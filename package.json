@@ -1,0 +1,19 @@
+{
+  "name": "bobril",
+  "version": "0.0.1",
+  "description": "Component Oriented MVC Framework with virtual DOM",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Boris Letocha",
+  "license": "MIT",
+  "devDependencies": {
+    "karma": "^0.12.23",
+    "karma-jasmine": "^0.1.5",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "karma-commonjs": "0.0.11",
+    "karma-sourcemap-loader": "^0.2.0",
+    "karma-coverage": "^0.2.6"
+  }
+}
