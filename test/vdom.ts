@@ -75,13 +75,19 @@ describe("updateNode", () => {
     }
 
     function advancedTest(start: string, update: string, result: string) {
-        var r = B.createNode(buildVdom(start), false);
+        var vdomStart = buildVdom(start);
+        var r = B.createNode(vdomStart, false);
         var c = r.element.childNodes;
         for (var i = 0; i < c.length; i++) {
             c[i].id = "" + i;
         }
-        r = B.updateNode(buildVdom(update), r, false);
+        var vdomUpdate = buildVdom(update);
+        r = B.updateNode(vdomUpdate, r, false);
         var a = r.children.map((ch: Bobril.IBobrilCacheNode) => (ch.key ? ch.key + ":" : "") + ch.element.innerHTML + (ch.element.id ? ":" + ch.element.id : ""));
+        expect(r.element.childElementCount).toBe(r.children.length);
+        for (i = 0; i < r.children.length; i++) {
+            expect(r.element.childNodes[i]).toBe(r.children[i].element);
+        }
         expect(a.join(",")).toBe(result);
     }
 
@@ -111,5 +117,29 @@ describe("updateNode", () => {
     });
     it("removeNonKey", () => {
         advancedTest("A,B", "C", "C:0");
+    });
+    it("removeLastKeyAndNonKey1", () => {
+        advancedTest("D,a:A,b:B,c:C", "a:E,b:F", "a:E:1,b:F:2");
+    });
+    it("removeLastKeyAndNonKey2", () => {
+        advancedTest("a:A,D,b:B,c:C", "a:E,b:F", "a:E:0,b:F:2");
+    });
+    it("removeLastKeyAndNonKey3", () => {
+        advancedTest("a:A,b:B,D,c:C", "a:E,b:F", "a:E:0,b:F:1");
+    });
+    it("removeLastKeyAndNonKey4", () => {
+        advancedTest("a:A,b:B,c:C,D", "a:E,b:F", "a:E:0,b:F:1");
+    });
+    it("removeLastKeyAnd2NonKey1", () => {
+        advancedTest("D1,D2,a:A,b:B,c:C", "a:E,b:F", "a:E:2,b:F:3");
+    });
+    it("removeLastKeyAnd2NonKey2", () => {
+        advancedTest("a:A,D1,D2,b:B,c:C", "a:E,b:F", "a:E:0,b:F:3");
+    });
+    it("removeLastKeyAnd2NonKey3", () => {
+        advancedTest("a:A,b:B,D1,D2,c:C", "a:E,b:F", "a:E:0,b:F:1");
+    });
+    it("removeLastKeyAnd2NonKey4", () => {
+        advancedTest("a:A,b:B,c:C,D1,D2", "a:E,b:F", "a:E:0,b:F:1");
     });
 });

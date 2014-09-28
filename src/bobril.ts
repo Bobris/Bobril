@@ -1,4 +1,12 @@
 ﻿module Bobril {
+    function assert(shoudBeTrue: boolean, messageIfFalse: string) {
+        if (!shoudBeTrue)
+            throw Error(messageIfFalse);
+    }
+
+    var objectToString = {}.toString;
+    var isArray = Array.isArray || ((a: any) => objectToString.call(a) === "[object Array]");
+
     export interface IBobrilAttributes {
         id?: string;
         href?: string;
@@ -107,27 +115,29 @@
 
         static createChildren(c: IBobrilCacheNode, inNamespace: boolean) {
             var ch = c.children;
-            if (!Array.isArray(ch)) {
-                ch = Bobril.normalizeNode(ch);
-                ch = Bobril.createNode(ch, inNamespace);
-                c.element.appendChild(ch.element);
-                c.children = ch;
+            if (!ch)
                 return;
+            if (!Array.isArray(ch)) {
+                ch = [ch];
             }
-            // TODO flatten
-            for (var i = 0, l = ch.length; i < l; i++) {
-                var j = ch[i] = Bobril.createNode(Bobril.normalizeNode(ch[i]), inNamespace);
+            var i = 0, l = ch.length;
+            while (i < l) {
+                var item = ch[i];
+                if (isArray(item)) {
+                    ch.splice.apply(ch, [i, 1].concat(item));
+                    l = ch.length;
+                    continue;
+                }
+                var j = ch[i] = Bobril.createNode(Bobril.normalizeNode(item), inNamespace);
                 c.element.appendChild(j.element);
+                i++;
             }
+            c.children = ch;
         }
 
         static destroyNode(c: IBobrilCacheNode) {
             var ch = c.children;
-
-            if (!ch) {
-            } else if (!Array.isArray(ch)) {
-                Bobril.destroyNode(ch);
-            } else {
+            if (ch) {
                 for (var i = 0, l = ch.length; i < l; i++) {
                     Bobril.destroyNode(ch[i]);
                 }
@@ -180,16 +190,21 @@
 
         static updateChildren(n: IBobrilNode, c: IBobrilCacheNode, inNamespace: boolean): void {
             var newChildren = n.children || [];
-            if (!Array.isArray(newChildren))
+            if (!isArray(newChildren))
                 newChildren = [newChildren];
             var cachedChildren = c.children || [];
-            if (!Array.isArray(cachedChildren))
-                cachedChildren = [cachedChildren];
             var newLength = newChildren.length;
             var cachedLength = cachedChildren.length;
             var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
-            for (var newIndex = 0; newIndex < newLength; newIndex++) {
-                newChildren[newIndex] = Bobril.normalizeNode(newChildren[newIndex]);
+            for (var newIndex = 0; newIndex < newLength;) {
+                var item = newChildren[newIndex];
+                if (isArray(item)) {
+                    newChildren.splice.apply(newChildren, [newIndex, 1].concat(item));
+                    newLength = newChildren.length;
+                    continue;
+                }
+                newChildren[newIndex] = Bobril.normalizeNode(item);
+                newIndex++;
             }
             newIndex = 0;
             var element = c.element;
@@ -199,7 +214,7 @@
                 cachedChildren[newIndex] = Bobril.updateNode(newChildren[newIndex], cachedChildren[newIndex], inNamespace);
             }
             if (newIndex === minNewCachedLength) {
-                // all keys up to common length ware identical = simple case
+                // all keys up to common length were identical = simple case
                 while (newIndex < newLength) {
                     cachedChildren.push(Bobril.createNode(newChildren[newIndex], inNamespace));
                     element.appendChild(cachedChildren[newIndex].element);
@@ -218,17 +233,22 @@
                 var key:string;
                 var node: IBobrilNode;
                 var backupCommonIndex = newIndex;
+                var deltaKeyless = 0;
                 for (cachedIndex = backupCommonIndex; cachedIndex < cachedLength; cachedIndex++) {
                     node = cachedChildren[cachedIndex];
                     key = node.key;
                     if (key !== undefined && !(key in cachedKeys))
                         cachedKeys[key] = cachedIndex;
+                    else
+                        deltaKeyless--;
                 }
-                for (cachedIndex = newIndex; cachedIndex < newLength; cachedIndex++) {
-                    node = newChildren[cachedIndex];
+                for (; newIndex < newLength; newIndex++) {
+                    node = newChildren[newIndex];
                     key = node.key;
                     if (key !== undefined && !(key in newKeys))
-                        newKeys[key] = cachedIndex;
+                        newKeys[key] = newIndex;
+                    else
+                        deltaKeyless++;
                 }
                 var delta = 0;
                 newIndex = backupCommonIndex;
@@ -343,12 +363,24 @@
                     }
                     if (key) {
                         if (newIndex !== cachedIndex) throw Error("assertion failed");
+                        if (newLength - newIndex - deltaKeyless == cachedLength - cachedIndex) {
+                            while (true) {
+                                Bobril.removeNode(cachedChildren[cachedIndex]);
+                                cachedChildren.splice(cachedIndex, 1);
+                                cachedLength--;
+                                deltaKeyless++;
+                                assert(cachedIndex !== cachedLength, "there still need to exist key node");
+                                if (cachedChildren[cachedIndex].key)
+                                    break;
+                            }
+                            continue;
+                        }
                         while (!cachedChildren[cachedIndex].key)
                             cachedIndex++;
                         if (key !== cachedChildren[cachedIndex].key) throw Error("assertion failed");
                         cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                         cachedChildren.splice(cachedIndex + 1, 1);
-                        element.insertBefore(cachedChildren[newIndex].element, cachedChildren[newIndex + 1].element;
+                        element.insertBefore(cachedChildren[newIndex].element, cachedChildren[newIndex + 1].element);
                         newIndex++;
                         cachedIndex = newIndex;
                         continue;
