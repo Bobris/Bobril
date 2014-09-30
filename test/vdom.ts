@@ -1,68 +1,66 @@
-﻿import Bobril = require("../src/bobril");
-var B = Bobril.Bobril;
+﻿/// <reference path="jasmine.d.ts"/>
+/// <reference path="../src/bobril.d.ts"/>
 
 describe("updateElement", () => {
     it("set className", () => {
-        var e = document.createElement("div");
-        var r = B.updateElement(e, { className: "a" }, {}, false);
-        expect(e.className).toBe("a");
-        expect(r).toEqual({ className: "a" });
+        var r = b.createNode({ tag: "div", attrs: { className: "a" } });
+        expect(r.element.className).toBe("a");
     });
 });
 
 describe("createNode", () => {
     it("simple", () => {
-        var r = B.createNode({ tag: "div", children: "hello" }, false);
+        var r = b.createNode({ tag: "div", children: "hello" });
         expect(r.element.outerHTML).toBe("<div>hello</div>");
     });
     it("number", () => {
-        var r = B.createNode({ tag: "div", children: 1 }, false);
+        var r = b.createNode({ tag: "div", children: 1 });
         expect(r.element.outerHTML).toBe("<div>1</div>");
     });
     it("boolean", () => {
-        var r = B.createNode({ tag: "div", children: true }, false);
+        var r = b.createNode({ tag: "div", children: true });
         expect(r.element.outerHTML).toBe("<div>true</div>");
     });
     it("single child", () => {
-        var r = B.createNode({ tag: "div", children: { tag: "span", children: "ok" } }, false);
+        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ok" } });
         expect(r.element.outerHTML).toBe("<div><span>ok</span></div>");
     });
     it("multiple children", () => {
-        var r = B.createNode({ tag: "div", children: [{ tag: "h1", children: "header" }, { tag: "div", children: "ok" }] }, false);
+        var r = b.createNode({ tag: "div", children: [{ tag: "h1", children: "header" }, { tag: "div", children: "ok" }] });
         expect(r.element.outerHTML).toBe("<div><h1>header</h1><div>ok</div></div>");
     });
 });
 
 describe("updateNode", () => {
     it("simple", () => {
-        var r = B.createNode({ tag: "div", children: "hello" }, false);
-        r = B.updateNode({ tag: "div", children: "bye" }, r, false);
+        var r = b.createNode({ tag: "div", children: "hello" });
+        r = b.updateNode({ tag: "div", children: "bye" }, r);
         expect(r.element.outerHTML).toBe("<div>bye</div>");
     });
     it("change single child from text to span", () => {
-        var r = B.createNode({ tag: "div", children: "hello" }, false);
-        r = B.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r, false);
+        var r = b.createNode({ tag: "div", children: "hello" });
+        r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r);
         expect(r.element.outerHTML).toBe("<div><span>ok</span></div>");
     });
     it("change single child from span to text", () => {
-        var r = B.createNode({ tag: "div", children: { tag: "span", children: "ko" } }, false);
-        r = B.updateNode({ tag: "div", children: "ok" }, r, false);
+        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } });
+        r = b.updateNode({ tag: "div", children: "ok" }, r);
         expect(r.element.outerHTML).toBe("<div>ok</div>");
     });
     it("append text after text", () => {
-        var r = B.createNode({ tag: "div", children: "A" }, false);
-        r = B.updateNode({ tag: "div", children: ["A", "B"] }, r, false);
+        var r = b.createNode({ tag: "div", children: "A" });
+        r = b.updateNode({ tag: "div", children: ["A", "B"] }, r);
         expect(r.element.outerHTML).toBe("<div>AB</div>");
     });
     it("preppend text before text", () => {
-        var r = B.createNode({ tag: "div", children: "A" }, false);
-        r = B.updateNode({ tag: "div", children: ["B", "A"] }, r, false);
+        var r = b.createNode({ tag: "div", children: "A" });
+        r = b.updateNode({ tag: "div", children: ["B", "A"] }, r);
         expect(r.element.outerHTML).toBe("<div>BA</div>");
     });
 
-    function buildVdom(s: string): Bobril.IBobrilNode {
+    function buildVdom(s: string): IBobrilNode {
         var items = s.split(",");
-        var res: Array<Bobril.IBobrilNode> = [];
+        var res: Array<IBobrilNode> = [];
         for (var i = 0; i < items.length; i++) {
             var item = items[i].split(":");
             if (item.length == 1) {
@@ -76,14 +74,14 @@ describe("updateNode", () => {
 
     function advancedTest(start: string, update: string, result: string) {
         var vdomStart = buildVdom(start);
-        var r = B.createNode(vdomStart, false);
+        var r = b.createNode(vdomStart);
         var c = r.element.childNodes;
         for (var i = 0; i < c.length; i++) {
             c[i].id = "" + i;
         }
         var vdomUpdate = buildVdom(update);
-        r = B.updateNode(vdomUpdate, r, false);
-        var a = r.children.map((ch: Bobril.IBobrilCacheNode) => (ch.key ? ch.key + ":" : "") + ch.element.innerHTML + (ch.element.id ? ":" + ch.element.id : ""));
+        r = b.updateNode(vdomUpdate, r);
+        var a = r.children.map((ch: IBobrilCacheNode) => (ch.key ? ch.key + ":" : "") + ch.element.innerHTML + (ch.element.id ? ":" + ch.element.id : ""));
         expect(r.element.childElementCount).toBe(r.children.length);
         for (i = 0; i < r.children.length; i++) {
             expect(r.element.childNodes[i]).toBe(r.children[i].element);

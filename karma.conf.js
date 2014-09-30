@@ -7,7 +7,7 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['commonjs','jasmine'],
+    frameworks: ['jasmine'],
 	
     files: [
       'src/**/*.js',
@@ -21,8 +21,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-	   'src/**/*.js': ['coverage','commonjs'],
-	   'test/**/*.js': ['commonjs']
+	   'src/**/*.js': ['coverage']
     },
 
 
