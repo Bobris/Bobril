@@ -3,6 +3,11 @@
 interface IBobrilStatic {
     createNode(n: IBobrilNode): IBobrilCacheNode;
     updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
+    /** factory returns string|number|boolean|IBobrilNode|(string|number|boolean|IBobrilNode)[] */
+    init(factory: () => any): void;
+    uptime(): number;
+    now(): number;
+    invalidate(): void;
 }
 
 interface IBobrilAttributes {

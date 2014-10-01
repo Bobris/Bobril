@@ -152,11 +152,11 @@ b = (function (window, undefined) {
                 if (n.tag === "svg")
                     inNamespace = true;
                 if (!n.attrs && !c.attrs) {
-                    updateChildren(n, c);
+                    updateChildrenNode(n, c);
                     inNamespace = backupInNamespace;
                     return c;
                 } else if (n.attrs && c.attrs && Object.keys(n.attrs).join() === Object.keys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildren(n, c);
+                    updateChildrenNode(n, c);
                     c.attrs = updateElement(c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
                     return c;
@@ -172,11 +172,15 @@ b = (function (window, undefined) {
         return r;
     }
 
-    function updateChildren(n, c) {
-        var newChildren = n.children || [];
+    function updateChildrenNode(n, c) {
+        c.children = updateChildren(c.element, n.children, c.children);
+    }
+
+    function updateChildren(element, newChildren, cachedChildren) {
+        newChildren = newChildren || [];
         if (!isArray(newChildren))
             newChildren = [newChildren];
-        var cachedChildren = c.children || [];
+        cachedChildren = cachedChildren || [];
         var newLength = newChildren.length;
         var cachedLength = cachedChildren.length;
         var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
@@ -191,7 +195,6 @@ b = (function (window, undefined) {
             newIndex++;
         }
         newIndex = 0;
-        var element = c.element;
         for (; newIndex < minNewCachedLength; newIndex++) {
             if (newChildren[newIndex].key !== cachedChildren[newIndex].key)
                 break;
@@ -347,7 +350,7 @@ b = (function (window, undefined) {
                     continue;
                 }
                 if (key) {
-                    assert(newIndex !== cachedIndex);
+                    assert(newIndex === cachedIndex);
                     if (newLength - newIndex - deltaKeyless == cachedLength - cachedIndex) {
                         while (true) {
                             removeNode(cachedChildren[cachedIndex]);
@@ -400,12 +403,72 @@ b = (function (window, undefined) {
                 cachedChildren.pop();
             }
         }
-        c.children = cachedChildren;
+        return cachedChildren;
+    }
+
+    var hasNativeRaf = false;
+    var nativeRaf = window.requestAnimationFrame;
+    if (nativeRaf) {
+        nativeRaf(function (param) {
+            if (typeof param === "number")
+                hasNativeRaf = true;
+        });
+    }
+
+    var now = Date.now || (function () {
+        return (new Date).getTime();
+    });
+    var startTime = now();
+    var lastTickTime = 0;
+
+    function requestAnimationFrame(callback) {
+        if (hasNativeRaf) {
+            nativeRaf(callback);
+        } else {
+            var delay = 50 / 3 + lastTickTime - now();
+            if (delay < 0)
+                delay = 0;
+            window.setTimeout(function () {
+                lastTickTime = now();
+                callback(lastTickTime - startTime);
+            }, delay);
+        }
+    }
+
+    var rootFactory;
+    var rootCacheChildren = [];
+
+    var scheduled = false;
+    function scheduleUpdate() {
+        if (scheduled)
+            return;
+        scheduled = true;
+        requestAnimationFrame(update);
+    }
+
+    function init(factory) {
+        rootFactory = factory;
+        scheduleUpdate();
+    }
+
+    var uptime = 0;
+
+    function update(time) {
+        uptime = time;
+        scheduled = false;
+        var newChildren = rootFactory();
+        rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren);
     }
 
     return {
         createNode: createNode,
-        updateNode: updateNode
+        updateNode: updateNode,
+        init: init,
+        uptime: function () {
+            return uptime;
+        },
+        now: now,
+        invalidate: scheduleUpdate
     };
 })((typeof window != "undefined" ? window : {}));
 //# sourceMappingURL=bobril.js.map

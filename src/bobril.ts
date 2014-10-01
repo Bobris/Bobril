@@ -142,11 +142,11 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
                 if (n.tag === "svg")
                     inNamespace = true;
                 if (!n.attrs && !c.attrs) {
-                    updateChildren(n, c);
+                    updateChildrenNode(n, c);
                     inNamespace = backupInNamespace;
                     return c;
                 } else if (n.attrs && c.attrs && Object.keys(n.attrs).join() === Object.keys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildren(n, c);
+                    updateChildrenNode(n, c);
                     c.attrs = updateElement(c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
                     return c;
@@ -162,11 +162,15 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
         return r;
     }
 
-    function updateChildren(n: IBobrilNode, c: IBobrilCacheNode): void {
-        var newChildren = n.children || [];
+    function updateChildrenNode(n:IBobrilNode, c:IBobrilCacheNode): void {
+        c.children = updateChildren(c.element, n.children, c.children);
+    }
+
+    function updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any): Array<IBobrilCacheNode> {
+        newChildren = newChildren || [];
         if (!isArray(newChildren))
             newChildren = [newChildren];
-        var cachedChildren = c.children || [];
+        cachedChildren = cachedChildren || [];
         var newLength = newChildren.length;
         var cachedLength = cachedChildren.length;
         var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
@@ -181,7 +185,6 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
             newIndex++;
         }
         newIndex = 0;
-        var element = c.element;
         for (; newIndex < minNewCachedLength; newIndex++) {
             if (newChildren[newIndex].key !== cachedChildren[newIndex].key)
                 break;
@@ -336,7 +339,7 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
                     continue;
                 }
                 if (key) {
-                    assert(newIndex !== cachedIndex);
+                    assert(newIndex === cachedIndex);
                     if (newLength - newIndex - deltaKeyless == cachedLength - cachedIndex) {
                         while (true) {
                             removeNode(cachedChildren[cachedIndex]);
@@ -389,11 +392,63 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
                 cachedChildren.pop();
             }
         }
-        c.children = cachedChildren;
+        return cachedChildren;
+    }
+
+    var hasNativeRaf = false;
+    var nativeRaf = window.requestAnimationFrame;
+    if (nativeRaf) {
+        nativeRaf((param) => { if (typeof param === "number") hasNativeRaf = true; });
+    }
+
+    var now = Date.now || (() => (new Date).getTime());
+    var startTime = now();
+    var lastTickTime = 0;
+
+    function requestAnimationFrame(callback: (time:number) => void) {
+        if (hasNativeRaf) {
+            nativeRaf(callback);
+        } else {
+            var delay = 50/3 + lastTickTime - now();
+            if (delay < 0) delay = 0;
+            window.setTimeout(() => {
+                lastTickTime = now();
+                callback(lastTickTime - startTime);
+            }, delay);
+        }
+    }
+
+    var rootFactory: () => any;
+    var rootCacheChildren: Array<IBobrilCacheNode> = [];
+
+    var scheduled = false;
+    function scheduleUpdate() {
+        if (scheduled)
+            return;
+        scheduled = true;
+        requestAnimationFrame(update);
+    }
+
+    function init(factory: () => any) {
+        rootFactory = factory;
+        scheduleUpdate();
+    }
+
+    var uptime = 0;
+
+    function update(time: number) {
+        uptime = time;
+        scheduled = false;
+        var newChildren = rootFactory();
+        rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren);
     }
 
     return {
         createNode: createNode,
-        updateNode: updateNode
+        updateNode: updateNode,
+        init: init,
+        uptime: () => uptime,
+        now: now,
+        invalidate: scheduleUpdate
     };
 }) (<Window>(typeof window != "undefined" ? window : {}));
