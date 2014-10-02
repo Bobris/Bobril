@@ -11,6 +11,6 @@ describe("sandbox", () => {
     });
     it("works", () => {
         root.appendChild(document.createElement("div"));
-        expect(root.innerHTML).toBe("<div></div>");
+        expect(root.innerHTML.toLowerCase()).toBe("<div></div>");
     });
 })

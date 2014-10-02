@@ -10,7 +10,7 @@ describe("sandbox", function () {
     });
     it("works", function () {
         root.appendChild(document.createElement("div"));
-        expect(root.innerHTML).toBe("<div></div>");
+        expect(root.innerHTML.toLowerCase()).toBe("<div></div>");
     });
 });
 //# sourceMappingURL=sandbox.js.map

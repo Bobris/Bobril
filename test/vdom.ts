@@ -1,6 +1,11 @@
 ﻿/// <reference path="jasmine.d.ts"/>
 /// <reference path="../src/bobril.d.ts"/>
 
+function expectInsensitive(s1:string, s2:string) {
+    s1 = s1.replace(/\s/g, '');
+    expect(s1.toLowerCase()).toBe(s2.toLowerCase());
+}
+
 describe("updateElement", () => {
     it("set className", () => {
         var r = b.createNode({ tag: "div", attrs: { className: "a" } });
@@ -11,23 +16,23 @@ describe("updateElement", () => {
 describe("createNode", () => {
     it("simple", () => {
         var r = b.createNode({ tag: "div", children: "hello" });
-        expect(r.element.outerHTML).toBe("<div>hello</div>");
+        expectInsensitive(r.element.outerHTML,"<div>hello</div>");
     });
     it("number", () => {
         var r = b.createNode({ tag: "div", children: 1 });
-        expect(r.element.outerHTML).toBe("<div>1</div>");
+        expectInsensitive(r.element.outerHTML,"<div>1</div>");
     });
     it("boolean", () => {
         var r = b.createNode({ tag: "div", children: true });
-        expect(r.element.outerHTML).toBe("<div>true</div>");
+        expectInsensitive(r.element.outerHTML,"<div>true</div>");
     });
     it("single child", () => {
         var r = b.createNode({ tag: "div", children: { tag: "span", children: "ok" } });
-        expect(r.element.outerHTML).toBe("<div><span>ok</span></div>");
+        expectInsensitive(r.element.outerHTML,"<div><span>ok</span></div>");
     });
     it("multiple children", () => {
         var r = b.createNode({ tag: "div", children: [{ tag: "h1", children: "header" }, { tag: "div", children: "ok" }] });
-        expect(r.element.outerHTML).toBe("<div><h1>header</h1><div>ok</div></div>");
+        expectInsensitive(r.element.outerHTML,"<div><h1>header</h1><div>ok</div></div>");
     });
 });
 
@@ -35,27 +40,27 @@ describe("updateNode", () => {
     it("simple", () => {
         var r = b.createNode({ tag: "div", children: "hello" });
         r = b.updateNode({ tag: "div", children: "bye" }, r);
-        expect(r.element.outerHTML).toBe("<div>bye</div>");
+        expectInsensitive(r.element.outerHTML,"<div>bye</div>");
     });
     it("change single child from text to span", () => {
         var r = b.createNode({ tag: "div", children: "hello" });
         r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r);
-        expect(r.element.outerHTML).toBe("<div><span>ok</span></div>");
+        expectInsensitive(r.element.outerHTML,"<div><span>ok</span></div>");
     });
     it("change single child from span to text", () => {
         var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } });
         r = b.updateNode({ tag: "div", children: "ok" }, r);
-        expect(r.element.outerHTML).toBe("<div>ok</div>");
+        expectInsensitive(r.element.outerHTML,"<div>ok</div>");
     });
     it("append text after text", () => {
         var r = b.createNode({ tag: "div", children: "A" });
         r = b.updateNode({ tag: "div", children: ["A", "B"] }, r);
-        expect(r.element.outerHTML).toBe("<div>AB</div>");
+        expectInsensitive(r.element.outerHTML,"<div>AB</div>");
     });
     it("preppend text before text", () => {
         var r = b.createNode({ tag: "div", children: "A" });
         r = b.updateNode({ tag: "div", children: ["B", "A"] }, r);
-        expect(r.element.outerHTML).toBe("<div>BA</div>");
+        expectInsensitive(r.element.outerHTML,"<div>BA</div>");
     });
 
     function buildVdom(s: string): IBobrilNode {
@@ -81,12 +86,16 @@ describe("updateNode", () => {
         }
         var vdomUpdate = buildVdom(update);
         r = b.updateNode(vdomUpdate, r);
-        var a = r.children.map((ch: IBobrilCacheNode) => (ch.key ? ch.key + ":" : "") + ch.element.innerHTML + (ch.element.id ? ":" + ch.element.id : ""));
-        expect(r.element.childElementCount).toBe(r.children.length);
+        var a:Array<string> = [];
+        for (i = 0; i < r.children.length; i++) {
+            var ch = r.children[i];
+            a.push((ch.key ? ch.key + ":" : "") + ch.element.innerHTML + (ch.element.id ? ":" + ch.element.id : ""));
+        }
+        expect(r.element.childNodes.length).toBe(r.children.length);
         for (i = 0; i < r.children.length; i++) {
             expect(r.element.childNodes[i]).toBe(r.children[i].element);
         }
-        expect(a.join(",")).toBe(result);
+        expect(a.join(",").toLowerCase()).toBe(result.toLowerCase());
     }
 
     it("reorderKey", () => {
