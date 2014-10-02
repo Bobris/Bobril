@@ -56,9 +56,12 @@
     <TypeScriptSourceMap>false</TypeScriptSourceMap>
     <TypeScriptModuleKind>CommonJs</TypeScriptModuleKind>
   </PropertyGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="examples\basic\index.html" />
+  </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />
