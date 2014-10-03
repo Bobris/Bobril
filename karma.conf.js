@@ -15,7 +15,8 @@ module.exports = function(config) {
 	  { pattern: 'src/**/*.js.map', included: false },
       { pattern: 'src/**/*.ts', included: false },
 	  { pattern: 'test/**/*.js.map', included: false },
-      { pattern: 'test/**/*.ts', included: false }
+      { pattern: 'test/**/*.ts', included: false },
+	  { pattern: 'examples/**/*.*', included: false }
     ],
 
     // preprocess matching files before serving them to the browser
