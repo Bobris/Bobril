@@ -17,6 +17,8 @@ b = (function (window, undefined) {
     });
 
     var inNamespace = false;
+    var updateCall = [];
+    var updateInstance = [];
 
     function updateElement(el, newAttrs, oldAttrs) {
         if (!newAttrs)
@@ -70,6 +72,7 @@ b = (function (window, undefined) {
         var backupInNamespace = inNamespace;
         if (n.tag === "") {
             c.element = window.document.createTextNode("" + c.content);
+            pushInitCallback(c);
             return c;
         } else if (n.tag === "svg") {
             c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
@@ -80,6 +83,7 @@ b = (function (window, undefined) {
         createChildren(c);
         c.attrs = updateElement(c.element, c.attrs, {});
         inNamespace = backupInNamespace;
+        pushInitCallback(c);
         return c;
     }
 
@@ -128,7 +132,29 @@ b = (function (window, undefined) {
 
     function removeNode(c) {
         destroyNode(c);
-        c.element.parentNode.removeChild(c.element);
+        var p = c.element.parentNode;
+        if (p)
+            p.removeChild(c.element);
+    }
+
+    function pushInitCallback(c) {
+        var cc = c.component;
+        if (cc) {
+            if (cc.postInitDom) {
+                updateCall.push(false);
+                updateInstance.push(c);
+            }
+        }
+    }
+
+    function pushUpdateCallback(c) {
+        var cc = c.component;
+        if (cc) {
+            if (cc.postUpdateDom) {
+                updateCall.push(true);
+                updateInstance.push(c);
+            }
+        }
     }
 
     function updateNode(n, c) {
@@ -143,6 +169,7 @@ b = (function (window, undefined) {
                     c.content = n.content;
                     if ('textContent' in c.element) {
                         c.element.textContent = "" + c.content;
+                        pushUpdateCallback(c);
                         return c;
                     }
                 } else
@@ -154,22 +181,40 @@ b = (function (window, undefined) {
                 if (!n.attrs && !c.attrs) {
                     updateChildrenNode(n, c);
                     inNamespace = backupInNamespace;
+                    pushUpdateCallback(c);
                     return c;
                 } else if (n.attrs && c.attrs && Object.keys(n.attrs).join() === Object.keys(c.attrs).join() && n.attrs.id === c.attrs.id) {
                     updateChildrenNode(n, c);
                     c.attrs = updateElement(c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
+                    pushUpdateCallback(c);
                     return c;
                 }
                 inNamespace = backupInNamespace;
             }
         }
         var r = createNode(n);
-        if (c.element.parentNode) {
-            c.element.parentNode.insertBefore(r.element, c.element);
+        var pn = c.element.parentNode;
+        if (pn) {
+            pn.insertBefore(r.element, c.element);
         }
         removeNode(c);
         return r;
+    }
+
+    function callPostCallbacks() {
+        var count = updateInstance.length;
+        for (var i = 0; i < count; i++) {
+            if (updateCall[i]) {
+                var n = updateInstance[i];
+                n.component.postUpdateDom(n.componentInstance, n, n.element);
+            } else {
+                var n = updateInstance[i];
+                n.component.postInitDom(n.componentInstance, n, n.element);
+            }
+        }
+        updateCall = [];
+        updateInstance = [];
     }
 
     function updateChildrenNode(n, c) {
@@ -458,11 +503,24 @@ b = (function (window, undefined) {
         scheduled = false;
         var newChildren = rootFactory();
         rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren);
+        callPostCallbacks();
+    }
+
+    function createNodeWithPostCallbacks(n) {
+        var res = createNode(n);
+        callPostCallbacks();
+        return res;
+    }
+
+    function updateNodeWithPostCallbacks(n, c) {
+        var res = updateNode(n, c);
+        callPostCallbacks();
+        return res;
     }
 
     return {
-        createNode: createNode,
-        updateNode: updateNode,
+        createNode: createNodeWithPostCallbacks,
+        updateNode: updateNodeWithPostCallbacks,
         init: init,
         uptime: function () {
             return uptime;

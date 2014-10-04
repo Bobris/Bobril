@@ -4,7 +4,7 @@ declare var DEBUG: boolean;
 // ReSharper restore InconsistentNaming
 if (typeof DEBUG === 'undefined') DEBUG = true;
 
-b = ((window: Window, undefined?:any): IBobrilStatic => {
+b = ((window: Window, undefined?: any): IBobrilStatic => {
     function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
         if (DEBUG)
             if (!shoudBeTrue)
@@ -15,6 +15,8 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
     var isArray = Array.isArray || ((a: any) => objectToString.call(a) === "[object Array]");
 
     var inNamespace: boolean = false;
+    var updateCall: Array<boolean> = [];
+    var updateInstance: Array<IBobrilCacheNode> = [];
 
     function updateElement(el: HTMLElement, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
         if (!newAttrs) return undefined;
@@ -24,7 +26,7 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
             if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    var rule:string;
+                    var rule: string;
                     if (oldAttr) {
                         for (rule in newAttr) {
                             var v = newAttr[rule];
@@ -61,6 +63,7 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
         var backupInNamespace = inNamespace;
         if (n.tag === "") {
             c.element = window.document.createTextNode("" + c.content);
+            pushInitCallback(c);
             return c;
         } else if (n.tag === "svg") {
             c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
@@ -71,6 +74,7 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
         createChildren(c);
         c.attrs = updateElement(c.element, c.attrs, {});
         inNamespace = backupInNamespace;
+        pushInitCallback(c);
         return c;
     }
 
@@ -119,7 +123,28 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
 
     function removeNode(c: IBobrilCacheNode) {
         destroyNode(c);
-        c.element.parentNode.removeChild(c.element);
+        var p = c.element.parentNode;
+        if (p) p.removeChild(c.element);
+    }
+
+    function pushInitCallback(c: IBobrilCacheNode) {
+        var cc = c.component;
+        if (cc) {
+            if (cc.postInitDom) {
+                updateCall.push(false);
+                updateInstance.push(c);
+            }
+        }
+    }
+
+    function pushUpdateCallback(c: IBobrilCacheNode) {
+        var cc = c.component;
+        if (cc) {
+            if (cc.postUpdateDom) {
+                updateCall.push(true);
+                updateInstance.push(c);
+            }
+        }
     }
 
     function updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode {
@@ -134,6 +159,7 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
                     c.content = n.content;
                     if ('textContent' in c.element) {
                         c.element.textContent = "" + c.content;
+                        pushUpdateCallback(c);
                         return c;
                     }
                 } else return c;
@@ -144,25 +170,43 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
                 if (!n.attrs && !c.attrs) {
                     updateChildrenNode(n, c);
                     inNamespace = backupInNamespace;
+                    pushUpdateCallback(c);
                     return c;
                 } else if (n.attrs && c.attrs && Object.keys(n.attrs).join() === Object.keys(c.attrs).join() && n.attrs.id === c.attrs.id) {
                     updateChildrenNode(n, c);
                     c.attrs = updateElement(c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
+                    pushUpdateCallback(c);
                     return c;
                 }
                 inNamespace = backupInNamespace;
             }
         }
         var r = createNode(n);
-        if (c.element.parentNode) {
-            c.element.parentNode.insertBefore(r.element, c.element);
+        var pn = c.element.parentNode;
+        if (pn) {
+            pn.insertBefore(r.element, c.element);
         }
         removeNode(c);
         return r;
     }
 
-    function updateChildrenNode(n:IBobrilNode, c:IBobrilCacheNode): void {
+    function callPostCallbacks() {
+        var count = updateInstance.length;
+        for (var i = 0; i < count; i++) {
+            if (updateCall[i]) {
+                var n = updateInstance[i];
+                n.component.postUpdateDom(n.componentInstance, n, n.element);
+            } else {
+                var n = updateInstance[i];
+                n.component.postInitDom(n.componentInstance, n, n.element);
+            }
+        }
+        updateCall = [];
+        updateInstance = [];
+    }
+
+    function updateChildrenNode(n: IBobrilNode, c: IBobrilCacheNode): void {
         c.children = updateChildren(c.element, n.children, c.children);
     }
 
@@ -405,11 +449,11 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
     var startTime = now();
     var lastTickTime = 0;
 
-    function requestAnimationFrame(callback: (time:number) => void) {
+    function requestAnimationFrame(callback: (time: number) => void) {
         if (hasNativeRaf) {
             nativeRaf(callback);
         } else {
-            var delay = 50/3 + lastTickTime - now();
+            var delay = 50 / 3 + lastTickTime - now();
             if (delay < 0) delay = 0;
             window.setTimeout(() => {
                 lastTickTime = now();
@@ -441,14 +485,27 @@ b = ((window: Window, undefined?:any): IBobrilStatic => {
         scheduled = false;
         var newChildren = rootFactory();
         rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren);
+        callPostCallbacks();
+    }
+
+    function createNodeWithPostCallbacks(n: IBobrilNode): IBobrilCacheNode {
+        var res = createNode(n);
+        callPostCallbacks();
+        return res;
+    }
+
+    function updateNodeWithPostCallbacks(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode {
+        var res = updateNode(n, c);
+        callPostCallbacks();
+        return res;
     }
 
     return {
-        createNode: createNode,
-        updateNode: updateNode,
+        createNode: createNodeWithPostCallbacks,
+        updateNode: updateNodeWithPostCallbacks,
         init: init,
         uptime: () => uptime,
         now: now,
         invalidate: scheduleUpdate
     };
-}) (<Window>(typeof window != "undefined" ? window : {}));
+})(<Window>(typeof window != "undefined" ? window : {}));

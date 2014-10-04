@@ -45,6 +45,8 @@ interface IBobrilNode {
     /** string|number|boolean|IBobrilNode|(string|number|boolean|IBobrilNode)[] */
     children?: any;
     component?: IBobrilComponent;
+    // Bobril does not touch this, it is completely for user passing custom data to component
+    data?: any;
 }
 
 interface IBobrilCacheNode extends IBobrilNode {

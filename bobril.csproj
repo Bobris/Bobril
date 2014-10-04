@@ -65,6 +65,7 @@
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />
+    <TypeScriptCompile Include="test\livecycle.ts" />
     <TypeScriptCompile Include="test\sandbox.ts" />
     <TypeScriptCompile Include="test\vdom.ts" />
   </ItemGroup>
