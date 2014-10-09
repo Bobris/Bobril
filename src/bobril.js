@@ -5,6 +5,7 @@ if (typeof DEBUG === 'undefined')
     DEBUG = true;
 
 b = (function (window, undefined) {
+    var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue, messageIfFalse) {
         if (DEBUG)
             if (!shoudBeTrue)
@@ -15,12 +16,22 @@ b = (function (window, undefined) {
     var isArray = Array.isArray || (function (a) {
         return objectToString.call(a) === "[object Array]";
     });
+    var objectKeys = Object.keys || (function (obj) {
+        var keys = [];
 
+        for (var i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                keys.push(i);
+            }
+        }
+
+        return keys;
+    });
     var inNamespace = false;
     var updateCall = [];
     var updateInstance = [];
 
-    function updateElement(el, newAttrs, oldAttrs) {
+    function updateElement(n, el, newAttrs, oldAttrs) {
         if (!newAttrs)
             return undefined;
         for (var attrName in newAttrs) {
@@ -52,6 +63,18 @@ b = (function (window, undefined) {
                         el.setAttribute("class", newAttr);
                     else
                         el.setAttribute(attrName, newAttr);
+                } else if (attrName === "value" && attrName in el) {
+                    var currentValue = (el[attrName]);
+                    if (oldAttr === undefined) {
+                        n.componentInstance["b$value"] = newAttr;
+                    }
+                    if (newAttr !== currentValue) {
+                        if (oldAttr === undefined || currentValue === oldAttr) {
+                            el[attrName] = newAttr;
+                        } else {
+                            emitOnChange(n);
+                        }
+                    }
                 } else if (attrName in el && !(attrName == "list" || attrName == "form")) {
                     el[attrName] = newAttr;
                 } else
@@ -72,7 +95,6 @@ b = (function (window, undefined) {
         var backupInNamespace = inNamespace;
         if (n.tag === "") {
             c.element = window.document.createTextNode("" + c.content);
-            pushInitCallback(c);
             return c;
         } else if (n.tag === "svg") {
             c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
@@ -81,7 +103,7 @@ b = (function (window, undefined) {
             c.element = window.document.createElement(n.tag);
         }
         createChildren(c);
-        c.attrs = updateElement(c.element, c.attrs, {});
+        c.attrs = updateElement(c, c.element, c.attrs, {});
         inNamespace = backupInNamespace;
         pushInitCallback(c);
         return c;
@@ -128,6 +150,8 @@ b = (function (window, undefined) {
             if (c.component.destroy)
                 c.component.destroy(c.componentInstance, c, c.element);
         }
+        if (c.tag !== "")
+            c.element[nodeBackpointer] = null;
     }
 
     function removeNode(c) {
@@ -138,6 +162,7 @@ b = (function (window, undefined) {
     }
 
     function pushInitCallback(c) {
+        c.element[nodeBackpointer] = c;
         var cc = c.component;
         if (cc) {
             if (cc.postInitDom) {
@@ -157,6 +182,10 @@ b = (function (window, undefined) {
         }
     }
 
+    function getCacheNode(n) {
+        return n[nodeBackpointer];
+    }
+
     function updateNode(n, c) {
         if (n.component) {
             if (n.component.shouldChange)
@@ -169,7 +198,6 @@ b = (function (window, undefined) {
                     c.content = n.content;
                     if ('textContent' in c.element) {
                         c.element.textContent = "" + c.content;
-                        pushUpdateCallback(c);
                         return c;
                     }
                 } else
@@ -183,9 +211,9 @@ b = (function (window, undefined) {
                     inNamespace = backupInNamespace;
                     pushUpdateCallback(c);
                     return c;
-                } else if (n.attrs && c.attrs && Object.keys(n.attrs).join() === Object.keys(c.attrs).join() && n.attrs.id === c.attrs.id) {
+                } else if (n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
                     updateChildrenNode(n, c);
-                    c.attrs = updateElement(c.element, n.attrs, c.attrs);
+                    c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
                     pushUpdateCallback(c);
                     return c;
@@ -205,11 +233,12 @@ b = (function (window, undefined) {
     function callPostCallbacks() {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
+            var n;
             if (updateCall[i]) {
-                var n = updateInstance[i];
+                n = updateInstance[i];
                 n.component.postUpdateDom(n.componentInstance, n, n.element);
             } else {
-                var n = updateInstance[i];
+                n = updateInstance[i];
                 n.component.postInitDom(n.componentInstance, n, n.element);
             }
         }
@@ -491,6 +520,85 @@ b = (function (window, undefined) {
         requestAnimationFrame(update);
     }
 
+    function addListener(el, name, fn) {
+        if (el.addEventListener) {
+            el.addEventListener(name, fn);
+        } else {
+            el.attachEvent("on" + name, fn);
+        }
+    }
+
+    function emitOnChange(n) {
+        if (!n)
+            return;
+        var c = n.component;
+        if (!c)
+            return;
+        if (!c.onChange)
+            return;
+        var ctx = n.componentInstance;
+        var v = n.element.value;
+        if (ctx["b$value"] !== v) {
+            ctx["b$value"] = v;
+            c.onChange(ctx, v);
+        }
+    }
+
+    function onInput(ev) {
+        ev = ev || window.event;
+        var t = ev.target || ev.srcElement;
+        var n = getCacheNode(t);
+        emitOnChange(n);
+        return true;
+    }
+
+    function onCutAndPaste(ev) {
+        ev = ev || window.event;
+        var t = ev.target || ev.srcElement;
+        var n = getCacheNode(t);
+        emitOnChange(n);
+        return true;
+    }
+
+    function onKeyDown(ev) {
+        ev = ev || window.event;
+        var t = ev.target || ev.srcElement;
+        var n = getCacheNode(t);
+        emitOnChange(n);
+        return true;
+    }
+
+    function onKeyPress(ev) {
+        ev = ev || window.event;
+        var t = ev.target || ev.srcElement;
+        var n = getCacheNode(t);
+        emitOnChange(n);
+        return true;
+    }
+
+    function onKeyUp(ev) {
+        ev = ev || window.event;
+        var t = ev.target || ev.srcElement;
+        var n = getCacheNode(t);
+        emitOnChange(n);
+        return true;
+    }
+
+    var eventsCaptured = false;
+    function initEvents() {
+        if (eventsCaptured)
+            return;
+        eventsCaptured = true;
+        var body = document.body;
+        if (body.oninput)
+            addListener(body, "input", onInput);
+        addListener(body, "cut", onCutAndPaste);
+        addListener(body, "paste", onCutAndPaste);
+        addListener(body, "keydown", onKeyDown);
+        addListener(body, "keypress", onKeyPress);
+        addListener(body, "keyup", onKeyUp);
+    }
+
     function init(factory) {
         rootFactory = factory;
         scheduleUpdate();
@@ -499,6 +607,7 @@ b = (function (window, undefined) {
     var uptime = 0;
 
     function update(time) {
+        initEvents();
         uptime = time;
         scheduled = false;
         var newChildren = rootFactory();
@@ -526,7 +635,8 @@ b = (function (window, undefined) {
             return uptime;
         },
         now: now,
-        invalidate: scheduleUpdate
+        invalidate: scheduleUpdate,
+        deref: getCacheNode
     };
 })((typeof window != "undefined" ? window : {}));
 //# sourceMappingURL=bobril.js.map

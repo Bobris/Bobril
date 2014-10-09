@@ -58,10 +58,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="examples\basic\index.html" />
+    <Content Include="examples\input\index.html" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
     <TypeScriptCompile Include="examples\basic\app.ts" />
+    <TypeScriptCompile Include="examples\input\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />

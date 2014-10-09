@@ -8,6 +8,7 @@ interface IBobrilStatic {
     uptime(): number;
     now(): number;
     invalidate(): void;
+    deref(n: Node): IBobrilCacheNode;
 }
 
 interface IBobrilAttributes {
@@ -19,10 +20,10 @@ interface IBobrilAttributes {
 }
 
 interface IBobrilComponent {
-    // Called before new node in vdom should be created any me members except key could be modified
+    // called before new node in vdom should be created any me members except key could be modified
     init? (ctx: Object, me: IBobrilNode): void;
     // return false when whole subtree should not be changed from last time, you can still update any me members except key
-    shouldChange? (ctx: Object, me: IBobrilNode, oldMe: IBobrilNode): boolean;
+    shouldChange? (ctx: Object, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
     // called from children to parents order for new nodes
     postInitDom? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
     // called from children to parents order for updated nodes
@@ -30,7 +31,7 @@ interface IBobrilComponent {
     // called just before removing node from dom
     destroy? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
     // called on input element after any change with new value
-    onInput? (ctx: Object, value: string): void;
+    onChange? (ctx: Object, value: string): void;
     // called on keydown, return false if you didn't processed key so parrent could process it
     onKeyDown? (ctx: Object, key: number): boolean;
 }
