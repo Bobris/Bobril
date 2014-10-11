@@ -66,7 +66,7 @@ b = (function (window, undefined) {
                 } else if (attrName === "value" && attrName in el) {
                     var currentValue = (el[attrName]);
                     if (oldAttr === undefined) {
-                        n.componentInstance["b$value"] = newAttr;
+                        n.ctx["b$value"] = newAttr;
                     }
                     if (newAttr !== currentValue) {
                         if (oldAttr === undefined || currentValue === oldAttr) {
@@ -87,9 +87,9 @@ b = (function (window, undefined) {
     function createNode(n) {
         var c = n;
         if (c.component) {
-            c.componentInstance = {};
+            c.ctx = {};
             if (c.component.init) {
-                c.component.init(c.componentInstance, n);
+                c.component.init(c.ctx, n);
             }
         }
         var backupInNamespace = inNamespace;
@@ -148,7 +148,7 @@ b = (function (window, undefined) {
         }
         if (c.component) {
             if (c.component.destroy)
-                c.component.destroy(c.componentInstance, c, c.element);
+                c.component.destroy(c.ctx, c, c.element);
         }
         if (c.tag !== "")
             c.element[nodeBackpointer] = null;
@@ -189,7 +189,7 @@ b = (function (window, undefined) {
     function updateNode(n, c) {
         if (n.component) {
             if (n.component.shouldChange)
-                if (!n.component.shouldChange(c.componentInstance, n, c))
+                if (!n.component.shouldChange(c.ctx, n, c))
                     return c;
         }
         if (n.tag === c.tag) {
@@ -236,10 +236,10 @@ b = (function (window, undefined) {
             var n;
             if (updateCall[i]) {
                 n = updateInstance[i];
-                n.component.postUpdateDom(n.componentInstance, n, n.element);
+                n.component.postUpdateDom(n.ctx, n, n.element);
             } else {
                 n = updateInstance[i];
-                n.component.postInitDom(n.componentInstance, n, n.element);
+                n.component.postInitDom(n.ctx, n, n.element);
             }
         }
         updateCall = [];
@@ -521,10 +521,16 @@ b = (function (window, undefined) {
     }
 
     function addListener(el, name, fn) {
+        function enhanceEvent(ev) {
+            ev = ev || window.event;
+            var t = ev.target || ev.srcElement;
+            var n = getCacheNode(t);
+            fn(ev, t, n);
+        }
         if (el.addEventListener) {
-            el.addEventListener(name, fn);
+            el.addEventListener(name, enhanceEvent);
         } else {
-            el.attachEvent("on" + name, fn);
+            el.attachEvent("on" + name, enhanceEvent);
         }
     }
 
@@ -536,7 +542,7 @@ b = (function (window, undefined) {
             return;
         if (!c.onChange)
             return;
-        var ctx = n.componentInstance;
+        var ctx = n.ctx;
         var v = n.element.value;
         if (ctx["b$value"] !== v) {
             ctx["b$value"] = v;
@@ -544,44 +550,24 @@ b = (function (window, undefined) {
         }
     }
 
-    function onInput(ev) {
-        ev = ev || window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(t);
+    function onInput(ev, t, n) {
         emitOnChange(n);
-        return true;
     }
 
-    function onCutAndPaste(ev) {
-        ev = ev || window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(t);
+    function onCutAndPaste(ev, t, n) {
         emitOnChange(n);
-        return true;
     }
 
-    function onKeyDown(ev) {
-        ev = ev || window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(t);
+    function onKeyDown(ev, t, n) {
         emitOnChange(n);
-        return true;
     }
 
-    function onKeyPress(ev) {
-        ev = ev || window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(t);
+    function onKeyPress(ev, t, n) {
         emitOnChange(n);
-        return true;
     }
 
-    function onKeyUp(ev) {
-        ev = ev || window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(t);
+    function onKeyUp(ev, t, n) {
         emitOnChange(n);
-        return true;
     }
 
     var eventsCaptured = false;

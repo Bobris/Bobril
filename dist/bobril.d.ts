@@ -1,4 +1,4 @@
-﻿declare var b: IBobrilStatic;
+declare var b: IBobrilStatic;
 
 interface IBobrilStatic {
     createNode(n: IBobrilNode): IBobrilCacheNode;

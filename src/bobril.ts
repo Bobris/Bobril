@@ -58,7 +58,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
                 } else if (attrName === "value" && attrName in el) {
                     var currentValue = ((<any>el)[attrName]);
                     if (oldAttr === undefined) {
-                        (<any>n.componentInstance)["b$value"] = newAttr;
+                        (<any>n.ctx)["b$value"] = newAttr;
                     }
                     if (newAttr !== currentValue) {
                         if (oldAttr === undefined || currentValue === oldAttr) {
@@ -78,9 +78,9 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
     function createNode(n: IBobrilNode): IBobrilCacheNode {
         var c = <IBobrilCacheNode>n;
         if (c.component) {
-            c.componentInstance = {};
+            c.ctx = {};
             if (c.component.init) {
-                c.component.init(c.componentInstance, n);
+                c.component.init(c.ctx, n);
             }
         }
         var backupInNamespace = inNamespace;
@@ -139,7 +139,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         }
         if (c.component) {
             if (c.component.destroy)
-                c.component.destroy(c.componentInstance, c, c.element);
+                c.component.destroy(c.ctx, c, c.element);
         }
         if (c.tag !== "")
             c.element[nodeBackpointer] = null;
@@ -179,7 +179,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
     function updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode {
         if (n.component) {
             if (n.component.shouldChange)
-                if (!n.component.shouldChange(c.componentInstance, n, c))
+                if (!n.component.shouldChange(c.ctx, n, c))
                     return c;
         }
         if (n.tag === c.tag) {
@@ -225,10 +225,10 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
             var n: IBobrilCacheNode;
             if (updateCall[i]) {
                 n = updateInstance[i];
-                n.component.postUpdateDom(n.componentInstance, n, n.element);
+                n.component.postUpdateDom(n.ctx, n, n.element);
             } else {
                 n = updateInstance[i];
-                n.component.postInitDom(n.componentInstance, n, n.element);
+                n.component.postInitDom(n.ctx, n, n.element);
             }
         }
         updateCall = [];
@@ -503,10 +503,16 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
     }
 
     function addListener(el: HTMLElement, name: string, fn: Function) {
+        function enhanceEvent(ev: Event) {
+            ev = ev || window.event;
+            var t = ev.target || ev.srcElement;
+            var n = getCacheNode(<any>t);
+            fn(ev, t, n);
+        }
         if (el.addEventListener) {
-            el.addEventListener(name, <any>fn);
+            el.addEventListener(name, enhanceEvent);
         } else {
-            el.attachEvent("on" + name, <any>fn);
+            el.attachEvent("on" + name, enhanceEvent);
         }
     }
 
@@ -518,7 +524,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
             return;
         if (!c.onChange)
             return;
-        var ctx = n.componentInstance;
+        var ctx = n.ctx;
         var v = n.element.value;
         if ((<any>ctx)["b$value"] !== v) {
             (<any>ctx)["b$value"] = v;
@@ -526,44 +532,24 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         }
     }
 
-    function onInput(ev: Event) {
-        ev = ev || window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(<any>t);
+    function onInput(ev: Event, t: Node, n: IBobrilCacheNode) {
         emitOnChange(n);
-        return true;
     }
 
-    function onCutAndPaste(ev: Event) {
-        ev = ev || window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(<any>t);
+    function onCutAndPaste(ev: Event, t: Node, n: IBobrilCacheNode) {
         emitOnChange(n);
-        return true;
     }
 
-    function onKeyDown(ev: KeyboardEvent) {
-        ev = ev || <any>window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(<any>t);
+    function onKeyDown(ev: Event, t: Node, n: IBobrilCacheNode) {
         emitOnChange(n);
-        return true;
     }
 
-    function onKeyPress(ev: KeyboardEvent) {
-        ev = ev || <any>window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(<any>t);
+    function onKeyPress(ev: Event, t: Node, n: IBobrilCacheNode) {
         emitOnChange(n);
-        return true;
     }
 
-    function onKeyUp(ev: KeyboardEvent) {
-        ev = ev || <any>window.event;
-        var t = ev.target || ev.srcElement;
-        var n = getCacheNode(<any>t);
+    function onKeyUp(ev: Event, t: Node, n: IBobrilCacheNode) {
         emitOnChange(n);
-        return true;
     }
 
     var eventsCaptured = false;
