@@ -9,6 +9,7 @@ interface IBobrilStatic {
     now(): number;
     invalidate(): void;
     deref(n: Node): IBobrilCacheNode;
+    addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
 }
 
 interface IBobrilAttributes {
@@ -30,10 +31,6 @@ interface IBobrilComponent {
     postUpdateDom? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
     // called just before removing node from dom
     destroy? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
-    // called on input element after any change with new value
-    onChange? (ctx: Object, value: string): void;
-    // called on keydown, return false if you didn't processed key so parrent could process it
-    onKeyDown? (ctx: Object, key: number): boolean;
 }
 
 // new node should atleast have tag or component member

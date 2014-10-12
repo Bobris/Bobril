@@ -4,6 +4,36 @@
 if (typeof DEBUG === 'undefined')
     DEBUG = true;
 
+// IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
+if (!Array.prototype.map) {
+    Array.prototype.map = function (callback, thisArg) {
+        var t, a, k;
+        if (this == null) {
+            throw new TypeError(" this is null or not defined");
+        }
+        var o = Object(this);
+        var len = o.length >>> 0;
+        if (typeof callback !== "function") {
+            throw new TypeError(callback + " is not a function");
+        }
+        if (arguments.length > 1) {
+            t = thisArg;
+        }
+        a = new Array(len);
+        k = 0;
+        while (k < len) {
+            var kValue, mappedValue;
+            if (k in o) {
+                kValue = o[k];
+                mappedValue = callback.call(t, kValue, k, o);
+                a[k] = mappedValue;
+            }
+            k++;
+        }
+        return a;
+    };
+}
+
 b = (function (window, undefined) {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue, messageIfFalse) {
@@ -18,13 +48,11 @@ b = (function (window, undefined) {
     });
     var objectKeys = Object.keys || (function (obj) {
         var keys = [];
-
         for (var i in obj) {
             if (obj.hasOwnProperty(i)) {
                 keys.push(i);
             }
         }
-
         return keys;
     });
     var inNamespace = false;
@@ -72,7 +100,7 @@ b = (function (window, undefined) {
                         if (oldAttr === undefined || currentValue === oldAttr) {
                             el[attrName] = newAttr;
                         } else {
-                            emitOnChange(n);
+                            emitEvent("input", null, el, n);
                         }
                     }
                 } else if (attrName in el && !(attrName == "list" || attrName == "form")) {
@@ -520,13 +548,35 @@ b = (function (window, undefined) {
         requestAnimationFrame(update);
     }
 
-    function addListener(el, name, fn) {
+    var regEvents;
+    var registryEvents;
+    regEvents = {};
+    registryEvents = {};
+
+    function addEvent(name, priority, callback) {
+        var list = registryEvents[name] || [];
+        list.push({ priority: priority, callback: callback });
+        registryEvents[name] = list;
+    }
+
+    function emitEvent(name, ev, target, node) {
+        var events = regEvents[name];
+        if (events)
+            for (var i = 0; i < events.length; i++) {
+                if (events[i](ev, target, node))
+                    break;
+            }
+    }
+
+    function addListener(el, name) {
         function enhanceEvent(ev) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement;
             var n = getCacheNode(t);
-            fn(ev, t, n);
+            emitEvent(name, ev, t, n);
         }
+        if (!("on" + name in el))
+            return;
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
         } else {
@@ -534,55 +584,27 @@ b = (function (window, undefined) {
         }
     }
 
-    function emitOnChange(n) {
-        if (!n)
-            return;
-        var c = n.component;
-        if (!c)
-            return;
-        if (!c.onChange)
-            return;
-        var ctx = n.ctx;
-        var v = n.element.value;
-        if (ctx["b$value"] !== v) {
-            ctx["b$value"] = v;
-            c.onChange(ctx, v);
-        }
-    }
-
-    function onInput(ev, t, n) {
-        emitOnChange(n);
-    }
-
-    function onCutAndPaste(ev, t, n) {
-        emitOnChange(n);
-    }
-
-    function onKeyDown(ev, t, n) {
-        emitOnChange(n);
-    }
-
-    function onKeyPress(ev, t, n) {
-        emitOnChange(n);
-    }
-
-    function onKeyUp(ev, t, n) {
-        emitOnChange(n);
-    }
-
     var eventsCaptured = false;
     function initEvents() {
         if (eventsCaptured)
             return;
         eventsCaptured = true;
+        var eventNames = objectKeys(registryEvents);
+        for (var j = 0; j < eventNames.length; j++) {
+            var eventName = eventNames[j];
+            var arr = registryEvents[eventName];
+            arr = arr.sort(function (a, b) {
+                return a.priority - b.priority;
+            });
+            regEvents[eventName] = arr.map(function (v) {
+                return v.callback;
+            });
+        }
+        registryEvents = null;
         var body = document.body;
-        if (body.oninput)
-            addListener(body, "input", onInput);
-        addListener(body, "cut", onCutAndPaste);
-        addListener(body, "paste", onCutAndPaste);
-        addListener(body, "keydown", onKeyDown);
-        addListener(body, "keypress", onKeyPress);
-        addListener(body, "keyup", onKeyUp);
+        for (var i = 0; i < eventNames.length; i++) {
+            addListener(body, eventNames[i]);
+        }
     }
 
     function init(factory) {
@@ -622,7 +644,8 @@ b = (function (window, undefined) {
         },
         now: now,
         invalidate: scheduleUpdate,
-        deref: getCacheNode
+        deref: getCacheNode,
+        addEvent: addEvent
     };
 })((typeof window != "undefined" ? window : {}));
 //# sourceMappingURL=bobril.js.map
