@@ -1,16 +1,17 @@
 /// <reference path="../../src/bobril.d.ts"/>
+module BasicApp {
+    function p(...args: any[]) {
+        return { tag: "p", children: args };
+    }
 
-function p(...args: any[]) {
-    return { tag: "p", children: args };
+    var frame = 0;
+    b.init(() => {
+        b.invalidate();
+        frame++;
+        return [
+            { tag: "h1", children: "First Bobril sample" },
+            p("I know, it is a little bit simplistic, but it is a start"),
+            p("Uptime: ", b.uptime().toFixed(0), "ms Frame: ", frame, " FPS:", (frame * 1000 / b.uptime()).toFixed(1))
+        ];
+    });
 }
-
-var frame = 0;
-b.init(() => {
-    b.invalidate();
-    frame++;
-    return [
-        { tag: "h1", children: "First Bobril sample" },
-        p("I know, it is a little bit simplistic, but it is a start"),
-        p("Uptime: ", b.uptime().toFixed(0), "ms Frame: ", frame, " FPS:", (frame * 1000 / b.uptime()).toFixed(1))
-    ];
-});
