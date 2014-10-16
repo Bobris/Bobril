@@ -65,6 +65,10 @@
     <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
+    <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
+    <TypeScriptCompile Include="src\bobril.onchange.ts" />
+    <TypeScriptCompile Include="src\bobril.onkey.d.ts" />
+    <TypeScriptCompile Include="src\bobril.onkey.ts" />
     <TypeScriptCompile Include="src\bobril.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />
     <TypeScriptCompile Include="test\livecycle.ts" />

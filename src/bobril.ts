@@ -6,8 +6,8 @@ if (typeof DEBUG === 'undefined') DEBUG = true;
 
 // IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
 if (!Array.prototype.map) {
-    Array.prototype.map = function (callback:any, thisArg:any) {
-        var t:any, a:Array<any>, k: number;
+    Array.prototype.map = function (callback: any, thisArg: any) {
+        var t: any, a: Array<any>, k: number;
         if (this == null) {
             throw new TypeError(" this is null or not defined");
         }
@@ -22,7 +22,7 @@ if (!Array.prototype.map) {
         a = new Array(len);
         k = 0;
         while (k < len) {
-            var kValue:any, mappedValue:any;
+            var kValue: any, mappedValue: any;
             if (k in o) {
                 kValue = o[k];
                 mappedValue = callback.call(t, kValue, k, o);
@@ -531,7 +531,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
     }
 
     var regEvents: { [name: string]: Array<(ev: Event, target: Node, node: IBobrilCacheNode) => boolean> };
-    var registryEvents: { [name: string]: Array<{ priority: number; callback:(ev: Event, target: Node, node: IBobrilCacheNode) => boolean}>}
+    var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean }> }
     regEvents = {};
     registryEvents = {};
 
@@ -612,6 +612,22 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         return res;
     }
 
+    function bubbleEvent(node: IBobrilCacheNode, name: string, param: any): boolean {
+        while (node) {
+            var c = node.component;
+            if (c) {
+                var m = (<any>c)[name];
+                if (m) {
+                    if (m.call(c, node.ctx, param))
+                        return true;
+                }
+            }
+            var el = node.element.parentNode;
+            node = el ? getCacheNode(el) : null;
+        }
+        return false;
+    }
+
     return {
         createNode: createNodeWithPostCallbacks,
         updateNode: updateNodeWithPostCallbacks,
@@ -620,6 +636,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         now: now,
         invalidate: scheduleUpdate,
         deref: getCacheNode,
-        addEvent: addEvent
+        addEvent: addEvent,
+        bubble: bubbleEvent
     };
 })(<Window>(typeof window != "undefined" ? window : {}));

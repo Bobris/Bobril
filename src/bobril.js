@@ -635,6 +635,22 @@ b = (function (window, undefined) {
         return res;
     }
 
+    function bubbleEvent(node, name, param) {
+        while (node) {
+            var c = node.component;
+            if (c) {
+                var m = c[name];
+                if (m) {
+                    if (m.call(c, node.ctx, param))
+                        return true;
+                }
+            }
+            var el = node.element.parentNode;
+            node = el ? getCacheNode(el) : null;
+        }
+        return false;
+    }
+
     return {
         createNode: createNodeWithPostCallbacks,
         updateNode: updateNodeWithPostCallbacks,
@@ -645,7 +661,8 @@ b = (function (window, undefined) {
         now: now,
         invalidate: scheduleUpdate,
         deref: getCacheNode,
-        addEvent: addEvent
+        addEvent: addEvent,
+        bubble: bubbleEvent
     };
 })((typeof window != "undefined" ? window : {}));
 //# sourceMappingURL=bobril.js.map

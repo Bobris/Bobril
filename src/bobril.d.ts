@@ -10,6 +10,7 @@ interface IBobrilStatic {
     invalidate(): void;
     deref(n: Node): IBobrilCacheNode;
     addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
+	bubble(node: IBobrilCacheNode, name: string, param: any): boolean;
 }
 
 interface IBobrilAttributes {
