@@ -1,35 +1,86 @@
 /// <reference path="../../src/bobril.d.ts"/>
-var InputApp;
-(function (InputApp) {
-    function p() {
-        var args = [];
-        for (var _i = 0; _i < (arguments.length - 0); _i++) {
-            args[_i] = arguments[_i + 0];
+/// <reference path="../../src/bobril.onkey.d.ts"/>
+var OnKeyApp;
+(function (OnKeyApp) {
+    var KeyUpDown = (function () {
+        function KeyUpDown(down, value) {
+            this.down = down;
+            this.value = value;
         }
-        return { tag: "p", children: args };
+        KeyUpDown.prototype.toString = function () {
+            var v = this.value;
+            return (this.down ? "KeyDown " : "KeyUp ") + "Shift: " + v.shift + " Ctrl: " + v.ctrl + " Alt: " + v.alt + " Meta: " + v.meta + " Which: " + v.which;
+        };
+        return KeyUpDown;
+    })();
+
+    var KeyPress = (function () {
+        function KeyPress(value) {
+            this.value = value;
+        }
+        KeyPress.prototype.toString = function () {
+            var v = this.value;
+            return "KeyPress CharCode: " + v.charCode;
+        };
+        return KeyPress;
+    })();
+
+    var evs = [];
+
+    function addEvent(e) {
+        evs.unshift(e);
+        if (evs.length > 15)
+            evs.pop();
+        b.invalidate();
     }
 
-    var frame = 0;
-    var value = "Change this";
-
-    var MyInput = (function () {
-        function MyInput() {
+    var TrackKeys = (function () {
+        function TrackKeys() {
         }
-        MyInput.onChange = function (ctx, v) {
-            value = v;
-            b.invalidate();
+        TrackKeys.init = function (ctx, me) {
+            ctx.onAdd = me.data.onAdd;
         };
-        return MyInput;
+
+        TrackKeys.postInitDom = function (ctx, me, element) {
+            element.focus();
+        };
+
+        TrackKeys.onKeyDown = function (ctx, event) {
+            ctx.onAdd(new KeyUpDown(true, event));
+            return false;
+        };
+
+        TrackKeys.onKeyUp = function (ctx, event) {
+            ctx.onAdd(new KeyUpDown(false, event));
+            return false;
+        };
+
+        TrackKeys.onKeyPress = function (ctx, event) {
+            ctx.onAdd(new KeyPress(event));
+            return false;
+        };
+        return TrackKeys;
     })();
 
     b.init(function () {
-        frame++;
+        // Normally this would be done though Array.map but I don't want to polyfill it now in this test
+        var evsli = [];
+        for (var i = 0; i < evs.length; i++) {
+            evsli.push({ tag: "li", children: evs[i].toString() });
+        }
         return [
-            { tag: "h1", children: "Input Bobril sample" },
-            { tag: "input", attrs: { value: value }, component: MyInput },
-            p("Entered: " + value),
-            p("Frame: ", frame)
+            {
+                tag: "div",
+                attrs: { tabindex: "0" },
+                data: { onAdd: addEvent },
+                component: TrackKeys,
+                children: [
+                    { tag: "h1", children: "OnKey demo" },
+                    { tag: "p", children: "Press keys on keyboard and events will be displayed below (last is on top)" },
+                    { tag: "ul", children: evsli }
+                ]
+            }
         ];
     });
-})(InputApp || (InputApp = {}));
+})(OnKeyApp || (OnKeyApp = {}));
 //# sourceMappingURL=app.js.map
