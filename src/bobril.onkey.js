@@ -42,8 +42,9 @@
         }
         return false;
     }
-    b.addEvent("keydown", 500, emitOnKeyDown);
-    b.addEvent("keyup", 500, emitOnKeyUp);
-    b.addEvent("keypress", 500, emitOnKeyPress);
+    var addEvent = b.addEvent;
+    addEvent("keydown", 500, emitOnKeyDown);
+    addEvent("keyup", 500, emitOnKeyUp);
+    addEvent("keypress", 500, emitOnKeyPress);
 })(b);
 //# sourceMappingURL=bobril.onkey.js.map

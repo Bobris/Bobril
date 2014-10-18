@@ -124,7 +124,7 @@ b = (function (window, undefined) {
         if (n.tag === "") {
             c.element = window.document.createTextNode("" + c.content);
             return c;
-        } else if (n.tag === "svg") {
+        } else if (inNamespace || n.tag === "svg") {
             c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
         } else {
