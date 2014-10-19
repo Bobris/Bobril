@@ -2,6 +2,14 @@
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 var OnKeyApp;
 (function (OnKeyApp) {
+    function h(tag) {
+        var args = [];
+        for (var _i = 0; _i < (arguments.length - 1); _i++) {
+            args[_i] = arguments[_i + 1];
+        }
+        return { tag: tag, children: args };
+    }
+
     var KeyUpDown = (function () {
         function KeyUpDown(down, value) {
             this.down = down;
@@ -63,11 +71,6 @@ var OnKeyApp;
     })();
 
     b.init(function () {
-        // Normally this would be done though Array.map but I don't want to polyfill it now in this test
-        var evsli = [];
-        for (var i = 0; i < evs.length; i++) {
-            evsli.push({ tag: "li", children: evs[i].toString() });
-        }
         return [
             {
                 tag: "div",
@@ -75,9 +78,11 @@ var OnKeyApp;
                 data: { onAdd: addEvent },
                 component: TrackKeys,
                 children: [
-                    { tag: "h1", children: "OnKey demo" },
-                    { tag: "p", children: "Press keys on keyboard and events will be displayed below (last is on top)" },
-                    { tag: "ul", children: evsli }
+                    h("h1", "OnKey demo"),
+                    h("p", "Press keys on keyboard and events will be displayed below (last is on top)"),
+                    h("ul", evs.map(function (e) {
+                        return h("li", e.toString());
+                    }))
                 ]
             }
         ];

@@ -2,6 +2,10 @@
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 
 module OnKeyApp {
+    function h(tag:string, ...args: any[]) {
+        return { tag: tag, children: args };
+    }
+
     interface IEvent {
         toString(): string;
     }
@@ -65,11 +69,6 @@ module OnKeyApp {
     }
 
     b.init(() => {
-        // Normally this would be done though Array.map but I don't want to polyfill it now in this test
-        var evsli = [];
-        for (var i = 0; i < evs.length; i++) {
-            evsli.push({ tag: "li", children: evs[i].toString() });
-        }
         return [
             {
                 tag: "div",
@@ -77,9 +76,9 @@ module OnKeyApp {
                 data: { onAdd: addEvent },
                 component: TrackKeys,
                 children: [
-                    { tag: "h1", children: "OnKey demo" },
-                    { tag: "p", children: "Press keys on keyboard and events will be displayed below (last is on top)" },
-                    { tag: "ul", children: evsli }
+                    h("h1", "OnKey demo"),
+                    h("p", "Press keys on keyboard and events will be displayed below (last is on top)"),
+                    h("ul", evs.map((e) => h("li", e.toString())))
                 ]
             }
         ];

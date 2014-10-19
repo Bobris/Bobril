@@ -1,6 +1,14 @@
 ﻿/// <reference path="../../src/bobril.d.ts"/>
 var SvgApp;
 (function (SvgApp) {
+    function h(tag) {
+        var args = [];
+        for (var _i = 0; _i < (arguments.length - 1); _i++) {
+            args[_i] = arguments[_i + 1];
+        }
+        return { tag: tag, children: args };
+    }
+
     function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
         var angleInRadians = angleInDegrees * Math.PI / 180.0;
         return {
@@ -55,11 +63,14 @@ var SvgApp;
         var angle = Math.sin(b.uptime() * 0.0002) * 180 + 180;
         var angle2 = Math.sin(b.uptime() * 0.0003) * 180 + 180;
         var path = donutPie(200, 200, 195, 180, 0, angle) + donutPie(200, 200, 175, 160, 0, angle2) + donutPie(200, 200, 155, 140, angle, angle2) + donutPie(200, 200, 135, 0, angle, angle2);
+        var radius = Math.sin(b.uptime() * 0.01) * 30 + 70;
+        var path2 = donutPie(200, 200, radius, 0, angle, angle2);
         return [
-            { tag: "h1", children: "Svg Bobril sample" },
+            h("h1", "Svg Bobril sample"),
             {
                 tag: "svg", attrs: { height: "400px", width: "400px" }, children: [
-                    { tag: "path", attrs: { d: path, fill: "#ff0000", stroke: "#000", "stroke-width": "2" } }
+                    { tag: "path", attrs: { d: path, fill: "#ff0000", stroke: "#000000", "stroke-width": "2" } },
+                    { tag: "path", attrs: { d: path2, fill: "#00ff00", "fill-opacity": "0.5" } }
                 ]
             }
         ];
