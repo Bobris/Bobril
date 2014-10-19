@@ -13,6 +13,10 @@ class TestComponent implements IBobrilComponent {
         return me.data.change;
     }
 
+    update(ctx: Object, me: IBobrilNode, oldMe: IBobrilNode): void {
+        this.actions += "u:" + me.data.name + ";";
+    }
+
     postInitDom(ctx: Object, me: IBobrilNode, element: HTMLElement): void {
         this.actions += "pi:" + me.data.name + ";";
     }
@@ -49,7 +53,7 @@ describe("livecycle", () => {
         var r = b.createNode({ tag: "div", component: c, data: { name: "1" } });
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
-        expect(c.actions).toBe("sc:1;pu:1;");
+        expect(c.actions).toBe("sc:1;u:1;pu:1;");
     });
 
     it("shouldUpdateReturningFalseDoesNotPostUpdate", () => {
@@ -75,7 +79,7 @@ describe("livecycle", () => {
                 tag: "div", component: c, data: { name: "2", change: true }
             }
         }, r);
-        expect(c.actions).toBe("sc:1;sc:2;pu:2;pu:1;");
+        expect(c.actions).toBe("sc:1;u:1;sc:2;u:2;pu:2;pu:1;");
     });
 
     it("destroyCalledInCaseOfBigChange", () => {
@@ -93,7 +97,7 @@ describe("livecycle", () => {
                 tag: "div", component: c, data: { name: "4", change: true }
             }
         }, r);
-        expect(c.actions).toBe("sc:3;i:3;i:4;d:2;d:1;pi:4;pi:3;");
+        expect(c.actions).toBe("sc:3;u:3;i:3;i:4;d:2;d:1;pi:4;pi:3;");
     });
 
     it("initCallsFactory", done => {

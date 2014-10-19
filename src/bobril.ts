@@ -106,7 +106,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
     function createNode(n: IBobrilNode): IBobrilCacheNode {
         var c = <IBobrilCacheNode>n;
         if (c.component) {
-            c.ctx = {};
+            c.ctx = { data: c.data || {} };
             if (c.component.init) {
                 c.component.init(c.ctx, n);
             }
@@ -205,10 +205,15 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
     }
 
     function updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode {
-        if (n.component) {
-            if (n.component.shouldChange)
-                if (!n.component.shouldChange(c.ctx, n, c))
+        var component = n.component;
+        if (component) {
+            if (component.shouldChange)
+                if (!component.shouldChange(c.ctx, n, c))
                     return c;
+            (<any>c.ctx).data = n.data || {};
+            c.component = component;
+            if (component.update)
+                component.update(c.ctx, n, c);
         }
         if (n.tag === c.tag) {
             if (n.tag === "") {
@@ -274,7 +279,6 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         cachedChildren = cachedChildren || [];
         var newLength = newChildren.length;
         var cachedLength = cachedChildren.length;
-        var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
         for (var newIndex = 0; newIndex < newLength;) {
             var item = newChildren[newIndex];
             if (isArray(item)) {
@@ -285,6 +289,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
             newChildren[newIndex] = normalizeNode(item);
             newIndex++;
         }
+        var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
         newIndex = 0;
         for (; newIndex < minNewCachedLength; newIndex++) {
             if (newChildren[newIndex].key !== cachedChildren[newIndex].key)

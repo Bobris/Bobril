@@ -45,26 +45,22 @@ var OnKeyApp;
     var TrackKeys = (function () {
         function TrackKeys() {
         }
-        TrackKeys.init = function (ctx, me) {
-            ctx.onAdd = me.data.onAdd;
-        };
-
         TrackKeys.postInitDom = function (ctx, me, element) {
             element.focus();
         };
 
         TrackKeys.onKeyDown = function (ctx, event) {
-            ctx.onAdd(new KeyUpDown(true, event));
+            ctx.data.onAdd(new KeyUpDown(true, event));
             return false;
         };
 
         TrackKeys.onKeyUp = function (ctx, event) {
-            ctx.onAdd(new KeyUpDown(false, event));
+            ctx.data.onAdd(new KeyUpDown(false, event));
             return false;
         };
 
         TrackKeys.onKeyPress = function (ctx, event) {
-            ctx.onAdd(new KeyPress(event));
+            ctx.data.onAdd(new KeyPress(event));
             return false;
         };
         return TrackKeys;

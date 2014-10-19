@@ -13,6 +13,10 @@ var TestComponent = (function () {
         return me.data.change;
     };
 
+    TestComponent.prototype.update = function (ctx, me, oldMe) {
+        this.actions += "u:" + me.data.name + ";";
+    };
+
     TestComponent.prototype.postInitDom = function (ctx, me, element) {
         this.actions += "pi:" + me.data.name + ";";
     };
@@ -50,7 +54,7 @@ describe("livecycle", function () {
         var r = b.createNode({ tag: "div", component: c, data: { name: "1" } });
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
-        expect(c.actions).toBe("sc:1;pu:1;");
+        expect(c.actions).toBe("sc:1;u:1;pu:1;");
     });
 
     it("shouldUpdateReturningFalseDoesNotPostUpdate", function () {
@@ -76,7 +80,7 @@ describe("livecycle", function () {
                 tag: "div", component: c, data: { name: "2", change: true }
             }
         }, r);
-        expect(c.actions).toBe("sc:1;sc:2;pu:2;pu:1;");
+        expect(c.actions).toBe("sc:1;u:1;sc:2;u:2;pu:2;pu:1;");
     });
 
     it("destroyCalledInCaseOfBigChange", function () {
@@ -94,7 +98,7 @@ describe("livecycle", function () {
                 tag: "div", component: c, data: { name: "4", change: true }
             }
         }, r);
-        expect(c.actions).toBe("sc:3;i:3;i:4;d:2;d:1;pi:4;pi:3;");
+        expect(c.actions).toBe("sc:3;u:3;i:3;i:4;d:2;d:1;pi:4;pi:3;");
     });
 
     it("initCallsFactory", function (done) {

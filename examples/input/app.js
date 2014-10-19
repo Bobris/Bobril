@@ -1,34 +1,49 @@
 /// <reference path="../../src/bobril.d.ts"/>
 var InputApp;
 (function (InputApp) {
-    function p() {
+    function h(tag) {
         var args = [];
-        for (var _i = 0; _i < (arguments.length - 0); _i++) {
-            args[_i] = arguments[_i + 0];
+        for (var _i = 0; _i < (arguments.length - 1); _i++) {
+            args[_i] = arguments[_i + 1];
         }
-        return { tag: "p", children: args };
+        return { tag: tag, children: args };
     }
 
+    // Model
     var frame = 0;
     var value = "Change this";
 
-    var MyInput = (function () {
-        function MyInput() {
+    function setValue(v) {
+        value = v;
+        b.invalidate();
+    }
+
+    
+
+    var TextInputComponent = (function () {
+        function TextInputComponent() {
         }
-        MyInput.onChange = function (ctx, v) {
-            value = v;
-            b.invalidate();
+        TextInputComponent.shouldChange = function (ctx, me, oldMe) {
+            return me.attrs.value !== oldMe.attrs.value || me.data.onChange !== oldMe.data.onChange;
         };
-        return MyInput;
+
+        TextInputComponent.onChange = function (ctx, v) {
+            ctx.data.onChange(v);
+        };
+        return TextInputComponent;
     })();
+
+    function textInput(value, onChange) {
+        return { tag: "input", attrs: { value: value }, data: { onChange: onChange }, component: TextInputComponent };
+    }
 
     b.init(function () {
         frame++;
         return [
-            { tag: "h1", children: "Input Bobril sample" },
-            { tag: "input", attrs: { value: value }, component: MyInput },
-            p("Entered: " + value),
-            p("Frame: ", frame)
+            h("h1", "Input Bobril sample"),
+            textInput(value, setValue),
+            h("p", "Entered: ", value),
+            h("p", "Frame: ", frame)
         ];
     });
 })(InputApp || (InputApp = {}));

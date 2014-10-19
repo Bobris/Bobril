@@ -1,26 +1,48 @@
 /// <reference path="../../src/bobril.d.ts"/>
 module InputApp {
-    function p(...args: any[]) {
-        return { tag: "p", children: args };
+    function h(tag: string, ...args: any[]) {
+        return { tag: tag, children: args };
     }
 
+    // Model
     var frame = 0;
     var value = "Change this";
 
-    class MyInput implements IBobrilComponent {
-        static onChange(ctx: Object, v: string) {
-            value = v;
-            b.invalidate();
+    function setValue(v: string) {
+        value = v;
+        b.invalidate();
+    }
+
+    // Custom component
+    interface ITextInputData {
+        onChange: (value: string) => void;
+    }
+
+    interface ITextInputCtx {
+        data: ITextInputData;
+    }
+
+    class TextInputComponent implements IBobrilComponent {
+        static shouldChange(ctx: ITextInputCtx, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean {
+            return me.attrs.value !== oldMe.attrs.value || me.data.onChange !== oldMe.data.onChange;
         }
+
+        static onChange(ctx: ITextInputCtx, v: string): void {
+            ctx.data.onChange(v);
+        }
+    }
+
+    function textInput(value: string, onChange: (value: string) => void): IBobrilNode {
+        return { tag: "input", attrs: { value: value }, data: { onChange: onChange }, component: TextInputComponent };
     }
 
     b.init(() => {
         frame++;
         return [
-            { tag: "h1", children: "Input Bobril sample" },
-            { tag: "input", attrs: { value: value }, component: MyInput },
-            p("Entered: " + value),
-            p("Frame: ", frame)
+            h("h1", "Input Bobril sample"),
+            textInput(value, setValue),
+            h("p", "Entered: ", value),
+            h("p", "Frame: ", frame)
         ];
     });
 }

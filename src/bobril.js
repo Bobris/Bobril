@@ -115,7 +115,7 @@ b = (function (window, undefined) {
     function createNode(n) {
         var c = n;
         if (c.component) {
-            c.ctx = {};
+            c.ctx = { data: c.data || {} };
             if (c.component.init) {
                 c.component.init(c.ctx, n);
             }
@@ -215,10 +215,15 @@ b = (function (window, undefined) {
     }
 
     function updateNode(n, c) {
-        if (n.component) {
-            if (n.component.shouldChange)
-                if (!n.component.shouldChange(c.ctx, n, c))
+        var component = n.component;
+        if (component) {
+            if (component.shouldChange)
+                if (!component.shouldChange(c.ctx, n, c))
                     return c;
+            c.ctx.data = n.data || {};
+            c.component = component;
+            if (component.update)
+                component.update(c.ctx, n, c);
         }
         if (n.tag === c.tag) {
             if (n.tag === "") {
@@ -285,7 +290,6 @@ b = (function (window, undefined) {
         cachedChildren = cachedChildren || [];
         var newLength = newChildren.length;
         var cachedLength = cachedChildren.length;
-        var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
         for (var newIndex = 0; newIndex < newLength;) {
             var item = newChildren[newIndex];
             if (isArray(item)) {
@@ -296,6 +300,7 @@ b = (function (window, undefined) {
             newChildren[newIndex] = normalizeNode(item);
             newIndex++;
         }
+        var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
         newIndex = 0;
         for (; newIndex < minNewCachedLength; newIndex++) {
             if (newChildren[newIndex].key !== cachedChildren[newIndex].key)
