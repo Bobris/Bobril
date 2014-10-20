@@ -74,6 +74,7 @@
     <TypeScriptCompile Include="src\bobril.onkey.d.ts" />
     <TypeScriptCompile Include="src\bobril.onkey.ts" />
     <TypeScriptCompile Include="src\bobril.ts" />
+    <TypeScriptCompile Include="src\bobril.vg.d.ts" />
     <TypeScriptCompile Include="src\bobril.vg.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />
     <TypeScriptCompile Include="test\livecycle.ts" />
