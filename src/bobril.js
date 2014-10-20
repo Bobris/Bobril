@@ -660,6 +660,7 @@ b = (function (window, undefined) {
         createNode: createNodeWithPostCallbacks,
         updateNode: updateNodeWithPostCallbacks,
         init: init,
+        isArray: isArray,
         uptime: function () {
             return uptime;
         },

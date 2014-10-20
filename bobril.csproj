@@ -60,18 +60,21 @@
     <Content Include="examples\basic\index.html" />
     <Content Include="examples\input\index.html" />
     <Content Include="examples\onkey\index.html" />
+    <Content Include="examples\svg\index.html" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
     <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
+    <TypeScriptCompile Include="examples\svg\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.ts" />
     <TypeScriptCompile Include="src\bobril.onkey.d.ts" />
     <TypeScriptCompile Include="src\bobril.onkey.ts" />
     <TypeScriptCompile Include="src\bobril.ts" />
+    <TypeScriptCompile Include="src\bobril.vg.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />
     <TypeScriptCompile Include="test\livecycle.ts" />
     <TypeScriptCompile Include="test\sandbox.ts" />

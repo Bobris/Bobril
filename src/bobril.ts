@@ -637,6 +637,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         createNode: createNodeWithPostCallbacks,
         updateNode: updateNodeWithPostCallbacks,
         init: init,
+        isArray: isArray,
         uptime: () => uptime,
         now: now,
         invalidate: scheduleUpdate,
