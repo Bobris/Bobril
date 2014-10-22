@@ -18,7 +18,7 @@ module SvgApp {
         return [
             h("h1", "Svg Bobril sample"),
             {
-                component: b.vg, attrs: { height: "400px", width: "400px" }, children: [
+                component: b.vg, data: { height: "400px", width: "400px" }, children: [
                     { data: { path: path, fill: "#ff0000", stroke: "#000000", strokeWidth: 2 } },
                     { data: { path: path2, fill: "#00ff00", fillOpacity: 0.5 } }
                 ]

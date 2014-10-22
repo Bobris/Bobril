@@ -9,7 +9,7 @@ if (!Array.prototype.map) {
     Array.prototype.map = function (callback, thisArg) {
         var t, a, k;
         if (this == null) {
-            throw new TypeError(" this is null or not defined");
+            throw new TypeError("this is null or not defined");
         }
         var o = Object(this);
         var len = o.length >>> 0;
@@ -34,7 +34,7 @@ if (!Array.prototype.map) {
     };
 }
 
-b = (function (window, undefined) {
+b = (function (window, document, undefined) {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue, messageIfFalse) {
         if (DEBUG)
@@ -56,6 +56,7 @@ b = (function (window, undefined) {
         return keys;
     });
     var inNamespace = false;
+    var inSvg = false;
     var updateCall = [];
     var updateInstance = [];
 
@@ -103,7 +104,7 @@ b = (function (window, undefined) {
                             emitEvent("input", null, el, n);
                         }
                     }
-                } else if (attrName in el && !(attrName == "list" || attrName == "form")) {
+                } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
                 } else
                     el.setAttribute(attrName, newAttr);
@@ -114,25 +115,28 @@ b = (function (window, undefined) {
 
     function createNode(n) {
         var c = n;
+        var backupInNamespace = inNamespace;
+        var backupInSvg = inSvg;
         if (c.component) {
             c.ctx = { data: c.data || {} };
             if (c.component.init) {
                 c.component.init(c.ctx, n);
             }
         }
-        var backupInNamespace = inNamespace;
         if (n.tag === "") {
             c.element = window.document.createTextNode("" + c.content);
             return c;
-        } else if (inNamespace || n.tag === "svg") {
+        } else if (inSvg || n.tag === "svg") {
             c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
+            inSvg = true;
         } else {
             c.element = window.document.createElement(n.tag);
         }
         createChildren(c);
         c.attrs = updateElement(c, c.element, c.attrs, {});
         inNamespace = backupInNamespace;
+        inSvg = backupInSvg;
         pushInitCallback(c);
         return c;
     }
@@ -216,6 +220,8 @@ b = (function (window, undefined) {
 
     function updateNode(n, c) {
         var component = n.component;
+        var backupInNamespace = inNamespace;
+        var backupInSvg = inSvg;
         if (component) {
             if (component.shouldChange)
                 if (!component.shouldChange(c.ctx, n, c))
@@ -236,21 +242,20 @@ b = (function (window, undefined) {
                 } else
                     return c;
             } else {
-                var backupInNamespace = inNamespace;
-                if (n.tag === "svg")
+                if (n.tag === "svg") {
                     inNamespace = true;
-                if (!n.attrs && !c.attrs) {
+                    inSvg = true;
+                }
+                if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
                     updateChildrenNode(n, c);
+                    if (c.attrs)
+                        c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
-                    pushUpdateCallback(c);
-                    return c;
-                } else if (n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildrenNode(n, c);
-                    c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
-                    inNamespace = backupInNamespace;
+                    inSvg = backupInSvg;
                     pushUpdateCallback(c);
                     return c;
                 }
+                inSvg = backupInSvg;
                 inNamespace = backupInNamespace;
             }
         }
@@ -666,9 +671,12 @@ b = (function (window, undefined) {
         },
         now: now,
         invalidate: scheduleUpdate,
+        vmlNode: function () {
+            return inNamespace = true;
+        },
         deref: getCacheNode,
         addEvent: addEvent,
         bubble: bubbleEvent
     };
-})((typeof window != "undefined" ? window : {}));
+})(window, document);
 //# sourceMappingURL=bobril.js.map

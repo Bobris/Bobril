@@ -3,9 +3,13 @@
 <head>
 	<title>Sandbox</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<script>document.namespaces.add("v","urn:schemas-microsoft-com:vml","#default#VML");</script>
 </head>
 <body>
-    <v:rect style="width:50; height:50" fillcolor="#ff0000" strokecolor="#000000" />
+	<script>
+        document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
+        var ss = document.createStyleSheet();
+        ss.cssText = 'v\\:shape { position: absolute; width:10px; height:10px; behavior: url(#default#VML); }';
+	</script>
+    <v:shape coordorigin="0 0" coordsize="10 10" path="m 10,10 l 50,10,50,50,10,50 x e" fillcolor="#ff0000" strokecolor="#000000" />
 </body>
 </html>

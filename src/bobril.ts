@@ -9,7 +9,7 @@ if (!Array.prototype.map) {
     Array.prototype.map = function (callback: any, thisArg: any) {
         var t: any, a: Array<any>, k: number;
         if (this == null) {
-            throw new TypeError(" this is null or not defined");
+            throw new TypeError("this is null or not defined");
         }
         var o = Object(this);
         var len = o.length >>> 0;
@@ -34,7 +34,7 @@ if (!Array.prototype.map) {
     };
 }
 
-b = ((window: Window, undefined?: any): IBobrilStatic => {
+b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
         if (DEBUG)
@@ -54,6 +54,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         return keys;
     });
     var inNamespace: boolean = false;
+    var inSvg: boolean = false;
     var updateCall: Array<boolean> = [];
     var updateInstance: Array<IBobrilCacheNode> = [];
 
@@ -95,7 +96,7 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
                             emitEvent("input", null, el, n);
                         }
                     }
-                } else if (attrName in el && !(attrName == "list" || attrName == "form")) {
+                } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     (<any>el)[attrName] = newAttr;
                 } else el.setAttribute(attrName, newAttr);
             }
@@ -105,25 +106,28 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
 
     function createNode(n: IBobrilNode): IBobrilCacheNode {
         var c = <IBobrilCacheNode>n;
+        var backupInNamespace = inNamespace;
+        var backupInSvg = inSvg;
         if (c.component) {
             c.ctx = { data: c.data || {} };
             if (c.component.init) {
                 c.component.init(c.ctx, n);
             }
         }
-        var backupInNamespace = inNamespace;
         if (n.tag === "") {
             c.element = window.document.createTextNode("" + c.content);
             return c;
-        } else if (inNamespace || n.tag === "svg") {
+        } else if (inSvg || n.tag === "svg") {
             c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
+            inSvg = true;
         } else {
             c.element = window.document.createElement(n.tag);
         }
         createChildren(c);
         c.attrs = updateElement(c, c.element, c.attrs, {});
         inNamespace = backupInNamespace;
+        inSvg = backupInSvg;
         pushInitCallback(c);
         return c;
     }
@@ -206,6 +210,8 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
 
     function updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode {
         var component = n.component;
+        var backupInNamespace = inNamespace;
+        var backupInSvg = inSvg;
         if (component) {
             if (component.shouldChange)
                 if (!component.shouldChange(c.ctx, n, c))
@@ -225,21 +231,20 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
                     }
                 } else return c;
             } else {
-                var backupInNamespace = inNamespace;
-                if (n.tag === "svg")
+                if (n.tag === "svg") {
                     inNamespace = true;
-                if (!n.attrs && !c.attrs) {
+                    inSvg = true;
+                }
+                if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
                     updateChildrenNode(n, c);
+                    if (c.attrs)
+                        c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
-                    pushUpdateCallback(c);
-                    return c;
-                } else if (n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildrenNode(n, c);
-                    c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
-                    inNamespace = backupInNamespace;
+                    inSvg = backupInSvg;
                     pushUpdateCallback(c);
                     return c;
                 }
+                inSvg = backupInSvg;
                 inNamespace = backupInNamespace;
             }
         }
@@ -641,8 +646,9 @@ b = ((window: Window, undefined?: any): IBobrilStatic => {
         uptime: () => uptime,
         now: now,
         invalidate: scheduleUpdate,
+        vmlNode: () => inNamespace = true,
         deref: getCacheNode,
         addEvent: addEvent,
         bubble: bubbleEvent
     };
-})(<Window>(typeof window != "undefined" ? window : {}));
+})(window, document);
