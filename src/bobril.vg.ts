@@ -2,7 +2,7 @@
 /// <reference path="../src/bobril.vg.d.ts"/>
 
 ((b: IBobrilStatic, window: Window, document: Document) => {
-    function recSetComponent(a: any, c:IBobrilComponent) {
+    function recSetComponent(a: any, c: IBobrilComponent) {
         if (!a) return;
         if (b.isArray(a)) {
             var l = a.length;
@@ -61,6 +61,7 @@
     var svgComponent = {
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "svg";
+            me.attrs = { width: me.data.width, height: me.data.height };
             recSetComponent(me.children, svgChildComponent);
         },
         update: (ctx: Object, me: IBobrilNode, oldMe: IBobrilCacheNode) => {
@@ -81,7 +82,7 @@
             var path = data.path || [];
             var resultPath = "";
             for (var i = 0; i < path.length;) {
-                switch(path[i]) {
+                switch (path[i]) {
                     case "pie":
                         resultPath += donutPie.apply(null, path.slice(i + 1, i + 7));
                         i += 7;
@@ -96,6 +97,7 @@
         }
     }
 
+    var vmlScale = 10;
     function describeArcVml(x: number, y: number, radius: number, startAngle: number, endAngle: number, startWithLine: boolean) {
         var absDeltaAngle = Math.abs(endAngle - startAngle);
         var close = false;
@@ -107,12 +109,15 @@
         } else {
             if (radius === 0) {
                 return (startWithLine ? "l" : "m") + [
-                    x.toFixed(0), y.toFixed(0)
+                    (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0)
                 ].join(",");
             }
         }
+        var radiusInStr = (radius * vmlScale).toFixed(0);
         var d = (startWithLine ? "ae" : "al") + [
-            x.toFixed(0), y.toFixed(0), radius.toFixed(0), radius.toFixed(0), ((startAngle)*65536).toFixed(0), ((endAngle-startAngle)*65536).toFixed(0)
+            (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0), radiusInStr, radiusInStr,
+            ((90 - startAngle) * 65536).toFixed(0),
+            ((startAngle - endAngle) * 65536).toFixed(0)
         ].join(",");
         if (close) d += "x";
         return d;
@@ -123,7 +128,7 @@
         var nextWithLine = true;
         if (p[p.length - 1] === "x") nextWithLine = false;
         if (radiusSmall === 0) {
-            if (!nextWithLine) return p+" e";
+            if (!nextWithLine) return p + " e";
         }
         return p + describeArcVml(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "x e";
     }
@@ -131,7 +136,7 @@
     var vmlComponent = {
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "div";
-            me.attrs = { id: "t" + b.uptime(), style: { position: "relative", width: me.data.width, height: me.data.height } };
+            me.attrs = { style: { position: "relative", width: me.data.width, height: me.data.height } };
             recSetComponent(me.children, vmlChildComponent);
         },
         update: (ctx: Object, me: IBobrilNode, oldMe: IBobrilCacheNode) => {
@@ -142,14 +147,14 @@
     var vmlChildComponent = {
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "v:shape";
-            var attrs: any = { coordorigin:"0 0", coordsize:"10 10" };
+            var attrs: any = { coordorigin: "0 0", coordsize: "100 100" };
             var data = me.data;
             var children = <IBobrilNode[]>[];
             if (false && data.fillOpacity) {
                 attrs.filled = true;
                 var fillattrs = <IBobrilAttributes>{};
                 fillattrs["color"] = data.fill;
-                fillattrs["opacity"] = ""+data.fillOpacity;
+                fillattrs["opacity"] = "" + data.fillOpacity;
                 var fill = { tag: "v:fill", attrs: fillattrs };
                 children.push(fill);
             } else if (data.fill) {
@@ -192,6 +197,13 @@
         },
         update: (ctx: Object, me: IBobrilNode, oldMe: IBobrilCacheNode) => {
             vmlChildComponent.init(ctx, me);
+        },
+
+        postInitDom: (ctx: Object, me: IBobrilNode, element: HTMLElement) => {
+        },
+
+        postUpdateDom: (ctx: Object, me: IBobrilNode, element: HTMLElement) => {
+            vmlChildComponent.postInitDom(ctx, me, element);
         }
     }
 
@@ -210,11 +222,12 @@
             document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
         }
         var ss = document.createStyleSheet();
-        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }';
+        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' +
+        ' v\\:fill { behavior:url(#default#VML); }';
         b.vg = vmlComponent;
     } else if (implType == 1) {
         b.vg = svgComponent;
     } else {
         b.vg = {};
     }
-})(b,window,document);
+})(b, window, document);

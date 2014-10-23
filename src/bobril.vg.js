@@ -66,6 +66,7 @@
     var svgComponent = {
         init: function (ctx, me) {
             me.tag = "svg";
+            me.attrs = { width: me.data.width, height: me.data.height };
             recSetComponent(me.children, svgChildComponent);
         },
         update: function (ctx, me, oldMe) {
@@ -106,6 +107,7 @@
         }
     };
 
+    var vmlScale = 10;
     function describeArcVml(x, y, radius, startAngle, endAngle, startWithLine) {
         var absDeltaAngle = Math.abs(endAngle - startAngle);
         var close = false;
@@ -120,12 +122,15 @@
         } else {
             if (radius === 0) {
                 return (startWithLine ? "l" : "m") + [
-                    x.toFixed(0), y.toFixed(0)
+                    (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0)
                 ].join(",");
             }
         }
+        var radiusInStr = (radius * vmlScale).toFixed(0);
         var d = (startWithLine ? "ae" : "al") + [
-            x.toFixed(0), y.toFixed(0), radius.toFixed(0), radius.toFixed(0), ((startAngle) * 65536).toFixed(0), ((endAngle - startAngle) * 65536).toFixed(0)
+            (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0), radiusInStr, radiusInStr,
+            ((90 - startAngle) * 65536).toFixed(0),
+            ((startAngle - endAngle) * 65536).toFixed(0)
         ].join(",");
         if (close)
             d += "x";
@@ -147,7 +152,7 @@
     var vmlComponent = {
         init: function (ctx, me) {
             me.tag = "div";
-            me.attrs = { id: "t" + b.uptime(), style: { position: "relative", width: me.data.width, height: me.data.height } };
+            me.attrs = { style: { position: "relative", width: me.data.width, height: me.data.height } };
             recSetComponent(me.children, vmlChildComponent);
         },
         update: function (ctx, me, oldMe) {
@@ -158,7 +163,7 @@
     var vmlChildComponent = {
         init: function (ctx, me) {
             me.tag = "v:shape";
-            var attrs = { coordorigin: "0 0", coordsize: "10 10" };
+            var attrs = { coordorigin: "0 0", coordsize: "100 100" };
             var data = me.data;
             var children = [];
             if (false && data.fillOpacity) {
@@ -208,6 +213,11 @@
         },
         update: function (ctx, me, oldMe) {
             vmlChildComponent.init(ctx, me);
+        },
+        postInitDom: function (ctx, me, element) {
+        },
+        postUpdateDom: function (ctx, me, element) {
+            vmlChildComponent.postInitDom(ctx, me, element);
         }
     };
 
@@ -226,7 +236,7 @@
             document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
         }
         var ss = document.createStyleSheet();
-        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }';
+        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' + ' v\\:fill { behavior:url(#default#VML); }';
         b.vg = vmlComponent;
     } else if (implType == 1) {
         b.vg = svgComponent;

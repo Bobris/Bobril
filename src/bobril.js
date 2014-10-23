@@ -231,7 +231,7 @@ b = (function (window, document, undefined) {
             if (component.update)
                 component.update(c.ctx, n, c);
         }
-        if (n.tag === c.tag) {
+        if (n.tag === c.tag && (inSvg || !inNamespace)) {
             if (n.tag === "") {
                 if (c.content !== n.content) {
                     c.content = n.content;
