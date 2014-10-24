@@ -1,7 +1,7 @@
 ﻿/// <reference path="jasmine.d.ts"/>
 /// <reference path="../src/bobril.d.ts"/>
 
-function expectInsensitive(s1:string, s2:string) {
+function expectInsensitive(s1: string, s2: string) {
     s1 = s1.replace(/\s/g, '');
     expect(s1.toLowerCase()).toBe(s2.toLowerCase());
 }
@@ -16,23 +16,31 @@ describe("updateElement", () => {
 describe("createNode", () => {
     it("simple", () => {
         var r = b.createNode({ tag: "div", children: "hello" });
-        expectInsensitive(r.element.outerHTML,"<div>hello</div>");
+        expectInsensitive(r.element.outerHTML, "<div>hello</div>");
     });
     it("number", () => {
         var r = b.createNode({ tag: "div", children: 1 });
-        expectInsensitive(r.element.outerHTML,"<div>1</div>");
+        expectInsensitive(r.element.outerHTML, "<div>1</div>");
     });
     it("boolean", () => {
         var r = b.createNode({ tag: "div", children: true });
-        expectInsensitive(r.element.outerHTML,"<div>true</div>");
+        expectInsensitive(r.element.outerHTML, "<div>true</div>");
     });
     it("single child", () => {
         var r = b.createNode({ tag: "div", children: { tag: "span", children: "ok" } });
-        expectInsensitive(r.element.outerHTML,"<div><span>ok</span></div>");
+        expectInsensitive(r.element.outerHTML, "<div><span>ok</span></div>");
     });
     it("multiple children", () => {
         var r = b.createNode({ tag: "div", children: [{ tag: "h1", children: "header" }, { tag: "div", children: "ok" }] });
-        expectInsensitive(r.element.outerHTML,"<div><h1>header</h1><div>ok</div></div>");
+        expectInsensitive(r.element.outerHTML, "<div><h1>header</h1><div>ok</div></div>");
+    });
+    it("html child", () => {
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] });
+        expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>c</div>");
+    });
+    it("html children", () => {
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }, { tag: "/", content: "d<i>e</i>" }] });
+        expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>cd<i>e</i></div>");
     });
 });
 
@@ -40,27 +48,32 @@ describe("updateNode", () => {
     it("simple", () => {
         var r = b.createNode({ tag: "div", children: "hello" });
         r = b.updateNode({ tag: "div", children: "bye" }, r);
-        expectInsensitive(r.element.outerHTML,"<div>bye</div>");
+        expectInsensitive(r.element.outerHTML, "<div>bye</div>");
     });
     it("change single child from text to span", () => {
         var r = b.createNode({ tag: "div", children: "hello" });
         r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r);
-        expectInsensitive(r.element.outerHTML,"<div><span>ok</span></div>");
+        expectInsensitive(r.element.outerHTML, "<div><span>ok</span></div>");
     });
     it("change single child from span to text", () => {
         var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } });
         r = b.updateNode({ tag: "div", children: "ok" }, r);
-        expectInsensitive(r.element.outerHTML,"<div>ok</div>");
+        expectInsensitive(r.element.outerHTML, "<div>ok</div>");
     });
     it("append text after text", () => {
         var r = b.createNode({ tag: "div", children: "A" });
         r = b.updateNode({ tag: "div", children: ["A", "B"] }, r);
-        expectInsensitive(r.element.outerHTML,"<div>AB</div>");
+        expectInsensitive(r.element.outerHTML, "<div>AB</div>");
     });
     it("preppend text before text", () => {
         var r = b.createNode({ tag: "div", children: "A" });
         r = b.updateNode({ tag: "div", children: ["B", "A"] }, r);
-        expectInsensitive(r.element.outerHTML,"<div>BA</div>");
+        expectInsensitive(r.element.outerHTML, "<div>BA</div>");
+    });
+    it("change html", () => {
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] });
+        r = b.updateNode({ tag: "div", children: [{ tag: "/", content: "d<i>e</i>f" }] }, r);
+        expectInsensitive(r.element.outerHTML, "<div>d<i>e</i>f</div>");
     });
 
     function buildVdom(s: string): IBobrilNode {
@@ -86,7 +99,7 @@ describe("updateNode", () => {
         }
         var vdomUpdate = buildVdom(update);
         r = b.updateNode(vdomUpdate, r);
-        var a:Array<string> = [];
+        var a: Array<string> = [];
         for (i = 0; i < r.children.length; i++) {
             var ch = r.children[i];
             a.push((ch.key ? ch.key + ":" : "") + ch.element.innerHTML + (ch.element.id ? ":" + ch.element.id : ""));

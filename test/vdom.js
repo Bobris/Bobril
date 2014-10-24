@@ -33,6 +33,14 @@ describe("createNode", function () {
         var r = b.createNode({ tag: "div", children: [{ tag: "h1", children: "header" }, { tag: "div", children: "ok" }] });
         expectInsensitive(r.element.outerHTML, "<div><h1>header</h1><div>ok</div></div>");
     });
+    it("html child", function () {
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] });
+        expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>c</div>");
+    });
+    it("html children", function () {
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }, { tag: "/", content: "d<i>e</i>" }] });
+        expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>cd<i>e</i></div>");
+    });
 });
 
 describe("updateNode", function () {
@@ -60,6 +68,11 @@ describe("updateNode", function () {
         var r = b.createNode({ tag: "div", children: "A" });
         r = b.updateNode({ tag: "div", children: ["B", "A"] }, r);
         expectInsensitive(r.element.outerHTML, "<div>BA</div>");
+    });
+    it("change html", function () {
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] });
+        r = b.updateNode({ tag: "div", children: [{ tag: "/", content: "d<i>e</i>f" }] }, r);
+        expectInsensitive(r.element.outerHTML, "<div>d<i>e</i>f</div>");
     });
 
     function buildVdom(s) {
