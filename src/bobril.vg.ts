@@ -83,6 +83,14 @@
             var resultPath = "";
             for (var i = 0; i < path.length;) {
                 switch (path[i]) {
+                    case "M":
+                        resultPath += "M" + path[i + 1] + " " + path[i + 2];
+                        i += 3;
+                        break;
+                    case "L":
+                        resultPath += "L" + path[i + 1] + " " + path[i + 2];
+                        i += 3;
+                        break;
                     case "pie":
                         resultPath += donutPie.apply(null, path.slice(i + 1, i + 7));
                         i += 7;
@@ -98,6 +106,11 @@
     }
 
     var vmlScale = 10;
+
+    function vmlCoord(x: number): string {
+        return (x * vmlScale).toFixed(0);
+    }
+
     function describeArcVml(x: number, y: number, radius: number, startAngle: number, endAngle: number, startWithLine: boolean) {
         var absDeltaAngle = Math.abs(endAngle - startAngle);
         var close = false;
@@ -109,13 +122,13 @@
         } else {
             if (radius === 0) {
                 return (startWithLine ? "l" : "m") + [
-                    (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0)
+                    vmlCoord(x), vmlCoord(y)
                 ].join(",");
             }
         }
-        var radiusInStr = (radius * vmlScale).toFixed(0);
+        var radiusInStr = vmlCoord(radius);
         var d = (startWithLine ? "ae" : "al") + [
-            (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0), radiusInStr, radiusInStr,
+            vmlCoord(x), vmlCoord(y), radiusInStr, radiusInStr,
             ((90 - startAngle) * 65536).toFixed(0),
             ((startAngle - endAngle) * 65536).toFixed(0)
         ].join(",");
@@ -152,7 +165,7 @@
             var sInner = "";
             var data = me.data;
             if (data.fillOpacity) {
-                sInner += "<v:fill color=\""+data.fill+"\" opacity=\""+data.fillOpacity+"\"/>";
+                sInner += "<v:fill color=\"" + data.fill + "\" opacity=\"" + data.fillOpacity + "\"/>";
             } else if (data.fill) {
                 s += " fillcolor=\"" + data.fill + "\"";
             } else {
@@ -161,9 +174,9 @@
             if (data.strokeOpacity) {
                 sInner += "<v:stroke color=\"" + data.stroke + "\" opacity=\"" + data.strokeOpacity + "\" weight=\"" + data.strokeWidth + "px\"/>";
             } else if (data.stroke) {
-                s+=" strokecolor=\""+data.stroke+"\"";
+                s += " strokecolor=\"" + data.stroke + "\"";
                 if (data.strokeWidth)
-                    s+=" strokeweight=\""+data.strokeWidth + "px\"";
+                    s += " strokeweight=\"" + data.strokeWidth + "px\"";
             } else {
                 s += " stroked=\"false\"";
             }
@@ -171,6 +184,14 @@
             s += " path=\"";
             for (var i = 0; i < path.length;) {
                 switch (path[i]) {
+                    case "M":
+                        s += "m" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
+                        i += 3;
+                        break;
+                    case "L":
+                        s += "l" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
+                        i += 3;
+                        break;
                     case "pie":
                         s += donutPieVml.apply(null, path.slice(i + 1, i + 7));
                         i += 7;
@@ -210,7 +231,9 @@
         }
         var ss = document.createStyleSheet();
         ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' +
-        ' v\\:fill { behavior:url(#default#VML); }';
+        ' v\\:fill { behavior:url(#default#VML); }' +
+        ' v\\:stroke { behavior:url(#default#VML); }'
+        ;
         b.vg = vmlComponent;
     } else if (implType == 1) {
         b.vg = svgComponent;

@@ -93,6 +93,14 @@
             var resultPath = "";
             for (var i = 0; i < path.length;) {
                 switch (path[i]) {
+                    case "M":
+                        resultPath += "M" + path[i + 1] + " " + path[i + 2];
+                        i += 3;
+                        break;
+                    case "L":
+                        resultPath += "L" + path[i + 1] + " " + path[i + 2];
+                        i += 3;
+                        break;
                     case "pie":
                         resultPath += donutPie.apply(null, path.slice(i + 1, i + 7));
                         i += 7;
@@ -108,6 +116,11 @@
     };
 
     var vmlScale = 10;
+
+    function vmlCoord(x) {
+        return (x * vmlScale).toFixed(0);
+    }
+
     function describeArcVml(x, y, radius, startAngle, endAngle, startWithLine) {
         var absDeltaAngle = Math.abs(endAngle - startAngle);
         var close = false;
@@ -122,13 +135,13 @@
         } else {
             if (radius === 0) {
                 return (startWithLine ? "l" : "m") + [
-                    (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0)
+                    vmlCoord(x), vmlCoord(y)
                 ].join(",");
             }
         }
-        var radiusInStr = (radius * vmlScale).toFixed(0);
+        var radiusInStr = vmlCoord(radius);
         var d = (startWithLine ? "ae" : "al") + [
-            (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0), radiusInStr, radiusInStr,
+            vmlCoord(x), vmlCoord(y), radiusInStr, radiusInStr,
             ((90 - startAngle) * 65536).toFixed(0),
             ((startAngle - endAngle) * 65536).toFixed(0)
         ].join(",");
@@ -187,6 +200,14 @@
             s += " path=\"";
             for (var i = 0; i < path.length;) {
                 switch (path[i]) {
+                    case "M":
+                        s += "m" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
+                        i += 3;
+                        break;
+                    case "L":
+                        s += "l" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
+                        i += 3;
+                        break;
                     case "pie":
                         s += donutPieVml.apply(null, path.slice(i + 1, i + 7));
                         i += 7;
@@ -223,7 +244,7 @@
             document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
         }
         var ss = document.createStyleSheet();
-        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' + ' v\\:fill { behavior:url(#default#VML); }';
+        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' + ' v\\:fill { behavior:url(#default#VML); }' + ' v\\:stroke { behavior:url(#default#VML); }';
         b.vg = vmlComponent;
     } else if (implType == 1) {
         b.vg = svgComponent;
