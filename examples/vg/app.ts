@@ -17,7 +17,11 @@ module VgApp {
         var path2 = ["pie", 200, 200, radius, 0, angle, angle2];
         var deltax = Math.sin(b.uptime() * 0.003) * 40;
         var deltay = Math.cos(b.uptime() * 0.003) * 40;
-        var line = ["M", 500 + deltax, 100 + deltay, "L", 500 - deltax, 100 - deltay];
+        var posx = 500 - deltax;
+        var posy = 100 - deltay;
+        var sline = ["M", 500 + deltax, 100 + deltay, "L", posx, posy, "C",
+            posx, posy + 20, posx - 10, posy + 10, posx - 10, posy + 30, "L", posx + 10, posy + 30, "C",
+            posx + 10, posy + 10, posx, posy + 20, posx, posy];
         return [
             h("h1", "Vector Graphic Bobril sample"),
             {
@@ -28,7 +32,7 @@ module VgApp {
                     { data: { path: path2, fill: "#00ff00", fillOpacity: 0.5 } },
                     {
                         data: {
-                            path: line, stroke: "#0000f0",
+                            path: sline, stroke: "#0000f0",
                             strokeOpacity: 0.2 + Math.abs(0.8 * Math.sin(b.uptime() * 0.001)),
                             strokeWidth: 5 + 2 * Math.sin(b.uptime() * 0.004)
                         }

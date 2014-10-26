@@ -75,8 +75,10 @@
             var attrs: any = {};
             var data = me.data;
             if (data.fill) attrs.fill = data.fill;
+            else attrs.fill = "none";
             if (data.fillOpacity) attrs["fill-opacity"] = "" + data.fillOpacity;
             if (data.stroke) attrs.stroke = data.stroke;
+            else attrs.stroke = "none";
             if (data.strokeWidth) attrs["stroke-width"] = "" + data.strokeWidth;
             if (data.strokeOpacity) attrs["stroke-opacity"] = "" + data.strokeOpacity;
             var path = data.path || [];
@@ -90,6 +92,10 @@
                     case "L":
                         resultPath += "L" + path[i + 1] + " " + path[i + 2];
                         i += 3;
+                        break;
+                    case "C":
+                        resultPath += "C" + path.slice(i + 1, i + 7).join(" ");
+                        i += 7;
                         break;
                     case "pie":
                         resultPath += donutPie.apply(null, path.slice(i + 1, i + 7));
@@ -191,6 +197,10 @@
                     case "L":
                         s += "l" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
                         i += 3;
+                        break;
+                    case "C":
+                        s += "c" + path.slice(i + 1, i + 7).map((pos:number) => vmlCoord(pos)).join(",");
+                        i += 7;
                         break;
                     case "pie":
                         s += donutPieVml.apply(null, path.slice(i + 1, i + 7));
