@@ -124,16 +124,16 @@ b = (function (window, document, undefined) {
             }
         }
         if (n.tag === "") {
-            c.element = window.document.createTextNode("" + c.content);
+            c.element = document.createTextNode("" + c.content);
             return c;
         } else if (n.tag === "/") {
             return c;
         } else if (inSvg || n.tag === "svg") {
-            c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
+            c.element = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
             inSvg = true;
         } else {
-            c.element = window.document.createElement(n.tag);
+            c.element = document.createElement(n.tag);
         }
         createChildren(c);
         c.attrs = updateElement(c, c.element, c.attrs, {});
