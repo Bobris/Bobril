@@ -632,8 +632,6 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             var n = getCacheNode(<any>t);
             emitEvent(name, ev, <Node>t, n);
         }
-        if (!("on" + name in el))
-            return;
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
         } else {
