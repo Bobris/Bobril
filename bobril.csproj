@@ -59,6 +59,7 @@
   <ItemGroup>
     <Content Include="examples\basic\index.html" />
     <Content Include="examples\input\index.html" />
+    <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
     <Content Include="examples\svg\index.html" />
   </ItemGroup>
@@ -66,11 +67,14 @@
   <ItemGroup>
     <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />
+    <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
     <TypeScriptCompile Include="examples\svg\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.ts" />
+    <TypeScriptCompile Include="src\bobril.onclick.d.ts" />
+    <TypeScriptCompile Include="src\bobril.onclick.ts" />
     <TypeScriptCompile Include="src\bobril.onkey.d.ts" />
     <TypeScriptCompile Include="src\bobril.onkey.ts" />
     <TypeScriptCompile Include="src\bobril.ts" />
@@ -82,4 +86,8 @@
     <TypeScriptCompile Include="test\vdom.ts" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(VSToolsPath)\TypeScript\Microsoft.TypeScript.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>COPY $(SolutionDir)\src\bobril.js $(SolutionDir)\examples\mouse\bobril.js
+COPY $(SolutionDir)\src\bobril.onclick.js $(SolutionDir)\examples\mouse\bobril.onclick.js</PostBuildEvent>
+  </PropertyGroup>
 </Project>
