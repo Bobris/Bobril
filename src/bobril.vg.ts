@@ -81,6 +81,9 @@
             else attrs.stroke = "none";
             if (data.strokeWidth) attrs["stroke-width"] = "" + data.strokeWidth;
             if (data.strokeOpacity) attrs["stroke-opacity"] = "" + data.strokeOpacity;
+            if (data.lineCap) attrs["stroke-linecap"] = data.lineCap;
+            if (data.lineJoin) attrs["stroke-linejoin"] = data.lineJoin;
+            if (data.miterLimit) attrs["stroke-miterlimit"] = "" + data.miterLimit;
             var path = data.path || [];
             var resultPath = "";
             for (var i = 0; i < path.length;) {
@@ -177,12 +180,16 @@
             } else {
                 s += " filled=\"false\"";
             }
-            if (data.strokeOpacity) {
-                sInner += "<v:stroke color=\"" + data.stroke + "\" opacity=\"" + data.strokeOpacity + "\" weight=\"" + data.strokeWidth + "px\"/>";
-            } else if (data.stroke) {
-                s += " strokecolor=\"" + data.stroke + "\"";
-                if (data.strokeWidth)
-                    s += " strokeweight=\"" + data.strokeWidth + "px\"";
+            if (data.stroke) {
+                sInner += "<v:stroke color=\"" + data.stroke;
+                if (data.strokeOpacity) sInner += "\" opacity=\"" + data.strokeOpacity;
+                if (data.strokeWidth) sInner += "\" weight=\"" + data.strokeWidth + "px";
+                var lineCap = data.lineCap;
+                if (lineCap) sInner += "\" endcap=\"" + (lineCap == 'butt' ? 'flat' : lineCap);
+                sInner += "\" joinstyle=\"" + (data.lineJoin || "miter");
+                var miter = data.miterLimit;
+                if (miter) sInner += "\" miterlimit=\"" + miter;
+                sInner += "\"/>";
             } else {
                 s += " stroked=\"false\"";
             }
@@ -199,7 +206,7 @@
                         i += 3;
                         break;
                     case "C":
-                        s += "c" + path.slice(i + 1, i + 7).map((pos:number) => vmlCoord(pos)).join(",");
+                        s += "c" + path.slice(i + 1, i + 7).map((pos: number) => vmlCoord(pos)).join(",");
                         i += 7;
                         break;
                     case "pie":

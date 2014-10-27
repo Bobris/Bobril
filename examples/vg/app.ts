@@ -26,7 +26,7 @@ module VgApp {
             h("h1", "Vector Graphic Bobril sample"),
             {
                 component: b.vg,
-                data: { width: "600px", height: "400px" },
+                data: { width: "700px", height: "400px" },
                 children: [
                     { data: { path: path, fill: "#ff0000", stroke: "#000000", strokeWidth: 2 } },
                     { data: { path: path2, fill: "#00ff00", fillOpacity: 0.5 } },
@@ -35,6 +35,36 @@ module VgApp {
                             path: sline, stroke: "#0000f0",
                             strokeOpacity: 0.2 + Math.abs(0.8 * Math.sin(b.uptime() * 0.001)),
                             strokeWidth: 5 + 2 * Math.sin(b.uptime() * 0.004)
+                        }
+                    },
+                    {
+                        data: {
+                            path: ["M", 440, 200, "L", 440, 300], stroke: "#000000", strokeWidth: 15, lineCap: "butt"
+                        }
+                    },
+                    {
+                        data: {
+                            path: ["M", 470, 200, "L", 470, 300], stroke: "#000000", strokeWidth: 15, lineCap: "round"
+                        }
+                    },
+                    {
+                        data: {
+                            path: ["M", 500, 200, "L", 500, 300], stroke: "#000000", strokeWidth: 15, lineCap: "square"
+                        }
+                    },
+                    {
+                        data: {
+                            path: ["M", 600, 150, "L", 630, 50, "L", 660, 150], stroke:"#000000", strokeWidth:15, lineJoin: "miter"
+                        }
+                    },
+                    {
+                        data: {
+                            path: ["M", 600, 250, "L", 630, 150, "L", 660, 250], stroke: "#000000", strokeWidth: 15, lineJoin: "round"
+                        }
+                    },
+                    {
+                        data: {
+                            path: ["M", 600, 350, "L", 630, 250, "L", 660, 350], stroke: "#000000", strokeWidth: 15, lineJoin: "bevel"
                         }
                     }
                 ]
