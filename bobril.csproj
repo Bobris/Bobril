@@ -61,7 +61,7 @@
     <Content Include="examples\input\index.html" />
     <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
-    <Content Include="examples\svg\index.html" />
+    <Content Include="examples\vg\index.html" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
@@ -69,7 +69,7 @@
     <TypeScriptCompile Include="examples\input\app.ts" />
     <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
-    <TypeScriptCompile Include="examples\svg\app.ts" />
+    <TypeScriptCompile Include="examples\vg\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.ts" />

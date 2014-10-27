@@ -81,18 +81,40 @@
             var data = me.data;
             if (data.fill)
                 attrs.fill = data.fill;
+            else
+                attrs.fill = "none";
             if (data.fillOpacity)
                 attrs["fill-opacity"] = "" + data.fillOpacity;
             if (data.stroke)
                 attrs.stroke = data.stroke;
+            else
+                attrs.stroke = "none";
             if (data.strokeWidth)
                 attrs["stroke-width"] = "" + data.strokeWidth;
             if (data.strokeOpacity)
                 attrs["stroke-opacity"] = "" + data.strokeOpacity;
+            if (data.lineCap)
+                attrs["stroke-linecap"] = data.lineCap;
+            if (data.lineJoin)
+                attrs["stroke-linejoin"] = data.lineJoin;
+            if (data.miterLimit)
+                attrs["stroke-miterlimit"] = "" + data.miterLimit;
             var path = data.path || [];
             var resultPath = "";
             for (var i = 0; i < path.length;) {
                 switch (path[i]) {
+                    case "M":
+                        resultPath += "M" + path[i + 1] + " " + path[i + 2];
+                        i += 3;
+                        break;
+                    case "L":
+                        resultPath += "L" + path[i + 1] + " " + path[i + 2];
+                        i += 3;
+                        break;
+                    case "C":
+                        resultPath += "C" + path.slice(i + 1, i + 7).join(" ");
+                        i += 7;
+                        break;
                     case "pie":
                         resultPath += donutPie.apply(null, path.slice(i + 1, i + 7));
                         i += 7;
@@ -108,6 +130,11 @@
     };
 
     var vmlScale = 10;
+
+    function vmlCoord(x) {
+        return (x * vmlScale).toFixed(0);
+    }
+
     function describeArcVml(x, y, radius, startAngle, endAngle, startWithLine) {
         var absDeltaAngle = Math.abs(endAngle - startAngle);
         var close = false;
@@ -122,13 +149,13 @@
         } else {
             if (radius === 0) {
                 return (startWithLine ? "l" : "m") + [
-                    (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0)
+                    vmlCoord(x), vmlCoord(y)
                 ].join(",");
             }
         }
-        var radiusInStr = (radius * vmlScale).toFixed(0);
+        var radiusInStr = vmlCoord(radius);
         var d = (startWithLine ? "ae" : "al") + [
-            (x * vmlScale).toFixed(0), (y * vmlScale).toFixed(0), radiusInStr, radiusInStr,
+            vmlCoord(x), vmlCoord(y), radiusInStr, radiusInStr,
             ((90 - startAngle) * 65536).toFixed(0),
             ((startAngle - endAngle) * 65536).toFixed(0)
         ].join(",");
@@ -154,6 +181,7 @@
             me.tag = "div";
             me.attrs = { style: { position: "relative", width: me.data.width, height: me.data.height } };
             recSetComponent(me.children, vmlChildComponent);
+            b.vmlNode();
         },
         update: function (ctx, me, oldMe) {
             vmlComponent.init(ctx, me);
@@ -162,54 +190,62 @@
 
     var vmlChildComponent = {
         init: function (ctx, me) {
-            me.tag = "v:shape";
-            var attrs = { coordorigin: "0 0", coordsize: "100 100" };
+            me.tag = "/";
+            var s = "<v:shape coordorigin=\"0 0\" coordsize=\"100 100\"";
+            var sInner = "";
             var data = me.data;
-            var children = [];
-            if (false && data.fillOpacity) {
-                attrs.filled = true;
-                var fillattrs = {};
-                fillattrs["color"] = data.fill;
-                fillattrs["opacity"] = "" + data.fillOpacity;
-                var fill = { tag: "v:fill", attrs: fillattrs };
-                children.push(fill);
+            if (data.fillOpacity) {
+                sInner += "<v:fill color=\"" + data.fill + "\" opacity=\"" + data.fillOpacity + "\"/>";
             } else if (data.fill) {
-                attrs.filled = true;
-                attrs.fillcolor = data.fill;
+                s += " fillcolor=\"" + data.fill + "\"";
             } else {
-                attrs.filled = false;
+                s += " filled=\"false\"";
             }
-            if (data.strokeOpacity) {
-                attrs.stroked = true;
-                var strokeattrs = {};
-                strokeattrs["color"] = data.stroke;
-                strokeattrs["opacity"] = "" + data.strokeOpacity;
-                strokeattrs["weight"] = "" + data.strokeWidth;
-                var stroke = { tag: "v:stroke", attrs: strokeattrs };
-                children.push(stroke);
-            } else if (data.stroke) {
-                attrs.stroked = true;
-                attrs.strokecolor = data.stroke;
+            if (data.stroke) {
+                sInner += "<v:stroke color=\"" + data.stroke;
+                if (data.strokeOpacity)
+                    sInner += "\" opacity=\"" + data.strokeOpacity;
                 if (data.strokeWidth)
-                    attrs.strokeweight = data.strokeWidth + "px";
+                    sInner += "\" weight=\"" + data.strokeWidth + "px";
+                var lineCap = data.lineCap;
+                if (lineCap)
+                    sInner += "\" endcap=\"" + (lineCap == 'butt' ? 'flat' : lineCap);
+                sInner += "\" joinstyle=\"" + (data.lineJoin || "miter");
+                var miter = data.miterLimit;
+                if (miter)
+                    sInner += "\" miterlimit=\"" + miter;
+                sInner += "\"/>";
             } else {
-                attrs.stroked = false;
+                s += " stroked=\"false\"";
             }
             var path = data.path || [];
-            var resultPath = "";
+            s += " path=\"";
             for (var i = 0; i < path.length;) {
                 switch (path[i]) {
+                    case "M":
+                        s += "m" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
+                        i += 3;
+                        break;
+                    case "L":
+                        s += "l" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
+                        i += 3;
+                        break;
+                    case "C":
+                        s += "c" + path.slice(i + 1, i + 7).map(function (pos) {
+                            return vmlCoord(pos);
+                        }).join(",");
+                        i += 7;
+                        break;
                     case "pie":
-                        resultPath += donutPieVml.apply(null, path.slice(i + 1, i + 7));
+                        s += donutPieVml.apply(null, path.slice(i + 1, i + 7));
                         i += 7;
                         break;
                 }
             }
-            attrs.path = resultPath;
-            me.attrs = attrs;
-            if (children.length)
-                me.children = children;
-            b.vmlNode();
+            s += "\">";
+            s += sInner;
+            s += "</v:shape>";
+            me.content = s;
         },
         update: function (ctx, me, oldMe) {
             vmlChildComponent.init(ctx, me);
@@ -236,7 +272,7 @@
             document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
         }
         var ss = document.createStyleSheet();
-        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' + ' v\\:fill { behavior:url(#default#VML); }';
+        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' + ' v\\:fill { behavior:url(#default#VML); }' + ' v\\:stroke { behavior:url(#default#VML); }';
         b.vg = vmlComponent;
     } else if (implType == 1) {
         b.vg = svgComponent;

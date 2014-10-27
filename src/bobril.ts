@@ -115,14 +115,16 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             }
         }
         if (n.tag === "") {
-            c.element = window.document.createTextNode("" + c.content);
+            c.element = document.createTextNode("" + c.content);
+            return c;
+        } else if (n.tag === "/") {
             return c;
         } else if (inSvg || n.tag === "svg") {
-            c.element = window.document.createElementNS("http://www.w3.org/2000/svg", n.tag);
+            c.element = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
             inSvg = true;
         } else {
-            c.element = window.document.createElement(n.tag);
+            c.element = document.createElement(n.tag);
         }
         createChildren(c);
         c.attrs = updateElement(c, c.element, c.attrs, {});
@@ -156,7 +158,23 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                 continue;
             }
             var j = ch[i] = createNode(normalizeNode(item));
-            c.element.appendChild(j.element);
+            if (j.tag === "/") {
+                var before = c.element.lastChild;
+                c.element.insertAdjacentHTML("beforeend", j.content);
+                j.element = [];
+                if (before) {
+                    before = before.nextSibling;
+                } else {
+                    before = c.element.firstChild;
+                }
+                while (before) {
+                    before[nodeBackpointer] = j;
+                    j.element.push(before);
+                    before = before.nextSibling;
+                }
+            } else {
+                c.element.appendChild(j.element);
+            }
             i++;
         }
         c.children = ch;
@@ -173,14 +191,32 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             if (c.component.destroy)
                 c.component.destroy(c.ctx, c, c.element);
         }
-        if (c.tag !== "")
-            c.element[nodeBackpointer] = null;
+        if (c.tag !== "") {
+            var el = c.element;
+            if (isArray(el)) {
+                for (var j = 0; j < el.length; j++) {
+                    el[j][nodeBackpointer] = null;
+                }
+            } else {
+                el[nodeBackpointer] = null;
+            }
+        }
     }
 
     function removeNode(c: IBobrilCacheNode) {
         destroyNode(c);
-        var p = c.element.parentNode;
-        if (p) p.removeChild(c.element);
+        var el = c.element;
+        if (isArray(el)) {
+            var pa = el[0].parentNode;
+            if (pa) {
+                for (var i = 0; i < el.length; i++) {
+                    pa.removeChild(el[i]);
+                }
+            }
+        } else {
+            var p = el.parentNode;
+            if (p) p.removeChild(el);
+        }
     }
 
     function pushInitCallback(c: IBobrilCacheNode) {
@@ -220,6 +256,36 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             c.component = component;
             if (component.update)
                 component.update(c.ctx, n, c);
+        }
+        if (n.tag === "/") {
+            var el = c.element;
+            if (isArray(el)) el = el[0];
+            var elprev = el.previousSibling;
+            var removeEl = false;
+            var parent = el.parentNode;
+            if (!el.insertAdjacentHTML) {
+                el = parent.insertBefore(document.createElement("i"), el);
+                removeEl = true;
+            }
+            el.insertAdjacentHTML("beforebegin", n.content);
+            if (elprev) {
+                elprev = elprev.nextSibling;
+            }
+            else {
+                elprev = parent.firstChild;
+            }
+            var newElements = <Array<Node>>[];
+            while (elprev !== el) {
+                elprev[nodeBackpointer] = n;
+                newElements.push(elprev);
+                elprev = elprev.nextSibling;
+            }
+            (<IBobrilCacheNode>n).element = newElements;
+            if (removeEl) {
+                parent.removeChild(el);
+            }
+            removeNode(c);
+            return n;
         }
         if (n.tag === c.tag && (inSvg || !inNamespace)) {
             if (n.tag === "") {
