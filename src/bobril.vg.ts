@@ -58,6 +58,10 @@
         return p + describeArc(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "Z";
     }
 
+    function circle(x: number, y: number, radius: number):string {
+        return describeArc(x, y, radius, 0, 360, false);
+    }
+
     var svgComponent = {
         id: "b$vgr",
         init: (ctx: Object, me: IBobrilNode) => {
@@ -101,6 +105,14 @@
                     case "C":
                         resultPath += "C" + path.slice(i + 1, i + 7).join(" ");
                         i += 7;
+                        break;
+                    case "Z":
+                        resultPath += "Z";
+                        i++;
+                        break;
+                    case "circle":
+                        resultPath += circle.apply(null, path.slice(i + 1, i + 4));
+                        i += 4;
                         break;
                     case "pie":
                         resultPath += donutPie.apply(null, path.slice(i + 1, i + 7));
@@ -157,11 +169,15 @@
         return p + describeArcVml(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "x e";
     }
 
+    function circleVml(x: number, y: number, radius: number): string {
+        return describeArcVml(x, y, radius, 0, 360, false);
+    }
+
     var vmlComponent = {
         id: "b$vgr",
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "div";
-            me.attrs = { style: { position: "relative", width: me.data.width, height: me.data.height } };
+            me.attrs = { style: { position: "absolute", width: me.data.width, height: me.data.height, clip:"rect(0,"+me.data.width+","+me.data.height+",0)" } };
             recSetComponent(me.children, vmlChildComponent);
             b.vmlNode();
         },
@@ -212,6 +228,14 @@
                     case "C":
                         s += "c" + path.slice(i + 1, i + 7).map((pos: number) => vmlCoord(pos)).join(",");
                         i += 7;
+                        break;
+                    case "Z":
+                        s += "x";
+                        i++;
+                        break;
+                    case "circle":
+                        s += circleVml.apply(null, path.slice(i + 1, i + 4));
+                        i += 4;
                         break;
                     case "pie":
                         s += donutPieVml.apply(null, path.slice(i + 1, i + 7));

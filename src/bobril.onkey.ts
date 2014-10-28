@@ -2,7 +2,7 @@
 /// <reference path="../src/bobril.onkey.d.ts"/>
 
 ((b: IBobrilStatic) => {
-    function buildParam(ev: KeyboardEvent):IKeyDownUpEvent {
+    function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
         return {
             shift: ev.shiftKey,
             ctrl: ev.ctrlKey,
@@ -11,12 +11,18 @@
             which: ev.which || ev.keyCode,
         };
     }
+
+    function preventDefault(event: Event) {
+        var pd = event.preventDefault;
+        if (pd) pd.call(event); else (<any>event).returnValue = false;
+    }
+
     function emitOnKeyDown(ev: KeyboardEvent, target: Node, node: IBobrilCacheNode) {
         if (!node)
             return false;
         var param: IKeyDownUpEvent = buildParam(ev);
         if (b.bubble(node, "onKeyDown", param)) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;
@@ -26,7 +32,7 @@
             return false;
         var param: IKeyDownUpEvent = buildParam(ev);
         if (b.bubble(node, "onKeyUp", param)) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;
@@ -38,7 +44,7 @@
             return false;
         var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode };
         if (b.bubble(node, "onKeyPress", param)) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;

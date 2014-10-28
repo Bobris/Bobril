@@ -10,12 +10,21 @@
             which: ev.which || ev.keyCode
         };
     }
+
+    function preventDefault(event) {
+        var pd = event.preventDefault;
+        if (pd)
+            pd.call(event);
+        else
+            event.returnValue = false;
+    }
+
     function emitOnKeyDown(ev, target, node) {
         if (!node)
             return false;
         var param = buildParam(ev);
         if (b.bubble(node, "onKeyDown", param)) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;
@@ -25,7 +34,7 @@
             return false;
         var param = buildParam(ev);
         if (b.bubble(node, "onKeyUp", param)) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;
@@ -37,7 +46,7 @@
             return false;
         var param = { charCode: ev.which || ev.keyCode };
         if (b.bubble(node, "onKeyPress", param)) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;
