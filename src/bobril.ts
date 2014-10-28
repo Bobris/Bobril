@@ -34,6 +34,15 @@ if (!Array.prototype.map) {
     };
 }
 
+// Object create polyfill
+if (!Object.create) {
+    Object.create = (o: any) => {
+        function f() { }
+        f.prototype = o;
+        return new (<any>f)();
+    }
+}
+
 b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
@@ -702,6 +711,49 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         return false;
     }
 
+    function merge(f1: Function, f2: Function): Function {
+        return () => {
+            var result = f1.apply(this, arguments);
+            if (result === true) return result;
+            return f2.apply(this, arguments);
+        }
+    }
+
+    function postEnhance(node: IBobrilNode, methods: { id?: string;[name: string]: any }): IBobrilNode {
+        var comp = node.component;
+        if (!comp) {
+            node.component = methods;
+            return node;
+        }
+        var id = methods.id;
+        var res: any;
+        if (id) {
+            id = "b$a" + id;
+            res = (<any>comp)[id];
+            if (res) {
+                node.component = res;
+                return node;
+            }
+        }
+        res = Object.create(comp);
+        for (var i in methods) {
+            if (methods.hasOwnProperty(i) && i !== "id") {
+                var m = methods[i];
+                var origM = (<any>comp)[i];
+                if (typeof (m) == "function" && origM) {
+                    res[i] = merge(origM, m);
+                } else {
+                    res[i] = m;
+                }
+            }
+        }
+        if (id) {
+            (<any>comp)[id] = res;
+        }
+        node.component = res;
+        return node;
+    }
+
     return {
         createNode: createNodeWithPostCallbacks,
         updateNode: updateNodeWithPostCallbacks,
@@ -713,6 +765,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         vmlNode: () => inNamespace = true,
         deref: getCacheNode,
         addEvent: addEvent,
-        bubble: bubbleEvent
+        bubble: bubbleEvent,
+        postEnhance: postEnhance
     };
 })(window, document);

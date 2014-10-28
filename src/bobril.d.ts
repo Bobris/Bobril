@@ -5,14 +5,15 @@ interface IBobrilStatic {
     updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
     /** factory returns string|number|boolean|IBobrilNode|(string|number|boolean|IBobrilNode)[] */
     init(factory: () => any): void;
-    isArray(a:any): boolean;
+    isArray(a: any): boolean;
     uptime(): number;
     now(): number;
     invalidate(): void;
     vmlNode(): void;
     deref(n: Node): IBobrilCacheNode;
     addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
-	bubble(node: IBobrilCacheNode, name: string, param: any): boolean;
+    bubble(node: IBobrilCacheNode, name: string, param: any): boolean;
+    postEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
 }
 
 interface IBobrilAttributes {
@@ -25,6 +26,7 @@ interface IBobrilAttributes {
 }
 
 interface IBobrilComponent {
+    id?: string;
     // called before new node in vdom should be created any me members except key could be modified, ctx is initialized to { data: me.data||{} }
     init? (ctx: Object, me: IBobrilNode): void;
     // return false when whole subtree should not be changed from last time, you can still update any me members except key, default implementation always return true

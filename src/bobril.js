@@ -34,6 +34,16 @@ if (!Array.prototype.map) {
     };
 }
 
+// Object create polyfill
+if (!Object.create) {
+    Object.create = function (o) {
+        function f() {
+        }
+        f.prototype = o;
+        return new f();
+    };
+}
+
 b = (function (window, document, undefined) {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue, messageIfFalse) {
@@ -725,6 +735,51 @@ b = (function (window, document, undefined) {
         return false;
     }
 
+    function merge(f1, f2) {
+        var _this = this;
+        return function () {
+            var result = f1.apply(_this, arguments);
+            if (result === true)
+                return result;
+            return f2.apply(_this, arguments);
+        };
+    }
+
+    function postEnhance(node, methods) {
+        var comp = node.component;
+        if (!comp) {
+            node.component = methods;
+            return node;
+        }
+        var id = methods.id;
+        var res;
+        if (id) {
+            id = "b$a" + id;
+            res = comp[id];
+            if (res) {
+                node.component = res;
+                return node;
+            }
+        }
+        res = Object.create(comp);
+        for (var i in methods) {
+            if (methods.hasOwnProperty(i) && i !== "id") {
+                var m = methods[i];
+                var origM = comp[i];
+                if (typeof (m) == "function" && origM) {
+                    res[i] = merge(origM, m);
+                } else {
+                    res[i] = m;
+                }
+            }
+        }
+        if (id) {
+            comp[id] = res;
+        }
+        node.component = res;
+        return node;
+    }
+
     return {
         createNode: createNodeWithPostCallbacks,
         updateNode: updateNodeWithPostCallbacks,
@@ -740,7 +795,8 @@ b = (function (window, document, undefined) {
         },
         deref: getCacheNode,
         addEvent: addEvent,
-        bubble: bubbleEvent
+        bubble: bubbleEvent,
+        postEnhance: postEnhance
     };
 })(window, document);
 //# sourceMappingURL=bobril.js.map

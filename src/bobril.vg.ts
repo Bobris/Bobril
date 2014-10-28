@@ -11,7 +11,7 @@
             }
         }
         else if (a === Object(a)) {
-            a.component = c;
+            b.postEnhance(a, c);
         }
     }
 
@@ -59,6 +59,7 @@
     }
 
     var svgComponent = {
+        id: "b$vgr",
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "svg";
             me.attrs = { width: me.data.width, height: me.data.height };
@@ -70,6 +71,7 @@
     }
 
     var svgChildComponent = {
+        id: "b$vgc",
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "path";
             var attrs: any = {};
@@ -156,6 +158,7 @@
     }
 
     var vmlComponent = {
+        id: "b$vgr",
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "div";
             me.attrs = { style: { position: "relative", width: me.data.width, height: me.data.height } };
@@ -168,6 +171,7 @@
     }
 
     var vmlChildComponent = {
+        id: "b$vgc",
         init: (ctx: Object, me: IBobrilNode) => {
             me.tag = "/";
             var s = "<v:shape coordorigin=\"0 0\" coordsize=\"100 100\"";
