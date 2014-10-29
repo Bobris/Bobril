@@ -13,6 +13,16 @@ var OnKeyApp;
             ctx.data.onAdd(new Clicked(event));
             return false;
         };
+
+        TrackClick.onSwipeLeft = function (ctx, event) {
+            ctx.data.onAdd(new SwipedLeft(event));
+            return false;
+        };
+
+        TrackClick.onSwipeRight = function (ctx, event) {
+            ctx.data.onAdd(new SwipedRight(event));
+            return false;
+        };
         return TrackClick;
     })();
 
@@ -33,13 +43,33 @@ var OnKeyApp;
         return Clicked;
     })();
 
+    var SwipedLeft = (function () {
+        function SwipedLeft(ev) {
+            this.ev = ev;
+        }
+        SwipedLeft.prototype.toString = function () {
+            return "Swiped left ClientX: " + this.ev.clientX + " ClientY: " + this.ev.clientY;
+        };
+        return SwipedLeft;
+    })();
+
+    var SwipedRight = (function () {
+        function SwipedRight(ev) {
+            this.ev = ev;
+        }
+        SwipedRight.prototype.toString = function () {
+            return "Swiped right ClientX: " + this.ev.clientX + " ClientY: " + this.ev.clientY;
+        };
+        return SwipedRight;
+    })();
+
     var events = [];
 
     b.init(function () {
         return [
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "100px" } },
+                attrs: { style: { border: "1px solid", minHeight: "120px" } },
                 component: TrackClick,
                 data: {
                     onAdd: function (ev) {

@@ -651,8 +651,9 @@ b = (function (window, document, undefined) {
             var n = getCacheNode(t);
             emitEvent(name, ev, t, n);
         }
-        if (!("on" + name in el))
-            return;
+
+        //if (!("on" + name in el))
+        //    return;
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
         } else {

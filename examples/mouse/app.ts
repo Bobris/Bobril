@@ -21,6 +21,16 @@ module OnKeyApp {
             ctx.data.onAdd(new Clicked(event));
             return false;
         }
+
+        static onSwipeLeft(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+            ctx.data.onAdd(new SwipedLeft(event));
+            return false;
+        }
+
+        static onSwipeRight(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+            ctx.data.onAdd(new SwipedRight(event));
+            return false;
+        }
     }
 
     function e(ev: IEvent):any {
@@ -42,7 +52,22 @@ module OnKeyApp {
         }
     }
 
-    
+    class SwipedLeft implements IEvent {
+        constructor(private ev: IMouseEvent) { }
+
+        toString(): string {
+            return "Swiped left ClientX: "+ this.ev.clientX + " ClientY: " + this.ev.clientY;
+        }
+    }
+
+    class SwipedRight implements IEvent {
+        constructor(private ev: IMouseEvent) { }
+
+        toString(): string {
+            return "Swiped right ClientX: " + this.ev.clientX + " ClientY: " + this.ev.clientY;
+        }
+    }
+
 
     var events :IEvent[]= [];
 
@@ -50,7 +75,7 @@ module OnKeyApp {
         return [
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "100px" } },
+                attrs: { style: { border: "1px solid", minHeight: "120px" } },
                 component: TrackClick,
                 data: {
                     onAdd: (ev: IEvent) => {
