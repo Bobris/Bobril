@@ -54,7 +54,7 @@ module VgApp {
                     },
                     {
                         data: {
-                            path: ["M", 600, 150, "L", 630, 50, "L", 660, 150], stroke:"#000000", strokeWidth:15, lineJoin: "miter"
+                            path: ["M", 600, 150, "L", 630, 50, "L", 660, 150], stroke: "#000000", strokeWidth: 15, lineJoin: "miter"
                         }
                     },
                     {
@@ -66,6 +66,9 @@ module VgApp {
                         data: {
                             path: ["M", 600, 350, "L", 630, 250, "L", 660, 350], stroke: "#000000", strokeWidth: 15, lineJoin: "bevel"
                         }
+                    },
+                    {
+                        data: { path: ["circle", 530, 350, 20], stroke: "#000000" }
                     }
                 ]
             }

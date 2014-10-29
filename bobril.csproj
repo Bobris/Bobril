@@ -58,6 +58,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="examples\basic\index.html" />
+    <Content Include="examples\game\index.html" />
     <Content Include="examples\input\index.html" />
     <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
@@ -66,6 +67,7 @@
   <ItemGroup />
   <ItemGroup>
     <TypeScriptCompile Include="examples\basic\app.ts" />
+    <TypeScriptCompile Include="examples\game\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />
     <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
