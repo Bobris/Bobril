@@ -74,6 +74,9 @@ var VgApp;
                         }
                     },
                     {
+                        data: { path: ["rect", 420, 330, 60, 40], stroke: "#000000" }
+                    },
+                    {
                         data: { path: ["circle", 530, 350, 20], stroke: "#000000" }
                     }
                 ]
