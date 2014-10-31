@@ -447,6 +447,7 @@ b = (function (window, document, undefined) {
                         key = newChildren[newIndex].key;
                         if (key)
                             break;
+                        newIndex++;
                     }
                     if (!key)
                         break;
@@ -507,7 +508,7 @@ b = (function (window, document, undefined) {
                 key = newChildren[newIndex].key;
                 if (key) {
                     cachedChildren.push(createNode(newChildren[newIndex]));
-                    element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
+                    element.insertBefore(cachedChildren[cachedIndex].element, cachedIndex == cachedLength ? null : cachedChildren[cachedIndex + 1].element);
                     delta++;
                     cachedIndex++;
                     cachedLength++;
@@ -526,7 +527,7 @@ b = (function (window, document, undefined) {
                     }
                 }
                 key = newChildren[newIndex].key;
-                if (key === cachedChildren[newIndex].key) {
+                if (newIndex < cachedLength && key === cachedChildren[newIndex].key) {
                     if (key) {
                         newIndex++;
                         continue;
@@ -578,8 +579,8 @@ b = (function (window, document, undefined) {
                     newIndex++;
                     cachedIndex++;
                 } else {
-                    cachedChildren.push(createNode(newChildren[newIndex]));
-                    element.appendChild(cachedChildren[cachedIndex].element);
+                    cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex]));
+                    element.insertBefore(cachedChildren[newIndex].element, newIndex == cachedLength ? null : cachedChildren[newIndex + 1].element);
                     newIndex++;
                     cachedIndex++;
                     cachedLength++;
