@@ -1,8 +1,14 @@
 declare var b: IBobrilStatic;
 
 interface IBobrilStatic {
+    // Low level method used just for testing
     createNode(n: IBobrilNode): IBobrilCacheNode;
+    // Low level method used just for testing
     updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
+    // Low level method used just for testing
+    updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any): Array<IBobrilCacheNode>;
+    // Low level method used just for testing
+    callPostCallbacks():void;
     /** factory returns string|number|boolean|IBobrilNode|(string|number|boolean|IBobrilNode)[] */
     init(factory: () => any): void;
     isArray(a: any): boolean;

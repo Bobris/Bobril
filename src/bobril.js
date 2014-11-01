@@ -411,7 +411,7 @@ b = (function (window, document, undefined) {
             for (cachedIndex = backupCommonIndex; cachedIndex < cachedLength; cachedIndex++) {
                 node = cachedChildren[cachedIndex];
                 key = node.key;
-                if (key !== undefined && !(key in cachedKeys))
+                if (key != null && !(key in cachedKeys))
                     cachedKeys[key] = cachedIndex;
                 else
                     deltaKeyless--;
@@ -419,7 +419,7 @@ b = (function (window, document, undefined) {
             for (; newIndex < newLength; newIndex++) {
                 node = newChildren[newIndex];
                 key = node.key;
-                if (key !== undefined && !(key in newKeys))
+                if (key != null && !(key in newKeys))
                     newKeys[key] = newIndex;
                 else
                     deltaKeyless++;
@@ -436,20 +436,20 @@ b = (function (window, document, undefined) {
                     continue;
                 }
                 cachedKey = cachedChildren[cachedIndex].key;
-                if (!cachedKey) {
+                if (cachedKey == null) {
                     cachedIndex++;
                     continue;
                 }
                 key = newChildren[newIndex].key;
-                if (!key) {
+                if (key == null) {
                     newIndex++;
                     while (newIndex < newLength) {
                         key = newChildren[newIndex].key;
-                        if (key)
+                        if (key != null)
                             break;
                         newIndex++;
                     }
-                    if (!key)
+                    if (key == null)
                         break;
                 }
                 var akpos = cachedKeys[key];
@@ -495,7 +495,7 @@ b = (function (window, document, undefined) {
                     cachedLength--;
                     continue;
                 }
-                if (cachedChildren[cachedIndex].key) {
+                if (cachedChildren[cachedIndex].key != null) {
                     removeNode(cachedChildren[cachedIndex]);
                     cachedChildren.splice(cachedIndex, 1);
                     cachedLength--;
@@ -506,7 +506,7 @@ b = (function (window, document, undefined) {
 
             while (newIndex < newLength) {
                 key = newChildren[newIndex].key;
-                if (key) {
+                if (key != null) {
                     cachedChildren.push(createNode(newChildren[newIndex]));
                     element.insertBefore(cachedChildren[cachedIndex].element, cachedIndex == cachedLength ? null : cachedChildren[cachedIndex + 1].element);
                     delta++;
@@ -521,14 +521,14 @@ b = (function (window, document, undefined) {
             while (newIndex < newLength) {
                 if (cachedIndex < cachedLength) {
                     cachedKey = cachedChildren[cachedIndex].key;
-                    if (cachedKey) {
+                    if (cachedKey != null) {
                         cachedIndex++;
                         continue;
                     }
                 }
                 key = newChildren[newIndex].key;
                 if (newIndex < cachedLength && key === cachedChildren[newIndex].key) {
-                    if (key) {
+                    if (key != null) {
                         newIndex++;
                         continue;
                     }
@@ -538,7 +538,7 @@ b = (function (window, document, undefined) {
                         cachedIndex = newIndex;
                     continue;
                 }
-                if (key) {
+                if (key != null) {
                     assert(newIndex === cachedIndex);
                     if (newLength - newIndex - deltaKeyless == cachedLength - cachedIndex) {
                         while (true) {
@@ -547,12 +547,12 @@ b = (function (window, document, undefined) {
                             cachedLength--;
                             deltaKeyless++;
                             assert(cachedIndex !== cachedLength, "there still need to exist key node");
-                            if (cachedChildren[cachedIndex].key)
+                            if (cachedChildren[cachedIndex].key != null)
                                 break;
                         }
                         continue;
                     }
-                    while (!cachedChildren[cachedIndex].key)
+                    while (cachedChildren[cachedIndex].key == null)
                         cachedIndex++;
                     assert(key !== cachedChildren[cachedIndex].key);
                     cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
@@ -565,14 +565,14 @@ b = (function (window, document, undefined) {
                 if (cachedIndex < cachedLength) {
                     cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                     cachedChildren.splice(cachedIndex + 1, 1);
-                    if (key) {
+                    if (key != null) {
                         newIndex++;
                         while (newIndex < newLength) {
                             key = newChildren[newIndex].key;
-                            if (!key)
+                            if (key == null)
                                 break;
                         }
-                        if (key)
+                        if (key != null)
                             break;
                     }
                     cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
@@ -708,18 +708,6 @@ b = (function (window, document, undefined) {
         callPostCallbacks();
     }
 
-    function createNodeWithPostCallbacks(n) {
-        var res = createNode(n);
-        callPostCallbacks();
-        return res;
-    }
-
-    function updateNodeWithPostCallbacks(n, c) {
-        var res = updateNode(n, c);
-        callPostCallbacks();
-        return res;
-    }
-
     function bubbleEvent(node, name, param) {
         while (node) {
             var c = node.component;
@@ -782,8 +770,10 @@ b = (function (window, document, undefined) {
     }
 
     return {
-        createNode: createNodeWithPostCallbacks,
-        updateNode: updateNodeWithPostCallbacks,
+        createNode: createNode,
+        updateNode: updateNode,
+        updateChildren: updateChildren,
+        callPostCallbacks: callPostCallbacks,
         init: init,
         isArray: isArray,
         uptime: function () {
