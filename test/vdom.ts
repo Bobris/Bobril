@@ -22,9 +22,9 @@ describe("createNode", () => {
         var r = b.createNode({ tag: "div", children: 1 });
         expectInsensitive(r.element.outerHTML, "<div>1</div>");
     });
-    it("boolean", () => {
+    it("boolean is skipped", () => {
         var r = b.createNode({ tag: "div", children: true });
-        expectInsensitive(r.element.outerHTML, "<div>true</div>");
+        expectInsensitive(r.element.outerHTML, "<div></div>");
     });
     it("single child", () => {
         var r = b.createNode({ tag: "div", children: { tag: "span", children: "ok" } });

@@ -8,13 +8,15 @@ if (typeof DEBUG === 'undefined')
 if (!Array.prototype.map) {
     Array.prototype.map = function (callback, thisArg) {
         var t, a, k;
+
+        // ReSharper disable once ConditionIsAlwaysConst
         if (this == null) {
-            throw new TypeError("this is null or not defined");
+            throw new TypeError("this==null");
         }
         var o = Object(this);
         var len = o.length >>> 0;
-        if (typeof callback !== "function") {
-            throw new TypeError(callback + " is not a function");
+        if (typeof callback != "function") {
+            throw new TypeError(callback + " isn't func");
         }
         if (arguments.length > 1) {
             t = thisArg;
@@ -127,10 +129,11 @@ b = (function (window, document, undefined) {
         var c = n;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
-        if (c.component) {
+        var component = c.component;
+        if (component) {
             c.ctx = { data: c.data || {} };
-            if (c.component.init) {
-                c.component.init(c.ctx, n);
+            if (component.init) {
+                component.init(c.ctx, n);
             }
         }
         if (n.tag === "") {
@@ -155,9 +158,11 @@ b = (function (window, document, undefined) {
 
     function normalizeNode(n) {
         var t = typeof n;
-        if (t === "string" || t === "number" || t === "boolean") {
+        if (t == "string" || t == "number") {
             return { tag: "", content: n };
         }
+        if (t == "boolean")
+            return null;
         return n;
     }
 
@@ -176,7 +181,13 @@ b = (function (window, document, undefined) {
                 l = ch.length;
                 continue;
             }
-            var j = ch[i] = createNode(normalizeNode(item));
+            item = normalizeNode(item);
+            if (item == null) {
+                ch.splice(i, 1);
+                l--;
+                continue;
+            }
+            var j = ch[i] = createNode(item);
             if (j.tag === "/") {
                 var before = c.element.lastChild;
                 c.element.insertAdjacentHTML("beforeend", j.content);
@@ -206,9 +217,10 @@ b = (function (window, document, undefined) {
                 destroyNode(ch[i]);
             }
         }
-        if (c.component) {
-            if (c.component.destroy)
-                c.component.destroy(c.ctx, c, c.element);
+        var component = c.component;
+        if (component) {
+            if (component.destroy)
+                component.destroy(c.ctx, c, c.element);
         }
         if (c.tag !== "") {
             var el = c.element;
@@ -274,8 +286,8 @@ b = (function (window, document, undefined) {
                     return c;
             c.ctx.data = n.data || {};
             c.component = component;
-            if (component.update)
-                component.update(c.ctx, n, c);
+            if (component.init)
+                component.init(c.ctx, n, c);
         }
         if (n.tag === "/") {
             var el = c.element;
@@ -378,7 +390,12 @@ b = (function (window, document, undefined) {
                 newLength = newChildren.length;
                 continue;
             }
-            newChildren[newIndex] = normalizeNode(item);
+            item = normalizeNode(item);
+            if (item == null) {
+                newChildren.splice(newIndex, 1);
+                continue;
+            }
+            newChildren[newIndex] = item;
             newIndex++;
         }
         var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
@@ -411,17 +428,19 @@ b = (function (window, document, undefined) {
             for (cachedIndex = backupCommonIndex; cachedIndex < cachedLength; cachedIndex++) {
                 node = cachedChildren[cachedIndex];
                 key = node.key;
-                if (key != null && !(key in cachedKeys))
+                if (key != null) {
+                    assert(!(key in cachedKeys));
                     cachedKeys[key] = cachedIndex;
-                else
+                } else
                     deltaKeyless--;
             }
             for (; newIndex < newLength; newIndex++) {
                 node = newChildren[newIndex];
                 key = node.key;
-                if (key != null && !(key in newKeys))
+                if (key != null) {
+                    assert(!(key in newKeys));
                     newKeys[key] = newIndex;
-                else
+                } else
                     deltaKeyless++;
             }
             var delta = 0;
@@ -599,7 +618,7 @@ b = (function (window, document, undefined) {
     var nativeRaf = window.requestAnimationFrame;
     if (nativeRaf) {
         nativeRaf(function (param) {
-            if (typeof param === "number")
+            if (param === +param)
                 hasNativeRaf = true;
         });
     }

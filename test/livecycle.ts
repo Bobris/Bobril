@@ -4,17 +4,16 @@
 class TestComponent implements IBobrilComponent {
     actions: string = "";
 
-    init(ctx: Object, me: IBobrilNode): void {
-        this.actions += "i:" + me.data.name + ";";
+    init(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
+        if (oldMe)
+            this.actions += "u:" + me.data.name + ";";
+        else
+            this.actions += "i:" + me.data.name + ";";
     }
 
     shouldChange(ctx: Object, me: IBobrilNode, oldMe: IBobrilNode): boolean {
         this.actions += "sc:" + me.data.name + ";";
         return me.data.change;
-    }
-
-    update(ctx: Object, me: IBobrilNode, oldMe: IBobrilNode): void {
-        this.actions += "u:" + me.data.name + ";";
     }
 
     postInitDom(ctx: Object, me: IBobrilNode, element: HTMLElement): void {

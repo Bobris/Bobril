@@ -17,7 +17,7 @@ gulp.task('uglify', function() {
 
   gulp.src(sources)
     .pipe(bytediff.start())
-    .pipe(uglify())
+    .pipe(uglify({ compress: { unsafe:true, pure_funcs: [ 'assert' ], global_defs: { DEBUG: false } } }))
     .pipe(bytediff.stop())
 	.pipe(rename(function (path) {
         path.basename += ".min";

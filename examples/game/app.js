@@ -1,4 +1,4 @@
-﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.d.ts"/>
 var GameApp;
 (function (GameApp) {
     function h(tag) {
@@ -114,11 +114,9 @@ var GameApp;
     var GameControler = (function () {
         function GameControler() {
         }
-        GameControler.init = function (ctx, me) {
-            ctx.time = b.uptime();
-        };
-
-        GameControler.update = function (ctx, me, oldMe) {
+        GameControler.init = function (ctx, me, oldMe) {
+            if (!oldMe)
+                ctx.time = b.uptime();
             var a = b.uptime();
             while (a > ctx.time) {
                 player.tick();

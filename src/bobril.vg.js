@@ -1,4 +1,4 @@
-/// <reference path="../src/bobril.d.ts"/>
+﻿/// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.vg.d.ts"/>
 (function (b, window, document) {
     function recSetComponent(a, c) {
@@ -144,8 +144,7 @@
 
     var svgComponent = {
         id: "b$vgr",
-        init: svgComponentInit,
-        update: svgComponentInit
+        init: svgComponentInit
     };
 
     function svgChildComponentInit(ctx, me) {
@@ -202,8 +201,7 @@
 
     var svgChildComponent = {
         id: "b$vgc",
-        init: svgChildComponentInit,
-        update: svgChildComponentInit
+        init: svgChildComponentInit
     };
 
     function vmlComponentInit(ctx, me) {
@@ -215,8 +213,7 @@
 
     var vmlComponent = {
         id: "b$vgr",
-        init: vmlComponentInit,
-        update: vmlComponentInit
+        init: vmlComponentInit
     };
 
     function vmlChildComponentInit(ctx, me) {
@@ -283,8 +280,7 @@
 
     var vmlChildComponent = {
         id: "b$vgc",
-        init: vmlChildComponentInit,
-        update: vmlChildComponentInit
+        init: vmlChildComponentInit
     };
 
     var defaultvml = "#default#VML";

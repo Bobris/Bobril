@@ -120,11 +120,9 @@ module GameApp {
     }
 
     class GameControler {
-        static init(ctx: IGameCtx, me: IBobrilNode): void {
-            ctx.time = b.uptime();
-        }
-
-        static update(ctx: IGameCtx, me: IBobrilNode, oldMe: IBobrilCacheNode): void {
+        static init(ctx: IGameCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+            if (!oldMe)
+                ctx.time = b.uptime();
             var a = b.uptime();
             while (a > ctx.time) {
                 player.tick();

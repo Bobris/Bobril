@@ -4,17 +4,16 @@ var TestComponent = (function () {
     function TestComponent() {
         this.actions = "";
     }
-    TestComponent.prototype.init = function (ctx, me) {
-        this.actions += "i:" + me.data.name + ";";
+    TestComponent.prototype.init = function (ctx, me, oldMe) {
+        if (oldMe)
+            this.actions += "u:" + me.data.name + ";";
+        else
+            this.actions += "i:" + me.data.name + ";";
     };
 
     TestComponent.prototype.shouldChange = function (ctx, me, oldMe) {
         this.actions += "sc:" + me.data.name + ";";
         return me.data.change;
-    };
-
-    TestComponent.prototype.update = function (ctx, me, oldMe) {
-        this.actions += "u:" + me.data.name + ";";
     };
 
     TestComponent.prototype.postInitDom = function (ctx, me, element) {
