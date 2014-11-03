@@ -1,4 +1,4 @@
-/// <reference path="../src/bobril.d.ts"/>
+﻿/// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.vg.d.ts"/>
 (function (b, window, document) {
     function recSetComponent(a, c) {
@@ -21,7 +21,7 @@
         };
     }
 
-    function describeArc(x, y, radius, startAngle, endAngle, startWithLine) {
+    function svgDescribeArc(x, y, radius, startAngle, endAngle, startWithLine) {
         var absDeltaAngle = Math.abs(endAngle - startAngle);
         var close = false;
         if (absDeltaAngle > 360 - 0.01) {
@@ -51,8 +51,8 @@
         return d;
     }
 
-    function donutPie(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
-        var p = describeArc(x, y, radiusBig, startAngle, endAngle, false);
+    function svgPie(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
+        var p = svgDescribeArc(x, y, radiusBig, startAngle, endAngle, false);
         var nextWithLine = true;
         if (p[p.length - 1] == "Z")
             nextWithLine = false;
@@ -60,88 +60,16 @@
             if (!nextWithLine)
                 return p;
         }
-        return p + describeArc(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "Z";
+        return p + svgDescribeArc(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "Z";
     }
 
-    function circle(x, y, radius) {
-        return describeArc(x, y, radius, 0, 360, false);
+    function svgCircle(x, y, radius) {
+        return svgDescribeArc(x, y, radius, 0, 360, false);
     }
 
-    var svgComponent = {
-        id: "b$vgr",
-        init: function (ctx, me) {
-            me.tag = "svg";
-            me.attrs = { width: me.data.width, height: me.data.height };
-            recSetComponent(me.children, svgChildComponent);
-        },
-        update: function (ctx, me, oldMe) {
-            svgComponent.init(ctx, me);
-        }
-    };
-
-    var svgChildComponent = {
-        id: "b$vgc",
-        init: function (ctx, me) {
-            me.tag = "path";
-            var attrs = {};
-            var data = me.data;
-            if (data.fill)
-                attrs.fill = data.fill;
-            else
-                attrs.fill = "none";
-            if (data.fillOpacity)
-                attrs["fill-opacity"] = "" + data.fillOpacity;
-            if (data.stroke)
-                attrs.stroke = data.stroke;
-            else
-                attrs.stroke = "none";
-            if (data.strokeWidth)
-                attrs["stroke-width"] = "" + data.strokeWidth;
-            if (data.strokeOpacity)
-                attrs["stroke-opacity"] = "" + data.strokeOpacity;
-            if (data.lineCap)
-                attrs["stroke-linecap"] = data.lineCap;
-            if (data.lineJoin)
-                attrs["stroke-linejoin"] = data.lineJoin;
-            if (data.miterLimit)
-                attrs["stroke-miterlimit"] = "" + data.miterLimit;
-            var path = data.path || [];
-            var resultPath = "";
-            for (var i = 0; i < path.length;) {
-                switch (path[i]) {
-                    case "M":
-                        resultPath += "M" + path[i + 1] + " " + path[i + 2];
-                        i += 3;
-                        break;
-                    case "L":
-                        resultPath += "L" + path[i + 1] + " " + path[i + 2];
-                        i += 3;
-                        break;
-                    case "C":
-                        resultPath += "C" + path.slice(i + 1, i + 7).join(" ");
-                        i += 7;
-                        break;
-                    case "Z":
-                        resultPath += "Z";
-                        i++;
-                        break;
-                    case "circle":
-                        resultPath += circle.apply(null, path.slice(i + 1, i + 4));
-                        i += 4;
-                        break;
-                    case "pie":
-                        resultPath += donutPie.apply(null, path.slice(i + 1, i + 7));
-                        i += 7;
-                        break;
-                }
-            }
-            attrs.d = resultPath;
-            me.attrs = attrs;
-        },
-        update: function (ctx, me, oldMe) {
-            svgChildComponent.init(ctx, me);
-        }
-    };
+    function svgRect(x, y, width, height) {
+        return "M" + x + " " + y + "h" + width + "v" + height + "h" + (-width) + "Z";
+    }
 
     var vmlScale = 10;
 
@@ -149,7 +77,7 @@
         return (x * vmlScale).toFixed(0);
     }
 
-    function describeArcVml(x, y, radius, startAngle, endAngle, startWithLine) {
+    function vmlDescribeArc(x, y, radius, startAngle, endAngle, startWithLine) {
         var absDeltaAngle = Math.abs(endAngle - startAngle);
         var close = false;
         if (absDeltaAngle > 360 - 0.01) {
@@ -178,129 +106,202 @@
         return d;
     }
 
-    function donutPieVml(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
-        var p = describeArcVml(x, y, radiusBig, startAngle, endAngle, false);
+    function vmlPie(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
+        var p = vmlDescribeArc(x, y, radiusBig, startAngle, endAngle, false);
         var nextWithLine = true;
         if (p[p.length - 1] === "x")
             nextWithLine = false;
         if (radiusSmall === 0) {
             if (!nextWithLine)
-                return p + " e";
+                return p;
         }
-        return p + describeArcVml(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "x e";
+        return p + vmlDescribeArc(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "x";
     }
 
-    function circleVml(x, y, radius) {
-        return describeArcVml(x, y, radius, 0, 360, false);
+    function vmlCircle(x, y, radius) {
+        return vmlDescribeArc(x, y, radius, 0, 360, false);
+    }
+
+    function vmlRect(x, y, width, height) {
+        return "m" + vmlCoord(x) + " " + vmlCoord(y) + "r" + vmlCoord(width) + " 0 0 " + vmlCoord(height) + " " + vmlCoord(-width) + " 0x";
+    }
+
+    var commands = {
+        "M": [2, "M", "m"],
+        "L": [2, "L", "l"],
+        "C": [6, "C", "c"],
+        "Z": [0, "Z", "x"],
+        "rect": [4, svgRect, vmlRect],
+        "circle": [3, svgCircle, vmlCircle],
+        "pie": [6, svgPie, vmlPie]
+    };
+
+    function svgComponentInit(ctx, me) {
+        me.tag = "svg";
+        me.attrs = { width: me.data.width, height: me.data.height };
+        recSetComponent(me.children, svgChildComponent);
+    }
+
+    var svgComponent = {
+        id: "b$vgr",
+        init: svgComponentInit
+    };
+
+    function svgChildComponentInit(ctx, me) {
+        me.tag = "path";
+        var attrs = {};
+        var data = me.data;
+        var v = data.fill;
+        attrs.fill = v ? v : "none";
+        v = data.fillOpacity;
+        if (v)
+            attrs["fill-opacity"] = "" + v;
+        v = data.stroke;
+        attrs.stroke = v ? v : "none";
+        v = data.strokeWidth;
+        if (v)
+            attrs["stroke-width"] = "" + v;
+        v = data.strokeOpacity;
+        if (v)
+            attrs["stroke-opacity"] = "" + v;
+        v = data.lineCap;
+        if (v)
+            attrs["stroke-linecap"] = v;
+        v = data.lineJoin;
+        if (v)
+            attrs["stroke-linejoin"] = v;
+        v = data.miterLimit;
+        if (v)
+            attrs["stroke-miterlimit"] = "" + v;
+        var path = data.path || [];
+        var resultPath = "";
+        var index = 0;
+        var descriptor;
+        var paramCount = 0;
+        var handler = null;
+        while (index < path.length) {
+            if (isNaN(path[index])) {
+                var command = path[index++];
+                descriptor = commands[command];
+                paramCount = descriptor[0] >> 0;
+                handler = descriptor[1];
+            }
+            if (typeof handler == "string") {
+                resultPath += handler;
+                for (var i = 0; i < paramCount; i++) {
+                    resultPath += " " + path[index + i];
+                }
+            } else
+                resultPath += handler.apply(null, path.slice(index, index + paramCount));
+            index += paramCount;
+        }
+        attrs.d = resultPath;
+        me.attrs = attrs;
+    }
+
+    var svgChildComponent = {
+        id: "b$vgc",
+        init: svgChildComponentInit
+    };
+
+    function vmlComponentInit(ctx, me) {
+        me.tag = "div";
+        me.attrs = { style: { position: "absolute", width: me.data.width, height: me.data.height, clip: "rect(0," + me.data.width + "," + me.data.height + ",0)" } };
+        recSetComponent(me.children, vmlChildComponent);
+        b.vmlNode();
     }
 
     var vmlComponent = {
         id: "b$vgr",
-        init: function (ctx, me) {
-            me.tag = "div";
-            me.attrs = { style: { position: "absolute", width: me.data.width, height: me.data.height, clip: "rect(0," + me.data.width + "," + me.data.height + ",0)" } };
-            recSetComponent(me.children, vmlChildComponent);
-            b.vmlNode();
-        },
-        update: function (ctx, me, oldMe) {
-            vmlComponent.init(ctx, me);
-        }
+        init: vmlComponentInit
     };
+
+    function vmlChildComponentInit(ctx, me) {
+        me.tag = "/";
+        var s = "<v:shape coordorigin=\"0 0\" coordsize=\"100 100\"";
+        var sInner = "";
+        var data = me.data;
+        var vfill = data.fill;
+        var v;
+        if (vfill) {
+            v = data.fillOpacity;
+            if (v)
+                sInner += "<v:fill color=\"" + vfill + "\" opacity=\"" + v + "\"/>";
+            else
+                s += " fillcolor=\"" + vfill + "\"";
+        } else {
+            s += " filled=\"false\"";
+        }
+        v = data.stroke;
+        if (v) {
+            sInner += "<v:stroke color=\"" + v;
+            v = data.strokeOpacity;
+            if (v)
+                sInner += "\" opacity=\"" + v;
+            v = data.strokeWidth;
+            if (v)
+                sInner += "\" weight=\"" + v + "px";
+            v = data.lineCap;
+            if (v)
+                sInner += "\" endcap=\"" + (v == 'butt' ? 'flat' : v);
+            sInner += "\" joinstyle=\"" + (data.lineJoin || "miter");
+            v = data.miterLimit;
+            if (v)
+                sInner += "\" miterlimit=\"" + v;
+            sInner += "\"/>";
+        } else {
+            s += " stroked=\"false\"";
+        }
+        var path = data.path || [];
+        s += " path=\"";
+        var index = 0;
+        var descriptor;
+        var paramCount = 0;
+        var handler = null;
+        while (index < path.length) {
+            if (isNaN(path[index])) {
+                var command = path[index++];
+                descriptor = commands[command];
+                paramCount = descriptor[0] >> 0;
+                handler = descriptor[2];
+            }
+            if (typeof handler == "string") {
+                s += handler;
+                for (var i = 0; i < paramCount; i++) {
+                    s += " " + vmlCoord(path[index + i]);
+                }
+            } else
+                s += handler.apply(null, path.slice(index, index + paramCount));
+            index += paramCount;
+        }
+        s += '">' + sInner + "</v:shape>";
+        me.content = s;
+    }
 
     var vmlChildComponent = {
         id: "b$vgc",
-        init: function (ctx, me) {
-            me.tag = "/";
-            var s = "<v:shape coordorigin=\"0 0\" coordsize=\"100 100\"";
-            var sInner = "";
-            var data = me.data;
-            if (data.fillOpacity) {
-                sInner += "<v:fill color=\"" + data.fill + "\" opacity=\"" + data.fillOpacity + "\"/>";
-            } else if (data.fill) {
-                s += " fillcolor=\"" + data.fill + "\"";
-            } else {
-                s += " filled=\"false\"";
-            }
-            if (data.stroke) {
-                sInner += "<v:stroke color=\"" + data.stroke;
-                if (data.strokeOpacity)
-                    sInner += "\" opacity=\"" + data.strokeOpacity;
-                if (data.strokeWidth)
-                    sInner += "\" weight=\"" + data.strokeWidth + "px";
-                var lineCap = data.lineCap;
-                if (lineCap)
-                    sInner += "\" endcap=\"" + (lineCap == 'butt' ? 'flat' : lineCap);
-                sInner += "\" joinstyle=\"" + (data.lineJoin || "miter");
-                var miter = data.miterLimit;
-                if (miter)
-                    sInner += "\" miterlimit=\"" + miter;
-                sInner += "\"/>";
-            } else {
-                s += " stroked=\"false\"";
-            }
-            var path = data.path || [];
-            s += " path=\"";
-            for (var i = 0; i < path.length;) {
-                switch (path[i]) {
-                    case "M":
-                        s += "m" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
-                        i += 3;
-                        break;
-                    case "L":
-                        s += "l" + vmlCoord(path[i + 1]) + "," + vmlCoord(path[i + 2]);
-                        i += 3;
-                        break;
-                    case "C":
-                        s += "c" + path.slice(i + 1, i + 7).map(function (pos) {
-                            return vmlCoord(pos);
-                        }).join(",");
-                        i += 7;
-                        break;
-                    case "Z":
-                        s += "x";
-                        i++;
-                        break;
-                    case "circle":
-                        s += circleVml.apply(null, path.slice(i + 1, i + 4));
-                        i += 4;
-                        break;
-                    case "pie":
-                        s += donutPieVml.apply(null, path.slice(i + 1, i + 7));
-                        i += 7;
-                        break;
-                }
-            }
-            s += "\">";
-            s += sInner;
-            s += "</v:shape>";
-            me.content = s;
-        },
-        update: function (ctx, me, oldMe) {
-            vmlChildComponent.init(ctx, me);
-        },
-        postInitDom: function (ctx, me, element) {
-        },
-        postUpdateDom: function (ctx, me, element) {
-            vmlChildComponent.postInitDom(ctx, me, element);
-        }
+        init: vmlChildComponentInit
     };
 
+    var defaultvml = "#default#VML";
+    var urldefaultvml = "url(" + defaultvml + ")";
     var implType = (window.SVGAngle || document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1") ? 1 : 2);
     if (implType == 2) {
         var testingdiv = document.createElement("div");
         testingdiv.innerHTML = '<v:shape adj="1"/>';
         var testingshape = testingdiv.firstChild;
-        testingshape.style.behavior = "url(#default#VML)";
+        testingshape.style.behavior = urldefaultvml;
         if (!(testingshape && typeof testingshape.adj == "object")) {
             implType = 0;
         }
     }
     if (implType == 2) {
         if (!document.namespaces['v']) {
-            document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
+            document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', defaultvml);
         }
+        var behaviururldefaultvml = "behavior:" + urldefaultvml + ";}";
         var ss = document.createStyleSheet();
-        ss.cssText = 'v\\:shape { position:absolute; width:10px; height:10px; behavior:url(#default#VML); }' + ' v\\:fill { behavior:url(#default#VML); }' + ' v\\:stroke { behavior:url(#default#VML); }';
+        ss.cssText = 'v\\:shape{position:absolute;width:10px;height:10px;' + behaviururldefaultvml + ' v\\:fill{' + behaviururldefaultvml + ' v\\:stroke{' + behaviururldefaultvml;
         b.vg = vmlComponent;
     } else if (implType == 1) {
         b.vg = svgComponent;

@@ -21,9 +21,9 @@ describe("createNode", function () {
         var r = b.createNode({ tag: "div", children: 1 });
         expectInsensitive(r.element.outerHTML, "<div>1</div>");
     });
-    it("boolean", function () {
+    it("boolean is skipped", function () {
         var r = b.createNode({ tag: "div", children: true });
-        expectInsensitive(r.element.outerHTML, "<div>true</div>");
+        expectInsensitive(r.element.outerHTML, "<div></div>");
     });
     it("single child", function () {
         var r = b.createNode({ tag: "div", children: { tag: "span", children: "ok" } });
@@ -160,6 +160,33 @@ describe("updateNode", function () {
     });
     it("removeLastKeyAnd2NonKey4", function () {
         advancedTest("a:A,b:B,c:C,D1,D2", "a:E,b:F", "a:E:0,b:F:1");
+    });
+    it("addLastKeyAndRemoveNonKey1", function () {
+        advancedTest("C,a:A,b:B", "a:D,b:E,c:F", "a:D:1,b:E:2,c:F");
+    });
+    it("addLastKeyAndRemoveNonKey2", function () {
+        advancedTest("a:A,C,b:B", "a:D,b:E,c:F", "a:D:0,b:E:2,c:F");
+    });
+    it("addLastKeyAndRemoveNonKey3", function () {
+        advancedTest("a:A,b:B,C", "a:D,b:E,c:F", "a:D:0,b:E:1,c:F");
+    });
+    it("swapAddLastKeyAndAddNonKey1", function () {
+        advancedTest("a:A,b:B", "b:D,a:E,c:F,C", "b:D:1,a:E:0,c:F,C");
+    });
+    it("swapAddLastKeyAndAddNonKey2", function () {
+        advancedTest("a:A,b:B", "b:D,a:E,C,c:F", "b:D:1,a:E:0,C,c:F");
+    });
+    it("swapAddLastKeyAndAddNonKey3", function () {
+        advancedTest("a:A,b:B", "b:D,C,a:E,c:F", "b:D:1,C,a:E:0,c:F");
+    });
+    it("remove2KeysAddNonKey", function () {
+        advancedTest("a:A,b:B,c:E", "b:D,C", "b:D:1,C");
+    });
+    it("remove2KeysMoveNonKey", function () {
+        advancedTest("a:A,b:B,c:E,C", "b:D,C", "b:D:1,C:3");
+    });
+    it("removeFirstKeyAdd2NonKey", function () {
+        advancedTest("a:A,b:B,c:E", "b:D,C1,C2,c:F", "b:D:1,C1,C2,c:F:2");
     });
 });
 //# sourceMappingURL=vdom.js.map

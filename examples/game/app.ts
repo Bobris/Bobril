@@ -5,10 +5,13 @@ module GameApp {
         return { tag: tag, children: args };
     }
 
+    var boardX = 700;
+    var boardY = 500;
+
     class Player {
         constructor() {
-            this.x = 350 - 20;
-            this.y = 480;
+            this.x = boardX * 0.5 - 20;
+            this.y = boardY - 20;
             this.vx = 0;
             this.vy = 0;
             this.ax = 0;
@@ -47,7 +50,7 @@ module GameApp {
             }
             if (Math.abs(this.vx) < 0.05) this.vx = 0;
             this.x += 10 * this.vx;
-            if (this.x > 700 - 50) this.x = 700 - 50;
+            if (this.x > boardX - 50) this.x = boardX - 50;
             if (this.x < 10) this.x = 10;
 
             if (this.ay < this.vy) {
@@ -57,7 +60,7 @@ module GameApp {
             }
             if (Math.abs(this.vy) < 0.05) this.vy = 0;
             this.y += 10 * this.vy;
-            if (this.y > 480) this.y = 480;
+            if (this.y > boardY - 20) this.y = boardY - 20;
             if (this.y < 70) this.y = 70;
             if (true) {
                 shootParticles.push(new ShootParticle(this.x + 20, this.y - 40, 0.5 - Math.random(), -10 + this.vy));
@@ -96,7 +99,7 @@ module GameApp {
             this.vx *= 0.995;
         }
         dead(): boolean {
-            return this.y < -10 || this.x < -10 || this.y > 510 || this.x > 710;
+            return this.y < -10 || this.x < -10 || this.y > boardY + 10 || this.x > boardX + 10;
         }
         toVg(): any {
             return {
@@ -117,11 +120,9 @@ module GameApp {
     }
 
     class GameControler {
-        static init(ctx: IGameCtx, me: IBobrilNode): void {
-            ctx.time = b.uptime();
-        }
-
-        static update(ctx: IGameCtx, me: IBobrilNode, oldMe: IBobrilCacheNode): void {
+        static init(ctx: IGameCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+            if (!oldMe)
+                ctx.time = b.uptime();
             var a = b.uptime();
             while (a > ctx.time) {
                 player.tick();
@@ -178,15 +179,15 @@ module GameApp {
 
     b.init(() => {
         b.invalidate();
-        var frame = ["M", 0, 0, "L", 700, 0, "L", 700, 500, "L", 0, 500, "Z"];
+        var frame = ["rect", 0, 0, boardX, boardY];
         return [
             h("h1", "Game"),
             {
-                tag: "div", attrs: { tabindex: "0", style: { width: "700px", height: "500px", outline: "0" } }, component: GameControler, children:
+                tag: "div", attrs: { tabindex: "0", style: { width: boardX + "px", height: boardY + "px", outline: "0" } }, component: GameControler, children:
                 [
                     {
                         component: b.vg,
-                        data: { width: "700px", height: "500px" },
+                        data: { width: boardX + "px", height: boardY + "px" },
                         children: [
                             { data: { path: frame, stroke: "#808080", strokeWidth: 2 } },
                             player.toVg(),

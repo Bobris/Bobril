@@ -9,10 +9,13 @@ var GameApp;
         return { tag: tag, children: args };
     }
 
+    var boardX = 700;
+    var boardY = 500;
+
     var Player = (function () {
         function Player() {
-            this.x = 350 - 20;
-            this.y = 480;
+            this.x = boardX * 0.5 - 20;
+            this.y = boardY - 20;
             this.vx = 0;
             this.vy = 0;
             this.ax = 0;
@@ -40,8 +43,8 @@ var GameApp;
             if (Math.abs(this.vx) < 0.05)
                 this.vx = 0;
             this.x += 10 * this.vx;
-            if (this.x > 700 - 50)
-                this.x = 700 - 50;
+            if (this.x > boardX - 50)
+                this.x = boardX - 50;
             if (this.x < 10)
                 this.x = 10;
 
@@ -53,8 +56,8 @@ var GameApp;
             if (Math.abs(this.vy) < 0.05)
                 this.vy = 0;
             this.y += 10 * this.vy;
-            if (this.y > 480)
-                this.y = 480;
+            if (this.y > boardY - 20)
+                this.y = boardY - 20;
             if (this.y < 70)
                 this.y = 70;
             if (true) {
@@ -91,7 +94,7 @@ var GameApp;
             this.vx *= 0.995;
         };
         ShootParticle.prototype.dead = function () {
-            return this.y < -10 || this.x < -10 || this.y > 510 || this.x > 710;
+            return this.y < -10 || this.x < -10 || this.y > boardY + 10 || this.x > boardX + 10;
         };
         ShootParticle.prototype.toVg = function () {
             return {
@@ -111,11 +114,9 @@ var GameApp;
     var GameControler = (function () {
         function GameControler() {
         }
-        GameControler.init = function (ctx, me) {
-            ctx.time = b.uptime();
-        };
-
-        GameControler.update = function (ctx, me, oldMe) {
+        GameControler.init = function (ctx, me, oldMe) {
+            if (!oldMe)
+                ctx.time = b.uptime();
             var a = b.uptime();
             while (a > ctx.time) {
                 player.tick();
@@ -173,14 +174,14 @@ var GameApp;
 
     b.init(function () {
         b.invalidate();
-        var frame = ["M", 0, 0, "L", 700, 0, "L", 700, 500, "L", 0, 500, "Z"];
+        var frame = ["rect", 0, 0, boardX, boardY];
         return [
             h("h1", "Game"),
             {
-                tag: "div", attrs: { tabindex: "0", style: { width: "700px", height: "500px", outline: "0" } }, component: GameControler, children: [
+                tag: "div", attrs: { tabindex: "0", style: { width: boardX + "px", height: boardY + "px", outline: "0" } }, component: GameControler, children: [
                     {
                         component: b.vg,
-                        data: { width: "700px", height: "500px" },
+                        data: { width: boardX + "px", height: boardY + "px" },
                         children: [
                             { data: { path: frame, stroke: "#808080", strokeWidth: 2 } },
                             player.toVg(),
