@@ -170,6 +170,13 @@ var OnKeyApp;
 
     var events = [];
 
+    function addEvent(ev) {
+        events.push(ev);
+        if (events.length > 30)
+            events.shift();
+        b.invalidate();
+    }
+
     b.init(function () {
         return [
             {
@@ -178,10 +185,7 @@ var OnKeyApp;
                 children: "aaa",
                 component: TrackClick,
                 data: {
-                    onAdd: function (ev) {
-                        events.push(ev);
-                        b.invalidate();
-                    }
+                    onAdd: addEvent
                 }
             },
             {
@@ -189,10 +193,7 @@ var OnKeyApp;
                 attrs: { style: { border: "1px solid", minHeight: "120px" }, id: "test" },
                 component: TrackClick,
                 data: {
-                    onAdd: function (ev) {
-                        events.push(ev);
-                        b.invalidate();
-                    }
+                    onAdd: addEvent
                 },
                 children: [{ tag: "div", children: "Click here!" }].concat(events.map(function (ev) {
                     return e(ev);

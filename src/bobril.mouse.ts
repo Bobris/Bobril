@@ -3,6 +3,107 @@
 /// <reference path="../src/lib.touch.d.ts"/>
 
 ((b: IBobrilStatic) => {
+    var CLICKBUSTER_THRESHOLD = 25; // 25 pixels in any dimension is the limit for busting clicks.
+    var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
+
+    // Checks if the coordinates are close enough to be within the region.
+    function hit(x1: number, y1: number, x2: number, y2: number) {
+        return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
+    }
+
+    // Checks a list of allowable regions against a click location.
+    // Returns true if the click should be allowed.
+    // Splices out the allowable region from the list after it has been used.
+    function checkAllowableRegions(coords: number[], x: number, y: number) {
+        for (var i = 0; i < coords.length; i += 2) {
+            if (hit(coords[i], coords[i + 1], x, y)) {
+                coords.splice(i, i + 2);
+                return true; // allowable region
+            }
+        }
+        return false; // No allowable region; bust it.
+    }
+
+    var lastPreventedTime: number;
+    var touchCoordinates: number[];
+    var lastLabelClickCoordinates: number [];
+
+    function onClick(event: TouchEvent) {
+        if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
+            return; // Too old.
+        }
+
+        var touches = event.touches && event.touches.length ? <any>event.touches : [event];
+        var x = touches[0].clientX;
+        var y = touches[0].clientY;
+        // Work around desktop Webkit quirk where clicking a label will fire two clicks (on the label
+        // and on the input element). Depending on the exact browser, this second click we don't want
+        // to bust has either (0,0), negative coordinates, or coordinates equal to triggering label
+        // click event
+        if (x < 1 && y < 1) {
+            return; // offscreen
+        }
+        if (lastLabelClickCoordinates &&
+            lastLabelClickCoordinates[0] === x && lastLabelClickCoordinates[1] === y) {
+            return; // input click triggered by label click
+        }
+        // reset label click coordinates on first subsequent click
+        if (lastLabelClickCoordinates) {
+            lastLabelClickCoordinates = null;
+        }
+        // remember label click coordinates to prevent click busting of trigger click event on input
+        if ((<any>event.target).tagName.toLowerCase() === 'label') {
+            lastLabelClickCoordinates = [x, y];
+        }
+
+        // Look for an allowable region containing this click.
+        // If we find one, that means it was created by touchstart and not removed by
+        // preventGhostClick, so we don't bust it.
+        if (checkAllowableRegions(touchCoordinates, x, y)) {
+            return;
+        }
+
+        // If we didn't find an allowable region, bust the click.
+        event.stopPropagation();
+        event.preventDefault();
+
+        // Blur focused form elements
+        event.target && (<any>event.target).blur();
+    }
+
+    // Global touchstart handler that creates an allowable region for a click event.
+    // This allowable region can be removed by preventGhostClick if we want to bust it.
+    function onTouchStart(event: TouchEvent) {
+        var touches = event.touches && event.touches.length ? <any>event.touches : [event];
+        var x = touches[0].clientX;
+        var y = touches[0].clientY;
+        touchCoordinates.push(x, y);
+
+        setTimeout(function () {
+            // Remove the allowable region.
+            for (var i = 0; i < touchCoordinates.length; i += 2) {
+                if (touchCoordinates[i] == x && touchCoordinates[i + 1] == y) {
+                    touchCoordinates.splice(i, i + 2);
+                    return;
+                }
+            }
+        }, PREVENT_DURATION);
+    }
+
+    // On the first call, attaches some event handlers. Then whenever it gets called, it creates a
+    // zone around the touchstart where clicks will get busted.
+    function preventGhostClick(x: number, y: number, elem: any) {
+        if (!touchCoordinates) {
+            elem.addEventListener("click", onClick, true);
+            elem.addEventListener("touchstart", onTouchStart, true);
+            touchCoordinates = [];
+        }
+
+        lastPreventedTime = Date.now();
+
+        checkAllowableRegions(touchCoordinates, x, y);
+    }
+
     var tapping: boolean = false;
     var tapElement: Node;
     var startTime: number;
@@ -42,7 +143,7 @@
         var stop = false;
         if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
             // Call preventGhostClick so the clickbuster will catch the corresponding click.
-            preventGhostClick(x, y);
+            preventGhostClick(x, y, tapElement);
 
 
             // Blur the focused element (the button, probably) before firing the callback.
@@ -52,10 +153,10 @@
                 (<any>tapElement).blur();
             }
 
-            //if (typeof attr.disabled !== 'undefined' || attr.disabled === false) {
-                //element.triggerHandler('click', [event]);
-                 stop = emitClickEvent(ev, target, node, x, y);
-            //}
+            var disabled: any = node.attrs && node.attrs["disabled"];
+            if (typeof disabled === "undefined" || disabled === false) {
+                stop = emitClickEvent(ev, target, node, x, y);
+            }
         }
 
         resetState();
@@ -106,8 +207,8 @@
     }
 
     var addEvent = b.addEvent;
+    addEvent("click", 400, createHandler("onClick"));
     addEvent("dblclick", 400, createHandler("onDoubleClick"));
-    //addEvent("tap", 400, createHandler("onClick"));
     addEvent("mousedown", 400, createHandler("onMouseDown"));
     addEvent("mouseup", 400, createHandler("onMouseUp"));
     //addEvent("mousemove", 400, createHandler("onMouseMove"));
@@ -115,7 +216,6 @@
     //addEvent("mouseleave", 400, createHandler("onMouseLeave"));
     addEvent("mouseover", 400, createHandler("onMouseOver"));
 
-    addEvent("click", 500, createHandler("onClick"));
     addEvent("touchstart", 500, handleTouchStart);
     addEvent("touchcancel", 500, tapCanceled);
     addEvent("touchend", 500, handleTouchEnd) ;

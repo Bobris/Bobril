@@ -2,8 +2,6 @@
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 
 module OnKeyApp {
-  
-
     interface ITrackClickData {
         onAdd: (e: IEvent) => void;
     }
@@ -160,7 +158,14 @@ module OnKeyApp {
     }
 
 
-    var events :IEvent[]= [];
+    var events: IEvent[] = [];
+
+    function addEvent(ev: IEvent) {
+        events.push(ev);
+        if (events.length > 30)
+            events.shift();
+        b.invalidate();
+    }
 
     b.init(() => {
         return [
@@ -170,10 +175,7 @@ module OnKeyApp {
                 children: "aaa",
                 component: TrackClick,
                 data: {
-                    onAdd: (ev: IEvent) => {
-                        events.push(ev);
-                        b.invalidate();
-                    }
+                    onAdd: addEvent
                 }
             },
             {
@@ -181,10 +183,7 @@ module OnKeyApp {
                 attrs: { style: { border: "1px solid", minHeight: "120px" }, id: "test" },
                 component: TrackClick,
                 data: {
-                    onAdd: (ev: IEvent) => {
-                        events.push(ev);
-                        b.invalidate();
-                    }
+                    onAdd: addEvent
                 },
                 children: [{ tag: "div", children: "Click here!"}].concat(events.map((ev: IEvent) => e(ev)))
             }

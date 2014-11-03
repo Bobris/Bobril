@@ -12,7 +12,6 @@
 interface TouchList extends Array<Touch> {
     length: number;
     item(index: number): Touch;
-    //identifiedTouch(identifier: number): Touch;
 }
 
 interface TouchEvent extends UIEvent {
@@ -23,7 +22,6 @@ interface TouchEvent extends UIEvent {
     metaKey: boolean;
     ctrlKey: boolean;
     shiftKey: boolean;
-    //initTouchEvent(type: string, canBubble: boolean, cancelable: boolean, view: AbstractView, detail: number, ctrlKey: boolean, altKey: boolean, shiftKey: boolean, metaKey: boolean, touches: TouchList, targetTouches: TouchList, changedTouches: TouchList) : TouchEvent;
 }
 
 declare var TouchEvent: {
