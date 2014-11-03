@@ -1,7 +1,7 @@
 ﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onclick.d.ts"/>
+/// <reference path="../src/bobril.swipe.d.ts"/>
 
-class SwipeDetector {
+class EventSanitizer {
     static getCoordinates(event: any): IGenericCoords {
         var touches = event.touches && event.touches.length ? event.touches : [event];
         var e = (event.changedTouches && event.changedTouches[0]) ||
@@ -14,45 +14,24 @@ class SwipeDetector {
             y: e.clientY
         };
     }
+
+    static preventDefault(event: Event) {
+        var pd = event.preventDefault;
+        if (pd) pd.call(event); else (<any>event).returnValue = false;
+    }
 }
 
 ((b: IBobrilStatic) => {
     function buildParam(ev: MouseEvent): IMouseEvent {
-        var coord = getCoordinates(ev);
+        var coord = EventSanitizer.getCoordinates(ev);
         return {
-            clientX: coord.x,
-            clientY: coord.y,
+            x: coord.x,
+            y: coord.y,
         };
     }
-
-    function emitOnClick(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
-        if (!node)
-            return false;
-        var param: IMouseEvent = buildParam(ev);
-        if (b.bubble(node, "onClick", param)) {
-            ev.preventDefault();
-            return true;
-        }
-        return false;
-    }
-
-
 
     // The total distance in any direction before we make the call on swipe vs. scroll.
     var MOVE_BUFFER_RADIUS = 10;
-
-    function getCoordinates(event: any): IGenericCoords {
-        var touches = event.touches && event.touches.length ? event.touches : [event];
-        var e = (event.changedTouches && event.changedTouches[0]) ||
-            (event.originalEvent && event.originalEvent.changedTouches &&
-            event.originalEvent.changedTouches[0]) ||
-            touches[0].originalEvent || touches[0];
-
-        return {
-            x: e.clientX,
-            y: e.clientY
-        };
-    }
 
     var startPos: IGenericCoords;
     var lastPos: IGenericCoords;
@@ -62,8 +41,8 @@ class SwipeDetector {
     var touchStarted: boolean = false;
 
 
-    function handleMoveStart(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
-        startPos = getCoordinates(ev);
+    function handleMoveStartEvents(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
+        startPos = EventSanitizer.getCoordinates(ev);
         touchStarted = true;
         totalX = 0;
         totalY = 0;
@@ -73,13 +52,13 @@ class SwipeDetector {
         return false;
     }
 
-    function handleMoveEnd(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
+    function handleMoveEndEvents(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
         if (!touchStarted) return false;
         touchStarted = false;
-        return moveEnd(ev, target, node, getCoordinates(ev));
+        return moveEnd(ev, target, node, EventSanitizer.getCoordinates(ev));
     }
 
-    function handleMove(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
+    function handleMoveEvents(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
         if (!touchStarted) return false;
         // Android will send a touchcancel if it thinks we're starting to scroll.
         // So when the total distance (+ or - or both) exceeds 10px in either direction,
@@ -88,7 +67,7 @@ class SwipeDetector {
         // - On totalY > totalX, we let the browser handle it as a scroll.
 
         if (!startPos) return false;
-        var coords = getCoordinates(event);
+        var coords = EventSanitizer.getCoordinates(event);
 
         totalX += Math.abs(coords.x - lastPos.x);
         totalY += Math.abs(coords.y - lastPos.y);
@@ -106,7 +85,7 @@ class SwipeDetector {
             moveCancelled(ev, target, node);
         } else {
             // Prevent the browser from scrolling.
-            event.preventDefault();
+            EventSanitizer.preventDefault(ev);
             //eventHandlers['move'] && eventHandlers['move'](coords, ev);
         }
         return false;
@@ -141,8 +120,7 @@ class SwipeDetector {
         var deltaY = Math.abs(coords.y - startCoords.y);
         var deltaX = coords.x - startCoords.x;
         var swipe = Swipe.Invalid;
-        if (!valid) // Short circuit for already-invalidated swipes.
-            return Swipe.Invalid;
+        if (!valid) return Swipe.Invalid;// Short circuit for already-invalidated swipes. 
 
         if (deltaX < 0)
             swipe = Swipe.Left;
@@ -180,7 +158,7 @@ class SwipeDetector {
         var method = swipe == Swipe.Right ? "onSwipeRight" : "onSwipeLeft";
         var param: IMouseEvent = buildParam(ev);
         if (b.bubble(node, method, param)) {
-            ev.preventDefault(); // nejsem si jistej tim prevent default
+            EventSanitizer.preventDefault(ev);
             return true;
         }
         return false;
@@ -188,14 +166,12 @@ class SwipeDetector {
 
 
     var addEvent = b.addEvent;
-    addEvent("click", 500, emitOnClick);
-
-    addEvent("touchstart", 500, handleMoveStart);
-    addEvent("mousedown", 500, handleMoveStart);
-    addEvent("touchend", 500, handleMoveEnd);
-    addEvent("mouseup", 500, handleMoveEnd);
-    addEvent("mousemove", 500, handleMove);
-    addEvent("touchmove", 500, handleMove);
-    addEvent("touchcancel", 500, handleTouchCancel);
+    addEvent("touchstart", 600, handleMoveStartEvents);
+    addEvent("mousedown", 600, handleMoveStartEvents);
+    addEvent("touchend", 600, handleMoveEndEvents);
+    addEvent("mouseup", 600, handleMoveEndEvents);
+    addEvent("mousemove", 600, handleMoveEvents);
+    addEvent("touchmove", 600, handleMoveEvents);
+    addEvent("touchcancel", 600, handleTouchCancel);
 })(b);
  

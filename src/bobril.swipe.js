@@ -1,9 +1,9 @@
 ﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onclick.d.ts"/>
-var SwipeDetector = (function () {
-    function SwipeDetector() {
+/// <reference path="../src/bobril.swipe.d.ts"/>
+var EventSanitizer = (function () {
+    function EventSanitizer() {
     }
-    SwipeDetector.getCoordinates = function (event) {
+    EventSanitizer.getCoordinates = function (event) {
         var touches = event.touches && event.touches.length ? event.touches : [event];
         var e = (event.changedTouches && event.changedTouches[0]) || (event.originalEvent && event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]) || touches[0].originalEvent || touches[0];
 
@@ -12,45 +12,28 @@ var SwipeDetector = (function () {
             y: e.clientY
         };
     };
-    return SwipeDetector;
+
+    EventSanitizer.preventDefault = function (event) {
+        var pd = event.preventDefault;
+        if (pd)
+            pd.call(event);
+        else
+            event.returnValue = false;
+    };
+    return EventSanitizer;
 })();
 
 (function (b) {
-    function preventDefault(event) {
-        event.preventDefault ? event.preventDefault() : event.returnValue = false;
-    }
-
     function buildParam(ev) {
-        var coord = getCoordinates(ev);
+        var coord = EventSanitizer.getCoordinates(ev);
         return {
-            clientX: coord.x,
-            clientY: coord.y
+            x: coord.x,
+            y: coord.y
         };
-    }
-
-    function emitOnClick(ev, target, node) {
-        if (!node)
-            return false;
-        var param = buildParam(ev);
-        if (b.bubble(node, "onClick", param)) {
-            ev.preventDefault();
-            return true;
-        }
-        return false;
     }
 
     // The total distance in any direction before we make the call on swipe vs. scroll.
     var MOVE_BUFFER_RADIUS = 10;
-
-    function getCoordinates(event) {
-        var touches = event.touches && event.touches.length ? event.touches : [event];
-        var e = (event.changedTouches && event.changedTouches[0]) || (event.originalEvent && event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]) || touches[0].originalEvent || touches[0];
-
-        return {
-            x: e.clientX,
-            y: e.clientY
-        };
-    }
 
     var startPos;
     var lastPos;
@@ -59,8 +42,8 @@ var SwipeDetector = (function () {
 
     var touchStarted = false;
 
-    function handleMoveStart(ev, target, node) {
-        startPos = getCoordinates(ev);
+    function handleMoveStartEvents(ev, target, node) {
+        startPos = EventSanitizer.getCoordinates(ev);
         touchStarted = true;
         totalX = 0;
         totalY = 0;
@@ -70,14 +53,14 @@ var SwipeDetector = (function () {
         return false;
     }
 
-    function handleMoveEnd(ev, target, node) {
+    function handleMoveEndEvents(ev, target, node) {
         if (!touchStarted)
             return false;
         touchStarted = false;
-        return moveEnd(ev, target, node, getCoordinates(ev));
+        return moveEnd(ev, target, node, EventSanitizer.getCoordinates(ev));
     }
 
-    function handleMove(ev, target, node) {
+    function handleMoveEvents(ev, target, node) {
         if (!touchStarted)
             return false;
 
@@ -88,7 +71,7 @@ var SwipeDetector = (function () {
         // - On totalY > totalX, we let the browser handle it as a scroll.
         if (!startPos)
             return false;
-        var coords = getCoordinates(event);
+        var coords = EventSanitizer.getCoordinates(event);
 
         totalX += Math.abs(coords.x - lastPos.x);
         totalY += Math.abs(coords.y - lastPos.y);
@@ -106,7 +89,7 @@ var SwipeDetector = (function () {
             moveCancelled(ev, target, node);
         } else {
             // Prevent the browser from scrolling.
-            preventDefault(ev);
+            EventSanitizer.preventDefault(ev);
             //eventHandlers['move'] && eventHandlers['move'](coords, ev);
         }
         return false;
@@ -180,21 +163,19 @@ var SwipeDetector = (function () {
         var method = swipe == 2 /* Right */ ? "onSwipeRight" : "onSwipeLeft";
         var param = buildParam(ev);
         if (b.bubble(node, method, param)) {
-            preventDefault(ev); // nejsem si jistej tim prevent default
+            EventSanitizer.preventDefault(ev);
             return true;
         }
         return false;
     }
 
     var addEvent = b.addEvent;
-    addEvent("click", 500, emitOnClick);
-
-    addEvent("touchstart", 500, handleMoveStart);
-    addEvent("mousedown", 500, handleMoveStart);
-    addEvent("touchend", 500, handleMoveEnd);
-    addEvent("mouseup", 500, handleMoveEnd);
-    addEvent("mousemove", 500, handleMove);
-    addEvent("touchmove", 500, handleMove);
-    addEvent("touchcancel", 500, handleTouchCancel);
+    addEvent("touchstart", 600, handleMoveStartEvents);
+    addEvent("mousedown", 600, handleMoveStartEvents);
+    addEvent("touchend", 600, handleMoveEndEvents);
+    addEvent("mouseup", 600, handleMoveEndEvents);
+    addEvent("mousemove", 600, handleMoveEvents);
+    addEvent("touchmove", 600, handleMoveEvents);
+    addEvent("touchcancel", 600, handleTouchCancel);
 })(b);
-//# sourceMappingURL=bobril.onclick.js.map
+//# sourceMappingURL=bobril.swipe.js.map

@@ -1,6 +1,5 @@
-﻿interface IMouseEvent {
-    clientX: number;
-    clientY: number;
+﻿interface IMouseEvent extends  IGenericCoords {
+    
 }
 
 interface IGenericCoords {
@@ -15,8 +14,6 @@ declare enum Swipe {
 }
 
 interface IBobrilComponent {
-    // called on input element after click
-    onClick? (ctx: Object, event: IKeyDownUpEvent): boolean;
     onSwipeLeft? (ctx: Object, event: IKeyDownUpEvent): boolean;
     onSwipeRight? (ctx: Object, event: IKeyDownUpEvent): boolean;
 } 
