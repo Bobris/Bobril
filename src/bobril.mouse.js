@@ -65,10 +65,8 @@
         // If we find one, that means it was created by touchstart and not removed by
         // preventGhostClick, so we don't bust it.
         if (checkAllowableRegions(touchCoordinates, x, y)) {
-            document.lastChild.appendChild(document.createTextNode("Inside available region "));
             return false;
         }
-        document.lastChild.appendChild(document.createTextNode("Click buster preventing "));
 
         // If we didn't find an allowable region, bust the click.
         event.stopPropagation();
@@ -84,7 +82,7 @@
     function touchStartBuster(event, target, node) {
         if (!bustingAllowed)
             return false;
-        document.lastChild.appendChild(document.createTextNode("Pushing coordinates "));
+
         var touches = event.touches && event.touches.length ? event.touches : [event];
         var x = touches[0].clientX;
         var y = touches[0].clientY;
@@ -148,8 +146,6 @@
 
         var stop = false;
         if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
-            document.lastChild.appendChild(document.createTextNode("Calling preventing ghost click "));
-
             // Call preventGhostClick so the clickbuster will catch the corresponding click.
             preventGhostClickAndAllowBusting(x, y);
 
