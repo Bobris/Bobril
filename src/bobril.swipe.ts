@@ -2,7 +2,7 @@
 /// <reference path="../src/bobril.swipe.d.ts"/>
 
 class EventSanitizer {
-    static getCoordinates(event: any): IGenericCoords {
+    static getCoordinates(event: any): ICoords {
         var touches = event.touches && event.touches.length ? event.touches : [event];
         var e = (event.changedTouches && event.changedTouches[0]) ||
             (event.originalEvent && event.originalEvent.changedTouches &&
@@ -22,7 +22,7 @@ class EventSanitizer {
 }
 
 ((b: IBobrilStatic) => {
-    function buildParam(ev: MouseEvent): IMouseEvent {
+    function buildParam(ev: MouseEvent): ICoords {
         var coord = EventSanitizer.getCoordinates(ev);
         return {
             x: coord.x,
@@ -33,8 +33,8 @@ class EventSanitizer {
     // The total distance in any direction before we make the call on swipe vs. scroll.
     var MOVE_BUFFER_RADIUS = 10;
 
-    var startPos: IGenericCoords;
-    var lastPos: IGenericCoords;
+    var startPos: ICoords;
+    var lastPos: ICoords;
     var totalX = 0;
     var totalY = 0;
 
@@ -104,10 +104,10 @@ class EventSanitizer {
     // At least a 30px lateral motion is necessary for a swipe.
     var MIN_HORIZONTAL_DISTANCE = 30;
 
-    var startCoords: IGenericCoords;
+    var startCoords: ICoords;
     var valid: boolean;
 
-    function analyzeSwipe(coords: IGenericCoords): Swipe {
+    function analyzeSwipe(coords: ICoords): Swipe {
         // Check that it's within the coordinates.
         // Absolute vertical distance must be within tolerances.
         // Horizontal distance, we take the current X - the starting X.
@@ -141,12 +141,12 @@ class EventSanitizer {
         valid = false;
     }
 
-    function moveStart(ev: MouseEvent, target: Node, node: IBobrilCacheNode, coords: IGenericCoords) {
+    function moveStart(ev: MouseEvent, target: Node, node: IBobrilCacheNode, coords: ICoords) {
         startCoords = coords;
         valid = true;
     }
 
-    function moveEnd(ev: MouseEvent, target: Node, node: IBobrilCacheNode, coords: IGenericCoords): boolean {
+    function moveEnd(ev: MouseEvent, target: Node, node: IBobrilCacheNode, coords: ICoords): boolean {
         var swipe = analyzeSwipe(coords);
         if(swipe == Swipe.Invalid) {
             return false;

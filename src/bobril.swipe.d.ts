@@ -1,8 +1,8 @@
-﻿interface IMouseEvent extends  IGenericCoords {
-    
+﻿interface ITouchEvent extends ICoords {
+
 }
 
-interface IGenericCoords {
+interface ICoords {
     x: number;
     y: number;
 }
@@ -14,6 +14,6 @@ declare enum Swipe {
 }
 
 interface IBobrilComponent {
-    onSwipeLeft? (ctx: Object, event: IKeyDownUpEvent): boolean;
-    onSwipeRight? (ctx: Object, event: IKeyDownUpEvent): boolean;
+    onSwipeLeft? (ctx: Object, event: ITouchEvent): boolean;
+    onSwipeRight? (ctx: Object, event: ITouchEvent): boolean;
 } 

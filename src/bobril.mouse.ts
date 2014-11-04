@@ -25,12 +25,16 @@
     }
 
     var lastPreventedTime: number;
-    var touchCoordinates: number[];
-    var lastLabelClickCoordinates: number [];
+    var touchCoordinates: number[] = [];
+    var lastLabelClickCoordinates: number[];
+    var bustingAllowed = false;
 
-    function onClick(event: TouchEvent) {
+    function clickBuster(event: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (!bustingAllowed)
+            return false;
+
         if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
-            return; // Too old.
+            return false; // Too old.
         }
 
         var touches = event.touches && event.touches.length ? <any>event.touches : [event];
@@ -41,11 +45,11 @@
         // to bust has either (0,0), negative coordinates, or coordinates equal to triggering label
         // click event
         if (x < 1 && y < 1) {
-            return; // offscreen
+            return false; // offscreen
         }
         if (lastLabelClickCoordinates &&
             lastLabelClickCoordinates[0] === x && lastLabelClickCoordinates[1] === y) {
-            return; // input click triggered by label click
+            return false; // input click triggered by label click
         }
         // reset label click coordinates on first subsequent click
         if (lastLabelClickCoordinates) {
@@ -60,7 +64,7 @@
         // If we find one, that means it was created by touchstart and not removed by
         // preventGhostClick, so we don't bust it.
         if (checkAllowableRegions(touchCoordinates, x, y)) {
-            return;
+            return false;
         }
 
         // If we didn't find an allowable region, bust the click.
@@ -69,11 +73,15 @@
 
         // Blur focused form elements
         event.target && (<any>event.target).blur();
+        return true;
     }
 
     // Global touchstart handler that creates an allowable region for a click event.
     // This allowable region can be removed by preventGhostClick if we want to bust it.
-    function onTouchStart(event: TouchEvent) {
+    function touchStartBuster(event: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (!bustingAllowed)
+            return false;
+
         var touches = event.touches && event.touches.length ? <any>event.touches : [event];
         var x = touches[0].clientX;
         var y = touches[0].clientY;
@@ -88,19 +96,15 @@
                 }
             }
         }, PREVENT_DURATION);
+
+        return false;
     }
 
     // On the first call, attaches some event handlers. Then whenever it gets called, it creates a
     // zone around the touchstart where clicks will get busted.
-    function preventGhostClick(x: number, y: number, elem: any) {
-        if (!touchCoordinates) {
-            elem.addEventListener("click", onClick, true);
-            elem.addEventListener("touchstart", onTouchStart, true);
-            touchCoordinates = [];
-        }
-
+    function preventGhostClickAndAllowBusting(x: number, y: number) {
+        bustingAllowed = true;
         lastPreventedTime = Date.now();
-
         checkAllowableRegions(touchCoordinates, x, y);
     }
 
@@ -113,7 +117,6 @@
     function handleTouchStart(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
         tapping = true;
         tapElement = target;
-        //tapElement = ev.target ? ev.target : ev.srcElement; // IE uses srcElement.
         // Hack for Safari, which can target text nodes instead of containers.
         if (tapElement.nodeType == 3) {
             tapElement = tapElement.parentNode;
@@ -143,8 +146,7 @@
         var stop = false;
         if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
             // Call preventGhostClick so the clickbuster will catch the corresponding click.
-            preventGhostClick(x, y, tapElement);
-
+            preventGhostClickAndAllowBusting(x, y);
 
             // Blur the focused element (the button, probably) before firing the callback.
             // This doesn't work perfectly on Android Chrome, but seems to work elsewhere.
@@ -207,6 +209,9 @@
     }
 
     var addEvent = b.addEvent;
+    addEvent("click", 1, clickBuster);
+    addEvent("touchstart", 1, touchStartBuster);
+
     addEvent("click", 400, createHandler("onClick"));
     addEvent("dblclick", 400, createHandler("onDoubleClick"));
     addEvent("mousedown", 400, createHandler("onMouseDown"));

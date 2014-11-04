@@ -1,4 +1,7 @@
-﻿
+﻿interface IMouseEvent extends ICoords {
+
+}
+
 interface IBobrilComponent {
     // called on input element after click
     onClick? (ctx: Object, event: IMouseEvent): boolean
