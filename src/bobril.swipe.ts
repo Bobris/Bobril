@@ -1,8 +1,10 @@
 ﻿/// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.swipe.d.ts"/>
 
-class EventSanitizer {
-    static getCoordinates(event: any): ICoords {
+((b: IBobrilStatic) => {
+    var preventDefault = b.preventDefault;
+
+    function getCoordinates(event: any): ICoords {
         var touches = event.touches && event.touches.length ? event.touches : [event];
         var e = (event.changedTouches && event.changedTouches[0]) ||
             (event.originalEvent && event.originalEvent.changedTouches &&
@@ -15,15 +17,8 @@ class EventSanitizer {
         };
     }
 
-    static preventDefault(event: Event) {
-        var pd = event.preventDefault;
-        if (pd) pd.call(event); else (<any>event).returnValue = false;
-    }
-}
-
-((b: IBobrilStatic) => {
     function buildParam(ev: MouseEvent): ICoords {
-        var coord = EventSanitizer.getCoordinates(ev);
+        var coord = getCoordinates(ev);
         return {
             x: coord.x,
             y: coord.y,
@@ -42,7 +37,7 @@ class EventSanitizer {
 
 
     function handleMoveStartEvents(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
-        startPos = EventSanitizer.getCoordinates(ev);
+        startPos = getCoordinates(ev);
         touchStarted = true;
         totalX = 0;
         totalY = 0;
@@ -55,7 +50,7 @@ class EventSanitizer {
     function handleMoveEndEvents(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
         if (!touchStarted) return false;
         touchStarted = false;
-        return moveEnd(ev, target, node, EventSanitizer.getCoordinates(ev));
+        return moveEnd(ev, target, node, getCoordinates(ev));
     }
 
     function handleMoveEvents(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
@@ -67,7 +62,7 @@ class EventSanitizer {
         // - On totalY > totalX, we let the browser handle it as a scroll.
 
         if (!startPos) return false;
-        var coords = EventSanitizer.getCoordinates(event);
+        var coords = getCoordinates(event);
 
         totalX += Math.abs(coords.x - lastPos.x);
         totalY += Math.abs(coords.y - lastPos.y);
@@ -85,7 +80,7 @@ class EventSanitizer {
             moveCancelled(ev, target, node);
         } else {
             // Prevent the browser from scrolling.
-            EventSanitizer.preventDefault(ev);
+            preventDefault(ev);
             //eventHandlers['move'] && eventHandlers['move'](coords, ev);
         }
         return false;
@@ -148,22 +143,21 @@ class EventSanitizer {
 
     function moveEnd(ev: MouseEvent, target: Node, node: IBobrilCacheNode, coords: ICoords): boolean {
         var swipe = analyzeSwipe(coords);
-        if(swipe == Swipe.Invalid) {
+        if (swipe == Swipe.Invalid) {
             return false;
         }
 
         if (!node)
             return false;
 
-        var method = swipe == Swipe.Right ? "onSwipeRight" : "onSwipeLeft";
+        var method = "onSwipe" + (swipe == Swipe.Right ? "Right" : "Left");
         var param: IMouseEvent = buildParam(ev);
         if (b.bubble(node, method, param)) {
-            EventSanitizer.preventDefault(ev);
+            preventDefault(ev);
             return true;
         }
         return false;
     }
-
 
     var addEvent = b.addEvent;
     addEvent("touchstart", 600, handleMoveStartEvents);
@@ -174,4 +168,3 @@ class EventSanitizer {
     addEvent("touchmove", 600, handleMoveEvents);
     addEvent("touchcancel", 600, handleTouchCancel);
 })(b);
- 

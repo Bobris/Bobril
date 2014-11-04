@@ -2,6 +2,8 @@
 /// <reference path="../src/bobril.mouse.d.ts"/>
 /// <reference path="../src/lib.touch.d.ts"/>
 (function (b) {
+    var preventDefault = b.preventDefault;
+    var now = b.now;
     var CLICKBUSTER_THRESHOLD = 25;
     var PREVENT_DURATION = 2500;
 
@@ -32,7 +34,7 @@
         if (!bustingAllowed)
             return false;
 
-        if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
+        if (now() - lastPreventedTime > PREVENT_DURATION) {
             return false;
         }
 
@@ -69,8 +71,7 @@
         }
 
         // If we didn't find an allowable region, bust the click.
-        event.stopPropagation();
-        event.preventDefault();
+        preventDefault(event);
 
         // Blur focused form elements
         event.target && event.target.blur();
@@ -104,7 +105,7 @@
     // zone around the touchstart where clicks will get busted.
     function preventGhostClickAndAllowBusting(x, y) {
         bustingAllowed = true;
-        lastPreventedTime = Date.now();
+        lastPreventedTime = now();
         checkAllowableRegions(touchCoordinates, x, y);
     }
 
@@ -123,7 +124,7 @@
             tapElement = tapElement.parentNode;
         }
 
-        startTime = Date.now();
+        startTime = now();
 
         var touches = ev.touches && ev.touches.length ? ev.touches : [ev];
         var e = touches[0].originalEvent || touches[0];
@@ -136,7 +137,7 @@
     var MOVE_TOLERANCE = 12;
 
     function handleTouchEnd(ev, target, node) {
-        var diff = Date.now() - startTime;
+        var diff = now() - startTime;
 
         var touches = (ev.changedTouches && ev.changedTouches.length) ? ev.changedTouches : ((ev.touches && ev.touches.length) ? ev.touches : [ev]);
         var e = touches[0].originalEvent || touches[0];
@@ -172,7 +173,7 @@
             return false;
 
         if (b.bubble(node, "onClick", { x: x, y: y })) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;
@@ -202,7 +203,7 @@
 
             var param = buildParam(ev);
             if (b.bubble(node, handlerName, param)) {
-                ev.preventDefault();
+                preventDefault(ev);
                 return true;
             }
             return false;

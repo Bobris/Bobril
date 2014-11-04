@@ -788,6 +788,11 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         return node;
     }
 
+    function preventDefault(event: Event) {
+        var pd = event.preventDefault;
+        if (pd) pd.call(event); else (<any>event).returnValue = false;
+    }
+
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -798,6 +803,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         uptime: () => uptime,
         now: now,
         invalidate: scheduleUpdate,
+        preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,
         deref: getCacheNode,
         addEvent: addEvent,

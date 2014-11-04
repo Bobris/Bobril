@@ -9,14 +9,23 @@ interface IBobrilStatic {
     updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any): Array<IBobrilCacheNode>;
     // Low level method used just for testing
     callPostCallbacks():void;
-    /** factory returns string|number|boolean|IBobrilNode|(string|number|boolean|IBobrilNode)[] */
+    // factory returns string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[]
     init(factory: () => any): void;
-    isArray(a: any): boolean;
-    uptime(): number;
-    now(): number;
+    // recreate whole vdom in next frame, next invalidates before next frame are noop
     invalidate(): void;
+    // shim for [].isArray
+    isArray(a: any): boolean;
+    // time in miliseconds from start
+    uptime(): number;
+    // shim for Date.now()
+    now(): number;
+    // shim for Event.preventDefault()
+    preventDefault(event: Event): void;
+    // this could be called only from component init and forces recreation of child nodes
     vmlNode(): void;
+    // DOM to vdom resolver
     deref(n: Node): IBobrilCacheNode;
+    // adds native event to body
     addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
     bubble(node: IBobrilCacheNode, name: string, param: any): boolean;
     postEnhance(node: IBobrilNode, methods: IBobrilComponent): void;

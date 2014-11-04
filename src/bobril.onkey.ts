@@ -12,10 +12,7 @@
         };
     }
 
-    function preventDefault(event: Event) {
-        var pd = event.preventDefault;
-        if (pd) pd.call(event); else (<any>event).returnValue = false;
-    }
+    var preventDefault = b.preventDefault;
 
     function emitOnKeyDown(ev: KeyboardEvent, target: Node, node: IBobrilCacheNode) {
         if (!node)

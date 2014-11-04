@@ -3,6 +3,8 @@
 /// <reference path="../src/lib.touch.d.ts"/>
 
 ((b: IBobrilStatic) => {
+    var preventDefault = b.preventDefault;
+    var now = b.now;
     var CLICKBUSTER_THRESHOLD = 25; // 25 pixels in any dimension is the limit for busting clicks.
     var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
 
@@ -33,7 +35,7 @@
         if (!bustingAllowed)
             return false;
 
-        if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
+        if (now() - lastPreventedTime > PREVENT_DURATION) {
             return false; // Too old.
         }
 
@@ -68,8 +70,7 @@
         }
 
         // If we didn't find an allowable region, bust the click.
-        event.stopPropagation();
-        event.preventDefault();
+        preventDefault(event);
 
         // Blur focused form elements
         event.target && (<any>event.target).blur();
@@ -87,7 +88,7 @@
         var y = touches[0].clientY;
         touchCoordinates.push(x, y);
 
-        setTimeout(function () {
+        setTimeout(() => {
             // Remove the allowable region.
             for (var i = 0; i < touchCoordinates.length; i += 2) {
                 if (touchCoordinates[i] == x && touchCoordinates[i + 1] == y) {
@@ -104,7 +105,7 @@
     // zone around the touchstart where clicks will get busted.
     function preventGhostClickAndAllowBusting(x: number, y: number) {
         bustingAllowed = true;
-        lastPreventedTime = Date.now();
+        lastPreventedTime = now();
         checkAllowableRegions(touchCoordinates, x, y);
     }
 
@@ -122,7 +123,7 @@
             tapElement = tapElement.parentNode;
         }
 
-        startTime = Date.now();
+        startTime = now();
 
         var touches: any = ev.touches && ev.touches.length ? ev.touches : [ev];
         var e = touches[0].originalEvent || touches[0];
@@ -135,7 +136,7 @@
     var MOVE_TOLERANCE = 12; // 12px seems to work in most mobile browsers.
 
     function handleTouchEnd(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var diff = Date.now() - startTime;
+        var diff = now() - startTime;
         
         var touches: any = (ev.changedTouches && ev.changedTouches.length) ? ev.changedTouches : ((ev.touches && ev.touches.length) ? <any>ev.touches : [ev]);
         var e = touches[0].originalEvent || touches[0];
@@ -171,7 +172,7 @@
             return false;
 
         if (b.bubble(node, "onClick", {x: x, y: y})) {
-            ev.preventDefault();
+            preventDefault(ev);
             return true;
         }
         return false;
@@ -195,13 +196,13 @@
     }
 
     function createHandler(handlerName: string) {
-        return function(ev: MouseEvent, target: Node, node: IBobrilCacheNode) {
+        return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
             if (!node)
                 return false;
 
             var param: IMouseEvent = buildParam(ev);
             if (b.bubble(node, handlerName, param)) {
-                ev.preventDefault();
+                preventDefault(ev);
                 return true;
             }
             return false;
@@ -223,6 +224,6 @@
 
     addEvent("touchstart", 500, handleTouchStart);
     addEvent("touchcancel", 500, tapCanceled);
-    addEvent("touchend", 500, handleTouchEnd) ;
+    addEvent("touchend", 500, handleTouchEnd);
     addEvent("touchmove", 500, tapCanceled);
 })(b)

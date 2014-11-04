@@ -1,9 +1,9 @@
 ﻿/// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.swipe.d.ts"/>
-var EventSanitizer = (function () {
-    function EventSanitizer() {
-    }
-    EventSanitizer.getCoordinates = function (event) {
+(function (b) {
+    var preventDefault = b.preventDefault;
+
+    function getCoordinates(event) {
         var touches = event.touches && event.touches.length ? event.touches : [event];
         var e = (event.changedTouches && event.changedTouches[0]) || (event.originalEvent && event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]) || touches[0].originalEvent || touches[0];
 
@@ -11,21 +11,10 @@ var EventSanitizer = (function () {
             x: e.clientX,
             y: e.clientY
         };
-    };
+    }
 
-    EventSanitizer.preventDefault = function (event) {
-        var pd = event.preventDefault;
-        if (pd)
-            pd.call(event);
-        else
-            event.returnValue = false;
-    };
-    return EventSanitizer;
-})();
-
-(function (b) {
     function buildParam(ev) {
-        var coord = EventSanitizer.getCoordinates(ev);
+        var coord = getCoordinates(ev);
         return {
             x: coord.x,
             y: coord.y
@@ -43,7 +32,7 @@ var EventSanitizer = (function () {
     var touchStarted = false;
 
     function handleMoveStartEvents(ev, target, node) {
-        startPos = EventSanitizer.getCoordinates(ev);
+        startPos = getCoordinates(ev);
         touchStarted = true;
         totalX = 0;
         totalY = 0;
@@ -57,7 +46,7 @@ var EventSanitizer = (function () {
         if (!touchStarted)
             return false;
         touchStarted = false;
-        return moveEnd(ev, target, node, EventSanitizer.getCoordinates(ev));
+        return moveEnd(ev, target, node, getCoordinates(ev));
     }
 
     function handleMoveEvents(ev, target, node) {
@@ -71,7 +60,7 @@ var EventSanitizer = (function () {
         // - On totalY > totalX, we let the browser handle it as a scroll.
         if (!startPos)
             return false;
-        var coords = EventSanitizer.getCoordinates(event);
+        var coords = getCoordinates(event);
 
         totalX += Math.abs(coords.x - lastPos.x);
         totalY += Math.abs(coords.y - lastPos.y);
@@ -89,7 +78,7 @@ var EventSanitizer = (function () {
             moveCancelled(ev, target, node);
         } else {
             // Prevent the browser from scrolling.
-            EventSanitizer.preventDefault(ev);
+            preventDefault(ev);
             //eventHandlers['move'] && eventHandlers['move'](coords, ev);
         }
         return false;
@@ -160,10 +149,10 @@ var EventSanitizer = (function () {
         if (!node)
             return false;
 
-        var method = swipe == 2 /* Right */ ? "onSwipeRight" : "onSwipeLeft";
+        var method = "onSwipe" + (swipe == 2 /* Right */ ? "Right" : "Left");
         var param = buildParam(ev);
         if (b.bubble(node, method, param)) {
-            EventSanitizer.preventDefault(ev);
+            preventDefault(ev);
             return true;
         }
         return false;
