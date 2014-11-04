@@ -36,7 +36,7 @@ module OnKeyApp {
         }
 
         static onMouseMove(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new MouseMove(event));
+            //ctx.data.onAdd(new MouseMove(event));
             return false;
         }
 
@@ -51,7 +51,7 @@ module OnKeyApp {
         }
 
         static onMouseOver(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new MouseOver(event));
+            //ctx.data.onAdd(new MouseOver(event));
             return false;
         }
 

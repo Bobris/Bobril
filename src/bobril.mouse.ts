@@ -216,7 +216,7 @@
     addEvent("dblclick", 400, createHandler("onDoubleClick"));
     addEvent("mousedown", 400, createHandler("onMouseDown"));
     addEvent("mouseup", 400, createHandler("onMouseUp"));
-    //addEvent("mousemove", 400, createHandler("onMouseMove"));
+    addEvent("mousemove", 400, createHandler("onMouseMove"));
     //addEvent("mouseenter", 400, createHandler("onMouseEnter"));
     //addEvent("mouseleave", 400, createHandler("onMouseLeave"));
     addEvent("mouseover", 400, createHandler("onMouseOver"));

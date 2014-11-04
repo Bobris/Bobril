@@ -30,7 +30,7 @@ var OnKeyApp;
         };
 
         TrackClick.onMouseMove = function (ctx, event) {
-            ctx.data.onAdd(new MouseMove(event));
+            //ctx.data.onAdd(new MouseMove(event));
             return false;
         };
 
@@ -45,7 +45,7 @@ var OnKeyApp;
         };
 
         TrackClick.onMouseOver = function (ctx, event) {
-            ctx.data.onAdd(new MouseOver(event));
+            //ctx.data.onAdd(new MouseOver(event));
             return false;
         };
 
