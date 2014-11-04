@@ -32,7 +32,7 @@ interface IBobrilAttributes {
 }
 
 interface IBobrilComponent {
-    // usefull to speed up merge component operations if set must be globally unique
+    // usefull to speed up enhance operations if set must be globally unique
     id?: string;
     // called before new node in vdom should be created any me members except key could be modified, ctx is initialized to { data: me.data||{} }
     // or after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component update to me.component before calling this

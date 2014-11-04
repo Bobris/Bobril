@@ -8,7 +8,7 @@ if (typeof DEBUG === 'undefined') DEBUG = true;
 if (!Array.prototype.map) {
     Array.prototype.map = function (callback: any, thisArg: any) {
         var t: any, a: Array<any>, k: number;
-// ReSharper disable once ConditionIsAlwaysConst
+        // ReSharper disable once ConditionIsAlwaysConst
         if (this == null) {
             throw new TypeError("this==null");
         }
@@ -154,11 +154,21 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         return <IBobrilNode>n;
     }
 
-    function createChildren(c: IBobrilCacheNode) {
+    function createChildren(c: IBobrilCacheNode): void {
         var ch = c.children;
+        var element = c.element;
         if (!ch)
             return;
         if (!isArray(ch)) {
+            var type = typeof ch;
+            if (type == "string" || type == "number") {
+                if ('textContent' in element) {
+                    element.textContent = "" + ch;
+                } else {
+                    element.appendChild(document.createTextNode("" + ch));
+                }
+                return;
+            }
             ch = [ch];
         }
         var i = 0, l = ch.length;
@@ -177,13 +187,13 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             }
             var j = ch[i] = createNode(item);
             if (j.tag === "/") {
-                var before = c.element.lastChild;
+                var before = element.lastChild;
                 c.element.insertAdjacentHTML("beforeend", j.content);
                 j.element = [];
                 if (before) {
                     before = before.nextSibling;
                 } else {
-                    before = c.element.firstChild;
+                    before = element.firstChild;
                 }
                 while (before) {
                     before[nodeBackpointer] = j;
@@ -191,7 +201,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                     before = before.nextSibling;
                 }
             } else {
-                c.element.appendChild(j.element);
+                element.appendChild(j.element);
             }
             i++;
         }
@@ -200,7 +210,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
 
     function destroyNode(c: IBobrilCacheNode) {
         var ch = c.children;
-        if (ch) {
+        if (isArray(ch)) {
             for (var i = 0, l = ch.length; i < l; i++) {
                 destroyNode(ch[i]);
             }
@@ -364,9 +374,25 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
 
     function updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any): Array<IBobrilCacheNode> {
         newChildren = newChildren || [];
-        if (!isArray(newChildren))
+        if (!isArray(newChildren)) {
+            var type = typeof newChildren;
+            if ((type == "string" || type == "number") && !isArray(cachedChildren)) {
+                if (newChildren === cachedChildren) return cachedChildren;
+                if ('textContent' in element) {
+                    element.textContent = "" + newChildren;
+                } else {
+                    element.innerHTML = "";
+                    element.appendChild(document.createTextNode("" + newChildren));
+                }
+                return newChildren;
+            }
             newChildren = [newChildren];
+        }
         cachedChildren = cachedChildren || [];
+        if (!isArray(cachedChildren)) {
+            element.removeChild(element.firstChild);
+            cachedChildren = [];
+        }
         var newLength = newChildren.length;
         var cachedLength = cachedChildren.length;
         for (var newIndex = 0; newIndex < newLength;) {
