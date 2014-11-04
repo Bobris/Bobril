@@ -1,0 +1,231 @@
+﻿/// <reference path="../src/bobril.d.ts"/>
+/// <reference path="../src/bobril.mouse.d.ts"/>
+/// <reference path="../src/lib.touch.d.ts"/>
+(function (b) {
+    var CLICKBUSTER_THRESHOLD = 25;
+    var PREVENT_DURATION = 2500;
+
+    // Checks if the coordinates are close enough to be within the region.
+    function hit(x1, y1, x2, y2) {
+        return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
+    }
+
+    // Checks a list of allowable regions against a click location.
+    // Returns true if the click should be allowed.
+    // Splices out the allowable region from the list after it has been used.
+    function checkAllowableRegions(coords, x, y) {
+        for (var i = 0; i < coords.length; i += 2) {
+            if (hit(coords[i], coords[i + 1], x, y)) {
+                coords.splice(i, i + 2);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var lastPreventedTime;
+    var touchCoordinates = [];
+    var lastLabelClickCoordinates;
+    var bustingAllowed = false;
+
+    function clickBuster(event, target, node) {
+        if (!bustingAllowed)
+            return false;
+
+        if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
+            return false;
+        }
+
+        var touches = event.touches && event.touches.length ? event.touches : [event];
+        var x = touches[0].clientX;
+        var y = touches[0].clientY;
+
+        // Work around desktop Webkit quirk where clicking a label will fire two clicks (on the label
+        // and on the input element). Depending on the exact browser, this second click we don't want
+        // to bust has either (0,0), negative coordinates, or coordinates equal to triggering label
+        // click event
+        if (x < 1 && y < 1) {
+            return false;
+        }
+        if (lastLabelClickCoordinates && lastLabelClickCoordinates[0] === x && lastLabelClickCoordinates[1] === y) {
+            return false;
+        }
+
+        // reset label click coordinates on first subsequent click
+        if (lastLabelClickCoordinates) {
+            lastLabelClickCoordinates = null;
+        }
+
+        // remember label click coordinates to prevent click busting of trigger click event on input
+        if (event.target.tagName.toLowerCase() === 'label') {
+            lastLabelClickCoordinates = [x, y];
+        }
+
+        // Look for an allowable region containing this click.
+        // If we find one, that means it was created by touchstart and not removed by
+        // preventGhostClick, so we don't bust it.
+        if (checkAllowableRegions(touchCoordinates, x, y)) {
+            return false;
+        }
+
+        // If we didn't find an allowable region, bust the click.
+        event.stopPropagation();
+        event.preventDefault();
+
+        // Blur focused form elements
+        event.target && event.target.blur();
+        return true;
+    }
+
+    // Global touchstart handler that creates an allowable region for a click event.
+    // This allowable region can be removed by preventGhostClick if we want to bust it.
+    function touchStartBuster(event, target, node) {
+        if (!bustingAllowed)
+            return false;
+
+        var touches = event.touches && event.touches.length ? event.touches : [event];
+        var x = touches[0].clientX;
+        var y = touches[0].clientY;
+        touchCoordinates.push(x, y);
+
+        setTimeout(function () {
+            for (var i = 0; i < touchCoordinates.length; i += 2) {
+                if (touchCoordinates[i] == x && touchCoordinates[i + 1] == y) {
+                    touchCoordinates.splice(i, i + 2);
+                    return;
+                }
+            }
+        }, PREVENT_DURATION);
+
+        return false;
+    }
+
+    // On the first call, attaches some event handlers. Then whenever it gets called, it creates a
+    // zone around the touchstart where clicks will get busted.
+    function preventGhostClickAndAllowBusting(x, y) {
+        bustingAllowed = true;
+        lastPreventedTime = Date.now();
+        checkAllowableRegions(touchCoordinates, x, y);
+    }
+
+    var tapping = false;
+    var tapElement;
+    var startTime;
+    var touchStartX;
+    var touchStartY;
+
+    function handleTouchStart(ev, target, node) {
+        tapping = true;
+        tapElement = target;
+
+        // Hack for Safari, which can target text nodes instead of containers.
+        if (tapElement.nodeType == 3) {
+            tapElement = tapElement.parentNode;
+        }
+
+        startTime = Date.now();
+
+        var touches = ev.touches && ev.touches.length ? ev.touches : [ev];
+        var e = touches[0].originalEvent || touches[0];
+        touchStartX = e.clientX;
+        touchStartY = e.clientY;
+        return false;
+    }
+
+    var TAP_DURATION = 750;
+    var MOVE_TOLERANCE = 12;
+
+    function handleTouchEnd(ev, target, node) {
+        var diff = Date.now() - startTime;
+
+        var touches = (ev.changedTouches && ev.changedTouches.length) ? ev.changedTouches : ((ev.touches && ev.touches.length) ? ev.touches : [ev]);
+        var e = touches[0].originalEvent || touches[0];
+        var x = e.clientX;
+        var y = e.clientY;
+        var dist = Math.sqrt(Math.pow(x - touchStartX, 2) + Math.pow(y - touchStartY, 2));
+
+        var stop = false;
+        if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
+            // Call preventGhostClick so the clickbuster will catch the corresponding click.
+            preventGhostClickAndAllowBusting(x, y);
+
+            // Blur the focused element (the button, probably) before firing the callback.
+            // This doesn't work perfectly on Android Chrome, but seems to work elsewhere.
+            // I couldn't get anything to work reliably on Android Chrome.
+            if (tapElement) {
+                tapElement.blur();
+            }
+
+            var disabled = node.attrs && node.attrs["disabled"];
+            if (typeof disabled === "undefined" || disabled === false) {
+                stop = emitClickEvent(ev, target, node, x, y);
+            }
+        }
+
+        resetState();
+
+        return stop;
+    }
+
+    function emitClickEvent(ev, target, node, x, y) {
+        if (!node)
+            return false;
+
+        if (b.bubble(node, "onClick", { x: x, y: y })) {
+            ev.preventDefault();
+            return true;
+        }
+        return false;
+    }
+
+    function resetState() {
+        tapping = false;
+    }
+
+    function tapCanceled(ev, target, node) {
+        resetState();
+        return false;
+    }
+
+    function buildParam(event) {
+        var coords = EventSanitizer.getCoordinates(event);
+        return {
+            x: coords.x,
+            y: coords.y
+        };
+    }
+
+    function createHandler(handlerName) {
+        return function (ev, target, node) {
+            if (!node)
+                return false;
+
+            var param = buildParam(ev);
+            if (b.bubble(node, handlerName, param)) {
+                ev.preventDefault();
+                return true;
+            }
+            return false;
+        };
+    }
+
+    var addEvent = b.addEvent;
+    addEvent("click", 1, clickBuster);
+    addEvent("touchstart", 1, touchStartBuster);
+
+    addEvent("click", 400, createHandler("onClick"));
+    addEvent("dblclick", 400, createHandler("onDoubleClick"));
+    addEvent("mousedown", 400, createHandler("onMouseDown"));
+    addEvent("mouseup", 400, createHandler("onMouseUp"));
+    addEvent("mousemove", 400, createHandler("onMouseMove"));
+
+    //addEvent("mouseenter", 400, createHandler("onMouseEnter"));
+    //addEvent("mouseleave", 400, createHandler("onMouseLeave"));
+    addEvent("mouseover", 400, createHandler("onMouseOver"));
+
+    addEvent("touchstart", 500, handleTouchStart);
+    addEvent("touchcancel", 500, tapCanceled);
+    addEvent("touchend", 500, handleTouchEnd);
+    addEvent("touchmove", 500, tapCanceled);
+})(b);
+//# sourceMappingURL=bobril.mouse.js.map
