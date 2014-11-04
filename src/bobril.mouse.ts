@@ -8,6 +8,19 @@
     var CLICKBUSTER_THRESHOLD = 25; // 25 pixels in any dimension is the limit for busting clicks.
     var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
 
+    function getCoordinates(event: any): ICoords {
+        var touches = event.touches && event.touches.length ? event.touches : [event];
+        var e = (event.changedTouches && event.changedTouches[0]) ||
+            (event.originalEvent && event.originalEvent.changedTouches &&
+            event.originalEvent.changedTouches[0]) ||
+            touches[0].originalEvent || touches[0];
+
+        return {
+            x: e.clientX,
+            y: e.clientY
+        };
+    }
+
     // Checks if the coordinates are close enough to be within the region.
     function hit(x1: number, y1: number, x2: number, y2: number) {
         return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
@@ -188,7 +201,7 @@
     }
 
     function buildParam(event: MouseEvent) : IMouseEvent {
-        var coords = EventSanitizer.getCoordinates(event);
+        var coords = getCoordinates(event);
         return {
             x: coords.x,
             y: coords.y

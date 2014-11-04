@@ -7,6 +7,16 @@
     var CLICKBUSTER_THRESHOLD = 25;
     var PREVENT_DURATION = 2500;
 
+    function getCoordinates(event) {
+        var touches = event.touches && event.touches.length ? event.touches : [event];
+        var e = (event.changedTouches && event.changedTouches[0]) || (event.originalEvent && event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]) || touches[0].originalEvent || touches[0];
+
+        return {
+            x: e.clientX,
+            y: e.clientY
+        };
+    }
+
     // Checks if the coordinates are close enough to be within the region.
     function hit(x1, y1, x2, y2) {
         return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
@@ -189,7 +199,7 @@
     }
 
     function buildParam(event) {
-        var coords = EventSanitizer.getCoordinates(event);
+        var coords = getCoordinates(event);
         return {
             x: coords.x,
             y: coords.y
