@@ -40,14 +40,12 @@ module MouseApp {
             return false;
         }
 
-        static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
             ctx.data.onAdd(new MouseEnter(event));
-            return false;
         }
 
-        static onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        static onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
             ctx.data.onAdd(new MouseLeave(event));
-            return false;
         }
 
         static onMouseOver(ctx: ITrackClickCtx, event: IMouseEvent): boolean {

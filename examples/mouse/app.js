@@ -36,12 +36,10 @@ var MouseApp;
 
         TrackClick.onMouseEnter = function (ctx, event) {
             ctx.data.onAdd(new MouseEnter(event));
-            return false;
         };
 
         TrackClick.onMouseLeave = function (ctx, event) {
             ctx.data.onAdd(new MouseLeave(event));
-            return false;
         };
 
         TrackClick.onMouseOver = function (ctx, event) {

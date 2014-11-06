@@ -9,7 +9,7 @@ interface IBobrilComponent {
     onMouseDown? (ctx: Object, event: IMouseEvent): boolean;
     onMouseUp? (ctx: Object, event: IMouseEvent): boolean;
     onMouseOver? (ctx: Object, event: IMouseEvent): boolean;
-    //onMouseEnter? (ctx: Object, event: IMouseEvent): boolean;
-    //onMouseLeave? (ctx: Object, event: IMouseEvent): boolean;
+    onMouseEnter? (ctx: Object, event: IMouseEvent): void;
+    onMouseLeave? (ctx: Object, event: IMouseEvent): void;
     onMouseMove? (ctx: Object, event: IMouseEvent): boolean;
 } 
