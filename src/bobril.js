@@ -10,12 +10,12 @@ if (!Array.prototype.map) {
         var t, a, k;
 
         // ReSharper disable once ConditionIsAlwaysConst
-        if (this == null) {
+        if (DEBUG && this == null) {
             throw new TypeError("this==null");
         }
         var o = Object(this);
         var len = o.length >>> 0;
-        if (typeof callback != "function") {
+        if (DEBUG && typeof callback != "function") {
             throw new TypeError(callback + " isn't func");
         }
         if (arguments.length > 1) {
@@ -49,9 +49,8 @@ if (!Object.create) {
 b = (function (window, document, undefined) {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue, messageIfFalse) {
-        if (DEBUG)
-            if (!shoudBeTrue)
-                throw Error(messageIfFalse || "assertion failed");
+        if (DEBUG && !shoudBeTrue)
+            throw Error(messageIfFalse || "assertion failed");
     }
 
     var objectToString = {}.toString;
@@ -137,7 +136,7 @@ b = (function (window, document, undefined) {
             }
         }
         if (n.tag === "") {
-            c.element = document.createTextNode("" + c.content);
+            c.element = document.createTextNode(c.content);
             return c;
         } else if (n.tag === "/") {
             return c;
@@ -158,10 +157,10 @@ b = (function (window, document, undefined) {
 
     function normalizeNode(n) {
         var t = typeof n;
-        if (t == "string" || t == "number") {
+        if (t === "string") {
             return { tag: "", content: n };
         }
-        if (t == "boolean")
+        if (t === "boolean")
             return null;
         return n;
     }
@@ -173,11 +172,11 @@ b = (function (window, document, undefined) {
             return;
         if (!isArray(ch)) {
             var type = typeof ch;
-            if (type == "string" || type == "number") {
+            if (type === "string") {
                 if ('textContent' in element) {
-                    element.textContent = "" + ch;
+                    element.textContent = ch;
                 } else {
-                    element.appendChild(document.createTextNode("" + ch));
+                    element.appendChild(document.createTextNode(ch));
                 }
                 return;
             }
@@ -334,7 +333,7 @@ b = (function (window, document, undefined) {
                 if (c.content !== n.content) {
                     c.content = n.content;
                     if ('textContent' in c.element) {
-                        c.element.textContent = "" + c.content;
+                        c.element.textContent = c.content;
                         return c;
                     }
                 } else
@@ -370,11 +369,10 @@ b = (function (window, document, undefined) {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
             var n;
+            n = updateInstance[i];
             if (updateCall[i]) {
-                n = updateInstance[i];
                 n.component.postUpdateDom(n.ctx, n, n.element);
             } else {
-                n = updateInstance[i];
                 n.component.postInitDom(n.ctx, n, n.element);
             }
         }
@@ -387,23 +385,25 @@ b = (function (window, document, undefined) {
     }
 
     function updateChildren(element, newChildren, cachedChildren) {
-        newChildren = newChildren || [];
+        if (newChildren == null)
+            newChildren = [];
         if (!isArray(newChildren)) {
             var type = typeof newChildren;
-            if ((type == "string" || type == "number") && !isArray(cachedChildren)) {
+            if ((type === "string") && !isArray(cachedChildren)) {
                 if (newChildren === cachedChildren)
                     return cachedChildren;
                 if ('textContent' in element) {
-                    element.textContent = "" + newChildren;
+                    element.textContent = newChildren;
                 } else {
                     element.innerHTML = "";
-                    element.appendChild(document.createTextNode("" + newChildren));
+                    element.appendChild(document.createTextNode(newChildren));
                 }
                 return newChildren;
             }
             newChildren = [newChildren];
         }
-        cachedChildren = cachedChildren || [];
+        if (cachedChildren == null)
+            cachedChildren = [];
         if (!isArray(cachedChildren)) {
             element.removeChild(element.firstChild);
             cachedChildren = [];
@@ -461,6 +461,7 @@ b = (function (window, document, undefined) {
                 } else
                     deltaKeyless--;
             }
+            var keyLess = -deltaKeyless - deltaKeyless;
             for (; newIndex < newLength; newIndex++) {
                 node = newChildren[newIndex];
                 key = node.key;
@@ -470,6 +471,7 @@ b = (function (window, document, undefined) {
                 } else
                     deltaKeyless++;
             }
+            keyLess += deltaKeyless;
             var delta = 0;
             newIndex = backupCommonIndex;
             cachedIndex = backupCommonIndex;
@@ -561,6 +563,10 @@ b = (function (window, document, undefined) {
                 }
                 newIndex++;
             }
+
+            // Without any keyless nodes we are done
+            if (!keyLess)
+                return cachedChildren;
 
             // reorder just nonkeyed nodes
             newIndex = cachedIndex = backupCommonIndex;
@@ -774,7 +780,7 @@ b = (function (window, document, undefined) {
         var _this = this;
         return function () {
             var result = f1.apply(_this, arguments);
-            if (result === true)
+            if (result)
                 return result;
             return f2.apply(_this, arguments);
         };
@@ -815,6 +821,14 @@ b = (function (window, document, undefined) {
         return node;
     }
 
+    function preventDefault(event) {
+        var pd = event.preventDefault;
+        if (pd)
+            pd.call(event);
+        else
+            event.returnValue = false;
+    }
+
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -827,6 +841,7 @@ b = (function (window, document, undefined) {
         },
         now: now,
         invalidate: scheduleUpdate,
+        preventDefault: preventDefault,
         vmlNode: function () {
             return inNamespace = true;
         },

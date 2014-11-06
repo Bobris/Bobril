@@ -1,7 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.onkey.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
 
-module OnKeyApp {
+module MouseApp {
     interface ITrackClickData {
         onAdd: (e: IEvent) => void;
     }

@@ -1,4 +1,4 @@
-/// <reference path="../../src/bobril.d.ts"/>
+﻿/// <reference path="../../src/bobril.d.ts"/>
 var InputApp;
 (function (InputApp) {
     function h(tag) {
@@ -43,7 +43,7 @@ var InputApp;
             h("h1", "Input Bobril sample"),
             textInput(value, setValue),
             h("p", "Entered: ", value),
-            h("p", "Frame: ", frame)
+            h("p", "Frame: " + frame)
         ];
     });
 })(InputApp || (InputApp = {}));

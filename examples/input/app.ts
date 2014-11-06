@@ -42,7 +42,7 @@ module InputApp {
             h("h1", "Input Bobril sample"),
             textInput(value, setValue),
             h("p", "Entered: ", value),
-            h("p", "Frame: ", frame)
+            h("p", "Frame: " + frame)
         ];
     });
 }

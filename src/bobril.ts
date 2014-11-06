@@ -9,12 +9,12 @@ if (!Array.prototype.map) {
     Array.prototype.map = function (callback: any, thisArg: any) {
         var t: any, a: Array<any>, k: number;
         // ReSharper disable once ConditionIsAlwaysConst
-        if (this == null) {
+        if (DEBUG && this == null) {
             throw new TypeError("this==null");
         }
         var o = Object(this);
         var len = o.length >>> 0;
-        if (typeof callback != "function") {
+        if (DEBUG && typeof callback != "function") {
             throw new TypeError(callback + " isn't func");
         }
         if (arguments.length > 1) {
@@ -47,9 +47,8 @@ if (!Object.create) {
 b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
-        if (DEBUG)
-            if (!shoudBeTrue)
-                throw Error(messageIfFalse || "assertion failed");
+        if (DEBUG && !shoudBeTrue)
+            throw Error(messageIfFalse || "assertion failed");
     }
 
     var objectToString = {}.toString;
@@ -126,7 +125,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             }
         }
         if (n.tag === "") {
-            c.element = document.createTextNode("" + c.content);
+            c.element = document.createTextNode(c.content);
             return c;
         } else if (n.tag === "/") {
             return c;
@@ -147,10 +146,10 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
 
     function normalizeNode(n: any): IBobrilNode {
         var t = typeof n;
-        if (t == "string" || t == "number") {
+        if (t === "string") {
             return { tag: "", content: n };
         }
-        if (t == "boolean") return null;
+        if (t === "boolean") return null;
         return <IBobrilNode>n;
     }
 
@@ -161,11 +160,11 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             return;
         if (!isArray(ch)) {
             var type = typeof ch;
-            if (type == "string" || type == "number") {
+            if (type === "string") {
                 if ('textContent' in element) {
-                    element.textContent = "" + ch;
+                    element.textContent = ch;
                 } else {
-                    element.appendChild(document.createTextNode("" + ch));
+                    element.appendChild(document.createTextNode(ch));
                 }
                 return;
             }
@@ -321,7 +320,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                 if (c.content !== n.content) {
                     c.content = n.content;
                     if ('textContent' in c.element) {
-                        c.element.textContent = "" + c.content;
+                        c.element.textContent = c.content;
                         return c;
                     }
                 } else return c;
@@ -356,11 +355,10 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
             var n: IBobrilCacheNode;
+            n = updateInstance[i];
             if (updateCall[i]) {
-                n = updateInstance[i];
                 n.component.postUpdateDom(n.ctx, n, n.element);
             } else {
-                n = updateInstance[i];
                 n.component.postInitDom(n.ctx, n, n.element);
             }
         }
@@ -373,22 +371,22 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
     }
 
     function updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any): Array<IBobrilCacheNode> {
-        newChildren = newChildren || [];
+        if (newChildren == null) newChildren = [];
         if (!isArray(newChildren)) {
             var type = typeof newChildren;
-            if ((type == "string" || type == "number") && !isArray(cachedChildren)) {
+            if ((type === "string") && !isArray(cachedChildren)) {
                 if (newChildren === cachedChildren) return cachedChildren;
                 if ('textContent' in element) {
-                    element.textContent = "" + newChildren;
+                    element.textContent = newChildren;
                 } else {
                     element.innerHTML = "";
-                    element.appendChild(document.createTextNode("" + newChildren));
+                    element.appendChild(document.createTextNode(newChildren));
                 }
                 return newChildren;
             }
             newChildren = [newChildren];
         }
-        cachedChildren = cachedChildren || [];
+        if (cachedChildren == null) cachedChildren = [];
         if (!isArray(cachedChildren)) {
             element.removeChild(element.firstChild);
             cachedChildren = [];
@@ -448,6 +446,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                 else
                     deltaKeyless--;
             }
+            var keyLess = -deltaKeyless-deltaKeyless;
             for (; newIndex < newLength; newIndex++) {
                 node = newChildren[newIndex];
                 key = node.key;
@@ -458,6 +457,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                 else
                     deltaKeyless++;
             }
+            keyLess += deltaKeyless;
             var delta = 0;
             newIndex = backupCommonIndex;
             cachedIndex = backupCommonIndex;
@@ -549,6 +549,9 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                 }
                 newIndex++;
             }
+            // Without any keyless nodes we are done
+            if (!keyLess)
+                return cachedChildren;
             // reorder just nonkeyed nodes
             newIndex = cachedIndex = backupCommonIndex;
             while (newIndex < newLength) {
@@ -748,7 +751,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
     function merge(f1: Function, f2: Function): Function {
         return () => {
             var result = f1.apply(this, arguments);
-            if (result === true) return result;
+            if (result) return result;
             return f2.apply(this, arguments);
         }
     }

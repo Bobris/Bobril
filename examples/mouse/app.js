@@ -1,7 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.onkey.d.ts"/>
-var OnKeyApp;
-(function (OnKeyApp) {
+/// <reference path="../../src/bobril.mouse.d.ts"/>
+var MouseApp;
+(function (MouseApp) {
     var TrackClick = (function () {
         function TrackClick() {
         }
@@ -201,5 +201,5 @@ var OnKeyApp;
             }
         ];
     });
-})(OnKeyApp || (OnKeyApp = {}));
+})(MouseApp || (MouseApp = {}));
 //# sourceMappingURL=app.js.map

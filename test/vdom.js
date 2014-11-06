@@ -17,10 +17,6 @@ describe("createNode", function () {
         var r = b.createNode({ tag: "div", children: "hello" });
         expectInsensitive(r.element.outerHTML, "<div>hello</div>");
     });
-    it("number", function () {
-        var r = b.createNode({ tag: "div", children: 1 });
-        expectInsensitive(r.element.outerHTML, "<div>1</div>");
-    });
     it("boolean is skipped", function () {
         var r = b.createNode({ tag: "div", children: true });
         expectInsensitive(r.element.outerHTML, "<div></div>");
