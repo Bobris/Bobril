@@ -220,18 +220,36 @@
         };
     }
 
+    function createNoBubblingHandler(handlerName) {
+        return function (ev, target, node) {
+            if (!node)
+                return false;
+
+            var param = buildParam(ev);
+            var c = node.component;
+            if (c) {
+                var m = c[handlerName];
+                if (m) {
+                    m.call(c, node.ctx, param);
+                }
+            }
+
+            return false;
+        };
+    }
+
     var addEvent = b.addEvent;
     addEvent("click", 1, clickBuster);
     addEvent("touchstart", 1, touchStartBuster);
+
+    addEvent("mouseover", 300, createNoBubblingHandler("onMouseEnter")); // bubbling mouseover and out are same basically same as nonbubling mouseenter and leave
+    addEvent("mouseout", 300, createNoBubblingHandler("onMouseLeave"));
 
     addEvent("click", 400, createHandler("onClick"));
     addEvent("dblclick", 400, createHandler("onDoubleClick"));
     addEvent("mousedown", 400, createHandler("onMouseDown"));
     addEvent("mouseup", 400, createHandler("onMouseUp"));
     addEvent("mousemove", 400, createHandler("onMouseMove"));
-
-    //addEvent("mouseenter", 400, createHandler("onMouseEnter"));
-    //addEvent("mouseleave", 400, createHandler("onMouseLeave"));
     addEvent("mouseover", 400, createHandler("onMouseOver"));
 
     addEvent("touchstart", 500, handleTouchStart);

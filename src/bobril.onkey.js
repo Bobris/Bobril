@@ -11,13 +11,7 @@
         };
     }
 
-    function preventDefault(event) {
-        var pd = event.preventDefault;
-        if (pd)
-            pd.call(event);
-        else
-            event.returnValue = false;
-    }
+    var preventDefault = b.preventDefault;
 
     function emitOnKeyDown(ev, target, node) {
         if (!node)

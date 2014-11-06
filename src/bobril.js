@@ -815,6 +815,14 @@ b = (function (window, document, undefined) {
         return node;
     }
 
+    function preventDefault(event) {
+        var pd = event.preventDefault;
+        if (pd)
+            pd.call(event);
+        else
+            event.returnValue = false;
+    }
+
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -827,6 +835,7 @@ b = (function (window, document, undefined) {
         },
         now: now,
         invalidate: scheduleUpdate,
+        preventDefault: preventDefault,
         vmlNode: function () {
             return inNamespace = true;
         },
