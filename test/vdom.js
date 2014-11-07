@@ -184,5 +184,14 @@ describe("updateNode", function () {
     it("removeFirstKeyAdd2NonKey", function () {
         advancedTest("a:A,b:B,c:E", "b:D,C1,C2,c:F", "b:D:1,C1,C2,c:F:2");
     });
+    it("moveNonKeyFront", function () {
+        advancedTest("a:A,b:B,D,c:C", "a:E,D2,b:F,c:G", "a:E:0,D2:2,b:F:1,c:G:3");
+    });
+    it("moveNonKeyBack", function () {
+        advancedTest("a:A,D,b:B,c:C", "a:E,b:F,D2,c:G", "a:E:0,b:F:2,D2:1,c:G:3");
+    });
+    it("moveNonKeyBackAndRemoveLastNonKey", function () {
+        advancedTest("a:A,D,b:B,c:C,D1", "a:E,b:F,D2,c:G", "a:E:0,b:F:2,D2:1,c:G:3");
+    });
 });
 //# sourceMappingURL=vdom.js.map

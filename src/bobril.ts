@@ -446,7 +446,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                 else
                     deltaKeyless--;
             }
-            var keyLess = -deltaKeyless-deltaKeyless;
+            var keyLess = -deltaKeyless - deltaKeyless;
             for (; newIndex < newLength; newIndex++) {
                 node = newChildren[newIndex];
                 key = node.key;
@@ -552,6 +552,8 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             // Without any keyless nodes we are done
             if (!keyLess)
                 return cachedChildren;
+            // calculate common (old and new) keyless
+            keyLess = (keyLess-deltaKeyless)>>1;
             // reorder just nonkeyed nodes
             newIndex = cachedIndex = backupCommonIndex;
             while (newIndex < newLength) {
@@ -569,13 +571,14 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                         continue;
                     }
                     cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                    keyLess--;
                     newIndex++;
-                    if (cachedIndex < newIndex) cachedIndex = newIndex;
+                    cachedIndex = newIndex;
                     continue;
                 }
                 if (key != null) {
                     assert(newIndex === cachedIndex);
-                    if (newLength - newIndex - deltaKeyless == cachedLength - cachedIndex) {
+                    if (keyLess===0 && deltaKeyless < 0) {
                         while (true) {
                             removeNode(cachedChildren[cachedIndex]);
                             cachedChildren.splice(cachedIndex, 1);
@@ -589,7 +592,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                     }
                     while (cachedChildren[cachedIndex].key == null)
                         cachedIndex++;
-                    assert(key !== cachedChildren[cachedIndex].key);
+                    assert(key === cachedChildren[cachedIndex].key);
                     cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                     cachedChildren.splice(cachedIndex + 1, 1);
                     element.insertBefore(cachedChildren[newIndex].element, cachedChildren[newIndex + 1].element);
@@ -598,19 +601,11 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                     continue;
                 }
                 if (cachedIndex < cachedLength) {
+                    element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[newIndex].element);
                     cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                     cachedChildren.splice(cachedIndex + 1, 1);
-                    if (key != null) {
-                        newIndex++;
-                        while (newIndex < newLength) {
-                            key = newChildren[newIndex].key;
-                            if (key == null)
-                                break;
-                        }
-                        if (key != null)
-                            break;
-                    }
-                    cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                    cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                    keyLess--;
                     newIndex++;
                     cachedIndex++;
                 } else {
