@@ -408,219 +408,276 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             newChildren[newIndex] = item;
             newIndex++;
         }
-        var minNewCachedLength = newLength < cachedLength ? newLength : cachedLength;
+        var newEnd = newLength;
+        var cachedEnd = cachedLength;
         newIndex = 0;
-        for (; newIndex < minNewCachedLength; newIndex++) {
-            if (newChildren[newIndex].key !== cachedChildren[newIndex].key)
+        cachedIndex = 0;
+        while (newIndex < newEnd && cachedIndex < cachedEnd) {
+            if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
+                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                newIndex++;
+                cachedIndex++;
+                continue;
+            }
+            while (true) {
+                if (newChildren[newEnd - 1].key === cachedChildren[cachedEnd - 1].key) {
+                    newEnd--;
+                    cachedEnd--;
+                    cachedChildren[cachedEnd] = updateNode(newChildren[newEnd], cachedChildren[cachedEnd]);
+                    if (newIndex < newEnd && cachedIndex < cachedEnd)
+                        continue;
+                }
                 break;
-            cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+            }
+            if (newIndex < newEnd && cachedIndex < cachedEnd) {
+                if (newChildren[newIndex].key === cachedChildren[cachedEnd - 1].key) {
+                    element.insertBefore(cachedChildren[cachedEnd - 1].element, cachedChildren[cachedIndex].element);
+                    cachedChildren.splice(cachedIndex, 0, cachedChildren[cachedEnd - 1]);
+                    cachedChildren.splice(cachedEnd, 1);
+                    cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                    newIndex++;
+                    cachedIndex++;
+                    continue;
+                }
+                if (newChildren[newEnd - 1].key === cachedChildren[cachedIndex].key) {
+                    element.insertBefore(cachedChildren[cachedIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
+                    cachedChildren.splice(cachedEnd, 0, cachedChildren[cachedIndex]);
+                    cachedChildren.splice(cachedIndex, 1);
+                    cachedEnd--;
+                    newEnd--;
+                    cachedChildren[cachedEnd] = updateNode(newChildren[newEnd], cachedChildren[cachedEnd]);
+                    continue;
+                }
+            }
+            break;
         }
-        if (newIndex === minNewCachedLength) {
-            // all keys up to common length were identical = simple case
-            while (newIndex < newLength) {
-                cachedChildren.push(createNode(newChildren[newIndex]));
-                element.appendChild(cachedChildren[newIndex].element);
+        if (cachedIndex === cachedEnd) {
+            if (newIndex === newEnd) {
+                return cachedChildren;
+            }
+            // Only work left is to add new nodes
+            while (newIndex < newEnd) {
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex]));
+                cachedIndex++;
+                cachedEnd++;
+                cachedLength++;
+                element.insertBefore(cachedChildren[newIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
                 newIndex++;
             }
-            while (cachedLength > newIndex) {
+            return cachedChildren;
+        }
+        if (newIndex === newEnd) {
+            // Only work left is to remove old nodes
+            while (cachedIndex < cachedEnd) {
+                cachedEnd--;
+                removeNode(cachedChildren[cachedEnd]);
+                cachedChildren.splice(cachedEnd, 1);
+            }
+            return cachedChildren;
+        }
+        // order of keyed nodes ware changed => reorder keyed nodes first
+        var cachedIndex: number;
+        var cachedKeys: { [keyName: string]: number } = {};
+        var newKeys: { [keyName: string]: number } = {};
+        var key: string;
+        var node: IBobrilNode;
+        var backupNewIndex = newIndex;
+        var backupCachedIndex = cachedIndex;
+        var deltaKeyless = 0;
+        for (; cachedIndex < cachedEnd; cachedIndex++) {
+            node = cachedChildren[cachedIndex];
+            key = node.key;
+            if (key != null) {
+                assert(!(key in cachedKeys));
+                cachedKeys[key] = cachedIndex;
+            }
+            else
+                deltaKeyless--;
+        }
+        var keyLess = -deltaKeyless - deltaKeyless;
+        for (; newIndex < newEnd; newIndex++) {
+            node = newChildren[newIndex];
+            key = node.key;
+            if (key != null) {
+                assert(!(key in newKeys));
+                newKeys[key] = newIndex;
+            }
+            else
+                deltaKeyless++;
+        }
+        keyLess += deltaKeyless;
+        var delta = 0;
+        newIndex = backupNewIndex;
+        cachedIndex = backupCachedIndex;
+        var cachedKey: string;
+        while (cachedIndex < cachedEnd && newIndex < newEnd) {
+            if (cachedChildren[cachedIndex] === null) { // already moved somethere else
+                cachedChildren.splice(cachedIndex, 1);
+                cachedEnd--;
                 cachedLength--;
-                removeNode(cachedChildren[cachedLength]);
-                cachedChildren.pop();
+                delta--;
+                continue;
             }
-        } else {
-            // order of keyed nodes ware changed => reorder keyed nodes first
-            var cachedIndex: number;
-            var cachedKeys: { [keyName: string]: number } = {};
-            var newKeys: { [keyName: string]: number } = {};
-            var key: string;
-            var node: IBobrilNode;
-            var backupCommonIndex = newIndex;
-            var deltaKeyless = 0;
-            for (cachedIndex = backupCommonIndex; cachedIndex < cachedLength; cachedIndex++) {
-                node = cachedChildren[cachedIndex];
-                key = node.key;
-                if (key != null) {
-                    assert(!(key in cachedKeys));
-                    cachedKeys[key] = cachedIndex;
-                }
-                else
-                    deltaKeyless--;
+            cachedKey = cachedChildren[cachedIndex].key;
+            if (cachedKey == null) {
+                cachedIndex++;
+                continue;
             }
-            var keyLess = -deltaKeyless - deltaKeyless;
-            for (; newIndex < newLength; newIndex++) {
-                node = newChildren[newIndex];
-                key = node.key;
-                if (key != null) {
-                    assert(!(key in newKeys));
-                    newKeys[key] = newIndex;
-                }
-                else
-                    deltaKeyless++;
-            }
-            keyLess += deltaKeyless;
-            var delta = 0;
-            newIndex = backupCommonIndex;
-            cachedIndex = backupCommonIndex;
-            var cachedKey: string;
-            while (cachedIndex < cachedLength && newIndex < newLength) {
-                if (cachedChildren[cachedIndex] === null) { // already moved somethere else
-                    cachedChildren.splice(cachedIndex, 1);
-                    cachedLength--;
-                    delta--;
-                    continue;
-                }
-                cachedKey = cachedChildren[cachedIndex].key;
-                if (cachedKey == null) {
-                    cachedIndex++;
-                    continue;
-                }
-                key = newChildren[newIndex].key;
-                if (key == null) {
-                    newIndex++;
-                    while (newIndex < newLength) {
-                        key = newChildren[newIndex].key;
-                        if (key != null)
-                            break;
-                        newIndex++;
-                    }
-                    if (key == null)
+            key = newChildren[newIndex].key;
+            if (key == null) {
+                newIndex++;
+                while (newIndex < newEnd) {
+                    key = newChildren[newIndex].key;
+                    if (key != null)
                         break;
-                }
-                var akpos = cachedKeys[key];
-                if (akpos === undefined) {
-                    // New key
-                    cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex]));
-                    element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
-                    delta++;
-                    newIndex++;
-                    cachedIndex++;
-                    cachedLength++;
-                    continue;
-                }
-                if (!(cachedKey in newKeys)) {
-                    // Old key
-                    removeNode(cachedChildren[cachedIndex]);
-                    cachedChildren.splice(cachedIndex, 1);
-                    delta--;
-                    cachedLength--;
-                    continue;
-                }
-                if (cachedIndex === akpos + delta) {
-                    // Inplace update
-                    cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
-                    newIndex++;
-                    cachedIndex++;
-                } else {
-                    // Move
-                    cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
-                    delta++;
-                    cachedChildren[akpos + delta] = null;
-                    element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
-                    cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
-                    cachedIndex++;
-                    cachedLength++;
                     newIndex++;
                 }
+                if (key == null)
+                    break;
             }
-            // remove old keyed cached nodes
-            while (cachedIndex < cachedLength) {
-                if (cachedChildren[cachedIndex] === null) { // already moved somethere else
-                    cachedChildren.splice(cachedIndex, 1);
-                    cachedLength--;
-                    continue;
-                }
-                if (cachedChildren[cachedIndex].key != null) { // this key is only in old
-                    removeNode(cachedChildren[cachedIndex]);
-                    cachedChildren.splice(cachedIndex, 1);
-                    cachedLength--;
-                    continue;
-                }
+            var akpos = cachedKeys[key];
+            if (akpos === undefined) {
+                // New key
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex]));
+                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
+                delta++;
+                newIndex++;
+                cachedIndex++;
+                cachedEnd++;
+                cachedLength++;
+                continue;
+            }
+            if (!(cachedKey in newKeys)) {
+                // Old key
+                removeNode(cachedChildren[cachedIndex]);
+                cachedChildren.splice(cachedIndex, 1);
+                delta--;
+                cachedEnd--;
+                cachedLength--;
+                continue;
+            }
+            if (cachedIndex === akpos + delta) {
+                // Inplace update
+                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                newIndex++;
+                cachedIndex++;
+            } else {
+                // Move
+                cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
+                delta++;
+                cachedChildren[akpos + delta] = null;
+                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
+                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                cachedIndex++;
+                cachedEnd++;
+                cachedLength++;
+                newIndex++;
+            }
+        }
+        // remove old keyed cached nodes
+        while (cachedIndex < cachedEnd) {
+            if (cachedChildren[cachedIndex] === null) { // already moved somethere else
+                cachedChildren.splice(cachedIndex, 1);
+                cachedEnd--;
+                cachedLength--;
+                continue;
+            }
+            if (cachedChildren[cachedIndex].key != null) { // this key is only in old
+                removeNode(cachedChildren[cachedIndex]);
+                cachedChildren.splice(cachedIndex, 1);
+                cachedEnd--;
+                cachedLength--;
+                continue;
+            }
+            cachedIndex++;
+        }
+        // add new keyed nodes
+        while (newIndex < newEnd) {
+            key = newChildren[newIndex].key;
+            if (key != null) {
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex]));
+                cachedEnd++;
+                cachedLength++;
+                element.insertBefore(cachedChildren[cachedIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
+                delta++;
                 cachedIndex++;
             }
-            // add new keyed nodes
-            while (newIndex < newLength) {
-                key = newChildren[newIndex].key;
-                if (key != null) {
-                    cachedChildren.push(createNode(newChildren[newIndex]));
-                    element.insertBefore(cachedChildren[cachedIndex].element, cachedIndex == cachedLength ? null : cachedChildren[cachedIndex + 1].element);
-                    delta++;
+            newIndex++;
+        }
+        // Without any keyless nodes we are done
+        if (!keyLess)
+            return cachedChildren;
+        // calculate common (old and new) keyless
+        keyLess = (keyLess - Math.abs(deltaKeyless)) >> 1;
+        // reorder just nonkeyed nodes
+        newIndex = backupNewIndex;
+        cachedIndex = backupCachedIndex;
+        while (newIndex < newEnd) {
+            if (cachedIndex < cachedEnd) {
+                cachedKey = cachedChildren[cachedIndex].key;
+                if (cachedKey != null) {
                     cachedIndex++;
-                    cachedLength++;
+                    continue;
                 }
+            }
+            key = newChildren[newIndex].key;
+            if (newIndex < cachedEnd && key === cachedChildren[newIndex].key) {
+                if (key != null) {
+                    newIndex++;
+                    continue;
+                }
+                cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                keyLess--;
                 newIndex++;
+                cachedIndex = newIndex;
+                continue;
             }
-            // Without any keyless nodes we are done
-            if (!keyLess)
-                return cachedChildren;
-            // calculate common (old and new) keyless
-            keyLess = (keyLess-Math.abs(deltaKeyless))>>1;
-            // reorder just nonkeyed nodes
-            newIndex = cachedIndex = backupCommonIndex;
-            while (newIndex < newLength) {
-                if (cachedIndex < cachedLength) {
-                    cachedKey = cachedChildren[cachedIndex].key;
-                    if (cachedKey != null) {
-                        cachedIndex++;
-                        continue;
+            if (key != null) {
+                assert(newIndex === cachedIndex);
+                if (keyLess === 0 && deltaKeyless < 0) {
+                    while (true) {
+                        removeNode(cachedChildren[cachedIndex]);
+                        cachedChildren.splice(cachedIndex, 1);
+                        cachedEnd--;
+                        cachedLength--;
+                        deltaKeyless++;
+                        assert(cachedIndex !== cachedEnd, "there still need to exist key node");
+                        if (cachedChildren[cachedIndex].key != null)
+                            break;
                     }
-                }
-                key = newChildren[newIndex].key;
-                if (newIndex < cachedLength && key === cachedChildren[newIndex].key) {
-                    if (key != null) {
-                        newIndex++;
-                        continue;
-                    }
-                    cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
-                    keyLess--;
-                    newIndex++;
-                    cachedIndex = newIndex;
                     continue;
                 }
-                if (key != null) {
-                    assert(newIndex === cachedIndex);
-                    if (keyLess===0 && deltaKeyless < 0) {
-                        while (true) {
-                            removeNode(cachedChildren[cachedIndex]);
-                            cachedChildren.splice(cachedIndex, 1);
-                            cachedLength--;
-                            deltaKeyless++;
-                            assert(cachedIndex !== cachedLength, "there still need to exist key node");
-                            if (cachedChildren[cachedIndex].key != null)
-                                break;
-                        }
-                        continue;
-                    }
-                    while (cachedChildren[cachedIndex].key == null)
-                        cachedIndex++;
-                    assert(key === cachedChildren[cachedIndex].key);
-                    cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
-                    cachedChildren.splice(cachedIndex + 1, 1);
-                    element.insertBefore(cachedChildren[newIndex].element, cachedChildren[newIndex + 1].element);
-                    newIndex++;
-                    cachedIndex = newIndex;
-                    continue;
-                }
-                if (cachedIndex < cachedLength) {
-                    element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[newIndex].element);
-                    cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
-                    cachedChildren.splice(cachedIndex + 1, 1);
-                    cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
-                    keyLess--;
-                    newIndex++;
+                while (cachedChildren[cachedIndex].key == null)
                     cachedIndex++;
-                } else {
-                    cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex]));
-                    element.insertBefore(cachedChildren[newIndex].element, newIndex == cachedLength ? null : cachedChildren[newIndex + 1].element);
-                    newIndex++;
-                    cachedIndex++;
-                    cachedLength++;
-                }
+                assert(key === cachedChildren[cachedIndex].key);
+                cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
+                cachedChildren.splice(cachedIndex + 1, 1);
+                element.insertBefore(cachedChildren[newIndex].element, cachedChildren[newIndex + 1].element);
+                newIndex++;
+                cachedIndex = newIndex;
+                continue;
             }
-            while (cachedLength > newIndex) {
-                cachedLength--;
-                removeNode(cachedChildren[cachedLength]);
-                cachedChildren.pop();
+            if (cachedIndex < cachedEnd) {
+                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[newIndex].element);
+                cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
+                cachedChildren.splice(cachedIndex + 1, 1);
+                cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                keyLess--;
+                newIndex++;
+                cachedIndex++;
+            } else {
+                cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex]));
+                cachedEnd++;
+                cachedLength++;
+                element.insertBefore(cachedChildren[newIndex].element, newIndex + 1 === cachedLength ? null : cachedChildren[newIndex + 1].element);
+                newIndex++;
+                cachedIndex++;
             }
+        }
+        while (cachedEnd > newIndex) {
+            cachedEnd--;
+            removeNode(cachedChildren[cachedEnd]);
+            cachedChildren.splice(cachedEnd, 1);
         }
         return cachedChildren;
     }
