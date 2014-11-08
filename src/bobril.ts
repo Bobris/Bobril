@@ -553,7 +553,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             if (!keyLess)
                 return cachedChildren;
             // calculate common (old and new) keyless
-            keyLess = (keyLess-deltaKeyless)>>1;
+            keyLess = (keyLess-Math.abs(deltaKeyless))>>1;
             // reorder just nonkeyed nodes
             newIndex = cachedIndex = backupCommonIndex;
             while (newIndex < newLength) {

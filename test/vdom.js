@@ -193,5 +193,11 @@ describe("updateNode", function () {
     it("moveNonKeyBackAndRemoveLastNonKey", function () {
         advancedTest("a:A,D,b:B,c:C,D1", "a:E,b:F,D2,c:G", "a:E:0,b:F:2,D2:1,c:G:3");
     });
+    it("moveNonKeyBackAndRemoveNonLastNonKey", function () {
+        advancedTest("a:A,D,b:B,D1,c:C", "a:E,b:F,D2,c:G", "a:E:0,b:F:2,D2:1,c:G:4");
+    });
+    it("insertKeyWithLastNonKey", function () {
+        advancedTest("a:A,b:B,F", "a:C,c:E,b:D,d:E2,G", "a:C:0,c:E,b:D:1,d:E2,G:2");
+    });
 });
 //# sourceMappingURL=vdom.js.map
