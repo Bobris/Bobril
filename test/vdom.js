@@ -133,6 +133,18 @@ describe("updateNode", function () {
     it("removeNonKey", function () {
         advancedTest("A,B", "C", "C:0");
     });
+    it("moveKeyBack", function () {
+        advancedTest("a:A,b:B,c:C,d:D", "b:b,c:c,d:d,a:a", "b:b:1,c:c:2,d:d:3,a:a:0");
+    });
+    it("moveKeyNearlyBack", function () {
+        advancedTest("a:A,b:B,c:C,d:D", "b:b,c:c,a:a,d:d", "b:b:1,c:c:2,a:a:0,d:d:3");
+    });
+    it("ThreeKeySwaps", function () {
+        advancedTest("a:A,b:B,c:C,d:D,e:E,f:F", "b:b,a:a,d:d,c:c,f:f,e:e", "b:b:1,a:a:0,d:d:3,c:c:2,f:f:5,e:e:4");
+    });
+    it("reveseKeys", function () {
+        advancedTest("a:A,b:B,c:C,d:D", "d:d,c:c,b:b,a:a", "d:d:3,c:c:2,b:b:1,a:a:0");
+    });
     it("removeLastKeyAndNonKey1", function () {
         advancedTest("D,a:A,b:B,c:C", "a:E,b:F", "a:E:1,b:F:2");
     });
@@ -169,6 +181,9 @@ describe("updateNode", function () {
     it("swapAddLastKeyAndAddNonKey1", function () {
         advancedTest("a:A,b:B", "b:D,a:E,c:F,C", "b:D:1,a:E:0,c:F,C");
     });
+    it("complexSwapAddLastKeyAndAddNonKey1", function () {
+        advancedTest("v:v,w:w,a:A,b:B", "w:W,v:V,b:D,a:E,C,c:F", "w:W:1,v:V:0,b:D:3,a:E:2,C,c:F");
+    });
     it("swapAddLastKeyAndAddNonKey2", function () {
         advancedTest("a:A,b:B", "b:D,a:E,C,c:F", "b:D:1,a:E:0,C,c:F");
     });
@@ -187,11 +202,20 @@ describe("updateNode", function () {
     it("moveNonKeyFront", function () {
         advancedTest("a:A,b:B,D,c:C", "a:E,D2,b:F,c:G", "a:E:0,D2:2,b:F:1,c:G:3");
     });
+    it("complexMoveNonKeyFront", function () {
+        advancedTest("x:x,y:y,a:A,b:B,D,c:C,v:v,w:w", "y:Y,x:X,a:E,D2,b:F,c:G,w:W,v:V", "y:Y:1,x:X:0,a:E:2,D2:4,b:F:3,c:G:5,w:W:7,v:V:6");
+    });
     it("moveNonKeyBack", function () {
         advancedTest("a:A,D,b:B,c:C", "a:E,b:F,D2,c:G", "a:E:0,b:F:2,D2:1,c:G:3");
     });
     it("moveNonKeyBackAndRemoveLastNonKey", function () {
         advancedTest("a:A,D,b:B,c:C,D1", "a:E,b:F,D2,c:G", "a:E:0,b:F:2,D2:1,c:G:3");
+    });
+    it("moveNonKeyBackAndRemoveNonLastNonKey", function () {
+        advancedTest("a:A,D,b:B,D1,c:C", "a:E,b:F,D2,c:G", "a:E:0,b:F:2,D2:3,c:G:4");
+    });
+    it("insertKeyWithLastNonKey", function () {
+        advancedTest("a:A,b:B,F", "a:C,c:E,b:D,d:E2,G", "a:C:0,c:E,b:D:1,d:E2,G:2");
     });
 });
 //# sourceMappingURL=vdom.js.map
