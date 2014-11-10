@@ -1,4 +1,4 @@
-﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.d.ts"/>
 var BasicApp;
 (function (BasicApp) {
     function p() {

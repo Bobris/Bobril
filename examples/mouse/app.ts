@@ -16,50 +16,32 @@ module MouseApp {
         }
 
         static onClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new Clicked(event));
+            ctx.data.onAdd(new EventWrapper(event, "Click"));
             return false;
         }
 
         static onDoubleClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new DoubleClicked(event));
+            ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return false;
         }
 
         static onMouseDown(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new MouseDown(event));
+            ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return false;
         }
 
         static onMouseUp(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new MouseUp(event));
-            return false;
-        }
-
-        static onMouseMove(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            //ctx.data.onAdd(new MouseMove(event));
-            return false;
-        }
-
-        static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
-            ctx.data.onAdd(new MouseEnter(event));
-        }
-
-        static onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
-            ctx.data.onAdd(new MouseLeave(event));
-        }
-
-        static onMouseOver(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            //ctx.data.onAdd(new MouseOver(event));
+            ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
             return false;
         }
 
         static onSwipeLeft(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new SwipedLeft(event));
+            ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
             return false;
         }
 
         static onSwipeRight(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
-            ctx.data.onAdd(new SwipedRight(event));
+            ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return false;
         }
     }
@@ -75,83 +57,11 @@ module MouseApp {
         toString(): string;
     }
 
-    class Clicked implements IEvent {
-        constructor(private ev: IMouseEvent) {}
+    class EventWrapper implements IEvent {
+        constructor(private ev: IMouseEvent, private eventName: string) { }
 
         toString(): string {
-            return "Clicked ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class DoubleClicked implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Double clicked ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class MouseDown implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Mouse down ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class MouseUp implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Mouse up ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class MouseMove implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Mouse move ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class MouseOver implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Mouse over ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class MouseEnter implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Mouse enter ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class MouseLeave implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Mouse leave ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class SwipedLeft implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Swiped left ClientX: "+ this.ev.x + " ClientY: " + this.ev.y;
-        }
-    }
-
-    class SwipedRight implements IEvent {
-        constructor(private ev: IMouseEvent) { }
-
-        toString(): string {
-            return "Swiped right ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName +" ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
         }
     }
 
@@ -169,8 +79,8 @@ module MouseApp {
         return [
             {
                 tag: "button",
-                attrs: { style: { fontSize: "3em" } },
-                children: "aaa",
+                attrs: { style: { fontSize: "3em", marginBottom: "10px" } },
+                children: "Click button",
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
@@ -178,12 +88,13 @@ module MouseApp {
             },
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "120px" }, id: "test" },
+                attrs: { style: { border: "1px solid", minHeight: "120px" } },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here!"}].concat(events.map((ev: IEvent) => e(ev)))
+                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }]
+                            .concat(events.map((ev: IEvent) => e(ev)))
             }
         ];
     });
