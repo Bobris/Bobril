@@ -59,7 +59,9 @@
   <ItemGroup>
     <Content Include="examples\basic\index.html" />
     <Content Include="examples\game\index.html" />
+    <Content Include="examples\index.html" />
     <Content Include="examples\input\index.html" />
+    <Content Include="examples\mouseenter\index.html" />
     <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
     <Content Include="examples\vg\index.html" />
@@ -69,6 +71,7 @@
     <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="examples\game\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />
+    <TypeScriptCompile Include="examples\mouseenter\app.ts" />
     <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
     <TypeScriptCompile Include="examples\vg\app.ts" />

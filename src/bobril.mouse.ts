@@ -212,7 +212,6 @@
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
             if (!node)
                 return false;
-
             var param: IMouseEvent = buildParam(ev);
             if (b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
@@ -222,14 +221,30 @@
         };
     }
 
-    function createNoBubblingHandler(handlerName: string) {
+    function isValidMouseLeave(ev: MouseEvent): boolean {
+        var from = ev.fromElement;
+        var to = ev.toElement;
+        while (to) {
+            to = (<any>to).parentElement;
+            if (to == from) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function createNoBubblingHandler(handlerName: string, validator?: (ev: IMouseEvent) => boolean) {
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
             if (!node)
                 return false;
 
             var param: IMouseEvent = buildParam(ev);
             var c = node.component;
+            
             if (c) {
+                if (validator && !validator(ev))
+                    return false;
+
                 var m = (<any>c)[handlerName];
                 if (m) {
                     m.call(c, node.ctx, param);
@@ -245,7 +260,7 @@
     addEvent("touchstart", 1, touchStartBuster);
 
     addEvent("mouseover", 300, createNoBubblingHandler("onMouseEnter")); // bubbling mouseover and out are same basically same as nonbubling mouseenter and leave
-    addEvent("mouseout", 300, createNoBubblingHandler("onMouseLeave"));
+    addEvent("mouseout", 300, createNoBubblingHandler("onMouseLeave", isValidMouseLeave));
 
     addEvent("click", 400, createHandler("onClick"));
     addEvent("dblclick", 400, createHandler("onDoubleClick"));
