@@ -62,6 +62,7 @@
     <Content Include="examples\input\index.html" />
     <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
+    <Content Include="examples\router\index.html" />
     <Content Include="examples\vg\index.html" />
   </ItemGroup>
   <ItemGroup />
@@ -71,12 +72,15 @@
     <TypeScriptCompile Include="examples\input\app.ts" />
     <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
+    <TypeScriptCompile Include="examples\router\app.ts" />
     <TypeScriptCompile Include="examples\vg\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.d.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.ts" />
+    <TypeScriptCompile Include="src\bobril.router.d.ts" />
+    <TypeScriptCompile Include="src\bobril.router.ts" />
     <TypeScriptCompile Include="src\bobril.swipe.d.ts" />
     <TypeScriptCompile Include="src\bobril.swipe.ts" />
     <TypeScriptCompile Include="src\bobril.onkey.d.ts" />

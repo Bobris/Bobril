@@ -763,10 +763,12 @@ b = (function (window, document, undefined) {
     function addListener(el, name) {
         function enhanceEvent(ev) {
             ev = ev || window.event;
-            var t = ev.target || ev.srcElement;
+            var t = ev.target || ev.srcElement || el;
             var n = getCacheNode(t);
             emitEvent(name, ev, t, n);
         }
+        if (("on" + name) in window)
+            el = window;
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
         } else {

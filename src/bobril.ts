@@ -735,17 +735,18 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         }
     }
 
-    function addListener(el: HTMLElement, name: string) {
+    function addListener(el: EventTarget, name: string) {
         function enhanceEvent(ev: Event) {
             ev = ev || window.event;
-            var t = ev.target || ev.srcElement;
+            var t = ev.target || ev.srcElement || el;
             var n = getCacheNode(<any>t);
             emitEvent(name, ev, <Node>t, n);
         }
+        if (("on" + name) in window) el = window;
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
         } else {
-            el.attachEvent("on" + name, enhanceEvent);
+            (<MSEventAttachmentTarget><any>el).attachEvent("on" + name, enhanceEvent);
         }
     }
 
