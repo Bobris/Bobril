@@ -10,50 +10,32 @@ var MouseApp;
         };
 
         TrackClick.onClick = function (ctx, event) {
-            ctx.data.onAdd(new Clicked(event));
+            ctx.data.onAdd(new EventWrapper(event, "Click"));
             return false;
         };
 
         TrackClick.onDoubleClick = function (ctx, event) {
-            ctx.data.onAdd(new DoubleClicked(event));
+            ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return false;
         };
 
         TrackClick.onMouseDown = function (ctx, event) {
-            ctx.data.onAdd(new MouseDown(event));
+            ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return false;
         };
 
         TrackClick.onMouseUp = function (ctx, event) {
-            ctx.data.onAdd(new MouseUp(event));
-            return false;
-        };
-
-        TrackClick.onMouseMove = function (ctx, event) {
-            //ctx.data.onAdd(new MouseMove(event));
-            return false;
-        };
-
-        TrackClick.onMouseEnter = function (ctx, event) {
-            ctx.data.onAdd(new MouseEnter(event));
-        };
-
-        TrackClick.onMouseLeave = function (ctx, event) {
-            ctx.data.onAdd(new MouseLeave(event));
-        };
-
-        TrackClick.onMouseOver = function (ctx, event) {
-            //ctx.data.onAdd(new MouseOver(event));
+            ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
             return false;
         };
 
         TrackClick.onSwipeLeft = function (ctx, event) {
-            ctx.data.onAdd(new SwipedLeft(event));
+            ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
             return false;
         };
 
         TrackClick.onSwipeRight = function (ctx, event) {
-            ctx.data.onAdd(new SwipedRight(event));
+            ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return false;
         };
         return TrackClick;
@@ -66,104 +48,15 @@ var MouseApp;
         };
     }
 
-    var Clicked = (function () {
-        function Clicked(ev) {
+    var EventWrapper = (function () {
+        function EventWrapper(ev, eventName) {
             this.ev = ev;
+            this.eventName = eventName;
         }
-        Clicked.prototype.toString = function () {
-            return "Clicked ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+        EventWrapper.prototype.toString = function () {
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
         };
-        return Clicked;
-    })();
-
-    var DoubleClicked = (function () {
-        function DoubleClicked(ev) {
-            this.ev = ev;
-        }
-        DoubleClicked.prototype.toString = function () {
-            return "Double clicked ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return DoubleClicked;
-    })();
-
-    var MouseDown = (function () {
-        function MouseDown(ev) {
-            this.ev = ev;
-        }
-        MouseDown.prototype.toString = function () {
-            return "Mouse down ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return MouseDown;
-    })();
-
-    var MouseUp = (function () {
-        function MouseUp(ev) {
-            this.ev = ev;
-        }
-        MouseUp.prototype.toString = function () {
-            return "Mouse up ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return MouseUp;
-    })();
-
-    var MouseMove = (function () {
-        function MouseMove(ev) {
-            this.ev = ev;
-        }
-        MouseMove.prototype.toString = function () {
-            return "Mouse move ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return MouseMove;
-    })();
-
-    var MouseOver = (function () {
-        function MouseOver(ev) {
-            this.ev = ev;
-        }
-        MouseOver.prototype.toString = function () {
-            return "Mouse over ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return MouseOver;
-    })();
-
-    var MouseEnter = (function () {
-        function MouseEnter(ev) {
-            this.ev = ev;
-        }
-        MouseEnter.prototype.toString = function () {
-            return "Mouse enter ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return MouseEnter;
-    })();
-
-    var MouseLeave = (function () {
-        function MouseLeave(ev) {
-            this.ev = ev;
-        }
-        MouseLeave.prototype.toString = function () {
-            return "Mouse leave ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return MouseLeave;
-    })();
-
-    var SwipedLeft = (function () {
-        function SwipedLeft(ev) {
-            this.ev = ev;
-        }
-        SwipedLeft.prototype.toString = function () {
-            return "Swiped left ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return SwipedLeft;
-    })();
-
-    var SwipedRight = (function () {
-        function SwipedRight(ev) {
-            this.ev = ev;
-        }
-        SwipedRight.prototype.toString = function () {
-            return "Swiped right ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return SwipedRight;
+        return EventWrapper;
     })();
 
     var events = [];
@@ -179,8 +72,8 @@ var MouseApp;
         return [
             {
                 tag: "button",
-                attrs: { style: { fontSize: "3em" } },
-                children: "aaa",
+                attrs: { style: { fontSize: "3em", marginBottom: "10px" } },
+                children: "Click button",
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
@@ -188,12 +81,12 @@ var MouseApp;
             },
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "120px" }, id: "test" },
+                attrs: { style: { border: "1px solid", minHeight: "120px" } },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here!" }].concat(events.map(function (ev) {
+                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }].concat(events.map(function (ev) {
                     return e(ev);
                 }))
             }
