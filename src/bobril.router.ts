@@ -11,7 +11,7 @@ interface IRoute {
 }
 
 interface OutFindMatch {
-    p: { [name: string]: string }
+    p: Params
 }
 
 ((b: IBobrilStatic, window: Window) => {
@@ -94,7 +94,7 @@ interface OutFindMatch {
 
     // Extracts the portions of the given URL path that match the given pattern.
     // Returns null if the pattern does not match the given path.
-    function extractParams(pattern: string, path: string): { [name: string]: string } {
+    function extractParams(pattern: string, path: string): Params {
         var object = compilePattern(pattern);
         var match = decodeURL(path).match(object.matcher);
 
@@ -114,7 +114,7 @@ interface OutFindMatch {
 
     // Returns a version of the given route path with params interpolated.
     // Throws if there is a dynamic segment of the route path for which there is no param.
-    function injectParams(pattern: string, params?: { [name: string]: string }) {
+    function injectParams(pattern: string, params?: Params) {
         params = params || {};
 
         var splatIndex = 0;
@@ -147,7 +147,7 @@ interface OutFindMatch {
         });
     }
 
-    function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): Array<IRoute> {
+    function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IRoute[] {
         var l = rs.length;
         for (var i = 0; i < l; i++) {
             var r = rs[i];
@@ -169,11 +169,16 @@ interface OutFindMatch {
         return null;
     };
 
+    var activeRoutes: IRoute[];
+    var activeParams: Params;
+
     function rootNodeFactory(): IBobrilNode {
         var path = window.location.hash.substr(1);
         if (!isAbsolute(path)) path = "/" + path;
         var out: OutFindMatch = { p: {} };
         var matches = findMatch(path, rootRoutes, out) || [];
+        activeRoutes = matches;
+        activeParams = out.p;
         var fn: (otherdata?: any) => IBobrilNode = noop;
         for (var i = 0; i < matches.length; i++) {
             ((fninner: Function, r: IRoute, routeParams: Object) => {
@@ -183,7 +188,7 @@ interface OutFindMatch {
                     otherdata.routeParams = routeParams;
                     return { data: otherdata, component: r.handler };
                 }
-            })(fn, matches[i], out.p);
+            })(fn, matches[i], activeParams);
         }
         return fn();
     }
@@ -236,16 +241,34 @@ interface OutFindMatch {
         return { name: config.name, url: config.url, handler: config.handler, children: nestedRoutes };
     }
 
-    function link(node: IBobrilNode, name: string, params?: { [name: string]: string }): IBobrilNode {
+    function isActive(name: string, params?: Params): boolean {
+        if (params) {
+            for (var prop in params) {
+                if (activeParams[prop] !== params[prop]) return false;
+            }
+        }
+        for (var i = 0, l = activeRoutes.length; i < l; i++) {
+            if (activeRoutes[i].name == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
         var r = nameRouteMap[name];
         var url = injectParams(r.url, params);
         node.data = node.data || {};
+        node.data.active = isActive(name, params);
         node.data.url = url;
         b.postEnhance(node, {
             init: (ctx: any, me: IBobrilNode) => {
+                me.attrs = me.attrs || {};
                 if (me.tag == "a") {
-                    me.attrs = me.attrs || {};
                     me.attrs.href = "#" + url;
+                }
+                if (ctx.data.active) {
+                    me.attrs.className += " active";
                 }
             },
             onClick: (ctx: any) => {

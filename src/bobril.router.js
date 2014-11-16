@@ -157,12 +157,17 @@
     }
     ;
 
+    var activeRoutes;
+    var activeParams;
+
     function rootNodeFactory() {
         var path = window.location.hash.substr(1);
         if (!isAbsolute(path))
             path = "/" + path;
         var out = { p: {} };
         var matches = findMatch(path, rootRoutes, out) || [];
+        activeRoutes = matches;
+        activeParams = out.p;
         var fn = noop;
         for (var i = 0; i < matches.length; i++) {
             (function (fninner, r, routeParams) {
@@ -172,7 +177,7 @@
                     otherdata.routeParams = routeParams;
                     return { data: otherdata, component: r.handler };
                 };
-            })(fn, matches[i], out.p);
+            })(fn, matches[i], activeParams);
         }
         return fn();
     }
@@ -225,16 +230,35 @@
         return { name: config.name, url: config.url, handler: config.handler, children: nestedRoutes };
     }
 
+    function isActive(name, params) {
+        if (params) {
+            for (var prop in params) {
+                if (activeParams[prop] !== params[prop])
+                    return false;
+            }
+        }
+        for (var i = 0, l = activeRoutes.length; i < l; i++) {
+            if (activeRoutes[i].name == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function link(node, name, params) {
         var r = nameRouteMap[name];
         var url = injectParams(r.url, params);
         node.data = node.data || {};
+        node.data.active = isActive(name, params);
         node.data.url = url;
         b.postEnhance(node, {
             init: function (ctx, me) {
+                me.attrs = me.attrs || {};
                 if (me.tag == "a") {
-                    me.attrs = me.attrs || {};
                     me.attrs.href = "#" + url;
+                }
+                if (ctx.data.active) {
+                    me.attrs.className += " active";
                 }
             },
             onClick: function (ctx) {
