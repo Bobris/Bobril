@@ -207,7 +207,8 @@ b = (function (window, document, undefined) {
                     before = element.firstChild;
                 }
                 while (before) {
-                    before[nodeBackpointer] = j;
+                    if (before.nodeType !== 3)
+                        before[nodeBackpointer] = j;
                     j.element.push(before);
                     before = before.nextSibling;
                 }
@@ -231,14 +232,19 @@ b = (function (window, document, undefined) {
             if (component.destroy)
                 component.destroy(c.ctx, c, c.element);
         }
+
+        // This is just to help GC to break cycle, it is probably useless for modern browsers, but in IE8 you never know ...
         if (c.tag !== "") {
             var el = c.element;
             if (isArray(el)) {
                 for (var j = 0; j < el.length; j++) {
-                    el[j][nodeBackpointer] = null;
+                    var ee = el[j];
+                    if (ee.nodeType !== 3)
+                        ee[nodeBackpointer] = null;
                 }
             } else {
-                el[nodeBackpointer] = null;
+                if (el.nodeType !== 3)
+                    el[nodeBackpointer] = null;
             }
         }
     }
@@ -317,7 +323,8 @@ b = (function (window, document, undefined) {
             }
             var newElements = [];
             while (elprev !== el) {
-                elprev[nodeBackpointer] = n;
+                if (elprev.nodeType !== 3)
+                    elprev[nodeBackpointer] = n;
                 newElements.push(elprev);
                 elprev = elprev.nextSibling;
             }
