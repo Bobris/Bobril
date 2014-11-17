@@ -2,6 +2,7 @@
 /// <reference path="../src/bobril.d.ts"/>
 function expectInsensitive(s1, s2) {
     s1 = s1.replace(/\s/g, '');
+    s1 = s1.replace(/;\"/g, '"');
     expect(s1.toLowerCase()).toBe(s2.toLowerCase());
 }
 
@@ -9,6 +10,28 @@ describe("updateElement", function () {
     it("set className", function () {
         var r = b.createNode({ tag: "div", attrs: { className: "a" } });
         expect(r.element.className).toBe("a");
+    });
+
+    it("set style by object", function () {
+        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "10px" } } });
+        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
+    });
+
+    it("set style by string", function () {
+        var r = b.createNode({ tag: "div", attrs: { style: "font-size:10px" } });
+        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
+    });
+
+    it("update style from string to object", function () {
+        var r = b.createNode({ tag: "div", attrs: { style: "font-size:5px" } });
+        r = b.updateNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, r);
+        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
+    });
+
+    it("update style from object to string", function () {
+        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "5px" } } });
+        r = b.updateNode({ tag: "div", attrs: { style: "font-size:10px" } }, r);
+        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
     });
 });
 

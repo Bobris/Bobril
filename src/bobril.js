@@ -80,21 +80,27 @@ b = (function (window, document, undefined) {
             if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    var rule;
-                    if (oldAttr) {
-                        for (rule in newAttr) {
-                            var v = newAttr[rule];
-                            if (oldAttr[rule] !== v)
-                                el.style[rule] = v;
-                        }
-                        for (rule in oldAttr) {
-                            if (!(rule in newAttr))
-                                el.style[rule] = "";
+                    if (typeof newAttr === "object") {
+                        var rule;
+                        if (oldAttr && typeof oldAttr === "object") {
+                            for (rule in newAttr) {
+                                var v = newAttr[rule];
+                                if (oldAttr[rule] !== v)
+                                    el.style[rule] = v;
+                            }
+                            for (rule in oldAttr) {
+                                if (!(rule in newAttr))
+                                    el.style[rule] = "";
+                            }
+                        } else {
+                            if (oldAttr)
+                                el.style.cssText = "";
+                            for (rule in newAttr) {
+                                el.style[rule] = newAttr[rule];
+                            }
                         }
                     } else {
-                        for (rule in newAttr) {
-                            el.style[rule] = newAttr[rule];
-                        }
+                        el.style.cssText = newAttr;
                     }
                 } else if (inNamespace) {
                     if (attrName === "href")

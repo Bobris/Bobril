@@ -75,19 +75,25 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    var rule: string;
-                    if (oldAttr) {
-                        for (rule in newAttr) {
-                            var v = newAttr[rule];
-                            if (oldAttr[rule] !== v) el.style[<any>rule] = v;
-                        }
-                        for (rule in oldAttr) {
-                            if (!(rule in newAttr)) el.style[<any>rule] = "";
+                    if (typeof newAttr === "object") {
+                        var rule: string;
+                        if (oldAttr && typeof oldAttr === "object") {
+                            for (rule in newAttr) {
+                                var v = newAttr[rule];
+                                if (oldAttr[rule] !== v) el.style[<any>rule] = v;
+                            }
+                            for (rule in oldAttr) {
+                                if (!(rule in newAttr)) el.style[<any>rule] = "";
+                            }
+                        } else {
+                            if (oldAttr)
+                                el.style.cssText = "";
+                            for (rule in newAttr) {
+                                el.style[<any>rule] = newAttr[rule];
+                            }
                         }
                     } else {
-                        for (rule in newAttr) {
-                            el.style[<any>rule] = newAttr[rule];
-                        }
+                        el.style.cssText = newAttr;
                     }
                 } else if (inNamespace) {
                     if (attrName === "href") el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
