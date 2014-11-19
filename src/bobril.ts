@@ -62,6 +62,11 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         }
         return keys;
     });
+
+    function isObject(value: any): boolean {
+        return typeof value === "object";
+    }
+
     var inNamespace: boolean = false;
     var inSvg: boolean = false;
     var updateCall: Array<boolean> = [];
@@ -75,9 +80,9 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    if (typeof newAttr === "object") {
+                    if (isObject(newAttr)) {
                         var rule: string;
-                        if (oldAttr && typeof oldAttr === "object") {
+                        if (isObject(oldAttr)) {
                             for (rule in newAttr) {
                                 var v = newAttr[rule];
                                 if (oldAttr[rule] !== v) el.style[<any>rule] = v;
@@ -856,6 +861,14 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         return node;
     }
 
+    function assign(target: Object, source: Object): Object {
+        if (source != null) for (var propname in source) {
+            if (!source.hasOwnProperty(propname)) continue;
+            (<any>target)[propname] = (<any>source)[propname];
+        }
+        return target;
+    }
+
     function preventDefault(event: Event) {
         var pd = event.preventDefault;
         if (pd) pd.call(event); else (<any>event).returnValue = false;
@@ -870,6 +883,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         isArray: isArray,
         uptime: () => uptime,
         now: now,
+        assign: assign,
         invalidate: scheduleUpdate,
         preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,

@@ -19,13 +19,15 @@ interface IBobrilStatic {
     uptime(): number;
     // shim for Date.now()
     now(): number;
+    // shalows copy all own members from source to target returns target, source could be null, target must be non-null 
+    assign(target: Object, source: Object): Object;
     // shim for Event.preventDefault()
     preventDefault(event: Event): void;
     // this could be called only from component init and forces recreation of child nodes
     vmlNode(): void;
     // DOM to vdom resolver
     deref(n: Node): IBobrilCacheNode;
-    // adds native event to body
+    // adds native event to window or body
     addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
     bubble(node: IBobrilCacheNode, name: string, param: any): boolean;
     postEnhance(node: IBobrilNode, methods: IBobrilComponent): void;

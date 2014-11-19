@@ -66,6 +66,11 @@ b = (function (window, document, undefined) {
         }
         return keys;
     });
+
+    function isObject(value) {
+        return typeof value === "object";
+    }
+
     var inNamespace = false;
     var inSvg = false;
     var updateCall = [];
@@ -80,9 +85,9 @@ b = (function (window, document, undefined) {
             if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    if (typeof newAttr === "object") {
+                    if (isObject(newAttr)) {
                         var rule;
-                        if (oldAttr && typeof oldAttr === "object") {
+                        if (isObject(oldAttr)) {
                             for (rule in newAttr) {
                                 var v = newAttr[rule];
                                 if (oldAttr[rule] !== v)
@@ -889,6 +894,16 @@ b = (function (window, document, undefined) {
         return node;
     }
 
+    function assign(target, source) {
+        if (source != null)
+            for (var propname in source) {
+                if (!source.hasOwnProperty(propname))
+                    continue;
+                target[propname] = source[propname];
+            }
+        return target;
+    }
+
     function preventDefault(event) {
         var pd = event.preventDefault;
         if (pd)
@@ -908,6 +923,7 @@ b = (function (window, document, undefined) {
             return uptime;
         },
         now: now,
+        assign: assign,
         invalidate: scheduleUpdate,
         preventDefault: preventDefault,
         vmlNode: function () {

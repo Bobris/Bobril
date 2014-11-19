@@ -136,8 +136,19 @@
 
     function findMatch(path, rs, outParams) {
         var l = rs.length;
+        var notFoundRoute;
+        var defaultRoute;
+        var params;
         for (var i = 0; i < l; i++) {
             var r = rs[i];
+            if (r.isNotFound) {
+                notFoundRoute = r;
+                continue;
+            }
+            if (r.isDefault) {
+                defaultRoute = r;
+                continue;
+            }
             if (r.children) {
                 var res = findMatch(path, r.children, outParams);
                 if (res) {
@@ -146,11 +157,25 @@
                 }
             }
             if (r.url) {
-                var params = extractParams(r.url, path);
+                params = extractParams(r.url, path);
                 if (params) {
                     outParams.p = params;
                     return [r];
                 }
+            }
+        }
+        if (defaultRoute) {
+            params = extractParams(defaultRoute.url, path);
+            if (params) {
+                outParams.p = params;
+                return [defaultRoute];
+            }
+        }
+        if (notFoundRoute) {
+            params = extractParams(notFoundRoute.url, path);
+            if (params) {
+                outParams.p = params;
+                return [notFoundRoute];
             }
         }
         return null;
@@ -172,10 +197,11 @@
         for (var i = 0; i < matches.length; i++) {
             (function (fninner, r, routeParams) {
                 fn = function (otherdata) {
-                    otherdata = otherdata || {};
-                    otherdata.activeRouteHandler = fninner;
-                    otherdata.routeParams = routeParams;
-                    return { data: otherdata, component: r.handler };
+                    var data = r.data || {};
+                    b.assign(data, otherdata);
+                    data.activeRouteHandler = fninner;
+                    data.routeParams = routeParams;
+                    return { data: data, component: r.handler };
                 };
             })(fn, matches[i], activeParams);
         }
@@ -208,7 +234,11 @@
                 nameRouteMap[name] = r;
                 u = joinPath(u, name);
             }
-            if (r.url) {
+            if (r.isDefault) {
+                u = url;
+            } else if (r.isNotFound) {
+                u = joinPath(url, "*");
+            } else if (r.url) {
                 u = joinPath(url, r.url);
             }
             r.url = u;
@@ -227,7 +257,15 @@
     }
 
     function route(config, nestedRoutes) {
-        return { name: config.name, url: config.url, handler: config.handler, children: nestedRoutes };
+        return { name: config.name, url: config.url, data: config.data, handler: config.handler, children: nestedRoutes };
+    }
+
+    function routeDefault(config) {
+        return { name: config.name, data: config.data, handler: config.handler, isDefault: true };
+    }
+
+    function routeNotFound(config) {
+        return { name: config.name, data: config.data, handler: config.handler, isNotFound: true };
     }
 
     function isActive(name, params) {
@@ -271,6 +309,8 @@
 
     b.routes = routes;
     b.route = route;
+    b.routeDefault = routeDefault;
+    b.routeNotFound = routeNotFound;
     b.link = link;
 })(b, window);
 //# sourceMappingURL=bobril.router.js.map

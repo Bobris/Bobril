@@ -6,8 +6,11 @@
 interface IRoute {
     name?: string;
     url?: string;
+    data?: Object;
     handler: IBobrilComponent;
     children?: Array<IRoute>;
+    isDefault?: boolean;
+    isNotFound?: boolean;
 }
 
 interface OutFindMatch {
@@ -149,8 +152,17 @@ interface OutFindMatch {
 
     function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IRoute[] {
         var l = rs.length;
+        var notFoundRoute: IRoute;
+        var defaultRoute: IRoute;
+        var params: Params;
         for (var i = 0; i < l; i++) {
             var r = rs[i];
+            if (r.isNotFound) {
+                notFoundRoute = r; continue;
+            }
+            if (r.isDefault) {
+                defaultRoute = r; continue;
+            }
             if (r.children) {
                 var res = findMatch(path, r.children, outParams);
                 if (res) {
@@ -159,11 +171,25 @@ interface OutFindMatch {
                 }
             }
             if (r.url) {
-                var params = extractParams(r.url, path);
+                params = extractParams(r.url, path);
                 if (params) {
                     outParams.p = params;
                     return [r];
                 }
+            }
+        }
+        if (defaultRoute) {
+            params = extractParams(defaultRoute.url, path);
+            if (params) {
+                outParams.p = params;
+                return [defaultRoute];
+            }
+        }
+        if (notFoundRoute) {
+            params = extractParams(notFoundRoute.url, path);
+            if (params) {
+                outParams.p = params;
+                return [notFoundRoute];
             }
         }
         return null;
@@ -183,10 +209,11 @@ interface OutFindMatch {
         for (var i = 0; i < matches.length; i++) {
             ((fninner: Function, r: IRoute, routeParams: Object) => {
                 fn = (otherdata?: any) => {
-                    otherdata = otherdata || {};
-                    otherdata.activeRouteHandler = fninner;
-                    otherdata.routeParams = routeParams;
-                    return { data: otherdata, component: r.handler };
+                    var data: any = r.data || {};
+                    b.assign(data, otherdata);
+                    data.activeRouteHandler = fninner;
+                    data.routeParams = routeParams;
+                    return { data: data, component: r.handler };
                 }
             })(fn, matches[i], activeParams);
         }
@@ -219,7 +246,11 @@ interface OutFindMatch {
                 nameRouteMap[name] = r;
                 u = joinPath(u, name);
             }
-            if (r.url) {
+            if (r.isDefault) {
+                u = url;
+            } else if (r.isNotFound) {
+                u = joinPath(url, "*");
+            } else if (r.url) {
                 u = joinPath(url, r.url);
             }
             r.url = u;
@@ -238,7 +269,15 @@ interface OutFindMatch {
     }
 
     function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRoute {
-        return { name: config.name, url: config.url, handler: config.handler, children: nestedRoutes };
+        return { name: config.name, url: config.url, data: config.data, handler: config.handler, children: nestedRoutes };
+    }
+
+    function routeDefault(config: IRouteConfig): IRoute {
+        return { name: config.name, data: config.data, handler: config.handler, isDefault: true };
+    }
+
+    function routeNotFound(config: IRouteConfig): IRoute {
+        return { name: config.name, data: config.data, handler: config.handler, isNotFound: true };
     }
 
     function isActive(name: string, params?: Params): boolean {
@@ -281,5 +320,7 @@ interface OutFindMatch {
 
     b.routes = routes;
     b.route = route;
+    b.routeDefault = routeDefault;
+    b.routeNotFound = routeNotFound;
     b.link = link;
 })(b, window);
