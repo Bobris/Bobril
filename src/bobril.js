@@ -76,6 +76,11 @@ b = (function (window, document, undefined) {
     var updateCall = [];
     var updateInstance = [];
 
+    function isCheckboxlike(el) {
+        var t = el.type;
+        return t === "checkbox" || t === "radio";
+    }
+
     function updateElement(n, el, newAttrs, oldAttrs) {
         if (!newAttrs)
             return undefined;
@@ -115,15 +120,29 @@ b = (function (window, document, undefined) {
                     else
                         el.setAttribute(attrName, newAttr);
                 } else if (attrName === "value" && attrName in el) {
-                    var currentValue = (el[attrName]);
-                    if (oldAttr === undefined) {
-                        n.ctx["b$value"] = newAttr;
-                    }
-                    if (newAttr !== currentValue) {
-                        if (oldAttr === undefined || currentValue === oldAttr) {
-                            el[attrName] = newAttr;
-                        } else {
-                            emitEvent("input", null, el, n);
+                    if (isCheckboxlike(el)) {
+                        var currentChecked = el.checked;
+                        if (oldAttr === undefined) {
+                            n.ctx["b$value"] = newAttr;
+                        }
+                        if (newAttr !== currentChecked) {
+                            if (oldAttr === undefined || currentChecked === oldAttr) {
+                                el.checked = newAttr;
+                            } else {
+                                emitEvent("input", null, el, n);
+                            }
+                        }
+                    } else {
+                        var currentValue = (el[attrName]);
+                        if (oldAttr === undefined) {
+                            n.ctx["b$value"] = newAttr;
+                        }
+                        if (newAttr !== currentValue) {
+                            if (oldAttr === undefined || currentValue === oldAttr) {
+                                el[attrName] = newAttr;
+                            } else {
+                                emitEvent("input", null, el, n);
+                            }
                         }
                     }
                 } else if (attrName in el && !(attrName === "list" || attrName === "form")) {

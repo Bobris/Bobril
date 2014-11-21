@@ -72,6 +72,11 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
     var updateCall: Array<boolean> = [];
     var updateInstance: Array<IBobrilCacheNode> = [];
 
+    function isCheckboxlike(el: HTMLInputElement) {
+        var t = el.type;
+        return t === "checkbox" || t === "radio";
+    }
+
     function updateElement(n: IBobrilCacheNode, el: HTMLElement, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
         if (!newAttrs) return undefined;
         for (var attrName in newAttrs) {
@@ -105,15 +110,29 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                     else if (attrName === "className") el.setAttribute("class", newAttr);
                     else el.setAttribute(attrName, newAttr);
                 } else if (attrName === "value" && attrName in el) {
-                    var currentValue = ((<any>el)[attrName]);
-                    if (oldAttr === undefined) {
-                        (<any>n.ctx)["b$value"] = newAttr;
-                    }
-                    if (newAttr !== currentValue) {
-                        if (oldAttr === undefined || currentValue === oldAttr) {
-                            (<any>el)[attrName] = newAttr;
-                        } else {
-                            emitEvent("input", null, el, n);
+                    if (isCheckboxlike(<HTMLInputElement>el)) {
+                        var currentChecked = (<any>el).checked;
+                        if (oldAttr === undefined) {
+                            (<any>n.ctx)["b$value"] = newAttr;
+                        }
+                        if (newAttr !== currentChecked) {
+                            if (oldAttr === undefined || currentChecked === oldAttr) {
+                                (<any>el).checked = newAttr;
+                            } else {
+                                emitEvent("input", null, el, n);
+                            }
+                        }
+                    } else {
+                        var currentValue = ((<any>el)[attrName]);
+                        if (oldAttr === undefined) {
+                            (<any>n.ctx)["b$value"] = newAttr;
+                        }
+                        if (newAttr !== currentValue) {
+                            if (oldAttr === undefined || currentValue === oldAttr) {
+                                (<any>el)[attrName] = newAttr;
+                            } else {
+                                emitEvent("input", null, el, n);
+                            }
                         }
                     }
                 } else if (attrName in el && !(attrName === "list" || attrName === "form")) {

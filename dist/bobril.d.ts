@@ -38,7 +38,8 @@ interface IBobrilAttributes {
     href?: string;
     className?: string;
     style?: Object;
-    value?: string;
+    // boolean | string
+    value?: any;
     [name: string]: any;
 }
 
