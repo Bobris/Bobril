@@ -119,7 +119,7 @@ b = (function (window, document, undefined) {
                         el.setAttribute("class", newAttr);
                     else
                         el.setAttribute(attrName, newAttr);
-                } else if (attrName === "value" && attrName in el) {
+                } else if (attrName === "value" && (el.tagName === "INPUT" || el.tagName === "SELECT")) {
                     if (isCheckboxlike(el)) {
                         var currentChecked = el.checked;
                         if (oldAttr === undefined) {
@@ -136,6 +136,9 @@ b = (function (window, document, undefined) {
                         var currentValue = (el[attrName]);
                         if (oldAttr === undefined) {
                             n.ctx["b$value"] = newAttr;
+                            if (el.tagName === "SELECT" && newAttr !== currentValue) {
+                                emitEvent("input", null, el, n);
+                            }
                         }
                         if (newAttr !== currentValue) {
                             if (oldAttr === undefined || currentValue === oldAttr) {

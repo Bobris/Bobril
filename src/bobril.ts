@@ -109,7 +109,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                     if (attrName === "href") el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
                     else if (attrName === "className") el.setAttribute("class", newAttr);
                     else el.setAttribute(attrName, newAttr);
-                } else if (attrName === "value" && attrName in el) {
+                } else if (attrName === "value" && (el.tagName === "INPUT" || el.tagName === "SELECT")) {
                     if (isCheckboxlike(<HTMLInputElement>el)) {
                         var currentChecked = (<any>el).checked;
                         if (oldAttr === undefined) {
@@ -126,6 +126,9 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                         var currentValue = ((<any>el)[attrName]);
                         if (oldAttr === undefined) {
                             (<any>n.ctx)["b$value"] = newAttr;
+                            if (el.tagName === "SELECT" && newAttr !== currentValue) {
+                                emitEvent("input", null, el, n);
+                            }
                         }
                         if (newAttr !== currentValue) {
                             if (oldAttr === undefined || currentValue === oldAttr) {

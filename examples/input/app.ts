@@ -4,6 +4,17 @@ module InputApp {
         return { tag: tag, children: args };
     }
 
+    function layoutPair(left: any, right: any, leftWidth= "50%"): IBobrilNode {
+        return {
+            tag: "div",
+            attrs: { style: { display:"table", width:"100%" } },
+            children: [
+                { tag: "div", attrs: { style: { display:"table-cell", width: leftWidth } }, children: left },
+                { tag: "div", attrs: { style: { display: "table-cell" } }, children: right }
+            ]
+        };
+    }
+
     // Model
     var frame = 0;
     var value = "Change this";
@@ -30,6 +41,13 @@ module InputApp {
 
     function setRadio2(v: boolean) {
         radio2 = v;
+        b.invalidate();
+    }
+
+    var option = "";
+
+    function setOption(v: string) {
+        option = v;
         b.invalidate();
     }
 
@@ -79,18 +97,30 @@ module InputApp {
         return { tag: "input", attrs: { type: "radio", name: groupName, value: value }, data: { onChange: onChange }, component: CheckboxComponent };
     }
 
+    function combobox(value: string, onChange: (value: string) => void, options: string[][]) {
+        return { tag: "select", attrs: { value: value }, data: { onChange: onChange }, component: TextInputComponent, children: options.map((i) => ({ tag: "option", attrs: { value: i[0] }, children: i[1] })) };
+    }
+
     b.init(() => {
         frame++;
         return [
             h("h1", "Input Bobril sample"),
-            textInput(value, setValue),
-            h("p", "Entered: ", value),
-            h("label", checkbox(checked, setChecked), "Checkbox"),
-            h("p", "Checked: ", checked ? "Yes" : "No"),
-            h("label", radiobox("g1", radio1, setRadio1), "Radio 1"),
-            h("label", radiobox("g1", radio2, setRadio2), "Radio 2"),
-            h("p", "Radio1: ", radio1 ? "Yes" : "No", " Radio2: ", radio2 ? "Yes" : "No"),
-            h("p", "Frame: " + frame)
+            layoutPair([
+                textInput(value, setValue),
+                h("p", "Entered: ", value),
+                h("label", checkbox(checked, setChecked), "Checkbox"),
+                h("p", "Checked: ", checked ? "Yes" : "No"),
+                h("label", radiobox("g1", radio1, setRadio1), "Radio 1"),
+                h("label", radiobox("g1", radio2, setRadio2), "Radio 2"),
+                h("p", "Radio1: ", radio1 ? "Yes" : "No", " Radio2: ", radio2 ? "Yes" : "No"),
+                h("p", "Frame: " + frame)
+            ], [
+                layoutPair([
+                    combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                ], [
+                    h("p", "Chosen: ", option)
+                ])
+            ])
         ];
     });
 }
