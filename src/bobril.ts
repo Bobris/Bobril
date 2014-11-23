@@ -44,7 +44,7 @@ if (!Object.create) {
     }
 }
 
-b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
+b = ((window: Window, document: Document): IBobrilStatic => {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
         if (DEBUG && !shoudBeTrue)
@@ -63,6 +63,12 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         return keys;
     });
 
+    function createTextNode(content: string): Text {
+        return document.createTextNode(content);
+    }
+
+    var hasTextContent = "textContent" in createTextNode("");
+
     function isObject(value: any): boolean {
         return typeof value === "object";
     }
@@ -71,17 +77,22 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
     var inSvg: boolean = false;
     var updateCall: Array<boolean> = [];
     var updateInstance: Array<IBobrilCacheNode> = [];
+    var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
+        (<any>el)["value"] = newValue;
+    }
 
-    function isCheckboxlike(el: HTMLInputElement) {
-        var t = el.type;
-        return t === "checkbox" || t === "radio";
+    function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void {
+        var prev = setValueCallback;
+        setValueCallback = callback;
+        return prev;
     }
 
     function updateElement(n: IBobrilCacheNode, el: HTMLElement, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
         if (!newAttrs) return undefined;
-        for (var attrName in newAttrs) {
-            var newAttr = newAttrs[attrName];
-            var oldAttr = oldAttrs[attrName];
+        var attrName:string, newAttr:any, oldAttr:any, valueOldAttr:any, valueNewAttr:any;
+        for (attrName in newAttrs) {
+            newAttr = newAttrs[attrName];
+            oldAttr = oldAttrs[attrName];
             if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
@@ -109,39 +120,16 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                     if (attrName === "href") el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
                     else if (attrName === "className") el.setAttribute("class", newAttr);
                     else el.setAttribute(attrName, newAttr);
-                } else if (attrName === "value" && (el.tagName === "INPUT" || el.tagName === "SELECT")) {
-                    if (isCheckboxlike(<HTMLInputElement>el)) {
-                        var currentChecked = (<any>el).checked;
-                        if (oldAttr === undefined) {
-                            (<any>n.ctx)["b$value"] = newAttr;
-                        }
-                        if (newAttr !== currentChecked) {
-                            if (oldAttr === undefined || currentChecked === oldAttr) {
-                                (<any>el).checked = newAttr;
-                            } else {
-                                emitEvent("input", null, el, n);
-                            }
-                        }
-                    } else {
-                        var currentValue = ((<any>el)[attrName]);
-                        if (oldAttr === undefined) {
-                            (<any>n.ctx)["b$value"] = newAttr;
-                            if (el.tagName === "SELECT" && newAttr !== currentValue) {
-                                emitEvent("input", null, el, n);
-                            }
-                        }
-                        if (newAttr !== currentValue) {
-                            if (oldAttr === undefined || currentValue === oldAttr) {
-                                (<any>el)[attrName] = newAttr;
-                            } else {
-                                emitEvent("input", null, el, n);
-                            }
-                        }
-                    }
+                } else if (attrName === "value") {
+                    valueOldAttr = oldAttr;
+                    valueNewAttr = newAttr;
                 } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     (<any>el)[attrName] = newAttr;
                 } else el.setAttribute(attrName, newAttr);
             }
+        }
+        if (valueNewAttr !== undefined) {
+            setValueCallback(el, n, valueNewAttr, valueOldAttr);
         }
         return oldAttrs;
     }
@@ -158,7 +146,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             }
         }
         if (n.tag === "") {
-            c.element = document.createTextNode(c.content);
+            c.element = createTextNode(c.content);
             return c;
         } else if (n.tag === "/") {
             return c;
@@ -194,10 +182,10 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         if (!isArray(ch)) {
             var type = typeof ch;
             if (type === "string") {
-                if ('textContent' in element) {
+                if (hasTextContent) {
                     element.textContent = ch;
                 } else {
-                    element.appendChild(document.createTextNode(ch));
+                    element.appendChild(createTextNode(ch));
                 }
                 return;
             }
@@ -358,7 +346,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             if (n.tag === "") {
                 if (c.content !== n.content) {
                     c.content = n.content;
-                    if ('textContent' in c.element) {
+                    if (hasTextContent) {
                         c.element.textContent = c.content;
                         return c;
                     }
@@ -415,11 +403,11 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
             var type = typeof newChildren;
             if ((type === "string") && !isArray(cachedChildren)) {
                 if (newChildren === cachedChildren) return cachedChildren;
-                if ('textContent' in element) {
+                if (hasTextContent) {
                     element.textContent = newChildren;
                 } else {
                     element.innerHTML = "";
-                    element.appendChild(document.createTextNode(newChildren));
+                    element.appendChild(createTextNode(newChildren));
                 }
                 return newChildren;
             }
@@ -901,6 +889,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         updateNode: updateNode,
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
+        setSetValue: setSetValue,
         init: init,
         isArray: isArray,
         uptime: () => uptime,

@@ -7,13 +7,15 @@ module InputApp {
     function layoutPair(left: any, right: any, leftWidth= "50%"): IBobrilNode {
         return {
             tag: "div",
-            attrs: { style: { display:"table", width:"100%" } },
+            attrs: { style: { display: "table", width: "100%" } },
             children: [
-                { tag: "div", attrs: { style: { display:"table-cell", width: leftWidth } }, children: left },
-                { tag: "div", attrs: { style: { display: "table-cell" } }, children: right }
+                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top", width: leftWidth } }, children: left },
+                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top" } }, children: right }
             ]
         };
     }
+
+    var spacer = { tag: "div", attrs: { style: "height:1em" } };
 
     // Model
     var frame = 0;
@@ -51,54 +53,61 @@ module InputApp {
         b.invalidate();
     }
 
+    var option2 = "";
+
+    function setOption2(v: string) {
+        option2 = v;
+        b.invalidate();
+    }
+
+    var optionm:string[] = [];
+
+    function setOptionm(v: string[]) {
+        optionm = v;
+        b.invalidate();
+    }
+
     // Text input custom component
-    interface ITextInputData {
-        onChange: (value: string) => void;
+    interface IOnChangeData {
+        onChange: (value: any) => void;
     }
 
-    interface ITextInputCtx {
-        data: ITextInputData;
+    interface IOnChangeCtx {
+        data: IOnChangeData;
     }
 
-    class TextInputComponent implements IBobrilComponent {
-        static shouldChange(ctx: ITextInputCtx, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean {
-            return me.attrs.value !== oldMe.attrs.value || me.data.onChange !== oldMe.data.onChange;
-        }
-
-        static onChange(ctx: ITextInputCtx, v: string): void {
+    class OnChangeComponent implements IBobrilComponent {
+        static onChange(ctx: IOnChangeCtx, v: any): void {
             ctx.data.onChange(v);
         }
     }
 
     function textInput(value: string, onChange: (value: string) => void): IBobrilNode {
-        return { tag: "input", attrs: { value: value }, data: { onChange: onChange }, component: TextInputComponent };
-    }
-
-    // Checkbox custom component
-    interface ICheckboxData {
-        onChange: (value: boolean) => void;
-    }
-
-    interface ICheckboxCtx {
-        data: ICheckboxData;
-    }
-
-    class CheckboxComponent implements IBobrilComponent {
-        static onChange(ctx: ICheckboxCtx, v: boolean): void {
-            ctx.data.onChange(v);
-        }
+        return { tag: "input", attrs: { value: value }, data: { onChange: onChange }, component: OnChangeComponent };
     }
 
     function checkbox(value: boolean, onChange: (value: boolean) => void): IBobrilNode {
-        return { tag: "input", attrs: { type: "checkbox", value: value }, data: { onChange: onChange }, component: CheckboxComponent };
+        return { tag: "input", attrs: { type: "checkbox", value: value }, data: { onChange: onChange }, component: OnChangeComponent };
     }
 
     function radiobox(groupName: string, value: boolean, onChange: (value: boolean) => void): IBobrilNode {
-        return { tag: "input", attrs: { type: "radio", name: groupName, value: value }, data: { onChange: onChange }, component: CheckboxComponent };
+        return { tag: "input", attrs: { type: "radio", name: groupName, value: value }, data: { onChange: onChange }, component: OnChangeComponent };
+    }
+
+    function mapOptions(options: string[][]): any[] {
+        return options.map((i) => ({ tag: "option", attrs: { value: i[0] }, children: i[1] }));
     }
 
     function combobox(value: string, onChange: (value: string) => void, options: string[][]) {
-        return { tag: "select", attrs: { value: value }, data: { onChange: onChange }, component: TextInputComponent, children: options.map((i) => ({ tag: "option", attrs: { value: i[0] }, children: i[1] })) };
+        return { tag: "select", attrs: { value: value }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+    }
+
+    function listbox(value: string, onChange: (value: string) => void, options: string[][]) {
+        return { tag: "select", attrs: { value: value, size: "" + options.length }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+    }
+
+    function listboxmulti(value: string[], onChange: (value: string[]) => void, options: string[][]) {
+        return { tag: "select", attrs: { value: value, multiple: true, size: "" + options.length }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
     }
 
     b.init(() => {
@@ -118,7 +127,19 @@ module InputApp {
                 layoutPair([
                     combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
                 ], [
-                    h("p", "Chosen: ", option)
+                    h("div", "Combobox: ", option)
+                ]),
+                spacer,
+                layoutPair([
+                    listbox(option2, setOption2, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                ], [
+                    h("div", "Listbox: ", option2)
+                ]),
+                spacer,
+                layoutPair([
+                    listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                ], [
+                    h("div", "Multiselect: ", optionm.join(", "))
                 ])
             ])
         ];
