@@ -78,7 +78,7 @@
                 var isCombobox = isSelect && (<HTMLSelectElement>el).size < 2;
                 var currentValue = ((<any>el)[tvalue]);
                 if (newValue !== currentValue) {
-                    if (oldValue === undefined || currentValue === oldValue) {
+                    if (oldValue === '' || currentValue === oldValue) {
                         if (isSelect) {
                             if (newValue === "") {
                                 (<HTMLSelectElement>el).selectedIndex = isCombobox ? 0 : -1;
