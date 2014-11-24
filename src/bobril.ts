@@ -93,7 +93,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
             oldAttr = oldAttrs[attrName];
-            if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
+            if ((oldAttr === '') || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
                     if (isObject(newAttr)) {
