@@ -8,7 +8,9 @@ interface IBobrilStatic {
     // Low level method used just for testing
     updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any): Array<IBobrilCacheNode>;
     // Low level method used just for testing
-    callPostCallbacks():void;
+    callPostCallbacks(): void;
+    // Set update DOM attribute value callback, returns previous callback to allow chaining
+    setSetValue(callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
     // factory returns string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[]
     init(factory: () => any): void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
@@ -38,7 +40,8 @@ interface IBobrilAttributes {
     href?: string;
     className?: string;
     style?: Object;
-    value?: string;
+    // boolean | string
+    value?: any;
     [name: string]: any;
 }
 

@@ -11,10 +11,10 @@ Features in core:
 - Normalization of Events
 - support for IE8+, Android 4.0+
 - batching of redrawing
-- under 8kb minified
+- under 9kb minified
 
 Features in extensions:
-- OnChange event
+- OnChange event and value attribute normalization
 - Key events
 - Mouse, Touch and Swipe Events
 - Vector graphic in spirit of React-Art just very limited in features, but under 4kb with SVG and VML backends
@@ -23,10 +23,8 @@ Features in extensions:
 Near term planned extensions:
 - Media detection
 
-Longer term planed feature in core:
-- New/Deleted Node animation
-
 Longer term extensions:
+- New/Deleted Node animation
 - Promises
 - Prevent exit
 - Ajax

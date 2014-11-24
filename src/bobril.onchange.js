@@ -1,6 +1,116 @@
 ﻿/// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.onchange.d.ts"/>
 (function (b) {
+    var bvalue = "b$value";
+    var tvalue = "value";
+
+    function isCheckboxlike(el) {
+        var t = el.type;
+        return t === "checkbox" || t === "radio";
+    }
+
+    function stringArrayEqual(a1, a2) {
+        var l = a1.length;
+        if (l !== a2.length)
+            return false;
+        for (var j = 0; j < l; j++) {
+            if (a1[j] !== a2[j])
+                return false;
+        }
+        return true;
+    }
+
+    function stringArrayContains(a, v) {
+        for (var j = 0, l = a.length; j < l; j++) {
+            if (a[j] === v)
+                return true;
+        }
+        return false;
+    }
+
+    function selectedArray(options) {
+        var res = [];
+        for (var j = 0; j < options.length; j++) {
+            if (options[j].selected)
+                res.push(options[j].value);
+        }
+        return res;
+    }
+
+    var prevSetValueCallback = b.setSetValue(function (el, node, newValue, oldValue) {
+        var tagName = el.tagName;
+        var isSelect = tagName === "SELECT";
+        var isInput = tagName === "INPUT";
+        if (!isInput && !isSelect) {
+            prevSetValueCallback(el, node, newValue, oldValue);
+            return;
+        }
+        if (node.ctx === undefined)
+            node.ctx = {};
+        if (oldValue === undefined) {
+            node.ctx[bvalue] = newValue;
+        }
+        var isMultiSelect = isSelect && el.multiple;
+        var emitDiff = false;
+        if (isMultiSelect) {
+            var options = el.options;
+            var currentMulti = selectedArray(options);
+            if (!stringArrayEqual(newValue, currentMulti)) {
+                if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue)) {
+                    for (var j = 0; j < options.length; j++) {
+                        options[j].selected = stringArrayContains(newValue, options[j].value);
+                    }
+                    currentMulti = selectedArray(options);
+                    if (stringArrayEqual(currentMulti, newValue)) {
+                        emitDiff = true;
+                    }
+                } else {
+                    emitDiff = true;
+                }
+            }
+        } else if (isInput || isSelect) {
+            if (isInput && isCheckboxlike(el)) {
+                var currentChecked = el.checked;
+                if (newValue !== currentChecked) {
+                    if (oldValue === undefined || currentChecked === oldValue) {
+                        el.checked = newValue;
+                    } else {
+                        emitDiff = true;
+                    }
+                }
+            } else {
+                var isCombobox = isSelect && el.size < 2;
+                var currentValue = (el[tvalue]);
+                if (newValue !== currentValue) {
+                    if (oldValue === undefined || currentValue === oldValue) {
+                        if (isSelect) {
+                            if (newValue === "") {
+                                el.selectedIndex = isCombobox ? 0 : -1;
+                            } else {
+                                el[tvalue] = newValue;
+                            }
+                            if (newValue !== "" || isCombobox) {
+                                currentValue = (el[tvalue]);
+                                if (newValue !== currentValue) {
+                                    emitDiff = true;
+                                }
+                            }
+                        } else {
+                            el[tvalue] = newValue;
+                        }
+                    } else {
+                        emitDiff = true;
+                    }
+                }
+            }
+        }
+        if (emitDiff) {
+            emitOnChange(null, el, node);
+        } else {
+            node.ctx[bvalue] = newValue;
+        }
+    });
+
     function emitOnChange(ev, target, node) {
         if (!node)
             return false;
@@ -10,15 +120,53 @@
         if (!c.onChange)
             return false;
         var ctx = node.ctx;
-        var v = target.value;
-        if (ctx["b$value"] !== v) {
-            ctx["b$value"] = v;
-            c.onChange(ctx, v);
+        var tagName = target.tagName;
+        var isSelect = tagName === "SELECT";
+        var isMultiSelect = isSelect && target.multiple;
+        if (isMultiSelect) {
+            var vs = selectedArray(target.options);
+            if (!stringArrayEqual(ctx[bvalue], vs)) {
+                ctx[bvalue] = vs;
+                c.onChange(ctx, vs);
+            }
+        } else if (isCheckboxlike(target)) {
+            if (target.type === "radio") {
+                var radios = document.getElementsByName(target.name);
+                for (var j = 0; j < radios.length; j++) {
+                    var radio = radios[j];
+                    var radionode = b.deref(radio);
+                    if (!radionode)
+                        continue;
+                    var radiocomponent = radionode.component;
+                    if (!radiocomponent)
+                        continue;
+                    if (!radiocomponent.onChange)
+                        continue;
+                    var radioctx = radionode.ctx;
+                    var vrb = radio.checked;
+                    if (radioctx[bvalue] !== vrb) {
+                        radioctx[bvalue] = vrb;
+                        radiocomponent.onChange(radioctx, vrb);
+                    }
+                }
+            } else {
+                var vb = target.checked;
+                if (ctx[bvalue] !== vb) {
+                    ctx[bvalue] = vb;
+                    c.onChange(ctx, vb);
+                }
+            }
+        } else {
+            var v = target.value;
+            if (ctx[bvalue] !== v) {
+                ctx[bvalue] = v;
+                c.onChange(ctx, v);
+            }
         }
         return false;
     }
 
-    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup"];
+    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 100, emitOnChange);
 })(b);
