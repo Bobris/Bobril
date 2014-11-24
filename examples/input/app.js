@@ -73,6 +73,13 @@ var InputApp;
         b.invalidate();
     }
 
+    var valuearea = "Change this";
+
+    function setValueArea(v) {
+        valuearea = v;
+        b.invalidate();
+    }
+
     
 
     var OnChangeComponent = (function () {
@@ -103,15 +110,43 @@ var InputApp;
     }
 
     function combobox(value, onChange, options) {
-        return { tag: "select", attrs: { value: value }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+        return {
+            tag: "select",
+            attrs: { value: value },
+            data: { onChange: onChange },
+            component: OnChangeComponent,
+            children: mapOptions(options)
+        };
     }
 
     function listbox(value, onChange, options) {
-        return { tag: "select", attrs: { value: value, size: "" + options.length }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+        return {
+            tag: "select",
+            attrs: { value: value, size: "" + options.length },
+            data: { onChange: onChange },
+            component: OnChangeComponent,
+            children: mapOptions(options)
+        };
     }
 
     function listboxmulti(value, onChange, options) {
-        return { tag: "select", attrs: { value: value, multiple: true, size: "" + options.length }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+        return {
+            tag: "select",
+            attrs: { value: value, multiple: true, size: "" + options.length },
+            data: { onChange: onChange },
+            component: OnChangeComponent,
+            children: mapOptions(options)
+        };
+    }
+
+    function textarea(value, onChange, rows) {
+        if (typeof rows === "undefined") { rows = 5; }
+        return {
+            tag: "textarea",
+            attrs: { value: value, rows: rows, style: { width: "100%" } },
+            data: { onChange: onChange },
+            component: OnChangeComponent
+        };
     }
 
     b.init(function () {
@@ -144,7 +179,10 @@ var InputApp;
                     listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
                 ], [
                     h("div", "Multiselect: ", optionm.join(", "))
-                ])
+                ]),
+                spacer,
+                textarea(valuearea, setValueArea),
+                h("pre", valuearea)
             ])
         ];
     });

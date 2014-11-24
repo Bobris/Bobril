@@ -37,7 +37,7 @@
     var prevSetValueCallback = b.setSetValue((el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => {
         var tagName = el.tagName;
         var isSelect = tagName === "SELECT";
-        var isInput = tagName === "INPUT";
+        var isInput = tagName === "INPUT" || tagName==="TEXTAREA";
         if (!isInput && !isSelect) {
             prevSetValueCallback(el, node, newValue, oldValue);
             return;
@@ -52,7 +52,7 @@
             var options = (<HTMLSelectElement>el).options;
             var currentMulti = selectedArray(options);
             if (!stringArrayEqual(newValue, currentMulti)) {
-                if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue)) {
+                if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue) || !stringArrayEqual(newValue,(<any>node.ctx)[bvalue])) {
                     for (var j = 0; j < options.length; j++) {
                         options[j].selected = stringArrayContains(newValue, options[j].value);
                     }
@@ -68,7 +68,7 @@
             if (isInput && isCheckboxlike(<HTMLInputElement>el)) {
                 var currentChecked = (<any>el).checked;
                 if (newValue !== currentChecked) {
-                    if (oldValue === undefined || currentChecked === oldValue) {
+                    if (oldValue === undefined || currentChecked === oldValue || newValue !== (<any>node.ctx)[bvalue]) {
                         (<any>el).checked = newValue;
                     } else {
                         emitDiff = true;
@@ -78,7 +78,7 @@
                 var isCombobox = isSelect && (<HTMLSelectElement>el).size < 2;
                 var currentValue = ((<any>el)[tvalue]);
                 if (newValue !== currentValue) {
-                    if (oldValue === undefined || currentValue === oldValue) {
+                    if (oldValue === undefined || currentValue === oldValue || newValue !== (<any>node.ctx)[bvalue]) {
                         if (isSelect) {
                             if (newValue === "") {
                                 (<HTMLSelectElement>el).selectedIndex = isCombobox ? 0 : -1;

@@ -78,7 +78,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var updateCall: Array<boolean> = [];
     var updateInstance: Array<IBobrilCacheNode> = [];
     var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
-        (<any>el)["value"] = newValue;
+        if (newValue !== oldValue)
+            (<any>el)["value"] = newValue;
     }
 
     function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void {
@@ -89,11 +90,17 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     function updateElement(n: IBobrilCacheNode, el: HTMLElement, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
         if (!newAttrs) return undefined;
-        var attrName:string, newAttr:any, oldAttr:any, valueOldAttr:any, valueNewAttr:any;
+        var attrName: string, newAttr: any, oldAttr: any, valueOldAttr: any, valueNewAttr: any;
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
             oldAttr = oldAttrs[attrName];
-            if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
+            if (attrName === "value" && !inNamespace) {
+                valueOldAttr = oldAttr;
+                valueNewAttr = newAttr;
+                oldAttrs[attrName] = newAttr;
+                continue;
+            }
+            if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
                     if (isObject(newAttr)) {

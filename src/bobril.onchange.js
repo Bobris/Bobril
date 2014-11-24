@@ -40,7 +40,7 @@
     var prevSetValueCallback = b.setSetValue(function (el, node, newValue, oldValue) {
         var tagName = el.tagName;
         var isSelect = tagName === "SELECT";
-        var isInput = tagName === "INPUT";
+        var isInput = tagName === "INPUT" || tagName === "TEXTAREA";
         if (!isInput && !isSelect) {
             prevSetValueCallback(el, node, newValue, oldValue);
             return;
@@ -56,7 +56,7 @@
             var options = el.options;
             var currentMulti = selectedArray(options);
             if (!stringArrayEqual(newValue, currentMulti)) {
-                if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue)) {
+                if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue) || !stringArrayEqual(newValue, node.ctx[bvalue])) {
                     for (var j = 0; j < options.length; j++) {
                         options[j].selected = stringArrayContains(newValue, options[j].value);
                     }
@@ -72,7 +72,7 @@
             if (isInput && isCheckboxlike(el)) {
                 var currentChecked = el.checked;
                 if (newValue !== currentChecked) {
-                    if (oldValue === undefined || currentChecked === oldValue) {
+                    if (oldValue === undefined || currentChecked === oldValue || newValue !== node.ctx[bvalue]) {
                         el.checked = newValue;
                     } else {
                         emitDiff = true;
@@ -82,7 +82,7 @@
                 var isCombobox = isSelect && el.size < 2;
                 var currentValue = (el[tvalue]);
                 if (newValue !== currentValue) {
-                    if (oldValue === undefined || currentValue === oldValue) {
+                    if (oldValue === undefined || currentValue === oldValue || newValue !== node.ctx[bvalue]) {
                         if (isSelect) {
                             if (newValue === "") {
                                 el.selectedIndex = isCombobox ? 0 : -1;

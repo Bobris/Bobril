@@ -67,6 +67,13 @@ module InputApp {
         b.invalidate();
     }
 
+    var valuearea = "Change this";
+
+    function setValueArea(v: string) {
+        valuearea = v;
+        b.invalidate();
+    }
+
     // Text input custom component
     interface IOnChangeData {
         onChange: (value: any) => void;
@@ -99,15 +106,42 @@ module InputApp {
     }
 
     function combobox(value: string, onChange: (value: string) => void, options: string[][]) {
-        return { tag: "select", attrs: { value: value }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+        return {
+            tag: "select",
+            attrs: { value: value },
+            data: { onChange: onChange },
+            component: OnChangeComponent,
+            children: mapOptions(options)
+        };
     }
 
     function listbox(value: string, onChange: (value: string) => void, options: string[][]) {
-        return { tag: "select", attrs: { value: value, size: "" + options.length }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+        return {
+            tag: "select",
+            attrs: { value: value, size: "" + options.length },
+            data: { onChange: onChange },
+            component: OnChangeComponent,
+            children: mapOptions(options)
+        };
     }
 
     function listboxmulti(value: string[], onChange: (value: string[]) => void, options: string[][]) {
-        return { tag: "select", attrs: { value: value, multiple: true, size: "" + options.length }, data: { onChange: onChange }, component: OnChangeComponent, children: mapOptions(options) };
+        return {
+            tag: "select",
+            attrs: { value: value, multiple: true, size: "" + options.length },
+            data: { onChange: onChange },
+            component: OnChangeComponent,
+            children: mapOptions(options)
+        };
+    }
+
+    function textarea(value: string, onChange: (value: string) => void, rows = 5) {
+        return {
+            tag: "textarea",
+            attrs: { value: value, rows: rows, style: { width: "100%" } },
+            data: { onChange: onChange },
+            component: OnChangeComponent
+        }
     }
 
     b.init(() => {
@@ -140,7 +174,10 @@ module InputApp {
                     listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
                 ], [
                     h("div", "Multiselect: ", optionm.join(", "))
-                ])
+                ]),
+                spacer,
+                textarea(valuearea, setValueArea),
+                h("pre", valuearea)
             ])
         ];
     });

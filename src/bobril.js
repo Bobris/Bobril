@@ -82,7 +82,8 @@ b = (function (window, document) {
     var updateCall = [];
     var updateInstance = [];
     var setValueCallback = function (el, node, newValue, oldValue) {
-        el["value"] = newValue;
+        if (newValue !== oldValue)
+            el["value"] = newValue;
     };
 
     function setSetValue(callback) {
@@ -98,7 +99,13 @@ b = (function (window, document) {
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
             oldAttr = oldAttrs[attrName];
-            if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
+            if (attrName === "value" && !inNamespace) {
+                valueOldAttr = oldAttr;
+                valueNewAttr = newAttr;
+                oldAttrs[attrName] = newAttr;
+                continue;
+            }
+            if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
                     if (isObject(newAttr)) {
