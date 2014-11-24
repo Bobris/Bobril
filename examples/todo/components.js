@@ -17,12 +17,10 @@ var MouseEnterLeaveApp;
             componentChilden.unshift(hint);
             componentChilden.unshift(input);
             componentChilden.unshift(heading);
-
             me.tag = 'div';
             me.attrs = { 'class': 'main' };
             me.children = componentChilden;
         };
-
         TaskList.createHeadingElement = function () {
             return [
                 {
@@ -31,7 +29,6 @@ var MouseEnterLeaveApp;
                 }
             ];
         };
-
         TaskList.createInputElement = function () {
             var _this = this;
             var inputAttributes = {
@@ -40,7 +37,8 @@ var MouseEnterLeaveApp;
             };
             if (this.currentTaskName) {
                 inputAttributes['value'] = this.currentTaskName;
-            } else {
+            }
+            else {
                 inputAttributes['value'] = '';
             }
             return {
@@ -52,7 +50,8 @@ var MouseEnterLeaveApp;
                             _this.tasks.addTask(_this.currentTaskName);
                             _this.currentTaskName = '';
                             b.invalidate();
-                        } else if (event.which == 27) {
+                        }
+                        else if (event.which == 27) {
                             // cancel the task adding controls
                             _this.currentTaskName = '';
                             b.invalidate();
@@ -64,7 +63,6 @@ var MouseEnterLeaveApp;
                 }
             };
         };
-
         TaskList.createHintElement = function () {
             return {
                 tag: 'p',
@@ -77,35 +75,50 @@ var MouseEnterLeaveApp;
                 }
             };
         };
-
         TaskList.createTaskElements = function () {
             var res = [];
             for (var i = 0; i < this.tasks.items.length; i++) {
                 var taskName = this.tasks.items[i].name;
                 var taskId = this.tasks.items[i].id;
-
+                var classes = 'task';
+                if (this.tasks.items[i].completed) {
+                    classes += ' completed';
+                }
                 res.push({
                     tag: 'div',
                     attrs: {
-                        'class': 'task'
+                        'class': classes
                     },
                     children: [
-                        this.createCheckboxElement(),
-                        taskName,
+                        this.createCheckboxElement(taskId),
+                        { tag: 'span', children: taskName },
                         this.createDeleteButtonElement(taskId)
                     ]
                 });
             }
             return res;
         };
-
-        TaskList.createCheckboxElement = function () {
+        TaskList.createCheckboxElement = function (taskId) {
+            var _this = this;
             return {
                 tag: 'input',
-                attrs: { 'type': 'checkbox', 'class': 'mark-as-completed' }
+                attrs: { 'type': 'checkbox', 'class': 'mark-as-completed' },
+                component: {
+                    onChange: function (ctx, value) {
+                        if (value) {
+                            _this.tasks.markTaskAsCompleted(ctx.data.taskId);
+                        }
+                        else {
+                            _this.tasks.markTaskAsActive(ctx.data.taskId);
+                        }
+                        b.invalidate();
+                    }
+                },
+                data: {
+                    'taskId': taskId
+                }
             };
         };
-
         TaskList.createDeleteButtonElement = function (taskId) {
             var _this = this;
             return {
@@ -126,6 +139,7 @@ var MouseEnterLeaveApp;
                 }
             };
         };
+        // model
         TaskList.tasks = new MouseEnterLeaveApp.Tasks();
         return TaskList;
     })();

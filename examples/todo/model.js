@@ -9,7 +9,6 @@ var MouseEnterLeaveApp;
         return Task;
     })();
     MouseEnterLeaveApp.Task = Task;
-
     var Tasks = (function () {
         function Tasks() {
             this.items = [];
@@ -18,20 +17,24 @@ var MouseEnterLeaveApp;
         Tasks.prototype.addTask = function (name) {
             this.items.push(new Task(this.counter++, name, false));
         };
-
         Tasks.prototype.markTaskAsCompleted = function (id) {
-            for (var i = 0; i < this.items.length; i++) {
-                if (this.items[i].id === id) {
-                    this.items[i].completed = true;
-                    return;
-                }
-            }
+            this.setTaskStatus(id, true);
         };
-
+        Tasks.prototype.markTaskAsActive = function (id) {
+            this.setTaskStatus(id, false);
+        };
         Tasks.prototype.removeTask = function (id) {
             for (var i = 0; i < this.items.length; i++) {
                 if (this.items[i].id === id) {
                     this.items.splice(i, 1);
+                    return;
+                }
+            }
+        };
+        Tasks.prototype.setTaskStatus = function (taskId, status) {
+            for (var i = 0; i < this.items.length; i++) {
+                if (this.items[i].id === taskId) {
+                    this.items[i].completed = status;
                     return;
                 }
             }

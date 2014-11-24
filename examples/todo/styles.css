@@ -52,3 +52,7 @@ div.task a.delete-button {
     width: 20px;
     height: 20px;
 }
+
+div.task.completed span {
+    text-decoration: line-through;
+}

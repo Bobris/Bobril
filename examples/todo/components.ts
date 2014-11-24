@@ -11,6 +11,10 @@ module MouseEnterLeaveApp {
         data: any;
     }
 
+    interface ICheckboxCtx {
+        data: any;
+    }
+
     export class TaskList implements IBobrilComponent {
 
         // model
@@ -90,15 +94,19 @@ module MouseEnterLeaveApp {
             for (var i = 0; i < this.tasks.items.length; i++) {
                 var taskName = this.tasks.items[i].name;
                 var taskId = this.tasks.items[i].id;
+                var classes = 'task';
+                if (this.tasks.items[i].completed) {
+                    classes += ' completed';
+                }
 
                 res.push({
                         tag: 'div',
                         attrs: {
-                            'class': 'task'
+                            'class': classes
                         },
                         children: [
-                            this.createCheckboxElement(),
-                            taskName,
+                            this.createCheckboxElement(taskId),
+                            { tag: 'span', children: taskName },
                             this.createDeleteButtonElement(taskId)
                         ]
                     });
@@ -106,16 +114,23 @@ module MouseEnterLeaveApp {
             return res;
         }
 
-        static createCheckboxElement() {
+        static createCheckboxElement(taskId: number) {
             return { 
                 tag: 'input',
                 attrs: { 'type': 'checkbox', 'class': 'mark-as-completed' },
-                // NOTE: checkboxes not implemented yet in Bobril
-                // component: {
-                //     onChange: (ctx: Object, value: string) => {
-                //         console.log('on change ' + value);
-                //     }
-                // }
+                component: {
+                    onChange: (ctx: ICheckboxCtx, value: string) => {
+                        if (value) {
+                            this.tasks.markTaskAsCompleted(ctx.data.taskId);
+                        } else {
+                            this.tasks.markTaskAsActive(ctx.data.taskId);
+                        }
+                        b.invalidate();
+                    }
+                },
+                data: {
+                    'taskId': taskId
+                }
             };
         }
 

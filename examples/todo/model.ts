@@ -21,18 +21,26 @@ module MouseEnterLeaveApp {
         }
 
         markTaskAsCompleted(id: number) {
-            for (var i = 0; i < this.items.length; i++) {
-                if (this.items[i].id === id) {
-                    this.items[i].completed = true;
-                    return;
-                }
-            }
+            this.setTaskStatus(id, true);
+        }
+
+        markTaskAsActive(id: number) {
+            this.setTaskStatus(id, false);
         }
 
         removeTask(id: number): void {
             for (var i = 0; i < this.items.length; i++) {
                 if (this.items[i].id === id) {
                     this.items.splice(i, 1);
+                    return;
+                }
+            }
+        }
+
+        setTaskStatus(taskId: number, status: boolean) {
+            for (var i = 0; i < this.items.length; i++) {
+                if (this.items[i].id === taskId) {
+                    this.items[i].completed = status;
                     return;
                 }
             }
