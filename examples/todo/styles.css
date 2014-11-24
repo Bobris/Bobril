@@ -1,0 +1,58 @@
+html {
+    height: 90%;
+}
+body {
+    background-color: #eeeeee;
+    font-family: Arial;
+    height: 100%;
+}
+
+div.main {
+    background-color: #fff;
+    width: 500px;
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;
+    overflow-y: scroll;
+}
+
+h3 {
+    text-align: center;
+    font-size: 30px;
+}
+
+p.hint {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 40px;
+}
+
+input.mark-as-completed {
+    margin-right: 10px;
+}
+
+input.task-name {
+    font-size: 20px;
+    padding: 6px;
+    width: 97%;
+}
+
+div.task {
+    padding: 10px;
+    margin-top: 10px;
+    border-bottom: solid 1px #a9a9a9;
+}
+
+div.task a.delete-button {
+    float: right;
+    text-indent: -5000px;
+    background-image: url('delete.png');
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+div.task.completed span {
+    text-decoration: line-through;
+}
