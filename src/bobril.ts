@@ -77,7 +77,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
         for (var attrName in newAttrs) {
             var newAttr = newAttrs[attrName];
             var oldAttr = oldAttrs[attrName];
-            if ((oldAttr === undefined) || (oldAttr !== newAttr)) {
+            if ((oldAttr === '') || (oldAttr !== newAttr)) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
                     if (isObject(newAttr)) {
@@ -110,7 +110,7 @@ b = ((window: Window, document: Document, undefined?: any): IBobrilStatic => {
                         (<any>n.ctx)["b$value"] = newAttr;
                     }
                     if (newAttr !== currentValue) {
-                        if (oldAttr === undefined || currentValue === oldAttr) {
+                        if (oldAttr === '' || currentValue === oldAttr) {
                             (<any>el)[attrName] = newAttr;
                         } else {
                             emitEvent("input", null, el, n);
