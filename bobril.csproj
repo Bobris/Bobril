@@ -61,6 +61,7 @@
     <Content Include="examples\game\index.html" />
     <Content Include="examples\index.html" />
     <Content Include="examples\input\index.html" />
+    <Content Include="examples\media\index.html" />
     <Content Include="examples\mouseenter\index.html" />
     <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
@@ -73,6 +74,7 @@
     <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="examples\game\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />
+    <TypeScriptCompile Include="examples\media\app.ts" />
     <TypeScriptCompile Include="examples\mouseenter\app.ts" />
     <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
@@ -80,6 +82,8 @@
     <TypeScriptCompile Include="examples\router\app.ts" />
     <TypeScriptCompile Include="examples\vg\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
+    <TypeScriptCompile Include="src\bobril.media.d.ts" />
+    <TypeScriptCompile Include="src\bobril.media.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.d.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
