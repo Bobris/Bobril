@@ -160,3 +160,5 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 /*.userprefs
+bobril.sublime-project
+bobril.sublime-workspace

@@ -1,14 +1,11 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-
+/// <reference path="../src/bobril.d.ts"/>
 // ReSharper restore InconsistentNaming
 if (typeof DEBUG === 'undefined')
     DEBUG = true;
-
 // IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
 if (!Array.prototype.map) {
     Array.prototype.map = function (callback, thisArg) {
         var t, a, k;
-
         // ReSharper disable once ConditionIsAlwaysConst
         if (DEBUG && this == null) {
             throw new TypeError("this==null");
@@ -35,7 +32,6 @@ if (!Array.prototype.map) {
         return a;
     };
 }
-
 // Object create polyfill
 if (!Object.create) {
     Object.create = function (o) {
@@ -45,18 +41,14 @@ if (!Object.create) {
         return new f();
     };
 }
-
 b = (function (window, document) {
     var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue, messageIfFalse) {
         if (DEBUG && !shoudBeTrue)
             throw Error(messageIfFalse || "assertion failed");
     }
-
     var objectToString = {}.toString;
-    var isArray = Array.isArray || (function (a) {
-        return objectToString.call(a) === "[object Array]";
-    });
+    var isArray = Array.isArray || (function (a) { return objectToString.call(a) === "[object Array]"; });
     var objectKeys = Object.keys || (function (obj) {
         var keys = [];
         for (var i in obj) {
@@ -66,17 +58,13 @@ b = (function (window, document) {
         }
         return keys;
     });
-
     function createTextNode(content) {
         return document.createTextNode(content);
     }
-
     var hasTextContent = "textContent" in createTextNode("");
-
     function isObject(value) {
         return typeof value === "object";
     }
-
     var inNamespace = false;
     var inSvg = false;
     var updateCall = [];
@@ -85,13 +73,11 @@ b = (function (window, document) {
         if (newValue !== oldValue)
             el["value"] = newValue;
     };
-
     function setSetValue(callback) {
         var prev = setValueCallback;
         setValueCallback = callback;
         return prev;
     }
-
     function updateElement(n, el, newAttrs, oldAttrs) {
         if (!newAttrs)
             return undefined;
@@ -120,29 +106,35 @@ b = (function (window, document) {
                                 if (!(rule in newAttr))
                                     el.style[rule] = "";
                             }
-                        } else {
+                        }
+                        else {
                             if (oldAttr)
                                 el.style.cssText = "";
                             for (rule in newAttr) {
                                 el.style[rule] = newAttr[rule];
                             }
                         }
-                    } else {
+                    }
+                    else {
                         el.style.cssText = newAttr;
                     }
-                } else if (inNamespace) {
+                }
+                else if (inNamespace) {
                     if (attrName === "href")
                         el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
                     else if (attrName === "className")
                         el.setAttribute("class", newAttr);
                     else
                         el.setAttribute(attrName, newAttr);
-                } else if (attrName === "value") {
+                }
+                else if (attrName === "value") {
                     valueOldAttr = oldAttr;
                     valueNewAttr = newAttr;
-                } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
+                }
+                else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
-                } else
+                }
+                else
                     el.setAttribute(attrName, newAttr);
             }
         }
@@ -151,7 +143,6 @@ b = (function (window, document) {
         }
         return oldAttrs;
     }
-
     function createNode(n) {
         var c = n;
         var backupInNamespace = inNamespace;
@@ -166,13 +157,16 @@ b = (function (window, document) {
         if (n.tag === "") {
             c.element = createTextNode(c.content);
             return c;
-        } else if (n.tag === "/") {
+        }
+        else if (n.tag === "/") {
             return c;
-        } else if (inSvg || n.tag === "svg") {
+        }
+        else if (inSvg || n.tag === "svg") {
             c.element = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
             inSvg = true;
-        } else {
+        }
+        else {
             c.element = document.createElement(n.tag);
         }
         createChildren(c);
@@ -182,7 +176,6 @@ b = (function (window, document) {
         pushInitCallback(c);
         return c;
     }
-
     function normalizeNode(n) {
         var t = typeof n;
         if (t === "string") {
@@ -192,7 +185,6 @@ b = (function (window, document) {
             return null;
         return n;
     }
-
     function createChildren(c) {
         var ch = c.children;
         var element = c.element;
@@ -203,7 +195,8 @@ b = (function (window, document) {
             if (type === "string") {
                 if (hasTextContent) {
                     element.textContent = ch;
-                } else {
+                }
+                else {
                     element.appendChild(createTextNode(ch));
                 }
                 return;
@@ -231,7 +224,8 @@ b = (function (window, document) {
                 j.element = [];
                 if (before) {
                     before = before.nextSibling;
-                } else {
+                }
+                else {
                     before = element.firstChild;
                 }
                 while (before) {
@@ -240,14 +234,14 @@ b = (function (window, document) {
                     j.element.push(before);
                     before = before.nextSibling;
                 }
-            } else {
+            }
+            else {
                 element.appendChild(j.element);
             }
             i++;
         }
         c.children = ch;
     }
-
     function destroyNode(c) {
         var ch = c.children;
         if (isArray(ch)) {
@@ -260,7 +254,6 @@ b = (function (window, document) {
             if (component.destroy)
                 component.destroy(c.ctx, c, c.element);
         }
-
         // This is just to help GC to break cycle, it is probably useless for modern browsers, but in IE8 you never know ...
         if (c.tag !== "") {
             var el = c.element;
@@ -270,13 +263,13 @@ b = (function (window, document) {
                     if (ee.nodeType !== 3)
                         ee[nodeBackpointer] = null;
                 }
-            } else {
+            }
+            else {
                 if (el.nodeType !== 3)
                     el[nodeBackpointer] = null;
             }
         }
     }
-
     function removeNode(c) {
         destroyNode(c);
         var el = c.element;
@@ -287,13 +280,13 @@ b = (function (window, document) {
                     pa.removeChild(el[i]);
                 }
             }
-        } else {
+        }
+        else {
             var p = el.parentNode;
             if (p)
                 p.removeChild(el);
         }
     }
-
     function pushInitCallback(c) {
         c.element[nodeBackpointer] = c;
         var cc = c.component;
@@ -304,7 +297,6 @@ b = (function (window, document) {
             }
         }
     }
-
     function pushUpdateCallback(c) {
         var cc = c.component;
         if (cc) {
@@ -314,11 +306,9 @@ b = (function (window, document) {
             }
         }
     }
-
     function getCacheNode(n) {
         return n[nodeBackpointer];
     }
-
     function updateNode(n, c) {
         var component = n.component;
         var backupInNamespace = inNamespace;
@@ -346,7 +336,8 @@ b = (function (window, document) {
             el.insertAdjacentHTML("beforebegin", n.content);
             if (elprev) {
                 elprev = elprev.nextSibling;
-            } else {
+            }
+            else {
                 elprev = parent.firstChild;
             }
             var newElements = [];
@@ -371,9 +362,11 @@ b = (function (window, document) {
                         c.element.textContent = c.content;
                         return c;
                     }
-                } else
+                }
+                else
                     return c;
-            } else {
+            }
+            else {
                 if (n.tag === "svg") {
                     inNamespace = true;
                     inSvg = true;
@@ -399,7 +392,6 @@ b = (function (window, document) {
         removeNode(c);
         return r;
     }
-
     function callPostCallbacks() {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
@@ -407,18 +399,17 @@ b = (function (window, document) {
             n = updateInstance[i];
             if (updateCall[i]) {
                 n.component.postUpdateDom(n.ctx, n, n.element);
-            } else {
+            }
+            else {
                 n.component.postInitDom(n.ctx, n, n.element);
             }
         }
         updateCall = [];
         updateInstance = [];
     }
-
     function updateChildrenNode(n, c) {
         c.children = updateChildren(c.element, n.children, c.children);
     }
-
     function updateChildren(element, newChildren, cachedChildren) {
         if (newChildren == null)
             newChildren = [];
@@ -429,7 +420,8 @@ b = (function (window, document) {
                     return cachedChildren;
                 if (hasTextContent) {
                     element.textContent = newChildren;
-                } else {
+                }
+                else {
                     element.innerHTML = "";
                     element.appendChild(createTextNode(newChildren));
                 }
@@ -507,7 +499,6 @@ b = (function (window, document) {
             if (newIndex === newEnd) {
                 return cachedChildren;
             }
-
             while (newIndex < newEnd) {
                 cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex]));
                 cachedIndex++;
@@ -526,7 +517,6 @@ b = (function (window, document) {
             }
             return cachedChildren;
         }
-
         // order of keyed nodes ware changed => reorder keyed nodes first
         var cachedIndex;
         var cachedKeys = {};
@@ -542,7 +532,8 @@ b = (function (window, document) {
             if (key != null) {
                 assert(!(key in cachedKeys));
                 cachedKeys[key] = cachedIndex;
-            } else
+            }
+            else
                 deltaKeyless--;
         }
         var keyLess = -deltaKeyless - deltaKeyless;
@@ -552,7 +543,8 @@ b = (function (window, document) {
             if (key != null) {
                 assert(!(key in newKeys));
                 newKeys[key] = newIndex;
-            } else
+            }
+            else
                 deltaKeyless++;
         }
         keyLess += deltaKeyless;
@@ -611,7 +603,8 @@ b = (function (window, document) {
                 cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
                 newIndex++;
                 cachedIndex++;
-            } else {
+            }
+            else {
                 // Move
                 cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
                 delta++;
@@ -624,7 +617,6 @@ b = (function (window, document) {
                 newIndex++;
             }
         }
-
         while (cachedIndex < cachedEnd) {
             if (cachedChildren[cachedIndex] === null) {
                 cachedChildren.splice(cachedIndex, 1);
@@ -641,7 +633,6 @@ b = (function (window, document) {
             }
             cachedIndex++;
         }
-
         while (newIndex < newEnd) {
             key = newChildren[newIndex].key;
             if (key != null) {
@@ -654,14 +645,11 @@ b = (function (window, document) {
             }
             newIndex++;
         }
-
         // Without any keyless nodes we are done
         if (!keyLess)
             return cachedChildren;
-
         // calculate common (old and new) keyless
         keyLess = (keyLess - Math.abs(deltaKeyless)) >> 1;
-
         // reorder just nonkeyed nodes
         newIndex = backupNewIndex;
         cachedIndex = backupCachedIndex;
@@ -718,7 +706,8 @@ b = (function (window, document) {
                 keyLess--;
                 newIndex++;
                 cachedIndex++;
-            } else {
+            }
+            else {
                 cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex]));
                 cachedEnd++;
                 cachedLength++;
@@ -734,7 +723,6 @@ b = (function (window, document) {
         }
         return cachedChildren;
     }
-
     var hasNativeRaf = false;
     var nativeRaf = window.requestAnimationFrame;
     if (nativeRaf) {
@@ -743,17 +731,14 @@ b = (function (window, document) {
                 hasNativeRaf = true;
         });
     }
-
-    var now = Date.now || (function () {
-        return (new Date).getTime();
-    });
+    var now = Date.now || (function () { return (new Date).getTime(); });
     var startTime = now();
     var lastTickTime = 0;
-
     function requestAnimationFrame(callback) {
         if (hasNativeRaf) {
             nativeRaf(callback);
-        } else {
+        }
+        else {
             var delay = 50 / 3 + lastTickTime - now();
             if (delay < 0)
                 delay = 0;
@@ -763,10 +748,8 @@ b = (function (window, document) {
             }, delay);
         }
     }
-
     var rootFactory;
     var rootCacheChildren = [];
-
     var scheduled = false;
     function scheduleUpdate() {
         if (scheduled)
@@ -774,18 +757,15 @@ b = (function (window, document) {
         scheduled = true;
         requestAnimationFrame(update);
     }
-
     var regEvents;
     var registryEvents;
     regEvents = {};
     registryEvents = {};
-
     function addEvent(name, priority, callback) {
         var list = registryEvents[name] || [];
         list.push({ priority: priority, callback: callback });
         registryEvents[name] = list;
     }
-
     function emitEvent(name, ev, target, node) {
         var events = regEvents[name];
         if (events)
@@ -794,7 +774,6 @@ b = (function (window, document) {
                     break;
             }
     }
-
     function addListener(el, name) {
         function enhanceEvent(ev) {
             ev = ev || window.event;
@@ -806,11 +785,11 @@ b = (function (window, document) {
             el = window;
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
-        } else {
+        }
+        else {
             el.attachEvent("on" + name, enhanceEvent);
         }
     }
-
     var eventsCaptured = false;
     function initEvents() {
         if (eventsCaptured)
@@ -820,12 +799,8 @@ b = (function (window, document) {
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
             var arr = registryEvents[eventName];
-            arr = arr.sort(function (a, b) {
-                return a.priority - b.priority;
-            });
-            regEvents[eventName] = arr.map(function (v) {
-                return v.callback;
-            });
+            arr = arr.sort(function (a, b) { return a.priority - b.priority; });
+            regEvents[eventName] = arr.map(function (v) { return v.callback; });
         }
         registryEvents = null;
         var body = document.body;
@@ -833,14 +808,11 @@ b = (function (window, document) {
             addListener(body, eventNames[i]);
         }
     }
-
     function init(factory) {
         rootFactory = factory;
         scheduleUpdate();
     }
-
     var uptime = 0;
-
     function update(time) {
         initEvents();
         uptime = time;
@@ -849,7 +821,6 @@ b = (function (window, document) {
         rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren);
         callPostCallbacks();
     }
-
     function bubbleEvent(node, name, param) {
         while (node) {
             var c = node.component;
@@ -865,7 +836,6 @@ b = (function (window, document) {
         }
         return false;
     }
-
     function merge(f1, f2) {
         var _this = this;
         return function () {
@@ -875,7 +845,6 @@ b = (function (window, document) {
             return f2.apply(_this, arguments);
         };
     }
-
     function postEnhance(node, methods) {
         var comp = node.component;
         if (!comp) {
@@ -899,7 +868,8 @@ b = (function (window, document) {
                 var origM = comp[i];
                 if (typeof (m) == "function" && origM) {
                     res[i] = merge(origM, m);
-                } else {
+                }
+                else {
                     res[i] = m;
                 }
             }
@@ -910,7 +880,6 @@ b = (function (window, document) {
         node.component = res;
         return node;
     }
-
     function assign(target, source) {
         if (source != null)
             for (var propname in source) {
@@ -920,7 +889,6 @@ b = (function (window, document) {
             }
         return target;
     }
-
     function preventDefault(event) {
         var pd = event.preventDefault;
         if (pd)
@@ -928,7 +896,6 @@ b = (function (window, document) {
         else
             event.returnValue = false;
     }
-
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -937,20 +904,15 @@ b = (function (window, document) {
         setSetValue: setSetValue,
         init: init,
         isArray: isArray,
-        uptime: function () {
-            return uptime;
-        },
+        uptime: function () { return uptime; },
         now: now,
         assign: assign,
         invalidate: scheduleUpdate,
         preventDefault: preventDefault,
-        vmlNode: function () {
-            return inNamespace = true;
-        },
+        vmlNode: function () { return inNamespace = true; },
         deref: getCacheNode,
         addEvent: addEvent,
         bubble: bubbleEvent,
         postEnhance: postEnhance
     };
 })(window, document);
-//# sourceMappingURL=bobril.js.map

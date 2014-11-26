@@ -5,7 +5,7 @@
 /// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="model.ts"/>
 
-module MouseEnterLeaveApp {
+module TodoApp {
 
     interface IDeleteButtonCtx {
         data: any;
@@ -15,42 +15,86 @@ module MouseEnterLeaveApp {
         data: any;
     }
 
+    interface IListItemCtx {
+        data: any;
+    }
+
+    interface ITaskListCtx {
+        data: ITaskListModel;
+    }
+
+    interface ITaskListModel {
+        tasks: Tasks;
+        currentNewTaskName: string;
+        currentEditTaskName: string;
+    }
+
     export class TaskList implements IBobrilComponent {
 
-        // model
-        static tasks: Tasks = new Tasks();
-        static currentTaskName: string;
-
-        static init(ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+        static init(ctx: ITaskListCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+            var model = oldMe ? oldMe.data : me.data;
             var heading = this.createHeadingElement();
-            var input = this.createInputElement();
-            var hint = this.createHintElement();
-            var componentChilden = this.createTaskElements();
-            componentChilden.unshift(hint);
-            componentChilden.unshift(input);
-            componentChilden.unshift(heading);
+            var checkbox = this.createSetAllCheckboxElement(model);
+            var input = this.createInputElement(model);
+            var hint = this.createHintElement(model);
+            var todoList = this.createTaskElements(model);
+            var footer = this.createFooterElements(model);
 
             me.tag = 'div';
             me.attrs = { 'class': 'main' };
-            me.children = componentChilden;
+            me.children = [
+                heading,
+                {
+                    tag: 'div',
+                    attrs: { 'class': 'input-wrapper' },
+                    children: [
+                        input,
+                        checkbox
+                    ]
+                },
+                // hint,
+                todoList,
+                footer
+            ]
         }
 
         static createHeadingElement() {
-            return [
-                {
+            return {
                     tag: 'h3',
                     children: 'Todos'
-                }
-            ];
+                };
         }
 
-        static createInputElement() {
+        static createSetAllCheckboxElement(model: ITaskListModel) {
+            var attributes = { 'type': 'checkbox', 'class': 'set-all-tasks' };
+            if (model.tasks.getItemsCount() > 0 && model.tasks.isWholeListCompleted()) {
+                attributes['checked'] = 'checked';
+            }
+            return {
+                tag: 'input',
+                attrs: attributes,
+                component: {
+                    onChange: (ctx: ITaskListCtx, value: string) => {
+                        if (value) {
+                            model.tasks.markAllTasksAsCompleted();
+                            b.invalidate();
+                        } else {
+                            model.tasks.markAllTasksAsActive();
+                            b.invalidate();
+                        }
+                    }
+                }
+            };
+        }
+
+        static createInputElement(model: ITaskListModel) {
             var inputAttributes = {
-                    'placeholder': 'What needs to be done',
-                    'class': 'task-name'
+                    'placeholder': 'What needs to be done?',
+                    'class': 'task-name',
+                    'autofocus': 'a'
                 };
-            if (this.currentTaskName) {
-                inputAttributes['value'] = this.currentTaskName;
+            if (model.currentNewTaskName) {
+                inputAttributes['value'] = model.currentNewTaskName;
             } else {
                 inputAttributes['value'] = '';
             }
@@ -60,23 +104,26 @@ module MouseEnterLeaveApp {
                 component: {
                     onKeyUp: (ctx: Object, event: IKeyDownUpEvent) => {
                         if (event.which == 13) { // enter
-                            this.tasks.addTask(this.currentTaskName);
-                            this.currentTaskName = '';
-                            b.invalidate();
+                            model.currentNewTaskName = model.currentNewTaskName.trim();
+                            if (model.currentNewTaskName) {
+                                model.tasks.addTask(model.currentNewTaskName);
+                                model.currentNewTaskName = '';
+                                b.invalidate();
+                            }
                         } else if (event.which == 27) { // escape
                             // cancel the task adding controls
-                            this.currentTaskName = '';
+                            model.currentNewTaskName = '';
                             b.invalidate();
                         }
                     },
                     onChange: (ctx: Object, value: string) => {
-                        this.currentTaskName = value;
+                        model.currentNewTaskName = value;
                     }
                 }
             };
         }
 
-        static createHintElement() {
+        static createHintElement(model: ITaskListModel) {
             return {
                 tag: 'p',
                 attrs: {
@@ -89,41 +136,69 @@ module MouseEnterLeaveApp {
             };
         }
 
-        static createTaskElements() {
-            var res = [];
-            for (var i = 0; i < this.tasks.items.length; i++) {
-                var taskName = this.tasks.items[i].name;
-                var taskId = this.tasks.items[i].id;
+        static createTaskElements(model: ITaskListModel) {
+            var res = {
+                tag: 'ul',
+                attrs: { 'class': 'todo-list'},
+                children: []
+            };
+            for (var i = 0; i < model.tasks.getItemsCount(); i++) {
+                var taskName = model.tasks.items[i].name;
+                var taskId = model.tasks.items[i].id;
                 var classes = 'task';
-                if (this.tasks.items[i].completed) {
+                if (model.tasks.isTaskCompleted(taskId)) {
                     classes += ' completed';
                 }
+                var labelClasses = '';
+                if (model.tasks.isInEditMode(taskId)) {
+                    labelClasses += 'hidden';
+                } else {
+                    classes += ' readonly';
+                }
 
-                res.push({
-                        tag: 'div',
+                res.children.push({
+                        tag: 'li',
                         attrs: {
                             'class': classes
                         },
                         children: [
-                            this.createCheckboxElement(taskId),
-                            { tag: 'span', children: taskName },
-                            this.createDeleteButtonElement(taskId)
-                        ]
+                            this.createCheckboxElement(model, taskId),
+                            { tag: 'label', children: taskName, attrs: { 'class': labelClasses } },
+                            this.createDeleteButtonElement(model, taskId),
+                            this.createEditingInputElement(model, taskId, taskName)
+                        ],
+                        component: {
+                            onDoubleClick: (ctx: IListItemCtx, event: IMouseEvent) => {
+                                model.tasks.setTaskEditMode(ctx.data.taskId, true);
+                                b.invalidate();
+                            }
+                        },
+                        data: {
+                            'taskId': taskId
+                        }
                     });
             }
             return res;
         }
 
-        static createCheckboxElement(taskId: number) {
+
+        static createCheckboxElement(model: ITaskListModel, taskId: number) {
+            var attributes = { 'type': 'checkbox', 'class': 'mark-as-completed' };
+            if (model.tasks.isTaskCompleted(taskId)) {
+                attributes['checked'] = 'checked';
+            }
+            if (model.tasks.isInEditMode(taskId)) {
+                attributes['class'] += ' hidden';
+            }
             return { 
                 tag: 'input',
-                attrs: { 'type': 'checkbox', 'class': 'mark-as-completed' },
+                attrs: attributes,
                 component: {
                     onChange: (ctx: ICheckboxCtx, value: string) => {
                         if (value) {
-                            this.tasks.markTaskAsCompleted(ctx.data.taskId);
+                            model.tasks.markTaskAsCompleted(ctx.data.taskId);
                         } else {
-                            this.tasks.markTaskAsActive(ctx.data.taskId);
+                            model.tasks.markTaskAsActive(ctx.data.taskId);
                         }
                         b.invalidate();
                     }
@@ -134,17 +209,18 @@ module MouseEnterLeaveApp {
             };
         }
 
-        static createDeleteButtonElement(taskId: number) {
+        static createDeleteButtonElement(model: ITaskListModel, taskId: number) {
+            var attributes = { 'class': 'delete-button', 'href': 'javascript: void(0);' };
+            if (model.tasks.isInEditMode(taskId)) {
+                attributes['class'] += ' hidden';
+            }
             return {
                 tag: 'a',
                 children: 'delete',
-                attrs: {
-                    'class': 'delete-button',
-                    'href': 'javascript: void(0);'
-                },
+                attrs: attributes,
                 component: {
                     onClick: (ctx: IDeleteButtonCtx, event: IMouseEvent) => {
-                        this.tasks.removeTask(ctx.data.taskId);
+                        model.tasks.removeTask(ctx.data.taskId);
                         b.invalidate();
                     }
                 },
@@ -152,6 +228,96 @@ module MouseEnterLeaveApp {
                     'taskId': taskId
                 }
             }
+        }
+
+        static createEditingInputElement(model: ITaskListModel, taskId: number, taskName: string) {
+            var isInEditMode = model.tasks.isInEditMode(taskId);
+            var attributes = { 'type': 'text', 'class': 'task-edit', 'value': taskName };
+            if (!isInEditMode) {
+                attributes['class'] += ' hidden';
+            }
+            return [
+                { 
+                    tag: 'input', 
+                    attrs: attributes,
+                    component: {
+                            onKeyUp: (ctx: Object, event: IKeyDownUpEvent) => {
+                                if (event.which == 13) { // enter
+                                    model.currentEditTaskName = model.currentEditTaskName.trim();
+                                    if (model.currentEditTaskName) {
+                                        model.tasks.setTaskName(taskId, model.currentEditTaskName);
+                                        model.currentEditTaskName = '';
+                                        model.tasks.setTaskEditMode(taskId, false);
+                                        b.invalidate();
+                                    }
+                                } else if (event.which == 27) { // escape
+                                    model.tasks.setTaskEditMode(taskId, false);
+                                    b.invalidate();
+                                }
+                            },
+                            onChange: (ctx: ITaskListCtx, value: string) => {
+                                model.currentEditTaskName = value;
+                            }
+                        }
+                },
+                { 
+                    tag: 'div', 
+                    attrs: { 'class': 'cleaner' } 
+                }];
+        }
+
+        static createFooterElements(model: ITaskListModel) {
+            var completedCount = model.tasks.getNumberOfCompletedTasks();
+            var itemsLeftInfo = this.createItemsLeftInfo(model);
+            var clearAllButton = this.createClearCompleted(model);
+            var attributes = { 'class': 'footer' };
+            if (model.tasks.items.length < 1) {
+                attributes['class'] += ' hidden';
+            }
+            return {
+                tag: 'div',
+                attrs: attributes,
+                children: [
+                    itemsLeftInfo,
+                    clearAllButton,
+                    {
+                        tag: 'div',
+                        attrs: { 'class': 'cleaner' }
+                    }
+                ]
+            };
+        }
+
+        static createItemsLeftInfo(model: ITaskListModel) {
+            var itemsLeftCount = model.tasks.items.length - model.tasks.getNumberOfCompletedTasks();
+            var text = itemsLeftCount === 1 
+                ? itemsLeftCount + ' item left'
+                : itemsLeftCount + ' items left';
+            return {
+                tag: 'div',
+                attrs: { 'class': 'items-left-info' },
+                children: text
+            };
+        }
+
+        static createClearCompleted(model: ITaskListModel) {
+            var numberOfCompletedTasks = model.tasks.getNumberOfCompletedTasks()
+            var text = 'Clear completed (' + model.tasks.getNumberOfCompletedTasks() + ')';
+            var attributes = { 'class': 'clear-completed-button' };
+            if (numberOfCompletedTasks < 1) {
+                attributes['class'] += ' hidden';
+            }
+            return {
+                tag: 'div',
+                attrs: attributes,
+                children: text,
+                component: {
+                    onClick: (ctx: Object, event: IMouseEvent) => {
+                        model.tasks.removeCompletedTasks();
+                        b.invalidate();
+                    }
+                }
+            };
         }
     }
 }
