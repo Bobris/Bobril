@@ -16,6 +16,7 @@ var TodoApp;
             var input = this.createInputElement(model);
             var hint = this.createHintElement(model);
             var todoList = this.createTaskElements(model);
+            var footer = this.createFooterElements(model);
             me.tag = 'div';
             me.attrs = { 'class': 'main' };
             me.children = [
@@ -28,7 +29,8 @@ var TodoApp;
                         checkbox
                     ]
                 },
-                todoList
+                todoList,
+                footer
             ];
         };
         TaskList.createHeadingElement = function () {
@@ -175,6 +177,55 @@ var TodoApp;
                 },
                 data: {
                     'taskId': taskId
+                }
+            };
+        };
+        TaskList.createFooterElements = function (model) {
+            var completedCount = model.tasks.getNumberOfCompletedTasks();
+            var itemsLeftInfo = this.createItemsLeftInfo(model);
+            var clearAllButton = this.createClearCompleted(model);
+            var attributes = { 'class': 'footer' };
+            if (model.tasks.items.length < 1) {
+                attributes['class'] += ' hidden';
+            }
+            return {
+                tag: 'div',
+                attrs: attributes,
+                children: [
+                    itemsLeftInfo,
+                    clearAllButton,
+                    {
+                        tag: 'div',
+                        attrs: { 'class': 'cleaner' }
+                    }
+                ]
+            };
+        };
+        TaskList.createItemsLeftInfo = function (model) {
+            var itemsLeftCount = model.tasks.items.length - model.tasks.getNumberOfCompletedTasks();
+            var text = itemsLeftCount === 1 ? itemsLeftCount + ' item left' : itemsLeftCount + ' items left';
+            return {
+                tag: 'div',
+                attrs: { 'class': 'items-left-info' },
+                children: text
+            };
+        };
+        TaskList.createClearCompleted = function (model) {
+            var numberOfCompletedTasks = model.tasks.getNumberOfCompletedTasks();
+            var text = 'Clear completed (' + model.tasks.getNumberOfCompletedTasks() + ')';
+            var attributes = { 'class': 'clear-completed-button' };
+            if (numberOfCompletedTasks < 1) {
+                attributes['class'] += ' hidden';
+            }
+            return {
+                tag: 'div',
+                attrs: attributes,
+                children: text,
+                component: {
+                    onClick: function (ctx, event) {
+                        model.tasks.removeCompletedTasks();
+                        b.invalidate();
+                    }
                 }
             };
         };

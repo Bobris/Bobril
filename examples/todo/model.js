@@ -34,12 +34,23 @@ var TodoApp;
             }
         };
         Tasks.prototype.removeTask = function (id) {
+            this.removeTasksByPredicate(function (item) {
+                return item.id === id;
+            });
+        };
+        Tasks.prototype.getNumberOfCompletedTasks = function () {
+            var res = 0;
             for (var i = 0; i < this.items.length; i++) {
-                if (this.items[i].id === id) {
-                    this.items.splice(i, 1);
-                    return;
+                if (this.items[i].completed) {
+                    res++;
                 }
             }
+            return res;
+        };
+        Tasks.prototype.removeCompletedTasks = function () {
+            this.removeTasksByPredicate(function (item) {
+                return item.completed;
+            });
         };
         Tasks.prototype.setTaskStatus = function (taskId, status) {
             this.findTaskById(taskId).completed = status;
@@ -59,6 +70,13 @@ var TodoApp;
                 }
             }
             return null;
+        };
+        Tasks.prototype.removeTasksByPredicate = function (predicate) {
+            for (var i = this.items.length - 1; i >= 0; i--) {
+                if (predicate(this.items[i])) {
+                    this.items.splice(i, 1);
+                }
+            }
         };
         return Tasks;
     })();

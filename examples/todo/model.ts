@@ -7,8 +7,8 @@ module TodoApp {
     }
 
     export class Tasks {
+        private counter: number;
         items: Task[];
-        counter: number;
 
         constructor() {
             this.items = [];
@@ -41,12 +41,21 @@ module TodoApp {
         }
 
         removeTask(id: number): void {
+            this.removeTasksByPredicate((item: Task) => { return item.id === id; });
+        }
+
+        getNumberOfCompletedTasks(): number {
+            var res = 0;
             for (var i = 0; i < this.items.length; i++) {
-                if (this.items[i].id === id) {
-                    this.items.splice(i, 1);
-                    return;
+                if (this.items[i].completed) {
+                    res++;
                 }
             }
+            return res;
+        }
+
+        removeCompletedTasks(): void {
+            this.removeTasksByPredicate((item: Task) => { return item.completed; });
         }
 
         setTaskStatus(taskId: number, status: boolean): void {
@@ -70,6 +79,14 @@ module TodoApp {
                 }
             }
             return null;
+        }
+
+        private removeTasksByPredicate(predicate: (Task) => boolean) {
+            for (var i = this.items.length - 1; i >= 0; i--) {
+                if (predicate(this.items[i])) {
+                    this.items.splice(i, 1);
+                }
+            }
         }
     }
 }

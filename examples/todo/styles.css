@@ -7,6 +7,14 @@ body {
     height: 100%;
 }
 
+div.cleaner {
+    clear: both;
+}
+
+div.hidden {
+    display: none;
+}
+
 div.main {
     background-color: #fff;
     width: 500px;
@@ -37,6 +45,7 @@ div.input-wrapper input.task-name {
     padding: 15px 15px 15px 50px;
     border: none;
     border-top: 5px solid #b8b8b8;
+    border-bottom: 5px solid #b8b8b8;
     outline-width: 0;
     display: block;
     width: 85%;
@@ -81,4 +90,26 @@ ul.todo-list li.task:hover a.delete-button {
 ul.todo-list li.task.completed label {
     text-decoration: line-through;
     color: #a9a9a9;
+}
+
+div.footer {
+    background-color: #eeeeee;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+div.footer div.items-left-info {
+    float: left;
+    padding: 3px;
+}
+
+div.footer div.clear-completed-button {
+    float: right;
+    padding: 5px;
+    background-color: #c1c1c1;
+    cursor: pointer;
+    border-radius: 3px;
+}
+div.footer div.clear-completed-button:hover {
+    background-color: #b6b6b6;
 }
