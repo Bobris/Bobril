@@ -43,6 +43,7 @@ module TodoApp {
         public markAllTasksAsCompleted(): void {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsCompleted(this.items[i].id);
+                this.setTaskEditMode(this.items[i].id, false);
             }
         }
 
@@ -53,6 +54,7 @@ module TodoApp {
         public markAllTasksAsActive(): void {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsActive(this.items[i].id);
+                this.setTaskEditMode(this.items[i].id, false);
             }
         }
 

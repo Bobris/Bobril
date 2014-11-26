@@ -46,6 +46,7 @@ div.input-wrapper input.task-name {
     border: none;
     border-top: 5px solid #b8b8b8;
     border-bottom: 5px solid #b8b8b8;
+    background-color: #f5f5f5;
     outline-width: 0;
     display: block;
     width: 85%;
