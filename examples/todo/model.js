@@ -1,5 +1,5 @@
-var MouseEnterLeaveApp;
-(function (MouseEnterLeaveApp) {
+var TodoApp;
+(function (TodoApp) {
     var Task = (function () {
         function Task(id, name, completed) {
             this.id = id;
@@ -8,7 +8,7 @@ var MouseEnterLeaveApp;
         }
         return Task;
     })();
-    MouseEnterLeaveApp.Task = Task;
+    TodoApp.Task = Task;
     var Tasks = (function () {
         function Tasks() {
             this.items = [];
@@ -20,8 +20,18 @@ var MouseEnterLeaveApp;
         Tasks.prototype.markTaskAsCompleted = function (id) {
             this.setTaskStatus(id, true);
         };
+        Tasks.prototype.markAllTasksAsCompleted = function () {
+            for (var i = 0; i < this.items.length; i++) {
+                this.markTaskAsCompleted(this.items[i].id);
+            }
+        };
         Tasks.prototype.markTaskAsActive = function (id) {
             this.setTaskStatus(id, false);
+        };
+        Tasks.prototype.markAllTasksAsActive = function () {
+            for (var i = 0; i < this.items.length; i++) {
+                this.markTaskAsActive(this.items[i].id);
+            }
         };
         Tasks.prototype.removeTask = function (id) {
             for (var i = 0; i < this.items.length; i++) {
@@ -32,14 +42,25 @@ var MouseEnterLeaveApp;
             }
         };
         Tasks.prototype.setTaskStatus = function (taskId, status) {
+            this.findTaskById(taskId).completed = status;
+        };
+        Tasks.prototype.isWholeListCompleted = function () {
+            return this.items.every(function (currentValue, index, array) {
+                return currentValue.completed;
+            });
+        };
+        Tasks.prototype.isTaskCompleted = function (taskId) {
+            return this.findTaskById(taskId).completed;
+        };
+        Tasks.prototype.findTaskById = function (taskId) {
             for (var i = 0; i < this.items.length; i++) {
                 if (this.items[i].id === taskId) {
-                    this.items[i].completed = status;
-                    return;
+                    return this.items[i];
                 }
             }
+            return null;
         };
         return Tasks;
     })();
-    MouseEnterLeaveApp.Tasks = Tasks;
-})(MouseEnterLeaveApp || (MouseEnterLeaveApp = {}));
+    TodoApp.Tasks = Tasks;
+})(TodoApp || (TodoApp = {}));

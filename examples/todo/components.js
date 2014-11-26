@@ -4,39 +4,69 @@
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 /// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="model.ts"/>
-var MouseEnterLeaveApp;
-(function (MouseEnterLeaveApp) {
+var TodoApp;
+(function (TodoApp) {
     var TaskList = (function () {
         function TaskList() {
         }
         TaskList.init = function (ctx, me, oldMe) {
+            var model = oldMe ? oldMe.data : me.data;
             var heading = this.createHeadingElement();
-            var input = this.createInputElement();
-            var hint = this.createHintElement();
-            var componentChilden = this.createTaskElements();
-            componentChilden.unshift(hint);
-            componentChilden.unshift(input);
-            componentChilden.unshift(heading);
+            var checkbox = this.createSetAllCheckboxElement(model);
+            var input = this.createInputElement(model);
+            var hint = this.createHintElement(model);
+            var todoList = this.createTaskElements(model);
             me.tag = 'div';
             me.attrs = { 'class': 'main' };
-            me.children = componentChilden;
-        };
-        TaskList.createHeadingElement = function () {
-            return [
+            me.children = [
+                heading,
                 {
-                    tag: 'h3',
-                    children: 'Todos'
-                }
+                    tag: 'div',
+                    attrs: { 'class': 'input-wrapper' },
+                    children: [
+                        input,
+                        checkbox
+                    ]
+                },
+                todoList
             ];
         };
-        TaskList.createInputElement = function () {
-            var _this = this;
-            var inputAttributes = {
-                'placeholder': 'What needs to be done',
-                'class': 'task-name'
+        TaskList.createHeadingElement = function () {
+            return {
+                tag: 'h3',
+                children: 'Todos'
             };
-            if (this.currentTaskName) {
-                inputAttributes['value'] = this.currentTaskName;
+        };
+        TaskList.createSetAllCheckboxElement = function (model) {
+            var attributes = { 'type': 'checkbox', 'class': 'set-all-tasks' };
+            if (model.tasks.items.length > 0 && model.tasks.isWholeListCompleted()) {
+                attributes['checked'] = 'checked';
+            }
+            return {
+                tag: 'input',
+                attrs: attributes,
+                component: {
+                    onChange: function (ctx, value) {
+                        if (value) {
+                            model.tasks.markAllTasksAsCompleted();
+                            b.invalidate();
+                        }
+                        else {
+                            model.tasks.markAllTasksAsActive();
+                            b.invalidate();
+                        }
+                    }
+                }
+            };
+        };
+        TaskList.createInputElement = function (model) {
+            var inputAttributes = {
+                'placeholder': 'What needs to be done?',
+                'class': 'task-name',
+                'autofocus': 'a'
+            };
+            if (model.currentTaskName) {
+                inputAttributes['value'] = model.currentTaskName;
             }
             else {
                 inputAttributes['value'] = '';
@@ -47,23 +77,26 @@ var MouseEnterLeaveApp;
                 component: {
                     onKeyUp: function (ctx, event) {
                         if (event.which == 13) {
-                            _this.tasks.addTask(_this.currentTaskName);
-                            _this.currentTaskName = '';
-                            b.invalidate();
+                            model.currentTaskName = model.currentTaskName.trim();
+                            if (model.currentTaskName) {
+                                model.tasks.addTask(model.currentTaskName);
+                                model.currentTaskName = '';
+                                b.invalidate();
+                            }
                         }
                         else if (event.which == 27) {
                             // cancel the task adding controls
-                            _this.currentTaskName = '';
+                            model.currentTaskName = '';
                             b.invalidate();
                         }
                     },
                     onChange: function (ctx, value) {
-                        _this.currentTaskName = value;
+                        model.currentTaskName = value;
                     }
                 }
             };
         };
-        TaskList.createHintElement = function () {
+        TaskList.createHintElement = function (model) {
             return {
                 tag: 'p',
                 attrs: {
@@ -75,41 +108,48 @@ var MouseEnterLeaveApp;
                 }
             };
         };
-        TaskList.createTaskElements = function () {
-            var res = [];
-            for (var i = 0; i < this.tasks.items.length; i++) {
-                var taskName = this.tasks.items[i].name;
-                var taskId = this.tasks.items[i].id;
+        TaskList.createTaskElements = function (model) {
+            var res = {
+                tag: 'ul',
+                attrs: { 'class': 'todo-list' },
+                children: []
+            };
+            for (var i = 0; i < model.tasks.items.length; i++) {
+                var taskName = model.tasks.items[i].name;
+                var taskId = model.tasks.items[i].id;
                 var classes = 'task';
-                if (this.tasks.items[i].completed) {
+                if (model.tasks.items[i].completed) {
                     classes += ' completed';
                 }
-                res.push({
-                    tag: 'div',
+                res.children.push({
+                    tag: 'li',
                     attrs: {
                         'class': classes
                     },
                     children: [
-                        this.createCheckboxElement(taskId),
-                        { tag: 'span', children: taskName },
-                        this.createDeleteButtonElement(taskId)
+                        this.createCheckboxElement(model, taskId),
+                        { tag: 'label', children: taskName },
+                        this.createDeleteButtonElement(model, taskId)
                     ]
                 });
             }
             return res;
         };
-        TaskList.createCheckboxElement = function (taskId) {
-            var _this = this;
+        TaskList.createCheckboxElement = function (model, taskId) {
+            var attributes = { 'type': 'checkbox', 'class': 'mark-as-completed' };
+            if (model.tasks.isTaskCompleted(taskId)) {
+                attributes['checked'] = 'checked';
+            }
             return {
                 tag: 'input',
-                attrs: { 'type': 'checkbox', 'class': 'mark-as-completed' },
+                attrs: attributes,
                 component: {
                     onChange: function (ctx, value) {
                         if (value) {
-                            _this.tasks.markTaskAsCompleted(ctx.data.taskId);
+                            model.tasks.markTaskAsCompleted(ctx.data.taskId);
                         }
                         else {
-                            _this.tasks.markTaskAsActive(ctx.data.taskId);
+                            model.tasks.markTaskAsActive(ctx.data.taskId);
                         }
                         b.invalidate();
                     }
@@ -119,8 +159,7 @@ var MouseEnterLeaveApp;
                 }
             };
         };
-        TaskList.createDeleteButtonElement = function (taskId) {
-            var _this = this;
+        TaskList.createDeleteButtonElement = function (model, taskId) {
             return {
                 tag: 'a',
                 children: 'delete',
@@ -130,7 +169,7 @@ var MouseEnterLeaveApp;
                 },
                 component: {
                     onClick: function (ctx, event) {
-                        _this.tasks.removeTask(ctx.data.taskId);
+                        model.tasks.removeTask(ctx.data.taskId);
                         b.invalidate();
                     }
                 },
@@ -139,9 +178,7 @@ var MouseEnterLeaveApp;
                 }
             };
         };
-        // model
-        TaskList.tasks = new MouseEnterLeaveApp.Tasks();
         return TaskList;
     })();
-    MouseEnterLeaveApp.TaskList = TaskList;
-})(MouseEnterLeaveApp || (MouseEnterLeaveApp = {}));
+    TodoApp.TaskList = TaskList;
+})(TodoApp || (TodoApp = {}));

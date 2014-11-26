@@ -22,37 +22,63 @@ h3 {
     font-size: 30px;
 }
 
+div.input-wrapper {
+    position: relative;
+}
+
+div.input-wrapper input[type=checkbox] {
+    position: absolute;
+    top: 22px;
+    left: 9px;
+}
+
+div.input-wrapper input.task-name {
+    font-size: 20px;
+    padding: 15px 15px 15px 50px;
+    border: none;
+    border-top: 5px solid #b8b8b8;
+    outline-width: 0;
+    display: block;
+    width: 85%;
+}
+
 p.hint {
     text-align: center;
     margin-top: 0;
     margin-bottom: 40px;
 }
 
-input.mark-as-completed {
-    margin-right: 10px;
+ul.todo-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-input.task-name {
-    font-size: 20px;
-    padding: 6px;
-    width: 97%;
+ul.todo-list input.mark-as-completed {
+    margin-right: 25px;
 }
 
-div.task {
+ul.todo-list li.task {
     padding: 10px;
     margin-top: 10px;
     border-bottom: solid 1px #a9a9a9;
+    font-size: 20px;
 }
 
-div.task a.delete-button {
+ul.todo-list li.task a.delete-button {
     float: right;
     text-indent: -5000px;
     background-image: url('delete.png');
-    display: block;
     width: 20px;
     height: 20px;
+    display: none;
 }
 
-div.task.completed span {
+ul.todo-list li.task:hover a.delete-button {
+    display: block;
+}
+
+ul.todo-list li.task.completed label {
     text-decoration: line-through;
+    color: #a9a9a9;
 }

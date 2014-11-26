@@ -1,5 +1,5 @@
 
-module MouseEnterLeaveApp {
+module TodoApp {
 
     export class Task {
         constructor(public id: number, public name: string, public completed: boolean) {
@@ -20,12 +20,24 @@ module MouseEnterLeaveApp {
             this.items.push(new Task(this.counter++, name, false));
         }
 
-        markTaskAsCompleted(id: number) {
+        markTaskAsCompleted(id: number): void {
             this.setTaskStatus(id, true);
         }
 
-        markTaskAsActive(id: number) {
+        markAllTasksAsCompleted(): void {
+            for (var i = 0; i < this.items.length; i++) {
+                this.markTaskAsCompleted(this.items[i].id);
+            }
+        }
+
+        markTaskAsActive(id: number): void {
             this.setTaskStatus(id, false);
+        }
+
+        markAllTasksAsActive(): void {
+            for (var i = 0; i < this.items.length; i++) {
+                this.markTaskAsActive(this.items[i].id);
+            }
         }
 
         removeTask(id: number): void {
@@ -37,13 +49,27 @@ module MouseEnterLeaveApp {
             }
         }
 
-        setTaskStatus(taskId: number, status: boolean) {
+        setTaskStatus(taskId: number, status: boolean): void {
+            this.findTaskById(taskId).completed = status;
+        }
+
+        isWholeListCompleted(): boolean {
+            return this.items.every((currentValue, index, array) => {
+                    return currentValue.completed;
+                });
+        }
+
+        isTaskCompleted(taskId: number): boolean {
+            return this.findTaskById(taskId).completed;
+        }
+
+        private findTaskById(taskId: number): Task {
             for (var i = 0; i < this.items.length; i++) {
                 if (this.items[i].id === taskId) {
-                    this.items[i].completed = status;
-                    return;
+                    return this.items[i];
                 }
             }
+            return null;
         }
     }
 }

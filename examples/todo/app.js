@@ -3,13 +3,16 @@
 /// <reference path="../../src/bobril.swipe.d.ts"/>
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 /// <reference path="model.ts"/>
-/// <reference path="utils.ts"/>
 /// <reference path="components.ts"/>
-var MouseEnterLeaveApp;
-(function (MouseEnterLeaveApp) {
+var TodoApp;
+(function (TodoApp) {
     b.init(function () {
         return {
-            component: MouseEnterLeaveApp.TaskList
+            component: TodoApp.TaskList,
+            data: {
+                tasks: new TodoApp.Tasks(),
+                currentTaskName: ''
+            }
         };
     });
-})(MouseEnterLeaveApp || (MouseEnterLeaveApp = {}));
+})(TodoApp || (TodoApp = {}));
