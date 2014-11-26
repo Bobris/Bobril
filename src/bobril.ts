@@ -7,7 +7,7 @@ if (typeof DEBUG === 'undefined') DEBUG = true;
 // IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
 if (!Array.prototype.map) {
     Array.prototype.map = function (callback: any, thisArg: any) {
-        var t: any, a: Array<any>, k: number;
+        var a: Array<any>, k: number;
         // ReSharper disable once ConditionIsAlwaysConst
         if (DEBUG && this == null) {
             throw new TypeError("this==null");
@@ -17,16 +17,13 @@ if (!Array.prototype.map) {
         if (DEBUG && typeof callback != "function") {
             throw new TypeError(callback + " isn't func");
         }
-        if (arguments.length > 1) {
-            t = thisArg;
-        }
         a = new Array(len);
         k = 0;
         while (k < len) {
             var kValue: any, mappedValue: any;
             if (k in o) {
                 kValue = o[k];
-                mappedValue = callback.call(t, kValue, k, o);
+                mappedValue = callback.call(thisArg, kValue, k, o);
                 a[k] = mappedValue;
             }
             k++;
