@@ -7,11 +7,11 @@ body {
     height: 100%;
 }
 
-div.cleaner {
+.cleaner {
     clear: both;
 }
 
-div.hidden {
+.hidden {
     display: none;
 }
 
@@ -68,6 +68,7 @@ ul.todo-list input.mark-as-completed {
 }
 
 ul.todo-list li.task {
+    position: relative;
     padding: 10px;
     margin-top: 10px;
     border-bottom: solid 1px #a9a9a9;
@@ -75,7 +76,9 @@ ul.todo-list li.task {
 }
 
 ul.todo-list li.task a.delete-button {
-    float: right;
+    position: absolute;
+    top: 5px;
+    right: 15px;
     text-indent: -5000px;
     background-image: url('delete.png');
     width: 20px;
@@ -83,7 +86,14 @@ ul.todo-list li.task a.delete-button {
     display: none;
 }
 
-ul.todo-list li.task:hover a.delete-button {
+ul.todo-list li.task input.task-edit {
+    width: 91%;
+    float: right;
+    margin-right: -4px;
+    font-size: 20px;
+}
+
+ul.todo-list li.readonly.task:hover a.delete-button {
     display: block;
 }
 

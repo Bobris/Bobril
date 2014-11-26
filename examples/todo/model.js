@@ -1,11 +1,22 @@
 var TodoApp;
 (function (TodoApp) {
     var Task = (function () {
-        function Task(id, name, completed) {
+        function Task(id, name, completed, isInEditMode) {
+            if (isInEditMode === void 0) { isInEditMode = false; }
             this.id = id;
             this.name = name;
             this.completed = completed;
+            this.isInEditMode = isInEditMode;
         }
+        Task.prototype.setStatus = function (completed) {
+            this.completed = completed;
+        };
+        Task.prototype.setEditMode = function (isEdit) {
+            this.isInEditMode = isEdit;
+        };
+        Task.prototype.setName = function (name) {
+            this.name = name;
+        };
         return Task;
     })();
     TodoApp.Task = Task;
@@ -14,6 +25,9 @@ var TodoApp;
             this.items = [];
             this.counter = 0;
         }
+        Tasks.prototype.getItemsCount = function () {
+            return this.items.length;
+        };
         Tasks.prototype.addTask = function (name) {
             this.items.push(new Task(this.counter++, name, false));
         };
@@ -53,7 +67,13 @@ var TodoApp;
             });
         };
         Tasks.prototype.setTaskStatus = function (taskId, status) {
-            this.findTaskById(taskId).completed = status;
+            this.findTaskById(taskId).setStatus(status);
+        };
+        Tasks.prototype.setTaskEditMode = function (taskId, inEditMode) {
+            this.findTaskById(taskId).setEditMode(inEditMode);
+        };
+        Tasks.prototype.setTaskName = function (taskId, name) {
+            this.findTaskById(taskId).setName(name);
         };
         Tasks.prototype.isWholeListCompleted = function () {
             return this.items.every(function (currentValue, index, array) {
@@ -62,6 +82,9 @@ var TodoApp;
         };
         Tasks.prototype.isTaskCompleted = function (taskId) {
             return this.findTaskById(taskId).completed;
+        };
+        Tasks.prototype.isInEditMode = function (taskId) {
+            return this.findTaskById(taskId).isInEditMode;
         };
         Tasks.prototype.findTaskById = function (taskId) {
             for (var i = 0; i < this.items.length; i++) {

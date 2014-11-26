@@ -2,49 +2,65 @@
 module TodoApp {
 
     export class Task {
-        constructor(public id: number, public name: string, public completed: boolean) {
+        constructor(public id: number, public name: string, public completed: boolean, public isInEditMode: boolean = false) {
+        }
+
+        public setStatus(completed: boolean): void {
+            this.completed = completed;
+        }
+
+        public setEditMode(isEdit: boolean): void {
+            this.isInEditMode = isEdit;
+        }
+
+        public setName(name: string): void {
+            this.name = name;
         }
     }
 
     export class Tasks {
         private counter: number;
-        items: Task[];
+        public items: Task[];
 
         constructor() {
             this.items = [];
             this.counter = 0;
         }
 
-        addTask(name: string): void
+        public getItemsCount(): number {
+            return this.items.length;
+        }
+
+        public addTask(name: string): void
         {
             this.items.push(new Task(this.counter++, name, false));
         }
 
-        markTaskAsCompleted(id: number): void {
+        public markTaskAsCompleted(id: number): void {
             this.setTaskStatus(id, true);
         }
 
-        markAllTasksAsCompleted(): void {
+        public markAllTasksAsCompleted(): void {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsCompleted(this.items[i].id);
             }
         }
 
-        markTaskAsActive(id: number): void {
+        public markTaskAsActive(id: number): void {
             this.setTaskStatus(id, false);
         }
 
-        markAllTasksAsActive(): void {
+        public markAllTasksAsActive(): void {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsActive(this.items[i].id);
             }
         }
 
-        removeTask(id: number): void {
+        public removeTask(id: number): void {
             this.removeTasksByPredicate((item: Task) => { return item.id === id; });
         }
 
-        getNumberOfCompletedTasks(): number {
+        public getNumberOfCompletedTasks(): number {
             var res = 0;
             for (var i = 0; i < this.items.length; i++) {
                 if (this.items[i].completed) {
@@ -54,22 +70,34 @@ module TodoApp {
             return res;
         }
 
-        removeCompletedTasks(): void {
+        public removeCompletedTasks(): void {
             this.removeTasksByPredicate((item: Task) => { return item.completed; });
         }
 
-        setTaskStatus(taskId: number, status: boolean): void {
-            this.findTaskById(taskId).completed = status;
+        public setTaskStatus(taskId: number, status: boolean): void {
+            this.findTaskById(taskId).setStatus(status)
         }
 
-        isWholeListCompleted(): boolean {
+        public setTaskEditMode(taskId: number, inEditMode: boolean): void {
+            this.findTaskById(taskId).setEditMode(inEditMode);
+        }
+
+        public setTaskName(taskId: number, name: string): void {
+            this.findTaskById(taskId).setName(name);
+        }
+
+        public isWholeListCompleted(): boolean {
             return this.items.every((currentValue, index, array) => {
                     return currentValue.completed;
                 });
         }
 
-        isTaskCompleted(taskId: number): boolean {
+        public isTaskCompleted(taskId: number): boolean {
             return this.findTaskById(taskId).completed;
+        }
+
+        public isInEditMode(taskId: number): boolean {
+            return this.findTaskById(taskId).isInEditMode;
         }
 
         private findTaskById(taskId: number): Task {
