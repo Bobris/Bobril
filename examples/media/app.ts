@@ -11,7 +11,8 @@ module MediaApp {
         return [
             { tag: "h1", children: "Media detection sample" },
             p(JSON.stringify(b.getMedia())),
-            p("Frame: ", ""+frame)
+            p("Frame: ", ""+frame),
+			{ tag: "input" }
         ];
     });
 }
