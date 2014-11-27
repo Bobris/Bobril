@@ -7,10 +7,12 @@
 var TodoApp;
 (function (TodoApp) {
     b.init(function () {
+        var taskList = new TodoApp.Tasks();
+        taskList.restoreFromStorage();
         return {
             component: TodoApp.TaskList,
             data: {
-                tasks: new TodoApp.Tasks(),
+                tasks: taskList,
                 currentTaskName: ''
             }
         };

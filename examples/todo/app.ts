@@ -8,10 +8,14 @@
 module TodoApp {
 
     b.init(() => {
+
+            var taskList = new TodoApp.Tasks();
+            taskList.restoreFromStorage();
+
             return {
                 component: TodoApp.TaskList,
                 data: {
-                    tasks: new TodoApp.Tasks(),
+                    tasks: taskList,
                     currentTaskName: ''
                 }
             }

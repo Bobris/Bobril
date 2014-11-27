@@ -216,7 +216,6 @@ var TodoApp;
                             if (event.which == 13) {
                                 model.currentEditTaskName = model.currentEditTaskName.trim();
                                 if (model.currentEditTaskName) {
-                                    // model.tasks.addTask(model.currentNewTaskName);
                                     model.tasks.setTaskName(taskId, model.currentEditTaskName);
                                     model.currentEditTaskName = '';
                                     model.tasks.setTaskEditMode(taskId, false);
