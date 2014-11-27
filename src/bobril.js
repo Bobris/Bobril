@@ -201,7 +201,7 @@ b = (function (window, document) {
                 if (hasTextContent) {
                     element.textContent = ch;
                 } else {
-                    element.appendChild(createTextNode(ch));
+                    element.innerText = ch;
                 }
                 return;
             }
@@ -329,8 +329,9 @@ b = (function (window, document) {
             if (component.init)
                 component.init(c.ctx, n, c);
         }
+        var el;
         if (n.tag === "/") {
-            var el = c.element;
+            el = c.element;
             if (isArray(el))
                 el = el[0];
             var elprev = el.previousSibling;
@@ -364,12 +365,14 @@ b = (function (window, document) {
             if (n.tag === "") {
                 if (c.content !== n.content) {
                     c.content = n.content;
+                    el = c.element;
                     if (hasTextContent) {
-                        c.element.textContent = c.content;
-                        return c;
+                        el.textContent = c.content;
+                    } else {
+                        el.nodeValue = c.content;
                     }
-                } else
-                    return c;
+                }
+                return c;
             } else {
                 if (n.tag === "svg") {
                     inNamespace = true;
@@ -427,8 +430,7 @@ b = (function (window, document) {
                 if (hasTextContent) {
                     element.textContent = newChildren;
                 } else {
-                    element.innerHTML = "";
-                    element.appendChild(createTextNode(newChildren));
+                    element.innerText = newChildren;
                 }
                 return newChildren;
             }
