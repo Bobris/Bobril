@@ -104,18 +104,42 @@ ul.todo-list li.task.completed label {
 }
 
 div.footer {
+    position: relative;
     background-color: #eeeeee;
     padding: 10px;
     margin-top: 10px;
+    font-size: 12px;
 }
 
 div.footer div.items-left-info {
-    float: left;
+    position: absolute;
+    top: 10px;
+    left: 10px;
     padding: 3px;
 }
 
+div.footer div.filter {
+    width: 10em;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 5px;
+    top: 10px;
+    right: 10px;
+}
+
+div.footer div.filter a {
+    margin: 5px;
+    text-decoration: none;
+}
+
+div.footer div.filter a.active {
+    font-weight: bold;
+}
+
 div.footer div.clear-completed-button {
-    float: right;
+    position: absolute;
+    top: 10px;
+    right: 10px;
     padding: 5px;
     background-color: #c1c1c1;
     cursor: pointer;

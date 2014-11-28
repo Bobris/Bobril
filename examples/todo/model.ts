@@ -20,13 +20,19 @@ module TodoApp {
 
     export class Tasks {
         private counter: number;
-        public items: Task[];
+        private items: Task[];
+        private filter: string;
         private storageItemsKey = 'todoApp.taskListItems';
         private storageCounterKey = 'todoApp.taskListCounter';
+
+        private filterAll = 'all';
+        private filterActive = 'active';
+        private filterCompleted = 'completed';
 
         constructor() {
             this.items = [];
             this.counter = 0;
+            this.filter = 'all';
         }
 
         public saveToStorage() {
@@ -46,6 +52,18 @@ module TodoApp {
             if (typeof(counter) === 'number') {
                 this.counter = counter;
             }
+        }
+
+        public setFilter(filterValue: string): void {
+            this.filter = filterValue;
+        }
+
+        public getFilteredItems(): Array<Task> {
+            return this.items.filter((item, index, array) => { 
+                return this.filter === this.filterAll ||
+                    this.filter === this.filterActive && !item.completed ||
+                    this.filter === this.filterCompleted && item.completed;
+            })
         }
 
         public getItemsCount(): number {

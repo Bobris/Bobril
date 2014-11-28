@@ -24,8 +24,12 @@ var TodoApp;
         function Tasks() {
             this.storageItemsKey = 'todoApp.taskListItems';
             this.storageCounterKey = 'todoApp.taskListCounter';
+            this.filterAll = 'all';
+            this.filterActive = 'active';
+            this.filterCompleted = 'completed';
             this.items = [];
             this.counter = 0;
+            this.filter = 'all';
         }
         Tasks.prototype.saveToStorage = function () {
             localStorage.setItem(this.storageItemsKey, JSON.stringify(this.items));
@@ -43,6 +47,15 @@ var TodoApp;
             if (typeof (counter) === 'number') {
                 this.counter = counter;
             }
+        };
+        Tasks.prototype.setFilter = function (filterValue) {
+            this.filter = filterValue;
+        };
+        Tasks.prototype.getFilteredItems = function () {
+            var _this = this;
+            return this.items.filter(function (item, index, array) {
+                return _this.filter === _this.filterAll || _this.filter === _this.filterActive && !item.completed || _this.filter === _this.filterCompleted && item.completed;
+            });
         };
         Tasks.prototype.getItemsCount = function () {
             return this.items.length;
