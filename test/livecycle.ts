@@ -11,6 +11,13 @@ class TestComponent implements IBobrilComponent {
             this.actions += "i:" + me.data.name + ";";
     }
 
+    postInit(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
+        if (oldMe)
+            this.actions += "U:" + me.data.name + ";";
+        else
+            this.actions += "I:" + me.data.name + ";";
+    }
+
     shouldChange(ctx: Object, me: IBobrilNode, oldMe: IBobrilNode): boolean {
         this.actions += "sc:" + me.data.name + ";";
         return me.data.change;
@@ -34,7 +41,7 @@ describe("livecycle", () => {
         var c = new TestComponent();
         b.createNode({ tag: "div", component: c, data: { name: "1" } });
         b.callPostCallbacks();
-        expect(c.actions).toBe("i:1;pi:1;");
+        expect(c.actions).toBe("i:1;I:1;pi:1;");
     });
 
     it("createNodeCallsInitInRightOrder", () => {
@@ -46,7 +53,7 @@ describe("livecycle", () => {
             }
         });
         b.callPostCallbacks();
-        expect(c.actions).toBe("i:1;i:2;pi:2;pi:1;");
+        expect(c.actions).toBe("i:1;i:2;I:2;I:1;pi:2;pi:1;");
     });
 
     it("updateNodeCallsShouldUpdateAndPostUpdate", () => {
@@ -56,7 +63,7 @@ describe("livecycle", () => {
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
         b.callPostCallbacks();
-        expect(c.actions).toBe("sc:1;u:1;pu:1;");
+        expect(c.actions).toBe("sc:1;u:1;U:1;pu:1;");
     });
 
     it("shouldUpdateReturningFalseDoesNotPostUpdate", () => {
@@ -86,7 +93,7 @@ describe("livecycle", () => {
             }
         }, r);
         b.callPostCallbacks();
-        expect(c.actions).toBe("sc:1;u:1;sc:2;u:2;pu:2;pu:1;");
+        expect(c.actions).toBe("sc:1;u:1;sc:2;u:2;U:2;U:1;pu:2;pu:1;");
     });
 
     it("destroyCalledInCaseOfBigChange", () => {
@@ -106,23 +113,27 @@ describe("livecycle", () => {
             }
         }, r);
         b.callPostCallbacks();
-        expect(c.actions).toBe("sc:3;u:3;i:3;i:4;d:2;d:1;pi:4;pi:3;");
+        expect(c.actions).toBe("sc:3;u:3;i:3;i:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
     });
 
-    it("initCallsFactory", done => {
+    // disabled because only one test can call b.init
+    xit("initCallsFactory", () => {
+        var done = false;
         var c = new TestComponent();
         b.init(() => {
             setTimeout(() => {
-                expect(c.actions).toBe("i:1;pi:1;");
-                done();
+                expect(c.actions).toBe("i:1;I:1;pi:1;");
+                done=true;
             }, 0);
             return { tag: "div", component: c, data: { name: "1" } }
         });
+        waitsFor(() => done);
     });
 
-    it("invalidateInsideFactoryWorks", done => {
+    it("invalidateInsideFactoryWorks", () => {
         var c = new TestComponent();
         var state = 0;
+        var done = false;
         b.init(() => {
             state++;
             if (state === 1) {
@@ -130,12 +141,13 @@ describe("livecycle", () => {
                 return [{ tag: "div", component: c, data: { name: "1" } }];
             } else {
                 setTimeout(() => {
-                    expect(c.actions).toBe("i:1;pi:1;d:1;");
-                    done();
+                    expect(c.actions).toBe("i:1;I:1;pi:1;d:1;");
+                    done = true;
                 }, 0);
                 return [];
             }
         });
+        waitsFor(() => done);
     });
 
     it("uptimeAndNowCouldBeCalled", () => {

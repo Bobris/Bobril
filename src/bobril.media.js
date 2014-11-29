@@ -26,11 +26,10 @@
 
     function getMedia() {
         if (media == null) {
-            var w = window.innerWidth || viewport.clientWidth;
-            var h = window.innerHeight || viewport.clientHeight;
+            var w = viewport.clientWidth;
+            var h = viewport.clientHeight;
             var o = window.orientation;
-            var p;
-            p = h >= w;
+            var p = h >= w;
             if (o == null)
                 o = p ? 0 : 90;
             var device = 0;

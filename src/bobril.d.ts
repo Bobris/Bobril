@@ -32,6 +32,9 @@ interface IBobrilStatic {
     // adds native event to window or body
     addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
     bubble(node: IBobrilCacheNode, name: string, param: any): boolean;
+    // merge components, methods will be called before already existing methods
+    preEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
+    // merge components, methods will be called after already existing methods
     postEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
 }
 
@@ -46,12 +49,13 @@ interface IBobrilAttributes {
 }
 
 interface IBobrilComponent {
-    // usefull to speed up enhance operations if set must be globally unique
-    id?: string;
     // called before new node in vdom should be created any me members except key could be modified, ctx is initialized to { data: me.data||{} }
     // or after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component update to me.component before calling this
     // usually just do always init and ignore oldMe parameter
     init? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
+    // called after all children are initilized and postInitialized, but before updating own attrs
+    // so this is useful for kind of layout in JS features
+    postInit? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
     // return false when whole subtree should not be changed from last time, you can still update any me members except key, default implementation always return true
     shouldChange? (ctx: Object, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
     // called from children to parents order for new nodes

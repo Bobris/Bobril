@@ -173,6 +173,11 @@ b = (function (window, document) {
             c.element = document.createElement(n.tag);
         }
         createChildren(c);
+        if (component) {
+            if (component.postInit) {
+                component.postInit(c.ctx, n);
+            }
+        }
         c.attrs = updateElement(c, c.element, c.attrs, {});
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
@@ -380,6 +385,11 @@ b = (function (window, document) {
                 }
                 if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
                     updateChildrenNode(n, c);
+                    if (component) {
+                        if (component.postInit) {
+                            component.postInit(c.ctx, n, c);
+                        }
+                    }
                     if (c.attrs)
                         c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
                     inNamespace = backupInNamespace;
@@ -875,27 +885,12 @@ b = (function (window, document) {
         };
     }
 
-    function postEnhance(node, methods) {
-        var comp = node.component;
-        if (!comp) {
-            node.component = methods;
-            return node;
-        }
-        var id = methods.id;
-        var res;
-        if (id) {
-            id = "b$a" + id;
-            res = comp[id];
-            if (res) {
-                node.component = res;
-                return node;
-            }
-        }
-        res = Object.create(comp);
-        for (var i in methods) {
-            if (methods.hasOwnProperty(i) && i !== "id") {
-                var m = methods[i];
-                var origM = comp[i];
+    function mergeComponents(c1, c2) {
+        var res = Object.create(c1);
+        for (var i in c2) {
+            if (c2.hasOwnProperty(i)) {
+                var m = c2[i];
+                var origM = c1[i];
                 if (typeof (m) == "function" && origM) {
                     res[i] = merge(origM, m);
                 } else {
@@ -903,10 +898,26 @@ b = (function (window, document) {
                 }
             }
         }
-        if (id) {
-            comp[id] = res;
+        return res;
+    }
+
+    function preEnhance(node, methods) {
+        var comp = node.component;
+        if (!comp) {
+            node.component = methods;
+            return node;
         }
-        node.component = res;
+        node.component = mergeComponents(methods, comp);
+        return node;
+    }
+
+    function postEnhance(node, methods) {
+        var comp = node.component;
+        if (!comp) {
+            node.component = methods;
+            return node;
+        }
+        node.component = mergeComponents(comp, methods);
         return node;
     }
 
@@ -949,6 +960,7 @@ b = (function (window, document) {
         deref: getCacheNode,
         addEvent: addEvent,
         bubble: bubbleEvent,
+        preEnhance: preEnhance,
         postEnhance: postEnhance
     };
 })(window, document);
