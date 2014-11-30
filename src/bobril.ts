@@ -42,7 +42,6 @@ if (!Object.create) {
 }
 
 b = ((window: Window, document: Document): IBobrilStatic => {
-    var nodeBackpointer = "data-bobril";
     function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
         if (DEBUG && !shoudBeTrue)
             throw Error(messageIfFalse || "assertion failed");
@@ -225,8 +224,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     before = element.firstChild;
                 }
                 while (before) {
-                    if (before.nodeType !== 3)
-                        before[nodeBackpointer] = j;
                     j.element.push(before);
                     before = before.nextSibling;
                 }
@@ -250,20 +247,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (component.destroy)
                 component.destroy(c.ctx, c, c.element);
         }
-        // This is just to help GC to break cycle, it is probably useless for modern browsers, but in IE8 you never know ...
-        if (c.tag !== "") {
-            var el = c.element;
-            if (isArray(el)) {
-                for (var j = 0; j < el.length; j++) {
-                    var ee = el[j];
-                    if (ee.nodeType !== 3)
-                        ee[nodeBackpointer] = null;
-                }
-            } else {
-                if (el.nodeType !== 3)
-                    el[nodeBackpointer] = null;
-            }
-        }
     }
 
     function removeNode(c: IBobrilCacheNode) {
@@ -283,7 +266,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function pushInitCallback(c: IBobrilCacheNode) {
-        c.element[nodeBackpointer] = c;
         var cc = c.component;
         if (cc) {
             if (cc.postInitDom) {
@@ -303,8 +285,32 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
+    var rootFactory: () => any;
+    var rootCacheChildren: Array<IBobrilCacheNode> = [];
+
     function getCacheNode(n: Node): IBobrilCacheNode {
-        return (<any>n)[nodeBackpointer];
+        if (n == null) return null;
+        var root = document.body;
+        var nodeStack:Node[] = [];
+        while (n && n !== root) {
+            nodeStack.push(n);
+            n = n.parentNode;
+        }
+        if (!n) return null;
+        var currentCacheArray = rootCacheChildren;
+        while (nodeStack.length) {
+            var currentNode = nodeStack.pop();
+            for (var i = 0, l = currentCacheArray.length; i < l; i++) {
+               if (currentCacheArray[i].element === currentNode) {
+                   if (nodeStack.length === 0) return currentCacheArray[i];
+                   currentCacheArray = currentCacheArray[i].children;
+                   currentNode = null;
+                   break;
+               }
+            }
+            if (currentNode) return null;
+        }
+        return null;
     }
 
     function updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode {
@@ -340,8 +346,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
             var newElements = <Array<Node>>[];
             while (elprev !== el) {
-                if (elprev.nodeType !== 3)
-                    elprev[nodeBackpointer] = n;
                 newElements.push(elprev);
                 elprev = elprev.nextSibling;
             }
@@ -748,9 +752,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }, delay);
         }
     }
-
-    var rootFactory: () => any;
-    var rootCacheChildren: Array<IBobrilCacheNode> = [];
 
     var scheduled = false;
     function scheduleUpdate() {
