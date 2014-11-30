@@ -154,6 +154,33 @@ describe("livecycle", function () {
         });
     });
 
+    it("canFindDomInVdom"), function () {
+        var done = false;
+        var uid = 0;
+        function d() {
+            var params = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                params[_i] = arguments[_i + 0];
+            }
+            return { tag: "div", attrs: { id: "bobriltest" + (uid++) }, children: params };
+        }
+
+        b.init(function () {
+            setTimeout(function () {
+                for (var i = 0; i < uid; i++) {
+                    var nn = document.getElementById("bobriltest" + i);
+                    var vnn = b.deref(nn);
+                    expect(vnn.attrs.id).toBe(nn.id);
+                }
+                done = true;
+            }, 0);
+            return [d(d(), d(), d(d(), d())), d(), d(d(d(d())))];
+        });
+        waitsFor(function () {
+            return done;
+        });
+    };
+
     it("uptimeAndNowCouldBeCalled", function () {
         b.uptime();
         b.now();

@@ -149,6 +149,27 @@ describe("livecycle", () => {
         waitsFor(() => done);
     });
 
+    it("canFindDomInVdom"), () => {
+        var done = false;
+        var uid = 0;
+        function d(...params: any[]) {
+            return { tag: "div", attrs: { id: "bobriltest"+(uid++) }, children: params };
+        }
+
+        b.init(() => {
+            setTimeout(() => {
+                for (var i = 0; i < uid; i++) {
+                    var nn = document.getElementById("bobriltest" + i);
+                    var vnn = b.deref(nn);
+                    expect(vnn.attrs.id).toBe(nn.id);
+                }
+                done = true;
+            }, 0);
+            return [d(d(),d(),d(d(),d())),d(),d(d(d(d())))];
+        });    
+        waitsFor(() => done);
+    }
+
     it("uptimeAndNowCouldBeCalled", () => {
         b.uptime();
         b.now();
