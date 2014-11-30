@@ -40,7 +40,7 @@ var TestComponent = (function () {
 describe("livecycle", function () {
     it("createNodeCallsInitAndPostInit", function () {
         var c = new TestComponent();
-        b.createNode({ tag: "div", component: c, data: { name: "1" } });
+        b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;I:1;pi:1;");
     });
@@ -52,14 +52,14 @@ describe("livecycle", function () {
             children: {
                 tag: "div", component: c, data: { name: "2" }
             }
-        });
+        }, null);
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;i:2;I:2;I:1;pi:2;pi:1;");
     });
 
     it("updateNodeCallsShouldUpdateAndPostUpdate", function () {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } });
+        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
@@ -69,7 +69,7 @@ describe("livecycle", function () {
 
     it("shouldUpdateReturningFalseDoesNotPostUpdate", function () {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } });
+        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: false } }, r);
@@ -84,7 +84,7 @@ describe("livecycle", function () {
             children: {
                 tag: "div", component: c, data: { name: "2" }
             }
-        });
+        }, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({
@@ -104,7 +104,7 @@ describe("livecycle", function () {
             children: {
                 tag: "div", component: c, data: { name: "2" }
             }
-        });
+        }, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({

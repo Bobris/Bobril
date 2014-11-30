@@ -2,11 +2,11 @@ declare var b: IBobrilStatic;
 
 interface IBobrilStatic {
     // Low level method used just for testing
-    createNode(n: IBobrilNode): IBobrilCacheNode;
+    createNode(n: IBobrilNode, parentNode: IBobrilNode): IBobrilCacheNode;
     // Low level method used just for testing
     updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
     // Low level method used just for testing
-    updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any): Array<IBobrilCacheNode>;
+    updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any, parentNode: IBobrilNode): Array<IBobrilCacheNode>;
     // Low level method used just for testing
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
@@ -77,11 +77,13 @@ interface IBobrilNode {
     children?: any;
     component?: IBobrilComponent;
     // Bobril does not touch this, it is completely for user passing custom data to component
+    // It is very similar to props in ReactJs
     data?: any;
 }
 
 interface IBobrilCacheNode extends IBobrilNode {
     /** HTMLNode | HTMLNode[] */
     element?: any;
+    parent?: IBobrilNode;
     ctx?: Object;
 }
