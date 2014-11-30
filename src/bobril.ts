@@ -814,6 +814,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function init(factory: () => any) {
+        if (rootCacheChildren.length) {
+            rootCacheChildren = updateChildren(document.body, [], rootCacheChildren);
+        }
         rootFactory = factory;
         scheduleUpdate();
     }

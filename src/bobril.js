@@ -844,6 +844,9 @@ b = (function (window, document) {
     }
 
     function init(factory) {
+        if (rootCacheChildren.length) {
+            rootCacheChildren = updateChildren(document.body, [], rootCacheChildren);
+        }
         rootFactory = factory;
         scheduleUpdate();
     }

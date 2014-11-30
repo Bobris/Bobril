@@ -117,8 +117,7 @@ describe("livecycle", function () {
         expect(c.actions).toBe("sc:3;u:3;i:3;i:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
     });
 
-    // disabled because only one test can call b.init
-    xit("initCallsFactory", function () {
+    it("initCallsFactory", function () {
         var done = false;
         var c = new TestComponent();
         b.init(function () {
