@@ -132,7 +132,6 @@
     }
 
     var svgComponent = {
-        id: "b$vgr",
         init: svgComponentInit
     }
 
@@ -183,7 +182,6 @@
     }
 
     var svgChildComponent = {
-        id: "b$vgc",
         init: svgChildComponentInit
     }
 
@@ -195,7 +193,6 @@
     }
 
     var vmlComponent = {
-        id: "b$vgr",
         init: vmlComponentInit
     }
 
@@ -257,7 +254,6 @@
     }
 
     var vmlChildComponent = {
-        id: "b$vgc",
         init: vmlChildComponentInit
     }
 

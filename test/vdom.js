@@ -8,28 +8,28 @@ function expectInsensitive(s1, s2) {
 
 describe("updateElement", function () {
     it("set className", function () {
-        var r = b.createNode({ tag: "div", attrs: { className: "a" } });
+        var r = b.createNode({ tag: "div", attrs: { className: "a" } }, null);
         expect(r.element.className).toBe("a");
     });
 
     it("set style by object", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "10px" } } });
+        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, null);
         expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
     });
 
     it("set style by string", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: "font-size:10px" } });
+        var r = b.createNode({ tag: "div", attrs: { style: "font-size:10px" } }, null);
         expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
     });
 
     it("update style from string to object", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: "font-size:5px" } });
+        var r = b.createNode({ tag: "div", attrs: { style: "font-size:5px" } }, null);
         r = b.updateNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, r);
         expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
     });
 
     it("update style from object to string", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "5px" } } });
+        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "5px" } } }, null);
         r = b.updateNode({ tag: "div", attrs: { style: "font-size:10px" } }, r);
         expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
     });
@@ -37,59 +37,59 @@ describe("updateElement", function () {
 
 describe("createNode", function () {
     it("simple", function () {
-        var r = b.createNode({ tag: "div", children: "hello" });
+        var r = b.createNode({ tag: "div", children: "hello" }, null);
         expectInsensitive(r.element.outerHTML, "<div>hello</div>");
     });
     it("boolean is skipped", function () {
-        var r = b.createNode({ tag: "div", children: true });
+        var r = b.createNode({ tag: "div", children: true }, null);
         expectInsensitive(r.element.outerHTML, "<div></div>");
     });
     it("single child", function () {
-        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ok" } });
+        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ok" } }, null);
         expectInsensitive(r.element.outerHTML, "<div><span>ok</span></div>");
     });
     it("multiple children", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "h1", children: "header" }, { tag: "div", children: "ok" }] });
+        var r = b.createNode({ tag: "div", children: [{ tag: "h1", children: "header" }, { tag: "div", children: "ok" }] }, null);
         expectInsensitive(r.element.outerHTML, "<div><h1>header</h1><div>ok</div></div>");
     });
     it("html child", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] });
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] }, null);
         expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>c</div>");
     });
     it("html children", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }, { tag: "/", content: "d<i>e</i>" }] });
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }, { tag: "/", content: "d<i>e</i>" }] }, null);
         expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>cd<i>e</i></div>");
     });
 });
 
 describe("updateNode", function () {
     it("simple", function () {
-        var r = b.createNode({ tag: "div", children: "hello" });
+        var r = b.createNode({ tag: "div", children: "hello" }, null);
         r = b.updateNode({ tag: "div", children: "bye" }, r);
         expectInsensitive(r.element.outerHTML, "<div>bye</div>");
     });
     it("change single child from text to span", function () {
-        var r = b.createNode({ tag: "div", children: "hello" });
+        var r = b.createNode({ tag: "div", children: "hello" }, null);
         r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r);
         expectInsensitive(r.element.outerHTML, "<div><span>ok</span></div>");
     });
     it("change single child from span to text", function () {
-        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } });
+        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } }, null);
         r = b.updateNode({ tag: "div", children: "ok" }, r);
         expectInsensitive(r.element.outerHTML, "<div>ok</div>");
     });
     it("append text after text", function () {
-        var r = b.createNode({ tag: "div", children: "A" });
+        var r = b.createNode({ tag: "div", children: "A" }, null);
         r = b.updateNode({ tag: "div", children: ["A", "B"] }, r);
         expectInsensitive(r.element.outerHTML, "<div>AB</div>");
     });
     it("preppend text before text", function () {
-        var r = b.createNode({ tag: "div", children: "A" });
+        var r = b.createNode({ tag: "div", children: "A" }, null);
         r = b.updateNode({ tag: "div", children: ["B", "A"] }, r);
         expectInsensitive(r.element.outerHTML, "<div>BA</div>");
     });
     it("change html", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] });
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] }, null);
         r = b.updateNode({ tag: "div", children: [{ tag: "/", content: "d<i>e</i>f" }] }, r);
         expectInsensitive(r.element.outerHTML, "<div>d<i>e</i>f</div>");
     });
@@ -110,7 +110,7 @@ describe("updateNode", function () {
 
     function advancedTest(start, update, result) {
         var vdomStart = buildVdom(start);
-        var r = b.createNode(vdomStart);
+        var r = b.createNode(vdomStart, null);
         var c = r.element.childNodes;
         for (var i = 0; i < c.length; i++) {
             c[i].id = "" + i;

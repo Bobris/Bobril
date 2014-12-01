@@ -1,4 +1,4 @@
-﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.media.d.ts"/>
 var MediaApp;
 (function (MediaApp) {
@@ -16,7 +16,8 @@ var MediaApp;
         return [
             { tag: "h1", children: "Media detection sample" },
             p(JSON.stringify(b.getMedia())),
-            p("Frame: ", "" + frame)
+            p("Frame: ", "" + frame),
+            { tag: "input" }
         ];
     });
 })(MediaApp || (MediaApp = {}));
