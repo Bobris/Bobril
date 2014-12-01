@@ -7,62 +7,43 @@
 /// <reference path="model.ts"/>
 var TodoApp;
 (function (TodoApp) {
-    var TaskList = (function () {
-        function TaskList() {
+    var App = (function () {
+        function App() {
         }
-        TaskList.init = function (ctx, me, oldMe) {
-            var model = oldMe ? oldMe.data : me.data;
-            model.tasks.setFilter(me.data.filter);
-            var heading = this.createHeadingElement();
-            var checkbox = this.createSetAllCheckboxElement(model);
-            var input = this.createInputElement(model);
-            var todoList = this.createTaskElements(model);
-            var footer = this.createFooterElements(model);
+        App.init = function (ctx, me, oldMe) {
             me.tag = 'div';
             me.attrs = { 'class': 'main' };
-            me.children = [
-                heading,
-                {
-                    tag: 'div',
-                    attrs: { 'class': 'input-wrapper' },
-                    children: [
-                        input,
-                        checkbox
-                    ]
-                },
-                todoList,
-                footer
+            me.data = ctx.data, me.children = [
+                { component: Heading },
+                { component: TaskCreate, data: ctx.data },
+                { component: TaskList, data: ctx.data },
+                { component: Footer, data: ctx.data }
             ];
         };
-        TaskList.createHeadingElement = function () {
-            return {
-                tag: 'h3',
-                children: 'todos'
-            };
+        return App;
+    })();
+    TodoApp.App = App;
+    var Heading = (function () {
+        function Heading() {
+        }
+        Heading.init = function (ctx, me, oldMe) {
+            me.tag = 'h3';
+            me.children = 'todos';
         };
-        TaskList.createSetAllCheckboxElement = function (model) {
-            var attributes = { 'type': 'checkbox', 'class': 'set-all-tasks' };
-            if (model.tasks.getItemsCount() > 0 && model.tasks.isWholeListCompleted()) {
-                attributes['checked'] = 'checked';
-            }
-            return {
-                tag: 'input',
-                attrs: attributes,
-                component: {
-                    onChange: function (ctx, value) {
-                        if (value) {
-                            model.tasks.markAllTasksAsCompleted();
-                            b.invalidate();
-                        }
-                        else {
-                            model.tasks.markAllTasksAsActive();
-                            b.invalidate();
-                        }
-                    }
-                }
-            };
+        return Heading;
+    })();
+    var TaskCreate = (function () {
+        function TaskCreate() {
+        }
+        TaskCreate.init = function (ctx, me, oldMe) {
+            var model = oldMe ? oldMe.data : me.data;
+            me.tag = 'div';
+            me.attrs = { 'class': 'input-wrapper' }, me.children = [
+                this.createInputElement(model),
+                this.createSetAllCheckboxElement(model)
+            ];
         };
-        TaskList.createInputElement = function (model) {
+        TaskCreate.createInputElement = function (model) {
             var inputAttributes = {
                 'placeholder': 'What needs to be done?',
                 'class': 'task-name',
@@ -92,6 +73,7 @@ var TodoApp;
                             model.currentNewTaskName = '';
                             b.invalidate();
                         }
+                        return false;
                     },
                     onChange: function (ctx, value) {
                         model.currentNewTaskName = value;
@@ -99,24 +81,41 @@ var TodoApp;
                 }
             };
         };
-        TaskList.createHintElement = function (model) {
+        TaskCreate.createSetAllCheckboxElement = function (model) {
+            var attributes = { 'type': 'checkbox', 'class': 'set-all-tasks' };
+            if (model.tasks.getItemsCount() > 0 && model.tasks.isWholeListCompleted()) {
+                attributes['checked'] = 'checked';
+            }
             return {
-                tag: 'p',
-                attrs: {
-                    class: 'hint'
-                },
-                children: {
-                    tag: 'small',
-                    children: '(Esc for cancellation, Enter to save the task)'
+                tag: 'input',
+                attrs: attributes,
+                component: {
+                    onChange: function (ctx, value) {
+                        if (value) {
+                            model.tasks.markAllTasksAsCompleted();
+                            b.invalidate();
+                        }
+                        else {
+                            model.tasks.markAllTasksAsActive();
+                            b.invalidate();
+                        }
+                    }
                 }
             };
         };
+        return TaskCreate;
+    })();
+    var TaskList = (function () {
+        function TaskList() {
+        }
+        TaskList.init = function (ctx, me, oldMe) {
+            var model = oldMe ? oldMe.data : me.data;
+            model.tasks.setFilter(me.data.filter);
+            me.tag = 'ul';
+            me.attrs = { 'class': 'todo-list' }, me.children = this.createTaskElements(model);
+        };
         TaskList.createTaskElements = function (model) {
-            var res = {
-                tag: 'ul',
-                attrs: { 'class': 'todo-list' },
-                children: []
-            };
+            var res = [];
             var tasks = model.tasks.getFilteredItems();
             for (var i = 0; i < tasks.length; i++) {
                 var taskName = tasks[i].name;
@@ -132,7 +131,7 @@ var TodoApp;
                 else {
                     classes += ' readonly';
                 }
-                res.children.push({
+                res.push({
                     tag: 'li',
                     attrs: {
                         'class': classes
@@ -147,6 +146,7 @@ var TodoApp;
                         onDoubleClick: function (ctx, event) {
                             model.tasks.setTaskEditMode(ctx.data.taskId, true);
                             b.invalidate();
+                            return false;
                         }
                     },
                     data: {
@@ -196,6 +196,7 @@ var TodoApp;
                     onClick: function (ctx, event) {
                         model.tasks.removeTask(ctx.data.taskId);
                         b.invalidate();
+                        return false;
                     }
                 },
                 data: {
@@ -240,8 +241,14 @@ var TodoApp;
                 }
             ];
         };
-        TaskList.createFooterElements = function (model) {
-            var completedCount = model.tasks.getNumberOfCompletedTasks();
+        return TaskList;
+    })();
+    var Footer = (function () {
+        function Footer() {
+        }
+        Footer.init = function (ctx, me, oldMe) {
+            var model = oldMe ? oldMe.data : me.data;
+            model.tasks.setFilter(me.data.filter);
             var itemsLeftInfo = this.createItemsLeftInfo(model);
             var filterButtons = this.createFilterButtons(model);
             var clearAllButton = this.createClearCompleted(model);
@@ -249,21 +256,19 @@ var TodoApp;
             if (model.tasks.getItemsCount() < 1) {
                 attributes['class'] += ' hidden';
             }
-            return {
-                tag: 'div',
-                attrs: attributes,
-                children: [
-                    itemsLeftInfo,
-                    filterButtons,
-                    clearAllButton,
-                    {
-                        tag: 'div',
-                        attrs: { 'class': 'cleaner' }
-                    }
-                ]
-            };
+            me.tag = 'div';
+            me.attrs = attributes;
+            me.children = [
+                itemsLeftInfo,
+                filterButtons,
+                clearAllButton,
+                {
+                    tag: 'div',
+                    attrs: { 'class': 'cleaner' }
+                }
+            ];
         };
-        TaskList.createItemsLeftInfo = function (model) {
+        Footer.createItemsLeftInfo = function (model) {
             var itemsLeftCount = model.tasks.getItemsCount() - model.tasks.getNumberOfCompletedTasks();
             var text = itemsLeftCount === 1 ? itemsLeftCount + ' item left' : itemsLeftCount + ' items left';
             return {
@@ -272,7 +277,7 @@ var TodoApp;
                 children: text
             };
         };
-        TaskList.createFilterButtons = function (model) {
+        Footer.createFilterButtons = function (model) {
             return {
                 tag: 'div',
                 attrs: { 'class': 'filter' },
@@ -283,7 +288,7 @@ var TodoApp;
                 ]
             };
         };
-        TaskList.createClearCompleted = function (model) {
+        Footer.createClearCompleted = function (model) {
             var numberOfCompletedTasks = model.tasks.getNumberOfCompletedTasks();
             var text = 'Clear completed (' + model.tasks.getNumberOfCompletedTasks() + ')';
             var attributes = { 'class': 'clear-completed-button' };
@@ -298,11 +303,11 @@ var TodoApp;
                     onClick: function (ctx, event) {
                         model.tasks.removeCompletedTasks();
                         b.invalidate();
+                        return false;
                     }
                 }
             };
         };
-        return TaskList;
+        return Footer;
     })();
-    TodoApp.TaskList = TaskList;
 })(TodoApp || (TodoApp = {}));

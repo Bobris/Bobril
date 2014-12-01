@@ -22,12 +22,12 @@ module TodoApp {
         private counter: number;
         private items: Task[];
         private filter: string;
-        private storageItemsKey = 'todoApp.taskListItems';
-        private storageCounterKey = 'todoApp.taskListCounter';
+        private storageItemsKey: string = 'todoApp.taskListItems';
+        private storageCounterKey: string = 'todoApp.taskListCounter';
 
-        private filterAll = 'all';
-        private filterActive = 'active';
-        private filterCompleted = 'completed';
+        private filterAll: string = 'all';
+        private filterActive: string = 'active';
+        private filterCompleted: string = 'completed';
 
         constructor() {
             this.items = [];
@@ -35,12 +35,12 @@ module TodoApp {
             this.filter = 'all';
         }
 
-        public saveToStorage() {
+        public saveToStorage(): void {
             localStorage.setItem(this.storageItemsKey, JSON.stringify(this.items));
             localStorage.setItem(this.storageCounterKey, JSON.stringify(this.counter));
         }
 
-        public restoreFromStorage() {
+        public restoreFromStorage(): void {
             var storageItems = JSON.parse(localStorage.getItem(this.storageItemsKey));
             if (storageItems) {
                 for (var i = 0; i < storageItems.length; i++) {
@@ -159,7 +159,7 @@ module TodoApp {
             return null;
         }
 
-        private removeTasksByPredicate(predicate: (Task) => boolean) {
+        private removeTasksByPredicate(predicate: (task: Task) => boolean) {
             for (var i = this.items.length - 1; i >= 0; i--) {
                 if (predicate(this.items[i])) {
                     this.items.splice(i, 1);

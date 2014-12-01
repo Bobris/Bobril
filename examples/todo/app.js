@@ -13,17 +13,17 @@ var TodoApp;
         b.routeDefault({
             name: "all",
             data: { tasks: taskList, currentNewTaskName: '', currentEditTaskName: '', filter: 'all' },
-            handler: TodoApp.TaskList
+            handler: TodoApp.App
         }),
         b.route({
             name: "active",
             data: { tasks: taskList, currentNewTaskName: '', currentEditTaskName: '', filter: 'active' },
-            handler: TodoApp.TaskList
+            handler: TodoApp.App
         }),
         b.route({
             name: "completed",
             data: { tasks: taskList, currentNewTaskName: '', currentEditTaskName: '', filter: 'completed' },
-            handler: TodoApp.TaskList
+            handler: TodoApp.App
         })
     ]);
 })(TodoApp || (TodoApp = {}));
