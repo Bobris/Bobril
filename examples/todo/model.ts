@@ -123,7 +123,7 @@ module TodoApp {
         }
 
         public setTaskStatus(taskId: number, status: boolean): void {
-            this.findTaskById(taskId).setStatus(status)
+            this.findTaskById(taskId).setStatus(status);
             this.saveToStorage();
         }
 

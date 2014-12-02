@@ -67,6 +67,9 @@
     <Content Include="examples\onkey\index.html" />
     <Content Include="examples\router2\index.html" />
     <Content Include="examples\router\index.html" />
+    <Content Include="examples\todo\delete.png" />
+    <Content Include="examples\todo\index.html" />
+    <Content Include="examples\todo\styles.css" />
     <Content Include="examples\vg\index.html" />
   </ItemGroup>
   <ItemGroup />
@@ -80,6 +83,9 @@
     <TypeScriptCompile Include="examples\onkey\app.ts" />
     <TypeScriptCompile Include="examples\router2\app.ts" />
     <TypeScriptCompile Include="examples\router\app.ts" />
+    <TypeScriptCompile Include="examples\todo\app.ts" />
+    <TypeScriptCompile Include="examples\todo\components.ts" />
+    <TypeScriptCompile Include="examples\todo\model.ts" />
     <TypeScriptCompile Include="examples\vg\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.media.d.ts" />

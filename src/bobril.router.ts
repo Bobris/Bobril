@@ -306,6 +306,7 @@ interface OutFindMatch {
                 if (me.tag == "a") {
                     me.attrs.href = "#" + url;
                 }
+                me.attrs.className = me.attrs.className || "";
                 if (ctx.data.active) {
                     me.attrs.className += " active";
                 }
