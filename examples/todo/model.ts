@@ -20,11 +20,50 @@ module TodoApp {
 
     export class Tasks {
         private counter: number;
-        public items: Task[];
+        private items: Task[];
+        private filter: string;
+        private storageItemsKey: string = 'todoApp.taskListItems';
+        private storageCounterKey: string = 'todoApp.taskListCounter';
+
+        private filterAll: string = 'all';
+        private filterActive: string = 'active';
+        private filterCompleted: string = 'completed';
 
         constructor() {
             this.items = [];
             this.counter = 0;
+            this.filter = 'all';
+        }
+
+        public saveToStorage(): void {
+            localStorage.setItem(this.storageItemsKey, JSON.stringify(this.items));
+            localStorage.setItem(this.storageCounterKey, JSON.stringify(this.counter));
+        }
+
+        public restoreFromStorage(): void {
+            var storageItems = JSON.parse(localStorage.getItem(this.storageItemsKey));
+            if (storageItems) {
+                for (var i = 0; i < storageItems.length; i++) {
+                    var item = storageItems[i];
+                    this.items.push(new Task(item.id, item.name, item.completed, item.isInEditMode));
+                }
+            }
+            var counter = JSON.parse(localStorage.getItem(this.storageCounterKey));
+            if (typeof(counter) === 'number') {
+                this.counter = counter;
+            }
+        }
+
+        public setFilter(filterValue: string): void {
+            this.filter = filterValue;
+        }
+
+        public getFilteredItems(): Array<Task> {
+            return this.items.filter((item, index, array) => { 
+                return this.filter === this.filterAll ||
+                    this.filter === this.filterActive && !item.completed ||
+                    this.filter === this.filterCompleted && item.completed;
+            })
         }
 
         public getItemsCount(): number {
@@ -34,10 +73,12 @@ module TodoApp {
         public addTask(name: string): void
         {
             this.items.push(new Task(this.counter++, name, false));
+            this.saveToStorage();
         }
 
         public markTaskAsCompleted(id: number): void {
             this.setTaskStatus(id, true);
+            this.saveToStorage();
         }
 
         public markAllTasksAsCompleted(): void {
@@ -45,10 +86,12 @@ module TodoApp {
                 this.markTaskAsCompleted(this.items[i].id);
                 this.setTaskEditMode(this.items[i].id, false);
             }
+            this.saveToStorage();
         }
 
         public markTaskAsActive(id: number): void {
             this.setTaskStatus(id, false);
+            this.saveToStorage();
         }
 
         public markAllTasksAsActive(): void {
@@ -56,10 +99,12 @@ module TodoApp {
                 this.markTaskAsActive(this.items[i].id);
                 this.setTaskEditMode(this.items[i].id, false);
             }
+            this.saveToStorage();
         }
 
         public removeTask(id: number): void {
             this.removeTasksByPredicate((item: Task) => { return item.id === id; });
+            this.saveToStorage();
         }
 
         public getNumberOfCompletedTasks(): number {
@@ -74,10 +119,12 @@ module TodoApp {
 
         public removeCompletedTasks(): void {
             this.removeTasksByPredicate((item: Task) => { return item.completed; });
+            this.saveToStorage();
         }
 
         public setTaskStatus(taskId: number, status: boolean): void {
             this.findTaskById(taskId).setStatus(status)
+            this.saveToStorage();
         }
 
         public setTaskEditMode(taskId: number, inEditMode: boolean): void {
@@ -86,6 +133,7 @@ module TodoApp {
 
         public setTaskName(taskId: number, name: string): void {
             this.findTaskById(taskId).setName(name);
+            this.saveToStorage();
         }
 
         public isWholeListCompleted(): boolean {
@@ -111,7 +159,7 @@ module TodoApp {
             return null;
         }
 
-        private removeTasksByPredicate(predicate: (Task) => boolean) {
+        private removeTasksByPredicate(predicate: (task: Task) => boolean) {
             for (var i = this.items.length - 1; i >= 0; i--) {
                 if (predicate(this.items[i])) {
                     this.items.splice(i, 1);
