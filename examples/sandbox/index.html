@@ -398,11 +398,12 @@ b = (function (window, document) {
 			var dd=rootnode.element;
 			for(i=0;i<j;i++) {
 			   ddd=document.createElement("div");
-			   ddd.innerHTML = ch[i].children;
+			   ddd.textContent = ch[i].children;
 			   dd.appendChild(ddd);
 			}
 			var t2 = +new Date();
 			root.appendChild(rootnode.element);
+            var h1=root.offsetHeight;
 			root.removeChild(rootnode.element);
 			var t3 = +new Date();
 			var str="<div>";
@@ -418,10 +419,11 @@ b = (function (window, document) {
 			str+="</div>";
 			var t4 = +new Date();
 			root.insertAdjacentHTML("beforeend",str);
+            var h2=root.offsetHeight;
 			root.removeChild(root.firstChild);
 			var t5 = +new Date();
 			var results = document.getElementById("results");
-			results.innerHTML+="<div>"+j+": init:"+(t1-t0)+" bobril:"+(t2-t1)+" todom:"+(t3-t2)+" buildstr:"+(t4-t3)+" todom:"+(t5-t4)+"</div>"; 
+			results.innerHTML+="<div>"+j+": init:"+(t1-t0)+" dom:"+(t2-t1)+" todom:"+(t3-t2)+" innerHTML:"+(t4-t3)+" todom:"+(t5-t4)+" H1:"+h1+" H2:"+h2+"</div>"; 
 		}
 		},0);
 	</script>
