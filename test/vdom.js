@@ -53,11 +53,11 @@ describe("createNode", function () {
         expectInsensitive(r.element.outerHTML, "<div><h1>header</h1><div>ok</div></div>");
     });
     it("html child", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] }, null);
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null);
         expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>c</div>");
     });
     it("html children", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }, { tag: "/", content: "d<i>e</i>" }] }, null);
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }, { tag: "/", children: "d<i>e</i>" }] }, null);
         expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>cd<i>e</i></div>");
     });
 });
@@ -89,8 +89,8 @@ describe("updateNode", function () {
         expectInsensitive(r.element.outerHTML, "<div>BA</div>");
     });
     it("change html", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", content: "a<span>b</span>c" }] }, null);
-        r = b.updateNode({ tag: "div", children: [{ tag: "/", content: "d<i>e</i>f" }] }, r);
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null);
+        r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r);
         expectInsensitive(r.element.outerHTML, "<div>d<i>e</i>f</div>");
     });
 

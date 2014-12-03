@@ -158,9 +158,12 @@ b = (function (window, document) {
             if (component.init) {
                 component.init(c.ctx, n);
             }
+            if (component.render) {
+                component.render(c.ctx, n);
+            }
         }
         if (n.tag === "") {
-            c.element = createTextNode(c.content);
+            c.element = createTextNode(c.children);
             return c;
         } else if (n.tag === "/") {
             return c;
@@ -188,7 +191,7 @@ b = (function (window, document) {
     function normalizeNode(n) {
         var t = typeof n;
         if (t === "string") {
-            return { tag: "", content: n };
+            return { tag: "", children: n };
         }
         if (t === "boolean")
             return null;
@@ -229,7 +232,7 @@ b = (function (window, document) {
             var j = ch[i] = createNode(item, c);
             if (j.tag === "/") {
                 var before = element.lastChild;
-                c.element.insertAdjacentHTML("beforeend", j.content);
+                c.element.insertAdjacentHTML("beforeend", j.children);
                 j.element = [];
                 if (before) {
                     before = before.nextSibling;
@@ -332,8 +335,8 @@ b = (function (window, document) {
                     return c;
             c.ctx.data = n.data || {};
             c.component = component;
-            if (component.init)
-                component.init(c.ctx, n, c);
+            if (component.render)
+                component.render(c.ctx, n, c);
         }
         var el;
         if (n.tag === "/") {
@@ -347,7 +350,7 @@ b = (function (window, document) {
                 el = parent.insertBefore(document.createElement("i"), el);
                 removeEl = true;
             }
-            el.insertAdjacentHTML("beforebegin", n.content);
+            el.insertAdjacentHTML("beforebegin", n.children);
             if (elprev) {
                 elprev = elprev.nextSibling;
             } else {
@@ -367,13 +370,13 @@ b = (function (window, document) {
         }
         if (n.tag === c.tag && (inSvg || !inNamespace)) {
             if (n.tag === "") {
-                if (c.content !== n.content) {
-                    c.content = n.content;
+                if (c.children !== n.children) {
+                    c.children = n.children;
                     el = c.element;
                     if (hasTextContent) {
-                        el.textContent = c.content;
+                        el.textContent = c.children;
                     } else {
-                        el.nodeValue = c.content;
+                        el.nodeValue = c.children;
                     }
                 }
                 return c;

@@ -23,7 +23,7 @@ module InputApp {
     ];
 
     class About implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = [
                 h("h3", "About"),
@@ -35,28 +35,28 @@ module InputApp {
     }
 
     class Empty implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("p", "Welcome");
         }
     }
 
     class NotFound implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("p", "This page does not exist please continue by clicking links above");
         }
     }
 
     class SelectPlanet implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("p", "Select planet to show on left");
         }
     }
 
     class PlanetList implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "table";
             me.children = a(h("tr", [
                 h("td", [
@@ -70,7 +70,7 @@ module InputApp {
     }
 
     class PlanetImage implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             var name = ctx.data.routeParams.name;
             var planet: { image: string } = null;
             for (var i = 0; i < planetData.length; i++) {
@@ -90,7 +90,7 @@ module InputApp {
     }
 
     class App implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = [
                 h("h1", "Advanced Router sample"),

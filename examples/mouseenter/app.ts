@@ -16,7 +16,7 @@ module MouseEnterLeaveApp {
 
 
     class TrackInnerEvents implements IBobrilComponent {
-        static init(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+        static render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             ctx.backColor = ctx.backColor || "#B3C9DF";
             me.attrs = { style: constructInnerStyle(ctx.backColor) };
         }
@@ -32,7 +32,7 @@ module MouseEnterLeaveApp {
     }
 
     class TrackEvents implements IBobrilComponent {
-        static init(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+        static render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             ctx.backColor = ctx.backColor || "#F0F0F0";
             
             me.tag = "div";

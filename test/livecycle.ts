@@ -4,11 +4,15 @@
 class TestComponent implements IBobrilComponent {
     actions: string = "";
 
-    init(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
+    init(ctx: Object, me: IBobrilNode): void {
+        this.actions += "i:" + me.data.name + ";";
+    }
+
+    render(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
         if (oldMe)
-            this.actions += "u:" + me.data.name + ";";
+            this.actions += "ru:" + me.data.name + ";";
         else
-            this.actions += "i:" + me.data.name + ";";
+            this.actions += "ri:" + me.data.name + ";";
     }
 
     postInit(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
@@ -41,7 +45,7 @@ describe("livecycle", () => {
         var c = new TestComponent();
         b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
         b.callPostCallbacks();
-        expect(c.actions).toBe("i:1;I:1;pi:1;");
+        expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
     });
 
     it("createNodeCallsInitInRightOrder", () => {
@@ -53,7 +57,7 @@ describe("livecycle", () => {
             }
         }, null);
         b.callPostCallbacks();
-        expect(c.actions).toBe("i:1;i:2;I:2;I:1;pi:2;pi:1;");
+        expect(c.actions).toBe("i:1;ri:1;i:2;ri:2;I:2;I:1;pi:2;pi:1;");
     });
 
     it("updateNodeCallsShouldUpdateAndPostUpdate", () => {
@@ -63,7 +67,7 @@ describe("livecycle", () => {
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
         b.callPostCallbacks();
-        expect(c.actions).toBe("sc:1;u:1;U:1;pu:1;");
+        expect(c.actions).toBe("sc:1;ru:1;U:1;pu:1;");
     });
 
     it("shouldUpdateReturningFalseDoesNotPostUpdate", () => {
@@ -93,7 +97,7 @@ describe("livecycle", () => {
             }
         }, r);
         b.callPostCallbacks();
-        expect(c.actions).toBe("sc:1;u:1;sc:2;u:2;U:2;U:1;pu:2;pu:1;");
+        expect(c.actions).toBe("sc:1;ru:1;sc:2;ru:2;U:2;U:1;pu:2;pu:1;");
     });
 
     it("destroyCalledInCaseOfBigChange", () => {
@@ -113,7 +117,7 @@ describe("livecycle", () => {
             }
         }, r);
         b.callPostCallbacks();
-        expect(c.actions).toBe("sc:3;u:3;i:3;i:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
+        expect(c.actions).toBe("sc:3;ru:3;i:3;ri:3;i:4;ri:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
     });
 
     it("initCallsFactory", () => {
@@ -121,7 +125,7 @@ describe("livecycle", () => {
         var c = new TestComponent();
         b.init(() => {
             setTimeout(() => {
-                expect(c.actions).toBe("i:1;I:1;pi:1;");
+                expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
                 done=true;
             }, 0);
             return { tag: "div", component: c, data: { name: "1" } }
@@ -140,7 +144,7 @@ describe("livecycle", () => {
                 return [{ tag: "div", component: c, data: { name: "1" } }];
             } else {
                 setTimeout(() => {
-                    expect(c.actions).toBe("i:1;I:1;pi:1;d:1;");
+                    expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;d:1;");
                     done = true;
                 }, 0);
                 return [];

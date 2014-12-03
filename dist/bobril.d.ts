@@ -49,10 +49,11 @@ interface IBobrilAttributes {
 }
 
 interface IBobrilComponent {
-    // called before new node in vdom should be created any me members except key could be modified, ctx is initialized to { data: me.data||{} }
-    // or after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component update to me.component before calling this
-    // usually just do always init and ignore oldMe parameter
-    init? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
+    // called before new node in vdom should be created, me members (tag, attrs, children) could be modified, ctx is initialized to { data: me.data||{} }
+    init? (ctx: Object, me: IBobrilNode): void;
+    // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
+    // in case of init this is called after init method, oldMe is equal to undefined in that case
+    render? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
     // called after all children are initilized and postInitialized, but before updating own attrs
     // so this is useful for kind of layout in JS features
     postInit? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
@@ -70,10 +71,8 @@ interface IBobrilComponent {
 interface IBobrilNode {
     tag?: string;
     key?: string;
-    /** string|number|boolean */
-    content?: any;
     attrs?: IBobrilAttributes;
-    /** string|number|boolean|IBobrilNode|(string|number|boolean|IBobrilNode)[] */
+    /** string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[] */
     children?: any;
     component?: IBobrilComponent;
     // Bobril does not touch this, it is completely for user passing custom data to component
