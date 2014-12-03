@@ -1,4 +1,4 @@
-/// <reference path="../../src/bobril.d.ts"/>
+﻿/// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 var MouseEnterLeaveApp;
 (function (MouseEnterLeaveApp) {
@@ -8,10 +8,14 @@ var MouseEnterLeaveApp;
     var TrackInnerEvents = (function () {
         function TrackInnerEvents() {
         }
-        TrackInnerEvents.init = function (ctx, me, oldMe) {
-            ctx.backColor = ctx.backColor || "#B3C9DF";
+        TrackInnerEvents.init = function (ctx, me) {
+            ctx.backColor = "#B3C9DF";
+        };
+
+        TrackInnerEvents.render = function (ctx, me, oldMe) {
             me.attrs = { style: constructInnerStyle(ctx.backColor) };
         };
+
         TrackInnerEvents.onMouseEnter = function (ctx, event) {
             ctx.backColor = mouseEnter;
             b.invalidate();
@@ -27,9 +31,11 @@ var MouseEnterLeaveApp;
     var TrackEvents = (function () {
         function TrackEvents() {
         }
-        TrackEvents.init = function (ctx, me, oldMe) {
-            ctx.backColor = ctx.backColor || "#F0F0F0";
+        TrackEvents.init = function (ctx, me) {
+            ctx.backColor = "#F0F0F0";
+        };
 
+        TrackEvents.render = function (ctx, me, oldMe) {
             me.tag = "div";
             me.attrs = { style: constructOuterStyle(ctx.backColor) };
             me.children = {
@@ -64,15 +70,6 @@ var MouseEnterLeaveApp;
         };
         return EventWrapper;
     })();
-
-    var events = [];
-
-    function addEvent(ev) {
-        events.push(ev);
-        if (events.length > 30)
-            events.shift();
-        b.invalidate();
-    }
 
     function constructOuterStyle(backColor) {
         return {

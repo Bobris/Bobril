@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+	<title>SpeedTest</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<script src="../../src/bobril.js"></script>
+</head>
+<body>
+	<div id="root"></div>
+	<div id="results"></div>
+	<script>
+		setTimeout(function() {
+		var i,j,ddd;
+		var root=document.getElementById("root");
+		for(j=1000;j<=10000;j+=1000) {
+			var t0 = +new Date();
+			var ch=[];
+			for(i=0;i<j;i++) ch.push({tag:"span", key: i, children: ""+i});
+			var t1 = +new Date();
+			var rootnode=b.createNode({tag:"div", children:ch},null);
+			var t2 = +new Date();
+			root.appendChild(rootnode.element);
+            var h1=root.offsetHeight;
+			root.removeChild(rootnode.element);
+			var t3 = +new Date();
+			rootnode={};
+			rootnode.element = document.createElement("div");
+			var dd=rootnode.element;
+			for(i=0;i<j;i++) {
+			   ddd=document.createElement("span");
+			   ddd.textContent = ch[i].children;
+			   dd.appendChild(ddd);
+			}
+			var t4 = +new Date();
+			root.appendChild(rootnode.element);
+            var h2=root.offsetHeight;
+			root.removeChild(rootnode.element);
+			var t5 = +new Date();
+			var str="<div>";
+			for(i=0;i<j;i++) {
+			 str+="<";
+			 str+="span";
+			 str+=">";
+			 str+=ch[i].children;
+			 str+="</";
+			 str+="span";
+			 str+=">";
+			}
+			str+="</div>";
+			var t6 = +new Date();
+			root.insertAdjacentHTML("beforeend",str);
+            var h3=root.offsetHeight;
+			root.removeChild(root.firstChild);
+			var t7 = +new Date();
+			var results = document.getElementById("results");
+			results.innerHTML+="<div>"+j+": init:"+(t1-t0)+" bobril:"+(t2-t1)+" todom:"+(t3-t2)+" createElement:"+(t4-t3)+" todom:"+(t5-t4)+" innerHTML:"+(t6-t5)+" todom:"+(t7-t6)+" H1:"+h1+" H2:"+h2+" H3:"+h2+"</div>"; 
+		}
+		},0);
+	</script>
+</body>
+</html>
