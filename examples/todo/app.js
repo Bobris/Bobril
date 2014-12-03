@@ -9,20 +9,21 @@ var TodoApp;
 (function (TodoApp) {
     var taskList = new TodoApp.Tasks();
     taskList.restoreFromStorage();
-
     b.routes([
         b.routeDefault({
             name: "all",
-            data: { tasks: taskList, filter: 'all' },
-            handler: TodoApp.App }),
+            handler: TodoApp.App,
+            data: { tasks: taskList, filter: 'all' }
+        }),
         b.route({
             name: "active",
-            data: { tasks: taskList, filter: 'active' },
-            handler: TodoApp.App }),
+            handler: TodoApp.App,
+            data: { tasks: taskList, filter: 'active' }
+        }),
         b.route({
             name: "completed",
-            data: { tasks: taskList, filter: 'completed' },
-            handler: TodoApp.App })
+            handler: TodoApp.App,
+            data: { tasks: taskList, filter: 'completed' }
+        })
     ]);
 })(TodoApp || (TodoApp = {}));
-//# sourceMappingURL=app.js.map
