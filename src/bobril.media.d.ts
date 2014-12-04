@@ -10,5 +10,5 @@
 interface IBobrilStatic {
 	getMedia?(): IBobrilMedia;
 	// optionaly set new device breakpoints, always return current device breakpoints 
-	accDeviceBreaks?(newBreaks?: number[]): number[];
+	accDeviceBreaks?(newBreaks?: number[][]): number[][];
 }

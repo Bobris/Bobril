@@ -3,7 +3,10 @@
 
 ((b: IBobrilStatic, window: Window) => {
     var media: IBobrilMedia = null;
-    var breaks = [600, 1024, 1200];
+    var breaks = [
+                    [400, 800, 900], //portrait widths
+                    [640, 1280, 1440] //landscape widths
+                 ];
 
     function emitOnMediaChange() {
         media = null;
@@ -15,7 +18,7 @@
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 100, emitOnMediaChange);
 
-    function accDeviceBreaks(newBreaks?: number[]): number[] {
+    function accDeviceBreaks(newBreaks?: number[][]): number[][] {
         if (newBreaks != null) {
             breaks = newBreaks;
             emitOnMediaChange();
@@ -33,14 +36,7 @@
             var p = h >= w;
             if (o == null) o = p ? 0 : 90;
             var device = 0;
-            if (p) {
-                while (w > breaks[device]) device++;
-            } else {
-                if (h > breaks[0]) {
-                    device++;
-                    while (w > breaks[device]) device++;
-                }
-            }
+            while (w > breaks[+!p][device]) device++;
             media = {
                 width: w,
                 height: h,
