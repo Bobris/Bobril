@@ -11,6 +11,10 @@ var TodoApp;
         function App() {
         }
         App.init = function (ctx, me, oldMe) {
+            console.log('init');
+        };
+        App.render = function (ctx, me, oldMe) {
+            console.log('render');
             ctx.filter = ctx.data.filter;
             me.tag = 'div';
             me.attrs = { 'class': 'main' };
@@ -67,7 +71,7 @@ var TodoApp;
     var TaskCreate = (function () {
         function TaskCreate() {
         }
-        TaskCreate.init = function (ctx, me) {
+        TaskCreate.render = function (ctx, me) {
             ctx.newTaskName = ctx.newTaskName || '';
             me.tag = 'div';
             me.attrs = { className: 'input-wrapper' }, me.children = [
@@ -144,7 +148,9 @@ var TodoApp;
         function TaskList() {
         }
         TaskList.init = function (ctx, me) {
-            ctx.editingTaskId = ctx.editingTaskId || -1;
+            ctx.editingTaskId = -1;
+        };
+        TaskList.render = function (ctx, me) {
             me.tag = 'ul';
             me.attrs = {
                 className: 'todo-list'
@@ -194,7 +200,7 @@ var TodoApp;
     var TaskItem = (function () {
         function TaskItem() {
         }
-        TaskItem.init = function (ctx, me) {
+        TaskItem.render = function (ctx, me) {
             var liClasses = 'task';
             var labelClasses = '';
             if (ctx.data.completed) {
@@ -222,7 +228,7 @@ var TodoApp;
                         performUncheck: function (taskId) {
                             ctx.data.markTaskAsActive(taskId);
                             b.invalidate();
-                        },
+                        }
                     }
                 },
                 { tag: 'label', children: ctx.data.name, attrs: { className: labelClasses } },
@@ -267,7 +273,7 @@ var TodoApp;
     var Checkbox = (function () {
         function Checkbox() {
         }
-        Checkbox.init = function (ctx, me) {
+        Checkbox.render = function (ctx, me) {
             var attributes = { 'type': 'checkbox', 'class': 'mark-as-completed' };
             if (ctx.data.invisible) {
                 return null;
@@ -293,7 +299,7 @@ var TodoApp;
     var DeleteButton = (function () {
         function DeleteButton() {
         }
-        DeleteButton.init = function (ctx, me) {
+        DeleteButton.render = function (ctx, me) {
             if (ctx.data.invisible) {
                 return null;
             }
@@ -312,7 +318,7 @@ var TodoApp;
     var EditingInput = (function () {
         function EditingInput() {
         }
-        EditingInput.init = function (ctx, me) {
+        EditingInput.render = function (ctx, me) {
             if (ctx.data.invisible) {
                 return null;
             }
@@ -349,7 +355,7 @@ var TodoApp;
     var Footer = (function () {
         function Footer() {
         }
-        Footer.init = function (ctx, me) {
+        Footer.render = function (ctx, me) {
             var itemsLeftInfo = this.createItemsLeftInfo(ctx);
             var filterButtons = this.createFilterButtons();
             var clearAllButton = this.createClearCompleted(ctx);
@@ -424,4 +430,3 @@ var TodoApp;
     })();
     TodoApp.KeyDownUpHandler = KeyDownUpHandler;
 })(TodoApp || (TodoApp = {}));
-//# sourceMappingURL=components.js.map

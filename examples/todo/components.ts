@@ -22,9 +22,8 @@ module TodoApp {
     }
 
     export class App implements IBobrilComponent {
-        static init(ctx: IAppCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+        static render(ctx: IAppCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             ctx.filter = ctx.data.filter;
-
             me.tag = 'div';
             me.attrs = { 'class': 'main' };
             me.children = [
@@ -94,7 +93,7 @@ module TodoApp {
     }
 
     class TaskCreate implements IBobrilComponent {
-        static init(ctx: ITaskCreateCtx, me: IBobrilNode): void {
+        static render(ctx: ITaskCreateCtx, me: IBobrilNode): void {
             ctx.newTaskName = ctx.newTaskName || '';
             me.tag = 'div';
             me.attrs = { className: 'input-wrapper' },
@@ -185,7 +184,9 @@ module TodoApp {
 
     class TaskList implements IBobrilComponent {
         static init(ctx: ITaskListCtx, me: IBobrilNode): void {
-            ctx.editingTaskId = ctx.editingTaskId || -1;
+            ctx.editingTaskId = -1;
+        }
+        static render(ctx: ITaskListCtx, me: IBobrilNode): void {
             me.tag = 'ul';
             me.attrs = {
                 className: 'todo-list'
@@ -242,7 +243,7 @@ module TodoApp {
     }
 
     export class TaskItem implements IBobrilComponent {
-        static init(ctx: ITaskItemCtx, me: IBobrilNode): void {
+        static render(ctx: ITaskItemCtx, me: IBobrilNode): void {
             var liClasses = 'task';
             var labelClasses: string = '';
             if (ctx.data.completed) {
@@ -324,7 +325,7 @@ module TodoApp {
     }
 
     export class Checkbox implements IBobrilComponent {
-        static init(ctx: ICheckboxCtx, me: IBobrilNode): void {
+        static render(ctx: ICheckboxCtx, me: IBobrilNode): void {
             var attributes: any = { 'type': 'checkbox', 'class': 'mark-as-completed' };
             if (ctx.data.invisible) {
                 return null;
@@ -357,7 +358,7 @@ module TodoApp {
     }
 
     export class DeleteButton implements IBobrilComponent {
-        static init(ctx: IDeleteButtonCtx, me: IBobrilNode): void {
+        static render(ctx: IDeleteButtonCtx, me: IBobrilNode): void {
             if (ctx.data.invisible) {
                 return null;
             }
@@ -388,7 +389,7 @@ module TodoApp {
     }
 
     export class EditingInput implements IBobrilComponent {
-        static init(ctx: IEditingInputCtx, me: IBobrilNode): void {
+        static render(ctx: IEditingInputCtx, me: IBobrilNode): void {
             if (ctx.data.invisible) {
                 return null;
             }
@@ -437,7 +438,7 @@ module TodoApp {
     }
 
     class Footer implements IBobrilComponent {
-        static init(ctx: IFooterCtx, me: IBobrilNode): void {
+        static render(ctx: IFooterCtx, me: IBobrilNode): void {
             var itemsLeftInfo = this.createItemsLeftInfo(ctx);
             var filterButtons = this.createFilterButtons();
             var clearAllButton = this.createClearCompleted(ctx);
