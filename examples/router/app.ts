@@ -7,21 +7,21 @@ module InputApp {
     }
 
     class Page1 implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("h3", "Page1");
         }
     }
 
     class Page2 implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("h3", "Page2");
         }
     }
 
     class App implements IBobrilComponent {
-        static init(ctx: any, me: IBobrilNode) {
+        static render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = [
                 h("h1", "Basic Router sample"),

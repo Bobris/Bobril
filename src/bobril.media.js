@@ -2,7 +2,10 @@
 /// <reference path="../src/bobril.media.d.ts"/>
 (function (b, window) {
     var media = null;
-    var breaks = [600, 1024, 1200];
+    var breaks = [
+        [400, 800, 900],
+        [640, 1280, 1440]
+    ];
 
     function emitOnMediaChange() {
         media = null;
@@ -33,16 +36,8 @@
             if (o == null)
                 o = p ? 0 : 90;
             var device = 0;
-            if (p) {
-                while (w > breaks[device])
-                    device++;
-            } else {
-                if (h > breaks[0]) {
-                    device++;
-                    while (w > breaks[device])
-                        device++;
-                }
-            }
+            while (w > breaks[+!p][device])
+                device++;
             media = {
                 width: w,
                 height: h,

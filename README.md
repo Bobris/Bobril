@@ -19,9 +19,10 @@ Features in extensions:
 - Mouse, Touch and Swipe Events
 - Vector graphic in spirit of React-Art just very limited in features, but under 4kb with SVG and VML backends
 - Router inspired by https://github.com/rackt/react-router/
+- Media detection
 
 Near term planned extensions:
-- Media detection
+- Focus, blur events
 
 Longer term extensions:
 - New/Deleted Node animation

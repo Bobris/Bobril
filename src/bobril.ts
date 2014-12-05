@@ -147,9 +147,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (component.init) {
                 component.init(c.ctx, n);
             }
+            if (component.render) {
+                component.render(c.ctx, n);
+            }
         }
         if (n.tag === "") {
-            c.element = createTextNode(c.content);
+            c.element = createTextNode(c.children);
             return c;
         } else if (n.tag === "/") {
             return c;
@@ -177,7 +180,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function normalizeNode(n: any): IBobrilNode {
         var t = typeof n;
         if (t === "string") {
-            return { tag: "", content: n };
+            return { tag: "", children: n };
         }
         if (t === "boolean") return null;
         return <IBobrilNode>n;
@@ -217,7 +220,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var j = ch[i] = createNode(item, c);
             if (j.tag === "/") {
                 var before = element.lastChild;
-                c.element.insertAdjacentHTML("beforeend", j.content);
+                c.element.insertAdjacentHTML("beforeend", j.children);
                 j.element = [];
                 if (before) {
                     before = before.nextSibling;
@@ -315,8 +318,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     return c;
             (<any>c.ctx).data = n.data || {};
             c.component = component;
-            if (component.init)
-                component.init(c.ctx, n, c);
+            if (component.render)
+                component.render(c.ctx, n, c);
         }
         var el: any;
         if (n.tag === "/") {
@@ -329,7 +332,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 el = parent.insertBefore(document.createElement("i"), el);
                 removeEl = true;
             }
-            el.insertAdjacentHTML("beforebegin", n.content);
+            el.insertAdjacentHTML("beforebegin", n.children);
             if (elprev) {
                 elprev = elprev.nextSibling;
             }
@@ -350,13 +353,13 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         if (n.tag === c.tag && (inSvg || !inNamespace)) {
             if (n.tag === "") {
-                if (c.content !== n.content) {
-                    c.content = n.content;
+                if (c.children !== n.children) {
+                    c.children = n.children;
                     el = c.element;
                     if (hasTextContent) {
-                        el.textContent = c.content;
+                        el.textContent = c.children;
                     } else {
-                        el.nodeValue = c.content;
+                        el.nodeValue = c.children;
                     }
                 }
                 return c;

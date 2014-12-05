@@ -301,7 +301,7 @@ interface OutFindMatch {
         node.data.active = isActive(name, params);
         node.data.url = url;
         b.postEnhance(node, {
-            init: (ctx: any, me: IBobrilNode) => {
+            render: (ctx: any, me: IBobrilNode) => {
                 me.attrs = me.attrs || {};
                 if (me.tag == "a") {
                     me.attrs.href = "#" + url;

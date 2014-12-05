@@ -29,7 +29,7 @@ var InputApp;
     var About = (function () {
         function About() {
         }
-        About.init = function (ctx, me) {
+        About.render = function (ctx, me) {
             me.tag = "div";
             me.children = [
                 h("h3", "About"),
@@ -44,7 +44,7 @@ var InputApp;
     var Empty = (function () {
         function Empty() {
         }
-        Empty.init = function (ctx, me) {
+        Empty.render = function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "Welcome");
         };
@@ -54,7 +54,7 @@ var InputApp;
     var NotFound = (function () {
         function NotFound() {
         }
-        NotFound.init = function (ctx, me) {
+        NotFound.render = function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "This page does not exist please continue by clicking links above");
         };
@@ -64,7 +64,7 @@ var InputApp;
     var SelectPlanet = (function () {
         function SelectPlanet() {
         }
-        SelectPlanet.init = function (ctx, me) {
+        SelectPlanet.render = function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "Select planet to show on left");
         };
@@ -74,7 +74,7 @@ var InputApp;
     var PlanetList = (function () {
         function PlanetList() {
         }
-        PlanetList.init = function (ctx, me) {
+        PlanetList.render = function (ctx, me) {
             me.tag = "table";
             me.children = a(h("tr", [
                 h("td", [
@@ -91,7 +91,7 @@ var InputApp;
     var PlanetImage = (function () {
         function PlanetImage() {
         }
-        PlanetImage.init = function (ctx, me) {
+        PlanetImage.render = function (ctx, me) {
             var name = ctx.data.routeParams.name;
             var planet = null;
             for (var i = 0; i < planetData.length; i++) {
@@ -115,7 +115,7 @@ var InputApp;
     var App = (function () {
         function App() {
         }
-        App.init = function (ctx, me) {
+        App.render = function (ctx, me) {
             me.tag = "div";
             me.children = [
                 h("h1", "Advanced Router sample"),

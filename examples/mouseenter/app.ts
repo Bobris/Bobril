@@ -16,10 +16,14 @@ module MouseEnterLeaveApp {
 
 
     class TrackInnerEvents implements IBobrilComponent {
-        static init(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            ctx.backColor = ctx.backColor || "#B3C9DF";
+        static init(ctx: ITrackClickCtx, me: IBobrilNode) {
+            ctx.backColor = "#B3C9DF";
+        }
+
+        static render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             me.attrs = { style: constructInnerStyle(ctx.backColor) };
         }
+
         static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
             ctx.backColor = mouseEnter;
             b.invalidate();
@@ -32,9 +36,11 @@ module MouseEnterLeaveApp {
     }
 
     class TrackEvents implements IBobrilComponent {
-        static init(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            ctx.backColor = ctx.backColor || "#F0F0F0";
-            
+        static init(ctx: ITrackClickCtx, me: IBobrilNode) {
+            ctx.backColor = "#F0F0F0";
+        }
+
+        static render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             me.tag = "div";
             me.attrs = { style: constructOuterStyle(ctx.backColor) };
             me.children = {
@@ -68,16 +74,6 @@ module MouseEnterLeaveApp {
         toString(): string {
             return this.eventName +" ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
         }
-    }
-
-
-    var events: IEvent[] = [];
-
-    function addEvent(ev: IEvent) {
-        events.push(ev);
-        if (events.length > 30)
-            events.shift();
-        b.invalidate();
     }
 
     function constructOuterStyle(backColor: string) {
