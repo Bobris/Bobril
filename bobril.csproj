@@ -88,6 +88,7 @@
     <TypeScriptCompile Include="examples\todo\model.ts" />
     <TypeScriptCompile Include="examples\vg\app.ts" />
     <TypeScriptCompile Include="src\bobril.d.ts" />
+    <TypeScriptCompile Include="src\bobril.focus.d.ts" />
     <TypeScriptCompile Include="src\bobril.media.d.ts" />
     <TypeScriptCompile Include="src\bobril.media.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.d.ts" />
