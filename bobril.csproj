@@ -96,6 +96,8 @@
     <TypeScriptCompile Include="src\bobril.onchange.ts" />
     <TypeScriptCompile Include="src\bobril.router.d.ts" />
     <TypeScriptCompile Include="src\bobril.router.ts" />
+    <TypeScriptCompile Include="src\bobril.scroll.d.ts" />
+    <TypeScriptCompile Include="src\bobril.scroll.ts" />
     <TypeScriptCompile Include="src\bobril.swipe.d.ts" />
     <TypeScriptCompile Include="src\bobril.swipe.ts" />
     <TypeScriptCompile Include="src\bobril.onkey.d.ts" />
