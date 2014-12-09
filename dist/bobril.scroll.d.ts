@@ -5,4 +5,3 @@ interface IBobrilStatic {
     removeOnScroll?(callback:()=>void): void;
     isScrollable?(el: Element): { x:boolean; y:boolean };
 }
-// https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js

@@ -273,7 +273,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function pushInitCallback(c: IBobrilCacheNode, aupdate: boolean) {
         var cc = c.component;
         if (cc) {
-            if (cc.postInitDom) {
+            if ((<any>cc)[aupdate ? "postUpdateDom" : "postInitDom"]) {
                 updateCall.push(aupdate);
                 updateInstance.push(c);
             }
