@@ -54,9 +54,9 @@ interface IBobrilComponent {
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
     // in case of init this is called after init method, oldMe is equal to undefined in that case
     render? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
-    // called after all children are initilized and postInitialized, but before updating own attrs
+    // called after all children are rendered, but before updating own attrs
     // so this is useful for kind of layout in JS features
-    postInit? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
+    postRender? (ctx: Object, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
     // return false when whole subtree should not be changed from last time, you can still update any me members except key, default implementation always return true
     shouldChange? (ctx: Object, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
     // called from children to parents order for new nodes

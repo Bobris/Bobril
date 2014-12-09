@@ -170,8 +170,8 @@ b = (function (window, document) {
         }
         createChildren(c);
         if (component) {
-            if (component.postInit) {
-                component.postInit(c.ctx, n);
+            if (component.postRender) {
+                component.postRender(c.ctx, n);
             }
         }
         c.attrs = updateElement(c, c.element, c.attrs, {});
@@ -381,8 +381,8 @@ b = (function (window, document) {
                 if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
                     updateChildrenNode(n, c);
                     if (component) {
-                        if (component.postInit) {
-                            component.postInit(c.ctx, n, c);
+                        if (component.postRender) {
+                            component.postRender(c.ctx, n, c);
                         }
                     }
                     if (c.attrs)

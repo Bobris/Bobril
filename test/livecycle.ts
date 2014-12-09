@@ -15,7 +15,7 @@ class TestComponent implements IBobrilComponent {
             this.actions += "ri:" + me.data.name + ";";
     }
 
-    postInit(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
+    postRender(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
         if (oldMe)
             this.actions += "U:" + me.data.name + ";";
         else
