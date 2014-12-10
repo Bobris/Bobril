@@ -71,7 +71,7 @@
             lastLabelClickCoordinates = null;
         }
         // remember label click coordinates to prevent click busting of trigger click event on input
-        if ((<any>event.target).tagName.toLowerCase() === 'label') {
+        if ((<any>event.target).tagName.toLowerCase() === "label") {
             lastLabelClickCoordinates = [x, y];
         }
 

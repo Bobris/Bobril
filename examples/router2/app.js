@@ -95,13 +95,13 @@ var InputApp;
             var name = ctx.data.routeParams.name;
             var planet = null;
             for (var i = 0; i < planetData.length; i++) {
-                if (planetData[i].name == name)
+                if (planetData[i].name === name)
                     planet = planetData[i];
             }
             if (planet) {
                 me.tag = "img";
                 me.attrs = {
-                    style: { width: "20em" },
+                    style: { height: "auto", width: "20em" },
                     src: planet.image
                 };
             } else {

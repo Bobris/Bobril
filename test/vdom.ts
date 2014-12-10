@@ -2,8 +2,8 @@
 /// <reference path="../src/bobril.d.ts"/>
 
 function expectInsensitive(s1: string, s2: string) {
-    s1 = s1.replace(/\s/g, '');
-    s1 = s1.replace(/;\"/g, '"');
+    s1 = s1.replace(/\s/g, "");
+    s1 = s1.replace(/;\"/g, "\"");
     expect(s1.toLowerCase()).toBe(s2.toLowerCase());
 }
 
@@ -15,24 +15,24 @@ describe("updateElement", () => {
 
     it("set style by object", () => {
         var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, null);
-        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
+        expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
     it("set style by string", () => {
         var r = b.createNode({ tag: "div", attrs: { style: "font-size:10px" } }, null);
-        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
+        expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
     it("update style from string to object", () => {
         var r = b.createNode({ tag: "div", attrs: { style: "font-size:5px" } }, null);
         r = b.updateNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, r);
-        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
+        expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
     it("update style from object to string", () => {
         var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "5px" } } }, null);
         r = b.updateNode({ tag: "div", attrs: { style: "font-size:10px" } }, r);
-        expectInsensitive(r.element.outerHTML, '<divstyle="font-size:10px"></div>');
+        expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
 });

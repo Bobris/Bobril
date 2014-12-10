@@ -1,7 +1,4 @@
-interface ICoords {
-    x: number;
-    y: number;
-}
+/// <reference path="bobril.mouse.d.ts" />
 
 declare enum Swipe {
     Invalid = 0,
