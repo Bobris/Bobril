@@ -250,7 +250,7 @@
             index += paramCount;
         }
         s += '">' + sInner + "</v:shape>";
-        me.content = s;
+        (<any>me).content = s;
     }
 
     var vmlChildComponent = {
@@ -270,7 +270,7 @@
         }
     }
     if (implType == 2) {
-        if (!document.namespaces['v']) {
+        if (!(<any>document).namespaces['v']) {
             document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', defaultvml);
         }
         var behaviururldefaultvml = "behavior:" + urldefaultvml + ";}";
