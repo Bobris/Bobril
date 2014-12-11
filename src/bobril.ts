@@ -213,6 +213,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
             ch = [ch];
         }
+        ch = ch.slice(0);
         var i = 0, l = ch.length;
         while (i < l) {
             var item = ch[i];
@@ -353,7 +354,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             removeNode(c);
             return n;
         }
-        if (n.tag === c.tag && (inSvg || !inNamespace)) {
+        else if (n.tag === c.tag && (inSvg || !inNamespace)) {
             if (n.tag === "") {
                 if (c.children !== n.children) {
                     c.children = n.children;
@@ -431,6 +432,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             element.removeChild(element.firstChild);
             cachedChildren = <any>[];
         }
+        newChildren = newChildren.slice(0);
         var newLength = newChildren.length;
         var cachedLength = cachedChildren.length;
         var newIndex: number;
