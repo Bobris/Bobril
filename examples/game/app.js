@@ -3,15 +3,13 @@ var GameApp;
 (function (GameApp) {
     function h(tag) {
         var args = [];
-        for (var _i = 0; _i < (arguments.length - 1); _i++) {
-            args[_i] = arguments[_i + 1];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
         }
         return { tag: tag, children: args };
     }
-
     var boardX = 700;
     var boardY = 500;
-
     var Player = (function () {
         function Player() {
             this.x = boardX * 0.5 - 20;
@@ -34,10 +32,10 @@ var GameApp;
                 this.ay = -1;
             else
                 this.ay = 1;
-
             if (this.ax < this.vx) {
                 this.vx -= 0.1;
-            } else if (this.ax > this.vx) {
+            }
+            else if (this.ax > this.vx) {
                 this.vx += 0.1;
             }
             if (Math.abs(this.vx) < 0.05)
@@ -47,10 +45,10 @@ var GameApp;
                 this.x = boardX - 50;
             if (this.x < 10)
                 this.x = 10;
-
             if (this.ay < this.vy) {
                 this.vy -= 0.1;
-            } else if (this.ay > this.vy) {
+            }
+            else if (this.ay > this.vy) {
                 this.vy += 0.1;
             }
             if (Math.abs(this.vy) < 0.05)
@@ -79,7 +77,6 @@ var GameApp;
         };
         return Player;
     })();
-
     var ShootParticle = (function () {
         function ShootParticle(x, y, vx, vy) {
             this.x = x + vx;
@@ -107,10 +104,8 @@ var GameApp;
         };
         return ShootParticle;
     })();
-
     var player = new Player();
     var shootParticles = [];
-
     var GameControler = (function () {
         function GameControler() {
         }
@@ -131,39 +126,42 @@ var GameApp;
                 ctx.time += 20;
             }
         };
-
         GameControler.postInitDom = function (ctx, me, element) {
             element.focus();
         };
-
         GameControler.onKeyDown = function (ctx, event) {
             if (event.which == 37) {
                 player.left = true;
                 return true;
-            } else if (event.which == 39) {
+            }
+            else if (event.which == 39) {
                 player.right = true;
                 return true;
-            } else if (event.which == 38) {
+            }
+            else if (event.which == 38) {
                 player.up = true;
                 return true;
-            } else if (event.which == 40) {
+            }
+            else if (event.which == 40) {
                 player.down = true;
                 return true;
             }
             return false;
         };
-
         GameControler.onKeyUp = function (ctx, event) {
             if (event.which == 37) {
                 player.left = false;
                 return true;
-            } else if (event.which == 39) {
+            }
+            else if (event.which == 39) {
                 player.right = false;
                 return true;
-            } else if (event.which == 38) {
+            }
+            else if (event.which == 38) {
                 player.up = false;
                 return true;
-            } else if (event.which == 40) {
+            }
+            else if (event.which == 40) {
                 player.down = false;
                 return true;
             }
@@ -171,23 +169,23 @@ var GameApp;
         };
         return GameControler;
     })();
-
     b.init(function () {
         b.invalidate();
         var frame = ["rect", 0, 0, boardX, boardY];
         return [
             h("h1", "Game"),
             {
-                tag: "div", attrs: { tabindex: "0", style: { width: boardX + "px", height: boardY + "px", outline: "0" } }, component: GameControler, children: [
+                tag: "div",
+                attrs: { tabindex: "0", style: { width: boardX + "px", height: boardY + "px", outline: "0" } },
+                component: GameControler,
+                children: [
                     {
                         component: b.vg,
                         data: { width: boardX + "px", height: boardY + "px" },
                         children: [
                             { data: { path: frame, stroke: "#808080", strokeWidth: 2 } },
                             player.toVg(),
-                            shootParticles.map(function (p) {
-                                return p.toVg();
-                            })
+                            shootParticles.map(function (p) { return p.toVg(); })
                         ]
                     }
                 ]

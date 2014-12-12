@@ -8,46 +8,38 @@ var MouseApp;
         TrackClick.postInitDom = function (ctx, me, element) {
             element.focus();
         };
-
         TrackClick.onClick = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
             return false;
         };
-
         TrackClick.onDoubleClick = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return false;
         };
-
         TrackClick.onMouseDown = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return false;
         };
-
         TrackClick.onMouseUp = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
             return false;
         };
-
         TrackClick.onSwipeLeft = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
             return false;
         };
-
         TrackClick.onSwipeRight = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return false;
         };
         return TrackClick;
     })();
-
     function e(ev) {
         return {
             tag: "div",
             children: ev.toString()
         };
     }
-
     var EventWrapper = (function () {
         function EventWrapper(ev, eventName) {
             this.ev = ev;
@@ -58,16 +50,13 @@ var MouseApp;
         };
         return EventWrapper;
     })();
-
     var events = [];
-
     function addEvent(ev) {
         events.push(ev);
         if (events.length > 30)
             events.shift();
         b.invalidate();
     }
-
     b.init(function () {
         return [
             {
@@ -86,9 +75,7 @@ var MouseApp;
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }].concat(events.map(function (ev) {
-                    return e(ev);
-                }))
+                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }].concat(events.map(function (ev) { return e(ev); }))
             }
         ];
     });

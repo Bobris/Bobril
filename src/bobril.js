@@ -288,9 +288,10 @@ b = (function (window, document) {
     }
     var rootFactory;
     var rootCacheChildren = [];
-    function getCacheNode(n) {
+    function vdomPath(n) {
+        var res = [];
         if (n == null)
-            return null;
+            return res;
         var root = document.body;
         var nodeStack = [];
         while (n && n !== root) {
@@ -298,23 +299,31 @@ b = (function (window, document) {
             n = n.parentNode;
         }
         if (!n)
-            return null;
+            return res;
         var currentCacheArray = rootCacheChildren;
         while (nodeStack.length) {
             var currentNode = nodeStack.pop();
             for (var i = 0, l = currentCacheArray.length; i < l; i++) {
-                if (currentCacheArray[i].element === currentNode) {
-                    if (nodeStack.length === 0)
-                        return currentCacheArray[i];
-                    currentCacheArray = currentCacheArray[i].children;
+                var bn = currentCacheArray[i];
+                if (bn.element === currentNode) {
+                    res.push(bn);
+                    currentCacheArray = bn.children;
                     currentNode = null;
                     break;
                 }
             }
-            if (currentNode)
-                return null;
+            if (currentNode) {
+                res.push(null);
+                break;
+            }
         }
-        return null;
+        return res;
+    }
+    function getCacheNode(n) {
+        var s = vdomPath(n);
+        if (s.length == 0)
+            return null;
+        return s[s.length - 1];
     }
     function updateNode(n, c) {
         var component = n.component;
@@ -922,6 +931,7 @@ b = (function (window, document) {
         invalidate: scheduleUpdate,
         preventDefault: preventDefault,
         vmlNode: function () { return inNamespace = true; },
+        vdomPath: vdomPath,
         deref: getCacheNode,
         addEvent: addEvent,
         bubble: bubbleEvent,

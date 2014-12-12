@@ -27,7 +27,9 @@ interface IBobrilStatic {
     preventDefault(event: Event): void;
     // this could be called only from component init and forces recreation of child nodes
     vmlNode(): void;
-    // DOM to vdom resolver
+    // DOM to vdom stack resolver
+    vdomPath(n: Node): IBobrilCacheNode[];
+    // DOM to vdom leaf resolver
     deref(n: Node): IBobrilCacheNode;
     // adds native event to window or body
     addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
@@ -42,7 +44,7 @@ interface IBobrilAttributes {
     id?: string;
     href?: string;
     className?: string;
-    style?: Object;
+    style?: any;
     // boolean | string
     value?: any;
     [name: string]: any;

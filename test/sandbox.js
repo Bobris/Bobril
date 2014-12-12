@@ -1,4 +1,4 @@
-﻿/// <reference path="jasmine.d.ts"/>
+/// <reference path="jasmine.d.ts"/>
 describe("sandbox", function () {
     var root;
     beforeEach(function () {

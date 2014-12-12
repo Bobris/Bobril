@@ -1,4 +1,4 @@
-﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.swipe.d.ts"/>
@@ -55,7 +55,6 @@ var TodoApp;
         return App;
     })();
     TodoApp.App = App;
-
     var Heading = (function () {
         function Heading() {
         }
@@ -65,7 +64,6 @@ var TodoApp;
         };
         return Heading;
     })();
-
     var TaskCreate = (function () {
         function TaskCreate() {
         }
@@ -77,7 +75,6 @@ var TodoApp;
                 this.createSetAllCheckboxElement(ctx)
             ];
         };
-
         TaskCreate.createInputElement = function (ctx) {
             return {
                 tag: "input",
@@ -114,7 +111,6 @@ var TodoApp;
                 data: ctx.data
             };
         };
-
         TaskCreate.createSetAllCheckboxElement = function (ctx) {
             return {
                 tag: "input",
@@ -127,7 +123,8 @@ var TodoApp;
                     onChange: function (ctx, value) {
                         if (value) {
                             ctx.data.markAllTasksAsCompleted();
-                        } else {
+                        }
+                        else {
                             ctx.data.markAllTasksAsActive();
                         }
                         b.invalidate();
@@ -141,7 +138,6 @@ var TodoApp;
         };
         return TaskCreate;
     })();
-
     var TaskList = (function () {
         function TaskList() {
         }
@@ -154,12 +150,10 @@ var TodoApp;
                 className: "todo-list"
             }, me.children = this.createTaskElements(ctx);
         };
-
         TaskList.createTaskElements = function (ctx) {
             var res = [];
             var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
             var tasks = ctx.data.tasks;
-
             for (var i = 0; i < taskItems.length; i++) {
                 var task = taskItems[i];
                 res.push({
@@ -191,12 +185,10 @@ var TodoApp;
                     }
                 });
             }
-
             return res;
         };
         return TaskList;
     })();
-
     var TaskItem = (function () {
         function TaskItem() {
         }
@@ -208,7 +200,8 @@ var TodoApp;
             }
             if (ctx.data.justEditing) {
                 labelClasses = "hidden";
-            } else {
+            }
+            else {
                 liClasses += " readonly";
             }
             me.tag = "li";
@@ -259,7 +252,6 @@ var TodoApp;
                 { tag: "div", attrs: { className: "cleaner" } }
             ];
         };
-
         TaskItem.onDoubleClick = function (ctx) {
             ctx.data.setEditingMode(ctx.data.id);
             b.invalidate();
@@ -268,7 +260,6 @@ var TodoApp;
         return TaskItem;
     })();
     TodoApp.TaskItem = TaskItem;
-
     var Checkbox = (function () {
         function Checkbox() {
         }
@@ -278,18 +269,17 @@ var TodoApp;
             me.attrs = attributes;
             me.data = ctx.data;
         };
-
         Checkbox.onChange = function (ctx, value) {
             if (value) {
                 ctx.data.performCheck(ctx.data.taskId);
-            } else {
+            }
+            else {
                 ctx.data.performUncheck(ctx.data.taskId);
             }
         };
         return Checkbox;
     })();
     TodoApp.Checkbox = Checkbox;
-
     var DeleteButton = (function () {
         function DeleteButton() {
         }
@@ -298,7 +288,6 @@ var TodoApp;
             me.children = "delete";
             me.attrs = { className: "delete-button" };
         };
-
         DeleteButton.onClick = function (ctx, event) {
             ctx.data.performDelete(ctx.data.taskId);
             return true;
@@ -306,7 +295,6 @@ var TodoApp;
         return DeleteButton;
     })();
     TodoApp.DeleteButton = DeleteButton;
-
     var EditingInput = (function () {
         function EditingInput() {
         }
@@ -341,7 +329,6 @@ var TodoApp;
         return EditingInput;
     })();
     TodoApp.EditingInput = EditingInput;
-
     var Footer = (function () {
         function Footer() {
         }
@@ -349,7 +336,6 @@ var TodoApp;
             var itemsLeftInfo = this.createItemsLeftInfo(ctx);
             var filterButtons = this.createFilterButtons();
             var clearAllButton = this.createClearCompleted(ctx);
-
             me.tag = "div";
             me.attrs = { className: "footer" };
             me.children = [
@@ -362,7 +348,6 @@ var TodoApp;
                 }
             ];
         };
-
         Footer.createItemsLeftInfo = function (ctx) {
             var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
             var text = itemsLeftCount === 1 ? itemsLeftCount + " item left" : itemsLeftCount + " items left";
@@ -372,7 +357,6 @@ var TodoApp;
                 children: text
             };
         };
-
         Footer.createFilterButtons = function () {
             return {
                 tag: "div",
@@ -384,7 +368,6 @@ var TodoApp;
                 ]
             };
         };
-
         Footer.createClearCompleted = function (ctx) {
             var numberOfCompletedTasks = ctx.data.completedTasksCount;
             var text = "Clear completed (" + numberOfCompletedTasks + ")";
@@ -408,14 +391,14 @@ var TodoApp;
         };
         return Footer;
     })();
-
     var KeyDownUpHandler = (function () {
         function KeyDownUpHandler() {
         }
         KeyDownUpHandler.prototype.handleEcsEnter = function (event, escapeHandler, enterHandler) {
             if (event.which === 27) {
                 return escapeHandler();
-            } else if (event.which === 13) {
+            }
+            else if (event.which === 13) {
                 return enterHandler();
             }
             return false;

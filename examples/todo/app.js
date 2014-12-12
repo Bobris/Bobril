@@ -13,17 +13,18 @@ var TodoApp;
         b.routeDefault({
             name: "all",
             handler: TodoApp.App,
-            data: { tasks: taskList, filter: 'all' }
+            data: { tasks: taskList, filter: "all" }
         }),
         b.route({
             name: "active",
             handler: TodoApp.App,
-            data: { tasks: taskList, filter: 'active' }
+            data: { tasks: taskList, filter: "active" }
         }),
         b.route({
             name: "completed",
             handler: TodoApp.App,
-            data: { tasks: taskList, filter: 'completed' }
+            data: { tasks: taskList, filter: "completed" }
         })
     ]);
 })(TodoApp || (TodoApp = {}));
+//# sourceMappingURL=app.js.map

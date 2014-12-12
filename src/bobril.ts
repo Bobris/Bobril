@@ -284,29 +284,40 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var rootFactory: () => any;
     var rootCacheChildren: Array<IBobrilCacheNode> = [];
 
-    function getCacheNode(n: Node): IBobrilCacheNode {
-        if (n == null) return null;
+    function vdomPath(n: Node): IBobrilCacheNode[] {
+        var res:IBobrilCacheNode[] = [];
+        if (n == null) return res;
         var root = document.body;
         var nodeStack: Node[] = [];
         while (n && n !== root) {
             nodeStack.push(n);
             n = n.parentNode;
         }
-        if (!n) return null;
+        if (!n) return res;
         var currentCacheArray = rootCacheChildren;
         while (nodeStack.length) {
             var currentNode = nodeStack.pop();
             for (var i = 0, l = currentCacheArray.length; i < l; i++) {
-                if (currentCacheArray[i].element === currentNode) {
-                    if (nodeStack.length === 0) return currentCacheArray[i];
-                    currentCacheArray = currentCacheArray[i].children;
+                var bn = currentCacheArray[i];
+                if (bn.element === currentNode) {
+                    res.push(bn);
+                    currentCacheArray = bn.children;
                     currentNode = null;
                     break;
                 }
             }
-            if (currentNode) return null;
+            if (currentNode) {
+                res.push(null);
+                break;
+            }
         }
-        return null;
+        return res;
+    }
+
+    function getCacheNode(n: Node): IBobrilCacheNode {
+        var s = vdomPath(n);
+        if (s.length == 0) return null;
+        return s[s.length - 1];
     }
 
     function updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode {
@@ -917,6 +928,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         invalidate: scheduleUpdate,
         preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,
+        vdomPath: vdomPath,
         deref: getCacheNode,
         addEvent: addEvent,
         bubble: bubbleEvent,
