@@ -21,6 +21,8 @@ interface IBobrilStatic {
     uptime(): number;
     // shim for Date.now()
     now(): number;
+    // returns IE version 8 - 11, for other browsers returns undefined
+    ieVersion(): number;
     // shalows copy all own members from source to target returns target, source could be null, target must be non-null 
     assign(target: Object, source: Object): Object;
     // shim for Event.preventDefault()

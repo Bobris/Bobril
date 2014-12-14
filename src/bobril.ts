@@ -925,6 +925,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         uptime: () => uptime,
         now: now,
         assign: assign,
+        ieVersion: () => document.documentMode,
         invalidate: scheduleUpdate,
         preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,
