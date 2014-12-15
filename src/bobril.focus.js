@@ -55,7 +55,6 @@
             nodestack = newstack;
             currentFocusedNode = nodestack.length == 0 ? null : nodestack[nodestack.length - 1];
         }
-        return false;
     }
     function emitOnFocusChangeIE() {
         setTimeout(emitOnFocusChange, 10);
@@ -63,7 +62,10 @@
     }
     var events = ["fucus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 50, emitOnFocusChangeIE);
+        b.addEvent(events[i], 50, (b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
+    if (b.ieVersion() === 8) {
+        setInterval(emitOnFocusChange, 100);
+    }
     function focused() {
         //emitOnFocusChange();
         return currentFocusedNode;

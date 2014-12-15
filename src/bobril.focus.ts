@@ -6,7 +6,7 @@
     var currentFocusedNode: IBobrilNode = null;
     var nodestack: IBobrilCacheNode[] = [];
 
-    function emitOnFocusChange(): boolean {
+    function emitOnFocusChange(): void {
         var newActiveElement = document.hasFocus() ? document.activeElement : null;
         if (newActiveElement !== currentActiveElement) {
             currentActiveElement = newActiveElement;
@@ -57,17 +57,20 @@
             nodestack = newstack;
             currentFocusedNode = nodestack.length == 0 ? null : nodestack[nodestack.length - 1];
         }
-        return false;
     }
 
-    function emitOnFocusChangeIE(): boolean {
+    function emitOnFocusChangeIE(): void {
         setTimeout(emitOnFocusChange, 10);
         emitOnFocusChange();
     }
 
     var events = ["fucus","blur","keydown","keyup","keypress","mousedown","mouseup","mousemove","touchstart","touchend"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 50, emitOnFocusChangeIE);
+        b.addEvent(events[i], 50, <any>(b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
+
+    if (b.ieVersion() === 8) {
+        setInterval(emitOnFocusChange, 100);
+    }
 
     function focused(): IBobrilCacheNode {
         //emitOnFocusChange();
