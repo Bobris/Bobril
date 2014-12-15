@@ -106,12 +106,11 @@ var GameApp;
     })();
     var player = new Player();
     var shootParticles = [];
-    var GameControler = (function () {
-        function GameControler() {
-        }
-        GameControler.init = function (ctx, me, oldMe) {
-            if (!oldMe)
-                ctx.time = b.uptime();
+    var GameControler = {
+        init: function (ctx, me) {
+            ctx.time = b.uptime();
+        },
+        render: function (ctx, me, oldMe) {
             var a = b.uptime();
             while (a > ctx.time) {
                 player.tick();
@@ -125,11 +124,11 @@ var GameApp;
                 }
                 ctx.time += 20;
             }
-        };
-        GameControler.postInitDom = function (ctx, me, element) {
+        },
+        postInitDom: function (ctx, me, element) {
             element.focus();
-        };
-        GameControler.onKeyDown = function (ctx, event) {
+        },
+        onKeyDown: function (ctx, event) {
             if (event.which == 37) {
                 player.left = true;
                 return true;
@@ -147,8 +146,8 @@ var GameApp;
                 return true;
             }
             return false;
-        };
-        GameControler.onKeyUp = function (ctx, event) {
+        },
+        onKeyUp: function (ctx, event) {
             if (event.which == 37) {
                 player.left = false;
                 return true;
@@ -166,9 +165,8 @@ var GameApp;
                 return true;
             }
             return false;
-        };
-        return GameControler;
-    })();
+        }
+    };
     b.init(function () {
         b.invalidate();
         var frame = ["rect", 0, 0, boardX, boardY];
