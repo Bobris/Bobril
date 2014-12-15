@@ -11,6 +11,8 @@ interface IBobrilStatic {
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
     setSetValue(callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
+    // Set update DOM attribute style callback, returns previous callback to allow chaining
+    setSetStyle(callback: (el: HTMLElement, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: HTMLElement, node: IBobrilNode, newValue: any, oldValue: any) => void;
     // factory returns string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[]
     init(factory: () => any): void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop

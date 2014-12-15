@@ -84,6 +84,35 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return prev;
     }
 
+    var setStyleCallback: (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
+        if (isObject(newValue)) {
+            var rule: string;
+            if (isObject(oldValue)) {
+                for (rule in newValue) {
+                    var v = newValue[rule];
+                    if (oldValue[rule] !== v) el.style[<any>rule] = v;
+                }
+                for (rule in oldValue) {
+                    if (!(rule in newValue)) el.style[<any>rule] = "";
+                }
+            } else {
+                if (oldValue)
+                    el.style.cssText = "";
+                for (rule in newValue) {
+                    el.style[<any>rule] = newValue[rule];
+                }
+            }
+        } else {
+            (<HTMLElement>el).style.cssText = newValue;
+        }
+    }
+
+    function setSetStyle(callback: (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any) => void {
+        var prev = setStyleCallback;
+        setStyleCallback = callback;
+        return prev;
+    }
+
     function updateElement(n: IBobrilCacheNode, el: HTMLElement, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
         if (!newAttrs) return undefined;
         var attrName: string, newAttr: any, oldAttr: any, valueOldAttr: any, valueNewAttr: any;
@@ -99,26 +128,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    if (isObject(newAttr)) {
-                        var rule: string;
-                        if (isObject(oldAttr)) {
-                            for (rule in newAttr) {
-                                var v = newAttr[rule];
-                                if (oldAttr[rule] !== v) el.style[<any>rule] = v;
-                            }
-                            for (rule in oldAttr) {
-                                if (!(rule in newAttr)) el.style[<any>rule] = "";
-                            }
-                        } else {
-                            if (oldAttr)
-                                el.style.cssText = "";
-                            for (rule in newAttr) {
-                                el.style[<any>rule] = newAttr[rule];
-                            }
-                        }
-                    } else {
-                        el.style.cssText = newAttr;
-                    }
+                    setStyleCallback(el, n, newAttr, oldAttr);
                 } else if (inNamespace) {
                     if (attrName === "href") el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
                     else if (attrName === "className") el.setAttribute("class", newAttr);
@@ -920,6 +930,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
         setSetValue: setSetValue,
+        setSetStyle: setSetStyle,
         init: init,
         isArray: isArray,
         uptime: () => uptime,
