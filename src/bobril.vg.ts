@@ -51,7 +51,7 @@
     function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string {
         var p = svgDescribeArc(x, y, radiusBig, startAngle, endAngle, false);
         var nextWithLine = true;
-        if (p[p.length - 1] == "Z") nextWithLine = false;
+        if (p[p.length - 1] === "Z") nextWithLine = false;
         if (radiusSmall === 0) {
             if (!nextWithLine) return p;
         }
@@ -125,16 +125,6 @@
         "pie": [6, svgPie, vmlPie]
     };
 
-    function svgComponentInit(ctx: Object, me: IBobrilNode) {
-        me.tag = "svg";
-        me.attrs = { width: me.data.width, height: me.data.height };
-        recSetComponent(me.children, svgChildComponent);
-    }
-
-    var svgComponent = {
-        render: svgComponentInit
-    }
-
     function svgChildComponentInit(ctx: Object, me: IBobrilNode) {
         me.tag = "path";
         var attrs: any = {};
@@ -155,7 +145,7 @@
         if (v) attrs["stroke-linejoin"] = v;
         v = data.miterLimit;
         if (v) attrs["stroke-miterlimit"] = "" + v;
-        var path = data.path || [];
+        var path = data.path || <any>[];
         var resultPath = "";
         var index = 0;
         var descriptor: any;
@@ -183,17 +173,16 @@
 
     var svgChildComponent = {
         render: svgChildComponentInit
+    };
+
+    function svgComponentInit(ctx: Object, me: IBobrilNode) {
+        me.tag = "svg";
+        me.attrs = { width: me.data.width, height: me.data.height };
+        recSetComponent(me.children, svgChildComponent);
     }
 
-    function vmlComponentInit(ctx: Object, me: IBobrilNode) {
-        me.tag = "div";
-        me.attrs = { style: { position: "absolute", width: me.data.width, height: me.data.height, clip: "rect(0," + me.data.width + "," + me.data.height + ",0)" } };
-        recSetComponent(me.children, vmlChildComponent);
-        b.vmlNode();
-    }
-
-    var vmlComponent = {
-        render: vmlComponentInit
+    var svgComponent = {
+        render: svgComponentInit
     }
 
     function vmlChildComponentInit(ctx: Object, me: IBobrilNode) {
@@ -219,7 +208,7 @@
             v = data.strokeWidth;
             if (v) sInner += "\" weight=\"" + v + "px";
             v = data.lineCap;
-            if (v) sInner += "\" endcap=\"" + (v == 'butt' ? 'flat' : v);
+            if (v) sInner += "\" endcap=\"" + (v === "butt" ? "flat" : v);
             sInner += "\" joinstyle=\"" + (data.lineJoin || "miter");
             v = data.miterLimit;
             if (v) sInner += "\" miterlimit=\"" + v;
@@ -227,7 +216,7 @@
         } else {
             s += " stroked=\"false\"";
         }
-        var path = data.path || [];
+        var path = data.path || <any>[];
         s += " path=\"";
         var index = 0;
         var descriptor: any;
@@ -249,37 +238,47 @@
                 s += handler.apply(null, path.slice(index, index + paramCount));
             index += paramCount;
         }
-        s += '">' + sInner + "</v:shape>";
-        (<any>me).content = s;
+        s += "\">" + sInner + "</v:shape>";
+        me.children = s;
     }
 
     var vmlChildComponent = {
         render: vmlChildComponentInit
     }
 
+    function vmlComponentInit(ctx: Object, me: IBobrilNode) {
+        me.tag = "div";
+        me.attrs = { style: { position: "absolute", width: me.data.width, height: me.data.height, clip: "rect(0," + me.data.width + "," + me.data.height + ",0)" } };
+        recSetComponent(me.children, vmlChildComponent);
+        b.vmlNode();
+    }
+
+    var vmlComponent = {
+        render: vmlComponentInit
+    }
     var defaultvml = "#default#VML";
     var urldefaultvml = "url(" + defaultvml + ")";
     var implType = ((<any>window).SVGAngle || document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1") ? 1 : 2);
-    if (implType == 2) {
+    if (implType === 2) {
         var testingdiv = document.createElement("div");
-        testingdiv.innerHTML = '<v:shape adj="1"/>';
+        testingdiv.innerHTML = "<v:shape adj=\"1\"/>";
         var testingshape = testingdiv.firstChild;
         (<HTMLElement>testingshape).style.behavior = urldefaultvml;
         if (!(testingshape && typeof (<any>testingshape).adj == "object")) {
             implType = 0;
         }
     }
-    if (implType == 2) {
-        if (!(<any>document).namespaces['v']) {
-            document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', defaultvml);
+    if (implType === 2) {
+        if (!(<any>document).namespaces["v"]) {
+            document.namespaces.add("v", "urn:schemas-microsoft-com:vml", defaultvml);
         }
         var behaviururldefaultvml = "behavior:" + urldefaultvml + ";}";
         var ss = document.createStyleSheet();
-        ss.cssText = 'v\\:shape{position:absolute;width:10px;height:10px;' + behaviururldefaultvml +
-        ' v\\:fill{' + behaviururldefaultvml +
-        ' v\\:stroke{' + behaviururldefaultvml;
+        ss.cssText = "v\\:shape{position:absolute;width:10px;height:10px;" + behaviururldefaultvml +
+        " v\\:fill{" + behaviururldefaultvml +
+        " v\\:stroke{" + behaviururldefaultvml;
         b.vg = vmlComponent;
-    } else if (implType == 1) {
+    } else if (implType === 1) {
         b.vg = svgComponent;
     } else {
         b.vg = {};

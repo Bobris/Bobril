@@ -18,7 +18,7 @@ interface OutFindMatch {
 }
 
 ((b: IBobrilStatic, window: Window) => {
-    function emitOnHashChange(ev: Event, target: Node, node: IBobrilCacheNode) {
+    function emitOnHashChange() {
         b.invalidate();
         return false;
     }
@@ -39,7 +39,7 @@ interface OutFindMatch {
     function replace(path: string) {
         actionType = REPLACE;
         var l = window.location;
-        l.replace(l.pathname + l.search + '#' + path);
+        l.replace(l.pathname + l.search + "#" + path);
     }
 
     function pop() {
@@ -50,16 +50,16 @@ interface OutFindMatch {
     var rootRoutes: IRoute[];
     var nameRouteMap: { [name: string]: IRoute } = {};
 
-    function encodeURL(url: string): string {
-        return encodeURIComponent(url).replace(/%20/g, '+');
+    function encodeUrl(url: string): string {
+        return encodeURIComponent(url).replace(/%20/g, "+");
     }
 
-    function decodeURL(url: string): string {
-        return decodeURIComponent(url.replace(/\+/g, ' '));
+    function decodeUrl(url: string): string {
+        return decodeURIComponent(url.replace(/\+/g, " "));
     }
 
-    function encodeURLPath(path: string): string {
-        return String(path).split('/').map(encodeURL).join('/');
+    function encodeUrlPath(path: string): string {
+        return String(path).split("/").map(encodeUrl).join("/");
     }
 
     var paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
@@ -68,22 +68,22 @@ interface OutFindMatch {
     var compiledPatterns: { [pattern: string]: { matcher: RegExp; paramNames: string[] } } = {};
 
     function compilePattern(pattern: string) {
-        if (!(pattern in compiledPatterns)) {
+        if (!(pattern in <any>compiledPatterns)) {
             var paramNames: Array<string> = [];
-            var source = pattern.replace(paramCompileMatcher, (match, paramName) => {
+            var source = pattern.replace(paramCompileMatcher, (match:string, paramName:string) => {
                 if (paramName) {
                     paramNames.push(paramName);
-                    return '([^/?#]+)';
-                } else if (match === '*') {
-                    paramNames.push('splat');
-                    return '(.*?)';
+                    return "([^/?#]+)";
+                } else if (match === "*") {
+                    paramNames.push("splat");
+                    return "(.*?)";
                 } else {
-                    return '\\' + match;
+                    return "\\" + match;
                 }
             });
 
             compiledPatterns[pattern] = {
-                matcher: new RegExp('^' + source + '$', 'i'),
+                matcher: new RegExp("^" + source + "$", "i"),
                 paramNames: paramNames
             };
         }
@@ -99,7 +99,7 @@ interface OutFindMatch {
     // Returns null if the pattern does not match the given path.
     function extractParams(pattern: string, path: string): Params {
         var object = compilePattern(pattern);
-        var match = decodeURL(path).match(object.matcher);
+        var match = decodeUrl(path).match(object.matcher);
 
         if (!match)
             return null;
@@ -122,31 +122,31 @@ interface OutFindMatch {
 
         var splatIndex = 0;
 
-        return pattern.replace(paramInjectMatcher, (match, paramName) => {
-            paramName = paramName || 'splat';
+        return pattern.replace(paramInjectMatcher, (match:string, paramName:string) => {
+            paramName = paramName || "splat";
 
             // If param is optional don't check for existence
-            if (paramName.slice(-1) !== '?') {
+            if (paramName.slice(-1) !== "?") {
                 if (params[paramName] == null)
-                    throw new Error('Missing "' + paramName + '" parameter for path "' + pattern + '"');
+                    throw new Error("Missing \"" + paramName + "\" parameter for path \"" + pattern + "\"");
             } else {
                 paramName = paramName.slice(0, -1);
                 if (params[paramName] == null) {
-                    return '';
+                    return "";
                 }
             }
 
             var segment: string;
-            if (paramName === 'splat' && Array.isArray(params[paramName])) {
+            if (paramName === "splat" && Array.isArray(params[paramName])) {
                 segment = params[paramName][splatIndex++];
 
                 if (segment == null)
-                    throw new Error('Missing splat # ' + splatIndex + ' for path "' + pattern + '"');
+                    throw new Error("Missing splat # " + splatIndex + " for path \"" + pattern + "\"");
             } else {
                 segment = params[paramName];
             }
 
-            return encodeURLPath(segment);
+            return encodeUrlPath(segment);
         });
     }
 
@@ -198,6 +198,14 @@ interface OutFindMatch {
     var activeRoutes: IRoute[];
     var activeParams: Params;
 
+    function isAbsolute(url: string): boolean {
+        return url[0] === "/";
+    }
+
+    function noop(): IBobrilNode {
+        return null;
+    }
+
     function rootNodeFactory(): IBobrilNode {
         var path = window.location.hash.substr(1);
         if (!isAbsolute(path)) path = "/" + path;
@@ -220,18 +228,10 @@ interface OutFindMatch {
         return fn();
     }
 
-    function noop(): IBobrilNode {
-        return null;
-    }
-
-    function isAbsolute(url: string): boolean {
-        return url[0] == "/";
-    }
-
     function joinPath(p1: string, p2: string): string {
         if (isAbsolute(p2))
             return p2;
-        if (p1[p1.length - 1] == "/")
+        if (p1[p1.length - 1] === "/")
             return p1 + p2;
         return p1 + "/" + p2;
     }
@@ -283,11 +283,13 @@ interface OutFindMatch {
     function isActive(name: string, params?: Params): boolean {
         if (params) {
             for (var prop in params) {
-                if (activeParams[prop] !== params[prop]) return false;
+                if (params.hasOwnProperty(prop)) {
+                    if (activeParams[prop] !== params[prop]) return false;
+                }
             }
         }
         for (var i = 0, l = activeRoutes.length; i < l; i++) {
-            if (activeRoutes[i].name == name) {
+            if (activeRoutes[i].name === name) {
                 return true;
             }
         }
@@ -301,9 +303,9 @@ interface OutFindMatch {
         node.data.active = isActive(name, params);
         node.data.url = url;
         b.postEnhance(node, {
-            render: (ctx: any, me: IBobrilNode) => {
+            render(ctx: any, me: IBobrilNode) {
                 me.attrs = me.attrs || {};
-                if (me.tag == "a") {
+                if (me.tag === "a") {
                     me.attrs.href = "#" + url;
                 }
                 me.attrs.className = me.attrs.className || "";
@@ -311,7 +313,7 @@ interface OutFindMatch {
                     me.attrs.className += " active";
                 }
             },
-            onClick: (ctx: any) => {
+            onClick(ctx: any) {
                 push(ctx.data.url);
                 return true;
             }

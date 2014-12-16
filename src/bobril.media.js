@@ -1,4 +1,4 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
+/// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.media.d.ts"/>
 (function (b, window) {
     var media = null;
@@ -6,17 +6,14 @@
         [400, 800, 900],
         [640, 1280, 1440]
     ];
-
     function emitOnMediaChange() {
         media = null;
         b.invalidate();
         return false;
     }
-
     var events = ["resize", "orientationchange"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 100, emitOnMediaChange);
-
     function accDeviceBreaks(newBreaks) {
         if (newBreaks != null) {
             breaks = newBreaks;
@@ -24,9 +21,7 @@
         }
         return breaks;
     }
-
     var viewport = window.document.documentElement;
-
     function getMedia() {
         if (media == null) {
             var w = viewport.clientWidth;
@@ -48,7 +43,6 @@
         }
         return media;
     }
-
     b.getMedia = getMedia;
     b.accDeviceBreaks = accDeviceBreaks;
 })(b, window);

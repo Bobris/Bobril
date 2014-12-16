@@ -17,12 +17,12 @@ module TodoApp {
     export class Tasks {
         private counter: number;
         private items: Task[];
-        private storageItemsKey: string = 'todoApp.taskListItems';
-        private storageCounterKey: string = 'todoApp.taskListCounter';
+        private storageItemsKey: string = "todoApp.taskListItems";
+        private storageCounterKey: string = "todoApp.taskListCounter";
 
-        private filterAll: string = 'all';
-        private filterActive: string = 'active';
-        private filterCompleted: string = 'completed';
+        private filterAll: string = "all";
+        private filterActive: string = "active";
+        private filterCompleted: string = "completed";
 
         constructor() {
             this.items = [];
@@ -43,7 +43,7 @@ module TodoApp {
                 }
             }
             var counter = JSON.parse(localStorage.getItem(this.storageCounterKey));
-            if (typeof(counter) === 'number') {
+            if (typeof(counter) === "number") {
                 this.counter = counter;
             }
         }

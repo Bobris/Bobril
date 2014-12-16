@@ -11,6 +11,8 @@ interface IBobrilStatic {
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
     setSetValue(callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
+    // Set update DOM attribute style callback, returns previous callback to allow chaining
+    setSetStyle(callback: (el: HTMLElement, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: HTMLElement, node: IBobrilNode, newValue: any, oldValue: any) => void;
     // factory returns string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[]
     init(factory: () => any): void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
@@ -21,13 +23,17 @@ interface IBobrilStatic {
     uptime(): number;
     // shim for Date.now()
     now(): number;
+    // returns IE version 8 - 11, for other browsers returns undefined
+    ieVersion(): number;
     // shalows copy all own members from source to target returns target, source could be null, target must be non-null 
     assign(target: Object, source: Object): Object;
     // shim for Event.preventDefault()
     preventDefault(event: Event): void;
     // this could be called only from component init and forces recreation of child nodes
     vmlNode(): void;
-    // DOM to vdom resolver
+    // DOM to vdom stack resolver
+    vdomPath(n: Node): IBobrilCacheNode[];
+    // DOM to vdom leaf resolver
     deref(n: Node): IBobrilCacheNode;
     // adds native event to window or body
     addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
@@ -42,7 +48,7 @@ interface IBobrilAttributes {
     id?: string;
     href?: string;
     className?: string;
-    style?: Object;
+    style?: any;
     // boolean | string
     value?: any;
     [name: string]: any;

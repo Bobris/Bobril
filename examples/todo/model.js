@@ -17,11 +17,11 @@ var TodoApp;
     TodoApp.Task = Task;
     var Tasks = (function () {
         function Tasks() {
-            this.storageItemsKey = 'todoApp.taskListItems';
-            this.storageCounterKey = 'todoApp.taskListCounter';
-            this.filterAll = 'all';
-            this.filterActive = 'active';
-            this.filterCompleted = 'completed';
+            this.storageItemsKey = "todoApp.taskListItems";
+            this.storageCounterKey = "todoApp.taskListCounter";
+            this.filterAll = "all";
+            this.filterActive = "active";
+            this.filterCompleted = "completed";
             this.items = [];
             this.counter = 0;
         }
@@ -38,7 +38,7 @@ var TodoApp;
                 }
             }
             var counter = JSON.parse(localStorage.getItem(this.storageCounterKey));
-            if (typeof (counter) === 'number') {
+            if (typeof (counter) === "number") {
                 this.counter = counter;
             }
         };
@@ -131,3 +131,4 @@ var TodoApp;
     })();
     TodoApp.Tasks = Tasks;
 })(TodoApp || (TodoApp = {}));
+//# sourceMappingURL=model.js.map

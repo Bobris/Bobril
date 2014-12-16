@@ -10,14 +10,10 @@ var TodoApp;
     var App = (function () {
         function App() {
         }
-        App.init = function (ctx, me, oldMe) {
-            console.log('init');
-        };
         App.render = function (ctx, me, oldMe) {
-            console.log('render');
             ctx.filter = ctx.data.filter;
-            me.tag = 'div';
-            me.attrs = { 'class': 'main' };
+            me.tag = "div";
+            me.attrs = { className: "main" };
             me.children = [
                 {
                     component: Heading
@@ -63,8 +59,8 @@ var TodoApp;
         function Heading() {
         }
         Heading.init = function (ctx, me) {
-            me.tag = 'h3';
-            me.children = 'todos';
+            me.tag = "h3";
+            me.children = "todos";
         };
         return Heading;
     })();
@@ -72,19 +68,19 @@ var TodoApp;
         function TaskCreate() {
         }
         TaskCreate.render = function (ctx, me) {
-            ctx.newTaskName = ctx.newTaskName || '';
-            me.tag = 'div';
-            me.attrs = { className: 'input-wrapper' }, me.children = [
+            ctx.newTaskName = ctx.newTaskName || "";
+            me.tag = "div";
+            me.attrs = { className: "input-wrapper" }, me.children = [
                 this.createInputElement(ctx),
                 this.createSetAllCheckboxElement(ctx)
             ];
         };
         TaskCreate.createInputElement = function (ctx) {
             return {
-                tag: 'input',
+                tag: "input",
                 attrs: {
-                    placeholder: 'What needs to be done?',
-                    className: 'task-name',
+                    placeholder: "What needs to be done?",
+                    className: "task-name",
                     value: ctx.newTaskName
                 },
                 component: {
@@ -92,7 +88,7 @@ var TodoApp;
                         var handler = new KeyDownUpHandler();
                         return handler.handleEcsEnter(event, function () {
                             // cancel the task adding controls (i.e. clear the input)
-                            ctx.newTaskName = '';
+                            ctx.newTaskName = "";
                             b.invalidate();
                             return true;
                         }, function () {
@@ -100,7 +96,7 @@ var TodoApp;
                             if (ctx.newTaskName) {
                                 ctx.data.addNewTask(ctx.newTaskName);
                                 b.invalidate();
-                                ctx.newTaskName = '';
+                                ctx.newTaskName = "";
                             }
                             return true;
                         });
@@ -110,8 +106,6 @@ var TodoApp;
                     },
                     postInitDom: function (ctx, me, element) {
                         element.focus();
-                    },
-                    postUpdateDom: function (ctx, me, element) {
                     }
                 },
                 data: ctx.data
@@ -119,10 +113,10 @@ var TodoApp;
         };
         TaskCreate.createSetAllCheckboxElement = function (ctx) {
             return {
-                tag: 'input',
+                tag: "input",
                 attrs: {
-                    type: 'checkbox',
-                    className: 'set-all-tasks',
+                    type: "checkbox",
+                    className: "set-all-tasks",
                     value: ctx.data.isWholeListCompleted
                 },
                 component: {
@@ -151,9 +145,9 @@ var TodoApp;
             ctx.editingTaskId = -1;
         };
         TaskList.render = function (ctx, me) {
-            me.tag = 'ul';
+            me.tag = "ul";
             me.attrs = {
-                className: 'todo-list'
+                className: "todo-list"
             }, me.children = this.createTaskElements(ctx);
         };
         TaskList.createTaskElements = function (ctx) {
@@ -161,34 +155,32 @@ var TodoApp;
             var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
             var tasks = ctx.data.tasks;
             for (var i = 0; i < taskItems.length; i++) {
-                var taskName = taskItems[i].name;
-                var taskId = taskItems[i].id;
-                var taskCompleted = taskItems[i].completed;
+                var task = taskItems[i];
                 res.push({
                     component: TaskItem,
                     data: {
-                        id: taskId,
-                        name: taskName,
-                        completed: taskCompleted,
-                        justEditing: taskId === ctx.editingTaskId,
+                        id: task.id,
+                        name: task.name,
+                        completed: task.completed,
+                        justEditing: task.id === ctx.editingTaskId,
                         cancelNewValue: function () {
                             ctx.editingTaskId = -1;
                         },
                         saveNewValue: function (taskId, value) {
-                            ctx.data.tasks.setTaskName(taskId, value);
+                            tasks.setTaskName(taskId, value);
                             ctx.editingTaskId = -1;
                         },
                         markTaskAsCompleted: function (taskId) {
-                            ctx.data.tasks.markTaskAsCompleted(taskId);
+                            tasks.markTaskAsCompleted(taskId);
                         },
                         markTaskAsActive: function (taskId) {
-                            ctx.data.tasks.markTaskAsActive(taskId);
+                            tasks.markTaskAsActive(taskId);
                         },
                         setEditingMode: function (taskId) {
                             ctx.editingTaskId = taskId;
                         },
                         removeTask: function (taskId) {
-                            ctx.data.tasks.removeTask(taskId);
+                            tasks.removeTask(taskId);
                         }
                     }
                 });
@@ -201,26 +193,25 @@ var TodoApp;
         function TaskItem() {
         }
         TaskItem.render = function (ctx, me) {
-            var liClasses = 'task';
-            var labelClasses = '';
+            var liClasses = "task";
+            var labelClasses = "";
             if (ctx.data.completed) {
-                liClasses += ' completed';
+                liClasses += " completed";
             }
             if (ctx.data.justEditing) {
-                labelClasses = 'hidden';
+                labelClasses = "hidden";
             }
             else {
-                liClasses += ' readonly';
+                liClasses += " readonly";
             }
-            me.tag = 'li';
+            me.tag = "li";
             me.attrs = { className: liClasses };
             me.children = [
-                {
+                ctx.data.justEditing || {
                     component: Checkbox,
                     data: {
                         taskId: ctx.data.id,
                         isChecked: ctx.data.completed,
-                        invisible: ctx.data.justEditing,
                         performCheck: function (taskId) {
                             ctx.data.markTaskAsCompleted(taskId);
                             b.invalidate();
@@ -231,7 +222,7 @@ var TodoApp;
                         }
                     }
                 },
-                { tag: 'label', children: ctx.data.name, attrs: { className: labelClasses } },
+                { tag: "label", children: ctx.data.name, attrs: { className: labelClasses } },
                 {
                     component: DeleteButton,
                     data: {
@@ -243,11 +234,10 @@ var TodoApp;
                         }
                     }
                 },
-                {
+                ctx.data.justEditing && {
                     component: EditingInput,
                     data: {
                         taskId: ctx.data.id,
-                        invisible: !ctx.data.justEditing,
                         oldValue: ctx.data.name,
                         saveNewValue: function (taskId, value) {
                             ctx.data.saveNewValue(taskId, value);
@@ -259,7 +249,7 @@ var TodoApp;
                         }
                     }
                 },
-                { tag: 'div', attrs: { className: 'cleaner' } }
+                { tag: "div", attrs: { className: "cleaner" } }
             ];
         };
         TaskItem.onDoubleClick = function (ctx) {
@@ -274,14 +264,8 @@ var TodoApp;
         function Checkbox() {
         }
         Checkbox.render = function (ctx, me) {
-            var attributes = { 'type': 'checkbox', 'class': 'mark-as-completed' };
-            if (ctx.data.invisible) {
-                return null;
-            }
-            if (ctx.data.isChecked) {
-                attributes['checked'] = 'checked';
-            }
-            me.tag = 'input';
+            var attributes = { type: "checkbox", className: "mark-as-completed", value: ctx.data.isChecked };
+            me.tag = "input";
             me.attrs = attributes;
             me.data = ctx.data;
         };
@@ -300,13 +284,9 @@ var TodoApp;
         function DeleteButton() {
         }
         DeleteButton.render = function (ctx, me) {
-            if (ctx.data.invisible) {
-                return null;
-            }
-            me.tag = 'a';
-            me.children = 'delete';
-            me.attrs = { className: 'delete-button' };
-            me.data = ctx.data;
+            me.tag = "a";
+            me.children = "delete";
+            me.attrs = { className: "delete-button" };
         };
         DeleteButton.onClick = function (ctx, event) {
             ctx.data.performDelete(ctx.data.taskId);
@@ -319,25 +299,22 @@ var TodoApp;
         function EditingInput() {
         }
         EditingInput.render = function (ctx, me) {
-            if (ctx.data.invisible) {
-                return null;
-            }
-            ctx.newValue = ctx.newValue || '';
-            me.tag = 'input';
-            me.attrs = { type: 'text', className: 'task-edit', value: ctx.data.oldValue };
+            ctx.newValue = ctx.newValue || "";
+            me.tag = "input";
+            me.attrs = { type: "text", className: "task-edit", value: ctx.data.oldValue };
             me.component = {
                 onKeyUp: function (ctx, event) {
                     var handler = new KeyDownUpHandler();
                     return handler.handleEcsEnter(event, function () {
                         ctx.data.cancelNewValue();
-                        ctx.newValue = '';
+                        ctx.newValue = "";
                         b.invalidate();
                         return true;
                     }, function () {
                         ctx.newValue = ctx.newValue.trim();
                         if (ctx.newValue) {
                             ctx.data.saveNewValue(ctx.data.taskId, ctx.newValue);
-                            ctx.newValue = '';
+                            ctx.newValue = "";
                             b.invalidate();
                         }
                         return true;
@@ -359,51 +336,51 @@ var TodoApp;
             var itemsLeftInfo = this.createItemsLeftInfo(ctx);
             var filterButtons = this.createFilterButtons();
             var clearAllButton = this.createClearCompleted(ctx);
-            me.tag = 'div';
-            me.attrs = { 'class': 'footer' };
+            me.tag = "div";
+            me.attrs = { className: "footer" };
             me.children = [
                 itemsLeftInfo,
                 filterButtons,
                 clearAllButton,
                 {
-                    tag: 'div',
-                    attrs: { 'class': 'cleaner' }
+                    tag: "div",
+                    attrs: { className: "cleaner" }
                 }
             ];
         };
         Footer.createItemsLeftInfo = function (ctx) {
             var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
-            var text = itemsLeftCount === 1 ? itemsLeftCount + ' item left' : itemsLeftCount + ' items left';
+            var text = itemsLeftCount === 1 ? itemsLeftCount + " item left" : itemsLeftCount + " items left";
             return {
-                tag: 'div',
-                attrs: { 'class': 'items-left-info' },
+                tag: "div",
+                attrs: { className: "items-left-info" },
                 children: text
             };
         };
         Footer.createFilterButtons = function () {
             return {
-                tag: 'div',
-                attrs: { 'class': 'filter' },
+                tag: "div",
+                attrs: { 'class': "filter" },
                 children: [
-                    b.link({ tag: 'a', children: 'All' }, 'all'),
-                    b.link({ tag: 'a', children: 'Active' }, 'active'),
-                    b.link({ tag: 'a', children: 'Completed' }, 'completed')
+                    b.link({ tag: "a", children: "All" }, "all"),
+                    b.link({ tag: "a", children: "Active" }, "active"),
+                    b.link({ tag: "a", children: "Completed" }, "completed")
                 ]
             };
         };
         Footer.createClearCompleted = function (ctx) {
             var numberOfCompletedTasks = ctx.data.completedTasksCount;
-            var text = 'Clear completed (' + numberOfCompletedTasks + ')';
-            var attributes = { 'class': 'clear-completed-button' };
+            var text = "Clear completed (" + numberOfCompletedTasks + ")";
+            var attributes = { className: "clear-completed-button" };
             if (numberOfCompletedTasks < 1) {
-                attributes['class'] += ' hidden';
+                attributes.className += " hidden";
             }
             return {
-                tag: 'div',
+                tag: "div",
                 attrs: attributes,
                 children: text,
                 component: {
-                    onClick: function (ctx, event) {
+                    onClick: function (ctx) {
                         ctx.data.removeCompletedTasks();
                         b.invalidate();
                         return true;
@@ -418,10 +395,10 @@ var TodoApp;
         function KeyDownUpHandler() {
         }
         KeyDownUpHandler.prototype.handleEcsEnter = function (event, escapeHandler, enterHandler) {
-            if (event.which == 27) {
+            if (event.which === 27) {
                 return escapeHandler();
             }
-            else if (event.which == 13) {
+            else if (event.which === 13) {
                 return enterHandler();
             }
             return false;
@@ -430,3 +407,4 @@ var TodoApp;
     })();
     TodoApp.KeyDownUpHandler = KeyDownUpHandler;
 })(TodoApp || (TodoApp = {}));
+//# sourceMappingURL=components.js.map

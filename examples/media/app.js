@@ -4,12 +4,11 @@ var MediaApp;
 (function (MediaApp) {
     function p() {
         var args = [];
-        for (var _i = 0; _i < (arguments.length - 0); _i++) {
-            args[_i] = arguments[_i + 0];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
         }
         return { tag: "p", children: args };
     }
-
     var frame = 0;
     b.init(function () {
         frame++;

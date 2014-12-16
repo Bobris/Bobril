@@ -70,6 +70,15 @@ describe("livecycle", () => {
         expect(c.actions).toBe("sc:1;ru:1;U:1;pu:1;");
     });
 
+    it("updateStringToComponetShouldWork", () => {
+        var c = new TestComponent();
+        var r = b.createNode({ tag: "", children:"a" }, null);
+        b.callPostCallbacks();
+        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
+        b.callPostCallbacks();
+        expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
+    });
+
     it("shouldUpdateReturningFalseDoesNotPostUpdate", () => {
         var c = new TestComponent();
         var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
@@ -147,7 +156,7 @@ describe("livecycle", () => {
                     expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;d:1;");
                     done = true;
                 }, 0);
-                return [];
+                return <any>[];
             }
         });
         waitsFor(() => done);

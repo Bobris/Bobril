@@ -1,4 +1,4 @@
-/// <reference path="../../src/bobril.d.ts"/>
+﻿/// <reference path="../../src/bobril.d.ts"/>
 var BasicApp;
 (function (BasicApp) {
     function p() {
@@ -16,6 +16,7 @@ var BasicApp;
         return [
             { tag: "h1", children: "First Bobril sample" },
             p("I know, it is a little bit simplistic, but it is a start"),
+            p(b.ieVersion() ? ("Your IE has version " + b.ieVersion()) : "You are lucky guy without IE"),
             p("Uptime: ", b.uptime().toFixed(0), "ms Frame: ", "" + frame, " FPS:", (frame * 1000 / b.uptime()).toFixed(1))
         ];
     });
