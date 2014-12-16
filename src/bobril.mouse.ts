@@ -2,17 +2,54 @@
 /// <reference path="../src/bobril.mouse.d.ts"/>
 /// <reference path="../src/lib.touch.d.ts"/>
 
+class Coord implements ICoords {
+    static CLICKBUSTER_THRESHOLD: number = 50; // 25 pixels in any dimension is the limit for busting clicks.
+    constructor(public x: number, public y: number) {}
+
+    hit(x: number, y: number): boolean {
+        return Math.abs(this.x - x) < Coord.CLICKBUSTER_THRESHOLD && Math.abs(this.y - y) < Coord.CLICKBUSTER_THRESHOLD;
+    }
+}
+
+class CoordList {
+    public coords: Coord[] = [];
+
+    containsTouchedRegion(x: number, y: number, removeIfHit: boolean) {
+        for (var i = 0; i < this.coords.length; i += 1) {
+            if (this.coords[i].hit(x, y)) {
+                if (removeIfHit) {
+                    this.coords.splice(i, 1);
+                }
+                return true; // allowable region
+            }
+        }
+        return false; // No allowable region; bust it.
+    }
+
+    push(x: number, y: number): void {
+        this.coords.push(new Coord(x, y));
+    }
+
+    remove(x: number, y: number): void {
+        for (var i = 0; i < this.coords.length; i += 1) {
+            if (this.coords[i].x == x && this.coords[i].y == y) {
+                this.coords.splice(i, 1);
+                return;
+            }
+        }
+    }
+}
+
 ((b: IBobrilStatic) => {
     var preventDefault = b.preventDefault;
     var now = b.now;
-    var CLICKBUSTER_THRESHOLD = 25; // 25 pixels in any dimension is the limit for busting clicks.
     var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
 
     function getCoordinates(event: any): ICoords {
         var touches = event.touches && event.touches.length ? event.touches : [event];
         var e = (event.changedTouches && event.changedTouches[0]) ||
             (event.originalEvent && event.originalEvent.changedTouches &&
-            event.originalEvent.changedTouches[0]) ||
+                event.originalEvent.changedTouches[0]) ||
             touches[0].originalEvent || touches[0];
 
         return {
@@ -21,37 +58,14 @@
         };
     }
 
-    // Checks if the coordinates are close enough to be within the region.
-    function hit(x1: number, y1: number, x2: number, y2: number) {
-        return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
-    }
-
-    // Checks a list of allowable regions against a click location.
-    // Returns true if the click should be allowed.
-    // Splices out the allowable region from the list after it has been used.
-    function checkAllowableRegions(coords: number[], x: number, y: number) {
-        for (var i = 0; i < coords.length; i += 2) {
-            if (hit(coords[i], coords[i + 1], x, y)) {
-                coords.splice(i, i + 2);
-                return true; // allowable region
-            }
-        }
-        return false; // No allowable region; bust it.
-    }
-
-    var lastPreventedTime: number;
-    var touchCoordinates: number[] = [];
+    var lastPreventedTime: number = 0;
+    var touchCoordinates: CoordList = new CoordList();
     var lastLabelClickCoordinates: number[];
-    var bustingAllowed = false;
 
-    function clickBuster(event: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        if (!bustingAllowed)
-            return false;
-
+    function buster(event: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
         if (now() - lastPreventedTime > PREVENT_DURATION) {
             return false; // Too old.
         }
-
         var touches = event.touches && event.touches.length ? <any>event.touches : [event];
         var x = touches[0].clientX;
         var y = touches[0].clientY;
@@ -75,10 +89,7 @@
             lastLabelClickCoordinates = [x, y];
         }
 
-        // Look for an allowable region containing this click.
-        // If we find one, that means it was created by touchstart and not removed by
-        // preventGhostClick, so we don't bust it.
-        if (checkAllowableRegions(touchCoordinates, x, y)) {
+        if (!touchCoordinates.containsTouchedRegion(x, y, event.type == "click")) {
             return false;
         }
 
@@ -92,34 +103,18 @@
 
     // Global touchstart handler that creates an allowable region for a click event.
     // This allowable region can be removed by preventGhostClick if we want to bust it.
-    function touchStartBuster(event: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        if (!bustingAllowed)
-            return false;
-
-        var touches = event.touches && event.touches.length ? <any>event.touches : [event];
+    function collectCoordinates(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var touches = ev.touches && ev.touches.length ? <any>ev.touches : [ev];
         var x = touches[0].clientX;
         var y = touches[0].clientY;
         touchCoordinates.push(x, y);
 
         setTimeout(() => {
             // Remove the allowable region.
-            for (var i = 0; i < touchCoordinates.length; i += 2) {
-                if (touchCoordinates[i] == x && touchCoordinates[i + 1] == y) {
-                    touchCoordinates.splice(i, i + 2);
-                    return;
-                }
-            }
+            touchCoordinates.remove(x, y);
         }, PREVENT_DURATION);
 
         return false;
-    }
-
-    // On the first call, attaches some event handlers. Then whenever it gets called, it creates a
-    // zone around the touchstart where clicks will get busted.
-    function preventGhostClickAndAllowBusting(x: number, y: number) {
-        bustingAllowed = true;
-        lastPreventedTime = now();
-        checkAllowableRegions(touchCoordinates, x, y);
     }
 
     var tapping: boolean = false;
@@ -127,7 +122,7 @@
     var startTime: number;
     var touchStartX: number;
     var touchStartY: number;
-        
+
     function handleTouchStart(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
         tapping = true;
         tapElement = target;
@@ -150,7 +145,7 @@
 
     function handleTouchEnd(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
         var diff = now() - startTime;
-        
+
         var touches: any = (ev.changedTouches && ev.changedTouches.length) ? ev.changedTouches : ((ev.touches && ev.touches.length) ? <any>ev.touches : [ev]);
         var e = touches[0].originalEvent || touches[0];
         var x = e.clientX;
@@ -159,9 +154,7 @@
 
         var stop = false;
         if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
-            // Call preventGhostClick so the clickbuster will catch the corresponding click.
-            preventGhostClickAndAllowBusting(x, y);
-
+            lastPreventedTime = now();
             // Blur the focused element (the button, probably) before firing the callback.
             // This doesn't work perfectly on Android Chrome, but seems to work elsewhere.
             // I couldn't get anything to work reliably on Android Chrome.
@@ -184,7 +177,7 @@
         if (!node)
             return false;
 
-        if (b.bubble(node, "onClick", {x: x, y: y})) {
+        if (b.bubble(node, "onClick", { x: x, y: y })) {
             preventDefault(ev);
             return true;
         }
@@ -200,7 +193,7 @@
         return false;
     }
 
-    function buildParam(event: MouseEvent) : IMouseEvent {
+    function buildParam(event: MouseEvent): IMouseEvent {
         var coords = getCoordinates(event);
         return {
             x: coords.x,
@@ -240,7 +233,7 @@
 
             var param: IMouseEvent = buildParam(ev);
             var c = node.component;
-            
+
             if (c) {
                 if (validator && !validator(ev))
                     return false;
@@ -254,10 +247,12 @@
             return false;
         };
     }
-    
+
     var addEvent = b.addEvent;
-    addEvent("click", 1, clickBuster);
-    addEvent("touchstart", 1, touchStartBuster);
+    addEvent("mousedown", 1, buster);
+    addEvent("mouseup", 1, buster);
+    addEvent("click", 1, buster);
+    addEvent("touchstart", 2, collectCoordinates);
 
     addEvent("mouseover", 300, createNoBubblingHandler("onMouseEnter")); // bubbling mouseover and out are same basically same as nonbubling mouseenter and leave
     addEvent("mouseout", 300, createNoBubblingHandler("onMouseLeave", isValidMouseLeave));
@@ -265,7 +260,9 @@
     addEvent("click", 400, createHandler("onClick"));
     addEvent("dblclick", 400, createHandler("onDoubleClick"));
     addEvent("mousedown", 400, createHandler("onMouseDown"));
+    addEvent("touchstart", 400, createHandler("onMouseDown"));
     addEvent("mouseup", 400, createHandler("onMouseUp"));
+    addEvent("touchend", 400, createHandler("onMouseUp"));
     addEvent("mousemove", 400, createHandler("onMouseMove"));
     addEvent("mouseover", 400, createHandler("onMouseOver"));
 
@@ -273,4 +270,4 @@
     addEvent("touchcancel", 500, tapCanceled);
     addEvent("touchend", 500, handleTouchEnd);
     addEvent("touchmove", 500, tapCanceled);
-})(b)
+})(b);
