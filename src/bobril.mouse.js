@@ -77,7 +77,7 @@ var CoordList = (function () {
             lastLabelClickCoordinates = null;
         }
         // remember label click coordinates to prevent click busting of trigger click event on input
-        if (event.target.tagName.toLowerCase() === 'label') {
+        if (event.target.tagName.toLowerCase() === "label") {
             lastLabelClickCoordinates = [x, y];
         }
         if (!touchCoordinates.containsTouchedRegion(x, y, event.type == "click")) {
