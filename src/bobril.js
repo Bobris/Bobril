@@ -38,14 +38,9 @@ if (!Object.create) {
         return new f();
     };
 }
-b = (function (window, document) {
-    function assert(shoudBeTrue, messageIfFalse) {
-        if (DEBUG && !shoudBeTrue)
-            throw Error(messageIfFalse || "assertion failed");
-    }
-    var objectToString = {}.toString;
-    var isArray = Array.isArray || (function (a) { return objectToString.call(a) === "[object Array]"; });
-    var objectKeys = Object.keys || (function (obj) {
+// Object keys polyfill
+if (!Object.keys) {
+    Object.keys = (function (obj) {
         var keys = [];
         for (var i in obj) {
             if (obj.hasOwnProperty(i)) {
@@ -54,6 +49,19 @@ b = (function (window, document) {
         }
         return keys;
     });
+}
+// Array isArray polyfill
+if (!Array.isArray) {
+    var objectToString = {}.toString;
+    Array.isArray = (function (a) { return objectToString.call(a) === "[object Array]"; });
+}
+b = (function (window, document) {
+    function assert(shoudBeTrue, messageIfFalse) {
+        if (DEBUG && !shoudBeTrue)
+            throw Error(messageIfFalse || "assertion failed");
+    }
+    var isArray = Array.isArray;
+    var objectKeys = Object.keys;
     function createTextNode(content) {
         return document.createTextNode(content);
     }
@@ -74,31 +82,7 @@ b = (function (window, document) {
         setValueCallback = callback;
         return prev;
     }
-    var setStyleCallback = function (el, node, newValue, oldValue) {
-        if (isObject(newValue)) {
-            var rule;
-            if (isObject(oldValue)) {
-                for (rule in newValue) {
-                    var v = newValue[rule];
-                    if (oldValue[rule] !== v)
-                        el.style[rule] = v;
-                }
-                for (rule in oldValue) {
-                    if (!(rule in newValue))
-                        el.style[rule] = "";
-                }
-            }
-            else {
-                if (oldValue)
-                    el.style.cssText = "";
-                for (rule in newValue) {
-                    el.style[rule] = newValue[rule];
-                }
-            }
-        }
-        else {
-            el.style.cssText = newValue;
-        }
+    var setStyleCallback = function () {
     };
     function setSetStyle(callback) {
         var prev = setStyleCallback;
@@ -121,7 +105,36 @@ b = (function (window, document) {
             if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    setStyleCallback(el, n, newAttr, oldAttr);
+                    if (isObject(newAttr)) {
+                        setStyleCallback(newAttr);
+                        var rule;
+                        if (isObject(oldAttr)) {
+                            for (rule in oldAttr) {
+                                if (!(rule in newAttr))
+                                    el.style[rule] = "";
+                            }
+                            for (rule in newAttr) {
+                                var v = newAttr[rule];
+                                if (v !== undefined) {
+                                    if (oldAttr[rule] !== v)
+                                        el.style[rule] = v;
+                                }
+                                else {
+                                    el.style[rule] = "";
+                                }
+                            }
+                        }
+                        else {
+                            if (oldAttr)
+                                el.style.cssText = "";
+                            for (rule in newAttr) {
+                                el.style[rule] = newAttr[rule];
+                            }
+                        }
+                    }
+                    else {
+                        el.style.cssText = newAttr;
+                    }
                 }
                 else if (inNamespace) {
                     if (attrName === "href")

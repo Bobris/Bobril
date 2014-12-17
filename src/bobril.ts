@@ -41,15 +41,9 @@ if (!Object.create) {
     }
 }
 
-b = ((window: Window, document: Document): IBobrilStatic => {
-    function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
-        if (DEBUG && !shoudBeTrue)
-            throw Error(messageIfFalse || "assertion failed");
-    }
-
-    var objectToString = {}.toString;
-    var isArray = Array.isArray || ((a: any) => objectToString.call(a) === "[object Array]");
-    var objectKeys = Object.keys || ((obj: any) => {
+// Object keys polyfill
+if (!Object.keys) {
+    Object.keys = ((obj: any) => {
         var keys = <string[]>[];
         for (var i in obj) {
             if (obj.hasOwnProperty(i)) {
@@ -58,6 +52,22 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         return keys;
     });
+}
+
+// Array isArray polyfill
+if (!Array.isArray) {
+    var objectToString = {}.toString;
+    Array.isArray = ((a: any) => objectToString.call(a) === "[object Array]");
+}
+
+b = ((window: Window, document: Document): IBobrilStatic => {
+    function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
+        if (DEBUG && !shoudBeTrue)
+            throw Error(messageIfFalse || "assertion failed");
+    }
+
+    var isArray = Array.isArray;
+    var objectKeys = Object.keys;
 
     function createTextNode(content: string): Text {
         return document.createTextNode(content);
@@ -84,30 +94,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return prev;
     }
 
-    var setStyleCallback: (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
-        if (isObject(newValue)) {
-            var rule: string;
-            if (isObject(oldValue)) {
-                for (rule in newValue) {
-                    var v = newValue[rule];
-                    if (oldValue[rule] !== v) el.style[<any>rule] = v;
-                }
-                for (rule in oldValue) {
-                    if (!(rule in newValue)) el.style[<any>rule] = "";
-                }
-            } else {
-                if (oldValue)
-                    el.style.cssText = "";
-                for (rule in newValue) {
-                    el.style[<any>rule] = newValue[rule];
-                }
-            }
-        } else {
-            (<HTMLElement>el).style.cssText = newValue;
-        }
+    var setStyleCallback: (newValue: any) => void = (): void => {
     }
 
-    function setSetStyle(callback: (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: HTMLElement, node: IBobrilCacheNode, newValue: any, oldValue: any) => void {
+    function setSetStyle(callback: (newValue: any) => void): (newValue: any) => void {
         var prev = setStyleCallback;
         setStyleCallback = callback;
         return prev;
@@ -128,7 +118,31 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
                 if (attrName === "style") {
-                    setStyleCallback(el, n, newAttr, oldAttr);
+                    if (isObject(newAttr)) {
+                        setStyleCallback(newAttr);
+                        var rule: string;
+                        if (isObject(oldAttr)) {
+                            for (rule in oldAttr) {
+                                if (!(rule in newAttr)) el.style[<any>rule] = "";
+                            }
+                            for (rule in newAttr) {
+                                var v = newAttr[rule];
+                                if (v !== undefined) {
+                                    if (oldAttr[rule] !== v) el.style[<any>rule] = v;
+                                } else {
+                                    el.style[<any>rule] = "";
+                                }
+                            }
+                        } else {
+                            if (oldAttr)
+                                el.style.cssText = "";
+                            for (rule in newAttr) {
+                                el.style[<any>rule] = newAttr[rule];
+                            }
+                        }
+                    } else {
+                        el.style.cssText = newAttr;
+                    }
                 } else if (inNamespace) {
                     if (attrName === "href") el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
                     else if (attrName === "className") el.setAttribute("class", newAttr);

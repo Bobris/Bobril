@@ -6,27 +6,14 @@
 </head>
 
 <body>
-<p style="position:fixed; top:0; left:0;" id="counter">-</p>
-<p>Resize the window</p>
-<p>to a very small size,</p>
-<p>and use the scrollbars</p>
-<p>to move around the page content</p>
-<p>in the window.</p>
-<div id="sc" style="overflow:scroll; height:80px;" >
-<p>Resize the window</p>
-<p>to a very small size,</p>
-<p>and use the scrollbars</p>
-<p>to move around the page content</p>
-<p>in the window.</p>
-</div>
+<div id="sc"></div>
 <script type="text/javascript">
-window.onscroll = scroll;
-document.getElementById("sc").onscroll = scroll;
-var counter = 0;
-function scroll () {
-   counter++;
-   document.getElementById("counter").innerHTML = ""+counter;   
+var d=document.getElementById("sc");
+var a="";
+for(var n in d.style) {
+    a+=n+" "+d.style[n]+"<br>";
 }
+d.innerHTML=a;
 </script>
 </body>
 </html>

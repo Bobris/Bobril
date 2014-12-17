@@ -1,13 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
 var BasicApp;
 (function (BasicApp) {
-    function p() {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
-        }
-        return { tag: "p", children: args };
-    }
     var spacer = { tag: "div", attrs: { style: "height:2px" } };
     var animtype = 0;
     var opacity = 0;
@@ -43,6 +36,7 @@ var BasicApp;
         }
         return [
             { tag: "h1", children: "Bobril sample for opacity" },
+            { tag: "p", attrs: { style: { userSelect: "none" } }, children: "This text should not be selectable" },
             radiobox("a", animtype, 0, function (v) { return animtype = v; }, "Solid"),
             spacer,
             radiobox("a", animtype, 1, function (v) { return animtype = v; }, "Half"),

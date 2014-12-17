@@ -1,13 +1,9 @@
 /// <reference path="../../src/bobril.d.ts"/>
 module BasicApp {
-    function p(...args: any[]) {
-        return { tag: "p", children: args };
-    }
-
     var spacer = { tag: "div", attrs: { style: "height:2px" } };
 
     var animtype = 0;
-    var opacity:any = 0;
+    var opacity: any = 0;
 
     function radiobox(groupName: string, value: number, constant: number, onChange: (value: number) => void, content: any): IBobrilNode {
         return {
@@ -35,6 +31,7 @@ module BasicApp {
         }
         return [
             { tag: "h1", children: "Bobril sample for opacity" },
+            { tag: "p", attrs: { style: { userSelect: "none" } }, children: "This text should not be selectable" },
             radiobox("a", animtype, 0, (v) => animtype = v, "Solid"), spacer,
             radiobox("a", animtype, 1, (v) => animtype = v, "Half"), spacer,
             radiobox("a", animtype, 2, (v) => animtype = v, "Transparent"), spacer,
@@ -44,7 +41,7 @@ module BasicApp {
                 attrs: { style: { background: "#f88", width: "10em", height: "10em" } },
                 children: {
                     tag: "div",
-                    attrs: { style: { width:"5em", height:"5em", "padding":"2.5em" } },
+                    attrs: { style: { width: "5em", height: "5em", "padding": "2.5em" } },
                     children: { tag: "div", attrs: { style: { opacity: opacity, background: "#0F0", width: "5em", height: "5em" } }, children: "Hello" }
                 }
             }
