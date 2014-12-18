@@ -254,16 +254,16 @@ class CoordList {
     }
     
     function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var hiddenEls: { target: Node; prevDisplay: string }[] = [];
+        var hiddenEls: { target: Node; prevVisibility: string }[] = [];
         var t = target;
         while (hasPointerEventsNone(t)) {
-            hiddenEls.push({target: t, prevDisplay: t.style.display});
-            t.style.display = "none";
+            hiddenEls.push({ target: t, prevVisibility: t.style.visibility});
+            t.style.visibility = "hidden";
             t = document.elementFromPoint(ev.x, ev.y);
         }
         if (hiddenEls.length) {
             for (var i = hiddenEls.length - 1; i >= 0; --i) {
-                hiddenEls[i].target.style.display = hiddenEls[i].prevDisplay;
+                hiddenEls[i].target.style.visibility = hiddenEls[i].prevVisibility;
             }
 
             if (b.ieVersion() < 9)
