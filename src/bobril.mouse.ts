@@ -248,11 +248,53 @@ class CoordList {
         };
     }
 
+    function hasPointerEventsNone(target: Node): boolean {
+        var bNode = b.deref(target);
+        return bNode && bNode.attrs && bNode.attrs.style && bNode.attrs.style.pointerEvents && bNode.attrs.style.pointerEvents == "none";
+    }
+    
+    function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var hiddenEls: { target: Node; prevVisibility: string }[] = [];
+        var t = target;
+        while (hasPointerEventsNone(t)) {
+            hiddenEls.push({ target: t, prevVisibility: t.style.visibility});
+            t.style.visibility = "hidden";
+            t = document.elementFromPoint(ev.x, ev.y);
+        }
+        if (hiddenEls.length) {
+            for (var i = hiddenEls.length - 1; i >= 0; --i) {
+                hiddenEls[i].target.style.visibility = hiddenEls[i].prevVisibility;
+            }
+
+            if (b.ieVersion() < 9)
+                t.fireEvent("on" + ev.type, ev);
+            else
+                t.dispatchEvent(ev);
+            preventDefault(ev);
+            return true;
+        }
+
+        return false;
+    }
+
     var addEvent = b.addEvent;
-    addEvent("mousedown", 1, buster);
-    addEvent("mouseup", 1, buster);
-    addEvent("click", 1, buster);
-    addEvent("touchstart", 2, collectCoordinates);
+
+    if (b.ieVersion() && b.ieVersion() < 11) {
+        // emulate pointer-events: none in older ie
+        var mouseEvents = [
+            "click", "dblclick", "drag", "dragend",
+            "dragenter", "dragleave", "dragover", "dragstart",
+            "drop", "mousedown", "mousemove", "mouseout",
+            "mouseover", "mouseup", "mousewheel", "scroll", "wheel"];
+        for (var i = 0; i < mouseEvents.length; ++i) {
+            addEvent(mouseEvents[i], 1, pointerThroughIE);
+        }
+    }
+    
+    addEvent("mousedown", 2, buster);
+    addEvent("mouseup", 2, buster);
+    addEvent("click", 2, buster);
+    addEvent("touchstart", 3, collectCoordinates);
 
     addEvent("mouseover", 300, createNoBubblingHandler("onMouseEnter")); // bubbling mouseover and out are same basically same as nonbubling mouseenter and leave
     addEvent("mouseout", 300, createNoBubblingHandler("onMouseLeave", isValidMouseLeave));
