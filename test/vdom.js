@@ -1,34 +1,40 @@
-/// <reference path="jasmine.d.ts"/>
+﻿/// <reference path="jasmine.d.ts"/>
 /// <reference path="../src/bobril.d.ts"/>
 function expectInsensitive(s1, s2) {
     s1 = s1.replace(/\s/g, "");
     s1 = s1.replace(/;\"/g, "\"");
     expect(s1.toLowerCase()).toBe(s2.toLowerCase());
 }
+
 describe("updateElement", function () {
     it("set className", function () {
         var r = b.createNode({ tag: "div", attrs: { className: "a" } }, null);
         expect(r.element.className).toBe("a");
     });
+
     it("set style by object", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, null);
+        var r = b.createNode({ tag: "div", attrs: { style: { "fontSize": "10px" } } }, null);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
+
     it("set style by string", function () {
         var r = b.createNode({ tag: "div", attrs: { style: "font-size:10px" } }, null);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
+
     it("update style from string to object", function () {
         var r = b.createNode({ tag: "div", attrs: { style: "font-size:5px" } }, null);
-        r = b.updateNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, r);
+        r = b.updateNode({ tag: "div", attrs: { style: { "fontSize": "10px" } } }, r);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
+
     it("update style from object to string", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "5px" } } }, null);
+        var r = b.createNode({ tag: "div", attrs: { style: { "fontSize": "5px" } } }, null);
         r = b.updateNode({ tag: "div", attrs: { style: "font-size:10px" } }, r);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 });
+
 describe("createNode", function () {
     it("simple", function () {
         var r = b.createNode({ tag: "div", children: "hello" }, null);
@@ -55,6 +61,7 @@ describe("createNode", function () {
         expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>cd<i>e</i></div>");
     });
 });
+
 describe("updateNode", function () {
     it("simple", function () {
         var r = b.createNode({ tag: "div", children: "hello" }, null);
@@ -86,6 +93,7 @@ describe("updateNode", function () {
         r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r);
         expectInsensitive(r.element.outerHTML, "<div>d<i>e</i>f</div>");
     });
+
     function buildVdom(s) {
         var items = s.split(",");
         var res = [];
@@ -93,13 +101,13 @@ describe("updateNode", function () {
             var item = items[i].split(":");
             if (item.length == 1) {
                 res.push({ tag: "span", children: item[0] });
-            }
-            else {
+            } else {
                 res.push({ tag: "span", key: item[0], children: item[1] });
             }
         }
         return { tag: "div", children: res };
     }
+
     function advancedTest(start, update, result) {
         var vdomStart = buildVdom(start);
         var r = b.createNode(vdomStart, null);
@@ -120,6 +128,7 @@ describe("updateNode", function () {
         }
         expect(a.join(",").toLowerCase()).toBe(result.toLowerCase());
     }
+
     it("reorderKey", function () {
         advancedTest("a:A,b:B", "b:C,a:D", "b:C:1,a:D:0");
     });

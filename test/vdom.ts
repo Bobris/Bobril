@@ -14,7 +14,7 @@ describe("updateElement", () => {
     });
 
     it("set style by object", () => {
-        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, null);
+        var r = b.createNode({ tag: "div", attrs: { style: { "fontSize": "10px" } } }, null);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
@@ -25,12 +25,12 @@ describe("updateElement", () => {
 
     it("update style from string to object", () => {
         var r = b.createNode({ tag: "div", attrs: { style: "font-size:5px" } }, null);
-        r = b.updateNode({ tag: "div", attrs: { style: { "font-size": "10px" } } }, r);
+        r = b.updateNode({ tag: "div", attrs: { style: { "fontSize": "10px" } } }, r);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
     it("update style from object to string", () => {
-        var r = b.createNode({ tag: "div", attrs: { style: { "font-size": "5px" } } }, null);
+        var r = b.createNode({ tag: "div", attrs: { style: { "fontSize": "5px" } } }, null);
         r = b.updateNode({ tag: "div", attrs: { style: "font-size:10px" } }, r);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });

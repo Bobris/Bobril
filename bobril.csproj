@@ -100,7 +100,8 @@
     <TypeScriptCompile Include="src\bobril.mouse.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.ts" />
-    <TypeScriptCompile Include="src\bobril.opacityIE8.ts" />
+    <TypeScriptCompile Include="src\bobril.promise.d.ts" />
+    <TypeScriptCompile Include="src\bobril.promise.ts" />
     <TypeScriptCompile Include="src\bobril.router.d.ts" />
     <TypeScriptCompile Include="src\bobril.router.ts" />
     <TypeScriptCompile Include="src\bobril.scroll.d.ts" />
@@ -116,6 +117,7 @@
     <TypeScriptCompile Include="test\helpers.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />
     <TypeScriptCompile Include="test\livecycle.ts" />
+    <TypeScriptCompile Include="test\promise.ts" />
     <TypeScriptCompile Include="test\sandbox.ts" />
     <TypeScriptCompile Include="test\vdom.ts" />
   </ItemGroup>

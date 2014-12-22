@@ -20,13 +20,15 @@ Features in extensions:
 - Vector graphic in spirit of React-Art just very limited in features, but under 4kb with SVG and VML backends
 - Router inspired by https://github.com/rackt/react-router/
 - Media detection
+- Focus, Blur, FocusIn, FocusOut events
+- Transparently add vendor prefixes for inline styles
 
 Near term planned extensions:
-- Focus, blur events
+- Scroll notification
+- Asap (setImmediate) and Promise A+ implementation - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 
 Longer term extensions:
 - New/Deleted Node animation
-- Promises
 - Prevent exit
 - Ajax
 
