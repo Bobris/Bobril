@@ -26,5 +26,73 @@ describe("asap", () => {
         b.asap(repeat);
         waitsFor(() => done === 100);
     });
+});
+
+describe("promise", () => {
+    it("itwillcallThenResolve", () => {
+        var promise = new b.Promise<string>((resolve, revoke) => {
+            resolve("OK");
+        });
+        var done = "";
+        promise.then((v) => {
+            done = v;
+        });
+        waitsFor(() => done === "OK");
+    });
+
+    it("itwillcallThenResolveAsync", () => {
+        var promise = new b.Promise<string>((resolve, revoke) => {
+            setTimeout(()=>resolve("OK"),0);
+        });
+        var done = "";
+        promise.then((v) => {
+            done = v;
+        });
+        waitsFor(() => done === "OK");
+    });
+
+    it("itwillcallThenRevoke", () => {
+        var promise = new b.Promise<string>((resolve, revoke) => {
+            revoke("OK");
+        });
+        var done = "";
+        promise.then(null, (r:string) => {
+            done = r;
+        });
+        waitsFor(() => done === "OK");
+    });
+
+    it("itwillcallThenRevokeAsync", () => {
+        var promise = new b.Promise<string>((resolve, revoke) => {
+            setTimeout(() => revoke("OK"), 0);
+        });
+        var done = "";
+        promise.then(null, (r: string) => {
+            done = r;
+        });
+        waitsFor(() => done === "OK");
+    });
+
+    it("thenChainingSuccess", () => {
+        var promise = new b.Promise<string>((resolve, revoke) => {
+            setTimeout(() => resolve("O"), 0);
+        });
+        var done = "";
+        promise.then((v) => {
+            return v + "K";
+        }).then((v) => done = v);
+        waitsFor(() => done === "OK");
+    });
+
+    it("thenChainingFailure", () => {
+        var promise = new b.Promise<string>((resolve, revoke) => {
+            setTimeout(() => revoke("OK"), 0);
+        });
+        var done = "";
+        promise.then((v:string) => {
+            return v + "K";
+        }).then(null,(v:string) => done = v);
+        waitsFor(() => done === "OK");
+    });
 
 });

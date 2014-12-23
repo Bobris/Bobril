@@ -37,4 +37,96 @@ describe("asap", function () {
         });
     });
 });
+
+describe("promise", function () {
+    it("itwillcallThenResolve", function () {
+        var promise = new b.Promise(function (resolve, revoke) {
+            resolve("OK");
+        });
+        var done = "";
+        promise.then(function (v) {
+            done = v;
+        });
+        waitsFor(function () {
+            return done === "OK";
+        });
+    });
+
+    it("itwillcallThenResolveAsync", function () {
+        var promise = new b.Promise(function (resolve, revoke) {
+            setTimeout(function () {
+                return resolve("OK");
+            }, 0);
+        });
+        var done = "";
+        promise.then(function (v) {
+            done = v;
+        });
+        waitsFor(function () {
+            return done === "OK";
+        });
+    });
+
+    it("itwillcallThenRevoke", function () {
+        var promise = new b.Promise(function (resolve, revoke) {
+            revoke("OK");
+        });
+        var done = "";
+        promise.then(null, function (r) {
+            done = r;
+        });
+        waitsFor(function () {
+            return done === "OK";
+        });
+    });
+
+    it("itwillcallThenRevokeAsync", function () {
+        var promise = new b.Promise(function (resolve, revoke) {
+            setTimeout(function () {
+                return revoke("OK");
+            }, 0);
+        });
+        var done = "";
+        promise.then(null, function (r) {
+            done = r;
+        });
+        waitsFor(function () {
+            return done === "OK";
+        });
+    });
+
+    it("thenChainingSuccess", function () {
+        var promise = new b.Promise(function (resolve, revoke) {
+            setTimeout(function () {
+                return resolve("O");
+            }, 0);
+        });
+        var done = "";
+        promise.then(function (v) {
+            return v + "K";
+        }).then(function (v) {
+            return done = v;
+        });
+        waitsFor(function () {
+            return done === "OK";
+        });
+    });
+
+    it("thenChainingFailure", function () {
+        var promise = new b.Promise(function (resolve, revoke) {
+            setTimeout(function () {
+                return revoke("OK");
+            }, 0);
+        });
+        var done = "";
+        promise.then(function (v) {
+            return v + "K";
+        }).then(null, function (v) {
+            return done = v;
+        });
+        waitsFor(function () {
+            return done === "OK";
+        });
+    });
+});
 //# sourceMappingURL=promise.js.map

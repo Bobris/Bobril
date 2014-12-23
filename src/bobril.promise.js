@@ -1,6 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
+﻿/// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.promise.d.ts"/>
-
 (function (b, window, document) {
     var asap = (function () {
         var callbacks = [];
@@ -60,7 +59,7 @@
                     document.body.appendChild(scriptEl);
                 }
             };
-            // All other browsers and node
+            // All other browsers
         } else {
             var timeout;
             var timeoutFn = window.setImmediate || setTimeout;
@@ -85,43 +84,39 @@
 
     var isArray = b.isArray;
 
-    function newHandler(onFulfilled, onRejected, resolve, reject) {
-        return { onFulfilled: onFulfilled, onRejected: onRejected, resolve: resolve, reject: reject };
-    }
-
     function handle(deferred) {
         var _this = this;
-        if (this._state === null) {
-            this._deferreds.push(deferred);
+        if (this.s === null) {
+            this.d.push(deferred);
             return;
         }
         asap(function () {
-            var cb = _this._state ? deferred.onFulfilled : deferred.onRejected;
-            if (cb === null) {
-                (_this._state ? deferred.resolve : deferred.reject)(_this._value);
+            var cb = _this.s ? deferred[0] : deferred[1];
+            if (cb == null) {
+                (_this.s ? deferred[2] : deferred[3])(_this.v);
                 return;
             }
             var ret;
             try  {
-                ret = cb(_this._value);
+                ret = cb(_this.v);
             } catch (e) {
-                deferred.reject(e);
+                deferred[3](e);
                 return;
             }
-            deferred.resolve(ret);
+            deferred[2](ret);
         });
     }
 
     function finale() {
-        for (var i = 0, len = this._deferreds.length; i < len; i++) {
-            handle.call(this, this._deferreds[i]);
+        for (var i = 0, len = this.d.length; i < len; i++) {
+            handle.call(this, this.d[i]);
         }
-        this._deferreds = null;
+        this.d = null;
     }
 
     function reject(newValue) {
-        this._state = false;
-        this._value = newValue;
+        this.s = false;
+        this.v = newValue;
         finale.call(this);
     }
 
@@ -156,16 +151,16 @@
     function resolve(newValue) {
         try  {
             if (newValue === this)
-                throw new TypeError('A promise cannot be resolved with itself.');
-            if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
+                throw new TypeError('Promise selfresolve');
+            if (Object(newValue) === newValue) {
                 var then = newValue.then;
                 if (typeof then === 'function') {
                     doResolve(bind(then, newValue), bind(resolve, this), bind(reject, this));
                     return;
                 }
             }
-            this._state = true;
-            this._value = newValue;
+            this.s = true;
+            this.v = newValue;
             finale.call(this);
         } catch (e) {
             reject.call(this, e);
@@ -173,9 +168,9 @@
     }
 
     function Promise(fn) {
-        this._state = null;
-        this._value = null;
-        this._deferreds = [];
+        this.s = null;
+        this.v = null;
+        this.d = [];
 
         doResolve(fn, bind(resolve, this), bind(reject, this));
     }
@@ -187,7 +182,7 @@
     Promise.prototype.then = function (onFulfilled, onRejected) {
         var me = this;
         return new Promise(function (resolve, reject) {
-            handle.call(me, newHandler(onFulfilled, onRejected, resolve, reject));
+            handle.call(me, [onFulfilled, onRejected, resolve, reject]);
         });
     };
 

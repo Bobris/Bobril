@@ -1,13 +1,6 @@
 /// <reference path="../src/bobril.d.ts"/>
 /// <reference path="../src/bobril.promise.d.ts"/>
 
-interface IHandler {
-    onFulfilled: (value: any) => void;
-    onRejected: (reason: any) => void;
-    resolve: (value: any) => void;
-    reject: (reason: any) => void;
-}
-
 ((b:IBobrilStatic, window: Window, document: Document) => {
     var asap = (() => {
         var callbacks: Array<() => void> = [];
@@ -67,7 +60,7 @@ interface IHandler {
                     document.body.appendChild(scriptEl);
                 }
             };
-            // All other browsers and node
+            // All other browsers
         } else {
             var timeout: number;
             var timeoutFn = window.setImmediate || setTimeout;
@@ -92,42 +85,38 @@ interface IHandler {
 
     var isArray = b.isArray;
 
-    function newHandler(onFulfilled: (value: any) => void, onRejected: (reason: any) => void, resolve: (value: any) => void, reject: (reason: any) => void): IHandler {
-        return { onFulfilled: onFulfilled, onRejected: onRejected, resolve: resolve, reject: reject };
-    }
-
-    function handle(deferred: IHandler) {
-        if (this._state === null) {
-            this._deferreds.push(deferred);
+    function handle(deferred: Array<(v:any)=>any>) {
+        if (this.s/*tate*/ === null) {
+            this.d/*eferreds*/.push(deferred);
             return;
         }
         asap(() => {
-            var cb = this._state ? deferred.onFulfilled : deferred.onRejected;
-            if (cb === null) {
-                (this._state ? deferred.resolve : deferred.reject)(this._value);
+            var cb = this.s/*tate*/ ? deferred[0] : deferred[1];
+            if (cb == null) {
+                (this.s/*tate*/ ? deferred[2] : deferred[3])(this.v/*alue*/);
                 return;
             }
             var ret: any;
             try {
-                ret = cb(this._value);
+                ret = cb(this.v/*alue*/);
             } catch (e) {
-                deferred.reject(e);
+                deferred[3](e);
                 return;
             }
-            deferred.resolve(ret);
+            deferred[2](ret);
         });
     }
 
     function finale() {
-        for (var i = 0, len = this._deferreds.length; i < len; i++) {
-            handle.call(this, this._deferreds[i]);
+        for (var i = 0, len = this.d/*eferreds*/.length; i < len; i++) {
+            handle.call(this, this.d/*eferreds*/[i]);
         }
-        this._deferreds = null;
+        this.d/*eferreds*/ = null;
     }
 
     function reject(newValue: any) {
-        this._state = false;
-        this._value = newValue;
+        this.s/*tate*/ = false;
+        this.v/*alue*/ = newValue;
         finale.call(this);
     }
 
@@ -158,24 +147,24 @@ interface IHandler {
 
     function resolve(newValue: any) {
         try { //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
-            if (newValue === this) throw new TypeError('A promise cannot be resolved with itself.');
-            if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
+            if (newValue === this) throw new TypeError('Promise selfresolve');
+            if (Object(newValue)===newValue) {
                 var then = newValue.then;
                 if (typeof then === 'function') {
                     doResolve(bind(then, newValue), bind(resolve, this), bind(reject, this));
                     return;
                 }
             }
-            this._state = true;
-            this._value = newValue;
+            this.s/*tate*/ = true;
+            this.v/*alue*/ = newValue;
             finale.call(this);
         } catch (e) { reject.call(this, e); }
     }
 
     function Promise(fn: (onFulfilled: (value: any) => void, onRejected: (reason: any) => void) => void) {
-        this._state = null;
-        this._value = null;
-        this._deferreds = <IHandler[]>[];
+        this.s/*tate*/ = null;
+        this.v/*alue*/ = null;
+        this.d/*eferreds*/ = <Array<Array<()=>void>>>[];
 
         doResolve(fn, bind(resolve, this), bind(reject, this));
     }
@@ -187,7 +176,7 @@ interface IHandler {
     Promise.prototype.then = function (onFulfilled: any, onRejected?: any) {
         var me = this;
         return new (<any>Promise)((resolve: any, reject: any) => {
-            handle.call(me, newHandler(onFulfilled, onRejected, resolve, reject));
+            handle.call(me, [onFulfilled, onRejected, resolve, reject]);
         });
     };
 
