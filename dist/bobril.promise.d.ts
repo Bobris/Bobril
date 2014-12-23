@@ -1,12 +1,17 @@
 interface PromiseImpl {
 	new <T>(resolver: (resolvePromise: (value: T) => void, rejectPromise: (reason: any) => void) => void): Thenable<T>;
+    all<T>(values: any[]): Thenable<T[]>;
+    all<T>(...values: any[]): Thenable<T[]>;
+    resolve<T>(value: any): Thenable<T>;
+    reject(reason: any): Thenable<any>;
+    race<T>(values: Thenable<T>[]): Thenable<T>;
 }
 
 interface Thenable<R> {
 	then<U>(onFulfill: (value: R) => Thenable<U>, onReject: (error: any) => Thenable<U>): Thenable<U>;
 	then<U>(onFulfill: (value: R) => Thenable<U>, onReject?: (error: any) => U): Thenable<U>;
 	then<U>(onFulfill: (value: R) => U, onReject: (error: any) => Thenable<U>): Thenable<U>;
-	then<U>(onFulfill?: (value: R) => U, onReject?: (error: any) => U): Thenable<U>;
+    then<U>(onFulfill?: (value: R) => U, onReject?: (error: any) => U): Thenable<U>;
 }
 
 interface IBobrilStatic {

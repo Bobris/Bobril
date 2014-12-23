@@ -13,6 +13,7 @@
             }
         }
 
+        var onreadystatechange = 'onreadystatechange';
         // Modern browsers, fastest async
         if ((<any>window).MutationObserver) {
             var hiddenDiv = document.createElement("div");
@@ -45,14 +46,14 @@
                 }
             };
             // IE browsers without postMessage
-        } else if (!window.setImmediate && 'onreadystatechange' in document.createElement('script')) {
-            var scriptEl: HTMLScriptElement;
+        } else if (!window.setImmediate && onreadystatechange in document.createElement('script')) {
+            var scriptEl: any;
             return (callback: () => void) => {
                 callbacks.push(callback);
                 if (!scriptEl) {
                     scriptEl = document.createElement("script");
-                    scriptEl.onreadystatechange = () => {
-                        scriptEl.onreadystatechange = null;
+                    scriptEl[onreadystatechange] = () => {
+                        scriptEl[onreadystatechange] = null;
                         scriptEl.parentNode.removeChild(scriptEl);
                         scriptEl = null;
                         executeCallbacks();
@@ -168,10 +169,6 @@
 
         doResolve(fn, bind(resolve, this), bind(reject, this));
     }
-
-    Promise.prototype["catch"] = function (onRejected: (reason: any) => void) {
-        return this.then(null, onRejected);
-    };
 
     Promise.prototype.then = function (onFulfilled: any, onRejected?: any) {
         var me = this;

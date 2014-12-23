@@ -4,7 +4,7 @@ interface PromiseImpl {
     all<T>(...values: any[]): Thenable<T[]>;
     resolve<T>(value: any): Thenable<T>;
     reject(reason: any): Thenable<any>;
-    race<T>(values: Thenable<T>): Thenable<T>;
+    race<T>(values: Thenable<T>[]): Thenable<T>;
 }
 
 interface Thenable<R> {
@@ -12,7 +12,6 @@ interface Thenable<R> {
 	then<U>(onFulfill: (value: R) => Thenable<U>, onReject?: (error: any) => U): Thenable<U>;
 	then<U>(onFulfill: (value: R) => U, onReject: (error: any) => Thenable<U>): Thenable<U>;
     then<U>(onFulfill?: (value: R) => U, onReject?: (error: any) => U): Thenable<U>;
-    "catch"<U>(onReject: (error: any) => U): Thenable<U>;
 }
 
 interface IBobrilStatic {

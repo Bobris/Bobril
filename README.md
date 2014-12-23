@@ -22,10 +22,10 @@ Features in extensions:
 - Media detection
 - Focus, Blur, FocusIn, FocusOut events
 - Transparently add vendor prefixes for inline styles
+- Asap (setImmediate) and Promise A+ implementation - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 
 Near term planned extensions:
 - Scroll notification
-- Asap (setImmediate) and Promise A+ implementation - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 
 Longer term extensions:
 - New/Deleted Node animation

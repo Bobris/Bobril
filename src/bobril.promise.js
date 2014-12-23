@@ -12,6 +12,8 @@
             }
         }
 
+        var onreadystatechange = 'onreadystatechange';
+
         // Modern browsers, fastest async
         if (window.MutationObserver) {
             var hiddenDiv = document.createElement("div");
@@ -44,14 +46,14 @@
                 }
             };
             // IE browsers without postMessage
-        } else if (!window.setImmediate && 'onreadystatechange' in document.createElement('script')) {
+        } else if (!window.setImmediate && onreadystatechange in document.createElement('script')) {
             var scriptEl;
             return function (callback) {
                 callbacks.push(callback);
                 if (!scriptEl) {
                     scriptEl = document.createElement("script");
-                    scriptEl.onreadystatechange = function () {
-                        scriptEl.onreadystatechange = null;
+                    scriptEl[onreadystatechange] = function () {
+                        scriptEl[onreadystatechange] = null;
                         scriptEl.parentNode.removeChild(scriptEl);
                         scriptEl = null;
                         executeCallbacks();
@@ -174,10 +176,6 @@
 
         doResolve(fn, bind(resolve, this), bind(reject, this));
     }
-
-    Promise.prototype["catch"] = function (onRejected) {
-        return this.then(null, onRejected);
-    };
 
     Promise.prototype.then = function (onFulfilled, onRejected) {
         var me = this;
