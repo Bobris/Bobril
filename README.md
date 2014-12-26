@@ -4,6 +4,8 @@ Bobril
 Component oriented framework inspired by Mithril and ReactJs (work in progress)
 Easy automatic generation of code and its speed has higher priority over simplicity.
 
+Examples: http://bobris.github.io/Bobril/
+
 Features in core:
 - No additional dependencies
 - Virtual DOM diffing
