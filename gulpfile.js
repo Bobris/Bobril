@@ -1,4 +1,5 @@
 var gulp = require('gulp');
+var gulpif = require('gulp-if');
 
 var sources = ['src/**/*.js'];
 var testSources = ['test/**/*.js'];
@@ -58,6 +59,36 @@ gulp.task('sloc', ['gzipsize'], function(){
   var sloc = require('gulp-sloc');
   return gulp.src(allTsSources)
     .pipe(sloc());
+});
+
+gulp.task('buildexamplesclean', function (cb) {
+    var rimraf = require('rimraf');
+    rimraf('./gh-pages', cb);
+});
+
+gulp.task('buildexampleshtml', ['buildexamplesclean'], function() {
+  var rebuild = require('gulp-html-rebuild');
+  return gulp.src('examples/**/*.*')
+  .pipe(gulpif(/\.html$/,rebuild({
+    onopentag: function (name, attrs) {
+	  if (name === "script") {
+	     if (attrs.src && attrs.src.substring(0,10)=="../../src/") {
+		     attrs.src="../bobril/"+attrs.src.substring(10);
+         }		 
+	  }
+      return "<" + name + rebuild.createAttrStr(attrs) + ">";
+    }
+  }))).pipe(gulp.dest('gh-pages/'));
+});
+
+gulp.task('buildexamplesbobril', ['buildexampleshtml'], function() {
+  return gulp.src('src/*.*').pipe(gulp.dest('gh-pages/bobril/'));
+});
+
+gulp.task('pages', ['buildexamplesbobril'], function () {
+    var deploy = require('gulp-gh-pages');
+    return gulp.src('./gh-pages/**/*')
+        .pipe(deploy({}));
 });
 
 gulp.task('default', ['watch']);
