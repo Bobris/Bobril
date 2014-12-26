@@ -1,0 +1,150 @@
+html {
+    height: 90%;
+}
+body {
+    background-color: #eeeeee;
+    font-family: Arial;
+    height: 100%;
+}
+
+.cleaner {
+    clear: both;
+}
+
+.hidden {
+    display: none;
+}
+
+div.main {
+    background-color: #fff;
+    width: 500px;
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;
+    overflow-y: scroll;
+}
+
+h3 {
+    text-align: center;
+    font-size: 30px;
+}
+
+div.input-wrapper {
+    position: relative;
+}
+
+div.input-wrapper input[type=checkbox] {
+    position: absolute;
+    top: 22px;
+    left: 9px;
+}
+
+div.input-wrapper input.task-name {
+    font-size: 20px;
+    padding: 15px 15px 15px 50px;
+    border: none;
+    border-top: 5px solid #b8b8b8;
+    border-bottom: 5px solid #b8b8b8;
+    background-color: #f5f5f5;
+    outline-width: 0;
+    display: block;
+    width: 85%;
+}
+
+p.hint {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 40px;
+}
+
+ul.todo-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul.todo-list input.mark-as-completed {
+    margin-right: 25px;
+}
+
+ul.todo-list li.task {
+    position: relative;
+    padding: 10px;
+    margin-top: 10px;
+    border-bottom: solid 1px #a9a9a9;
+    font-size: 20px;
+}
+
+ul.todo-list li.task a.delete-button {
+    position: absolute;
+    top: 5px;
+    right: 15px;
+    text-indent: -5000px;
+    background-image: url('delete.png');
+    width: 20px;
+    height: 20px;
+    display: none;
+}
+
+ul.todo-list li.task input.task-edit {
+    width: 91%;
+    float: right;
+    margin-right: -4px;
+    font-size: 20px;
+}
+
+ul.todo-list li.readonly.task:hover a.delete-button {
+    display: block;
+}
+
+ul.todo-list li.task.completed label {
+    text-decoration: line-through;
+    color: #a9a9a9;
+}
+
+div.footer {
+    position: relative;
+    background-color: #eeeeee;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+div.footer div.items-left-info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 3px;
+}
+
+div.footer div.filter {
+    width: 10em;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 5px;
+    top: 10px;
+    right: 10px;
+}
+
+div.footer div.filter a {
+    margin: 5px;
+    text-decoration: none;
+}
+
+div.footer div.filter a.active {
+    font-weight: bold;
+}
+
+div.footer div.clear-completed-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px;
+    background-color: #c1c1c1;
+    cursor: pointer;
+    border-radius: 3px;
+}
+div.footer div.clear-completed-button:hover {
+    background-color: #b6b6b6;
+}

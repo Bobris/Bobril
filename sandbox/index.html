@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+	<title>Sandbox</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+
+<body>
+<div id="sc"></div>
+<script type="text/javascript">
+var d=document.getElementById("sc");
+var a="";
+for(var n in d.style) {
+    a+=n+" "+d.style[n]+"<br>";
+}
+d.innerHTML=a;
+</script>
+</body>
+</html>
