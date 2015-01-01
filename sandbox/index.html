@@ -3,17 +3,58 @@
 <head>
 	<title>Sandbox</title>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<script src="jquery-1.11.2.js"></script>
+	<script src="jquery.stickytableheaders.js"></script>
 </head>
 
 <body>
+<h1>Some text here</h1>
+<p>aaaaa</p>
 <div id="sc"></div>
+<p>past...</p>
+<p>1</p><p>2</p><p>3</p><p>4</p><p>5</p><p>6</p><p>7</p><p>8</p><p>9</p><p>10</p><p>11</p><p>12</p><p>13</p><p>14</p><p>15</p>
 <script type="text/javascript">
+if (!Array.prototype.map) {
+    Array.prototype.map = function (callback, thisArg) {
+        var a, k;
+        // ReSharper disable once ConditionIsAlwaysConst
+        var o = Object(this);
+        var len = o.length >>> 0;
+        a = new Array(len);
+        k = 0;
+        while (k < len) {
+            var kValue, mappedValue;
+            if (k in o) {
+                kValue = o[k];
+                mappedValue = callback.call(thisArg, kValue, k, o);
+                a[k] = mappedValue;
+            }
+            k++;
+        }
+        return a;
+    };
+}
+var cols = 20;
 var d=document.getElementById("sc");
 var a="";
-for(var n in d.style) {
-    a+=n+" "+d.style[n]+"<br>";
+function range(from, to) {
+	var res = [];
+	for (var i = from; i <= to; i++) {
+		res.push(i);
+	}
+	return res;
 }
+
+a+="<table style=\"border:1px solid #000;border-collapse:";
+a+=1?"separate":"collapse";
+a+=";border-spacing:5px\">";
+a+="<thead><tr>";
+a+=range(1,cols).map(function (i) { return "<th style=\"background-color:#ffc; border:1px solid #300\">Header "+i+"</th>";}).join("");
+a+="</tr></thead>";
+a+=range(1,100).map(function(i) { return "<tr>"+range(1,cols).map(function(j) { return "<td style=\"border:1px solid #600\">Cell "+j+"/"+i+"</td>"; }).join("")+"</tr>";}).join("");
+a+="</table>";
 d.innerHTML=a;
+$('table').stickyTableHeaders();
 </script>
 </body>
 </html>
