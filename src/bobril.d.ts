@@ -55,6 +55,9 @@ interface IBobrilAttributes {
 }
 
 interface IBobrilComponent {
+    // if id of old node is different from new node it is considered completely different so init will be called before render directly
+    // it does prevent calling render method twice on same node
+    id?: string;
     // called before new node in vdom should be created, me members (tag, attrs, children) could be modified, ctx is initialized to { data: me.data||{} }
     init? (ctx: Object, me: IBobrilNode): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this

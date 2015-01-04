@@ -67,7 +67,7 @@ var StickyHeaderApp;
     function getHeight(element) {
         return element.scrollHeight;
     }
-    function stickyUpdateDom(ctx, me, element) {
+    function stickyUpdateDomFix(ctx, me, element) {
         var scrollableArea = element.parentElement;
         while (!b.isScrollable(scrollableArea))
             scrollableArea = scrollableArea.parentElement;
@@ -81,7 +81,8 @@ var StickyHeaderApp;
         var scrollTop = winScroll[1] + newTopOffset;
         var scrollLeft = winScroll[0];
         var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
-        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) < (offset[1] + getHeight(tableElement) - getHeight(origHeader) - newTopOffset);
+        // twice header height for better UX
+        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) < (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
         if (c.sticky !== (scrolledPastTop && notScrolledPastBottom)) {
             c.sticky = !c.sticky;
             b.invalidate();
@@ -120,7 +121,8 @@ var StickyHeaderApp;
     function cloneObj(o) {
         return b.assign({}, o);
     }
-    var StickyTableComp = {
+    var StickyTableFixComp = {
+        id: "StickyTableFix",
         init: function (ctx) {
             ctx.onScroll = function () { return b.invalidate(); };
             ctx.sticky = false;
@@ -147,10 +149,10 @@ var StickyHeaderApp;
         },
         postInitDom: function (ctx, me, element) {
             b.addOnScroll(ctx.onScroll);
-            stickyUpdateDom(ctx, me, element);
+            stickyUpdateDomFix(ctx, me, element);
         },
         postUpdateDom: function (ctx, me, element) {
-            stickyUpdateDom(ctx, me, element);
+            stickyUpdateDomFix(ctx, me, element);
             if (!ctx.lastSticky)
                 return;
             var origEl = element.firstChild;
@@ -186,10 +188,122 @@ var StickyHeaderApp;
             b.removeOnScroll(ctx.onScroll);
         }
     };
-    function stickyTable(borderCollapse, style, header, body) {
+    function stickyTableFix(borderCollapse, style, header, body) {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "table", attrs: { style: style }, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableComp };
+        return { tag: "table", attrs: { style: style }, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
+    }
+    function stickyUpdateDomAbs(ctx, me, element) {
+        var scrollableArea = element.parentElement;
+        while (!b.isScrollable(scrollableArea))
+            scrollableArea = scrollableArea.parentElement;
+        var isWindowScrolling = scrollableArea === document.body;
+        var c = ctx;
+        var tableElement = element.firstChild;
+        var origHeader = tableElement.firstChild;
+        var newTopOffset = isWindowScrolling ? 0 : getOffset(scrollableArea)[1];
+        var offset = getOffset(tableElement);
+        var winScroll = b.getWindowScroll();
+        var scrollTop = winScroll[1] + newTopOffset;
+        var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
+        // twice header height for better UX
+        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) < (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
+        var absElement = element.childNodes[1];
+        var absElementStyle = absElement.style;
+        if (scrolledPastTop && notScrolledPastBottom) {
+            absElementStyle.visibility = "visible";
+            var newTop = (isWindowScrolling ? winScroll[1] : newTopOffset) - offset[1];
+            absElementStyle.left = c.deltaCorr + "px";
+            absElementStyle.top = newTop + "px";
+            var absHeader = absElement.firstChild.firstChild;
+            if (origHeader.firstChild) {
+                var l1 = absHeader.firstChild.getBoundingClientRect().left;
+                var l2 = origHeader.firstChild.getBoundingClientRect().left;
+                var dif = l2 - l1;
+                c.deltaCorr += dif;
+                if (Math.abs(dif) > 0.1) {
+                    absElementStyle.left = c.deltaCorr + "px";
+                }
+                var ieWeirdness = b.ieVersion() <= 9;
+                for (var i = 0, l = origHeader.childNodes.length; i < l; i++) {
+                    var w;
+                    var origElc = origHeader.childNodes[i];
+                    if (ieWeirdness) {
+                        // w = origElc.offsetWidth; this does not work correctly in IE9
+                        var clientRect = origElc.getBoundingClientRect();
+                        w = clientRect.right - clientRect.left;
+                    }
+                    else {
+                        var computedStyle = window.getComputedStyle(origElc, null);
+                        if (computedStyle.boxSizing === "border-box") {
+                            w = origElc.offsetWidth;
+                        }
+                        else {
+                            w = parseFloat(computedStyle.width);
+                        }
+                    }
+                    var s = absHeader.childNodes[i].style;
+                    var w2 = w + "px";
+                    s.minWidth = w2;
+                    s.maxWidth = w2;
+                    if (ieWeirdness) {
+                        s.boxSizing = "border-box";
+                    }
+                }
+            }
+        }
+        else {
+            absElementStyle.visibility = "hidden";
+        }
+    }
+    var StickyTableAbsComp = {
+        id: "StickyTableAbs",
+        init: function (ctx) {
+            ctx.deltaCorr = 0;
+            ctx.onScroll = function () { return b.invalidate(); };
+        },
+        render: function (ctx, me) {
+            var header = ctx.data.header;
+            var headerClone = cloneObj(header);
+            var attrsClone = cloneObj(me.attrs);
+            attrsClone.style = cloneObj(attrsClone.style);
+            attrsClone.style.border = "none";
+            me.children = [
+                {
+                    tag: "table",
+                    attrs: me.attrs,
+                    children: [
+                        header,
+                        ctx.data.body
+                    ]
+                },
+                {
+                    tag: "div",
+                    attrs: { style: { visibility: "hidden", position: "absolute" } },
+                    children: {
+                        tag: "table",
+                        attrs: attrsClone,
+                        children: headerClone
+                    }
+                }
+            ];
+            me.attrs = { style: { position: "relative" } };
+        },
+        postInitDom: function (ctx, me, element) {
+            b.addOnScroll(ctx.onScroll);
+            stickyUpdateDomAbs(ctx, me, element);
+        },
+        postUpdateDom: function (ctx, me, element) {
+            stickyUpdateDomAbs(ctx, me, element);
+        },
+        destroy: function (ctx, me, element) {
+            b.removeOnScroll(ctx.onScroll);
+        }
+    };
+    function stickyTableAbs(borderCollapse, style, header, body) {
+        style = cloneObj(style);
+        style.borderCollapse = (borderCollapse ? "collapse" : "separate");
+        return { tag: "div", attrs: { style: style }, data: { header: header, body: body }, component: StickyTableAbsComp };
     }
     function headerCell(content) {
         return hs("th", { backgroundColor: "#ffc", border: "1px solid #300" }, content);
@@ -216,6 +330,7 @@ var StickyHeaderApp;
     var frame = 0;
     var borderSpacing = 5;
     var borderCollapse = false;
+    var implStrategyAbs = true;
     b.init(function () {
         frame++;
         function rows() {
@@ -223,9 +338,14 @@ var StickyHeaderApp;
                 return h("tr", range(1, cols).map(function (j) { return bodyCell("Cell " + j + "/" + i); }));
             });
         }
+        var stickyTable = implStrategyAbs ? stickyTableAbs : stickyTableFix;
         return [
             h("h1", "Sticky Header Bobril sample"),
             h("p", "Frame: " + frame),
+            h("label", checkbox(implStrategyAbs, function (v) {
+                implStrategyAbs = v;
+                b.invalidate();
+            }), "Absolute Positioning"),
             h("label", checkbox(borderCollapse, function (v) {
                 borderCollapse = v;
                 b.invalidate();
@@ -235,7 +355,17 @@ var StickyHeaderApp;
                 borderSpacing = v;
                 b.invalidate();
             }),
-            { tag: "div", attrs: { style: { height: "150px", width: "300px", overflow: "auto" } }, component: ScrollableComp, children: stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(function (j) { return headerCell("Header " + j); })), rows()) },
+            {
+                tag: "div",
+                attrs: { style: { height: "150px", width: "300px", overflow: "auto" } },
+                component: ScrollableComp,
+                children: [
+                    h("p", "Before table"),
+                    stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(function (j) { return headerCell("Header " + j); })), rows()),
+                    h("p", "Some text after table"),
+                    range(1, 10).map(function (i) { return h("p", "" + i); })
+                ]
+            },
             stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(function (j) { return headerCell("Header " + j); })), rows()),
             h("p", "Some text after table"),
             range(1, 30).map(function (i) { return h("p", "" + i); })

@@ -350,17 +350,23 @@ b = (function (window, document) {
         var component = n.component;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
+        var bigChange = false;
         if (component && c.ctx != null) {
-            if (component.shouldChange)
-                if (!component.shouldChange(c.ctx, n, c))
-                    return c;
-            c.ctx.data = n.data || {};
-            c.component = component;
-            if (component.render)
-                component.render(c.ctx, n, c);
+            if (component.id !== c.component.id) {
+                bigChange = true;
+            }
+            else {
+                if (component.shouldChange)
+                    if (!component.shouldChange(c.ctx, n, c))
+                        return c;
+                c.ctx.data = n.data || {};
+                c.component = component;
+                if (component.render)
+                    component.render(c.ctx, n, c);
+            }
         }
         var el;
-        if (component && c.ctx == null) {
+        if (bigChange || (component && c.ctx == null)) {
         }
         else if (n.tag === "/") {
             el = c.element;
@@ -888,13 +894,17 @@ b = (function (window, document) {
             return f2.apply(_this, arguments);
         };
     }
+    var emptyObject = {};
     function mergeComponents(c1, c2) {
         var res = Object.create(c1);
         for (var i in c2) {
-            if (c2.hasOwnProperty(i)) {
+            if (!(i in emptyObject)) {
                 var m = c2[i];
                 var origM = c1[i];
-                if (typeof (m) == "function" && origM) {
+                if (i === "id") {
+                    res[i] = ((origM != null) ? origM : "") + "/" + m;
+                }
+                else if (typeof m === "function" && origM != null && typeof origM === "function") {
                     res[i] = merge(origM, m);
                 }
                 else {

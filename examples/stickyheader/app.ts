@@ -60,7 +60,7 @@ module StickyHeaderApp {
         return element.scrollHeight;
     }
 
-    function stickyUpdateDom(ctx: any, me: IBobrilNode, element: HTMLElement) {
+    function stickyUpdateDomFix(ctx: any, me: IBobrilNode, element: HTMLElement) {
         var scrollableArea = element.parentElement;
         while (!b.isScrollable(scrollableArea)) scrollableArea = scrollableArea.parentElement;
         var isWindowScrolling = scrollableArea === document.body;
@@ -74,8 +74,9 @@ module StickyHeaderApp {
         var scrollLeft = winScroll[0];
 
         var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
+        // twice header height for better UX
         var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) <
-            (offset[1] + getHeight(tableElement) - getHeight(origHeader) - newTopOffset);
+            (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
         if (c.sticky !== (scrolledPastTop && notScrolledPastBottom)) {
             c.sticky = !c.sticky;
             b.invalidate();
@@ -117,7 +118,8 @@ module StickyHeaderApp {
         return <T>b.assign({}, o);
     }
 
-    var StickyTableComp: IBobrilComponent = {
+    var StickyTableFixComp: IBobrilComponent = {
+        id: "StickyTableFix",
         init(ctx: any) {
             ctx.onScroll = () => b.invalidate();
             ctx.sticky = false;
@@ -142,10 +144,10 @@ module StickyHeaderApp {
         },
         postInitDom(ctx: any, me: IBobrilNode, element: HTMLElement) {
             b.addOnScroll(ctx.onScroll);
-            stickyUpdateDom(ctx, me, element);
+            stickyUpdateDomFix(ctx, me, element);
         },
         postUpdateDom(ctx: any, me: IBobrilCacheNode, element: HTMLElement) {
-            stickyUpdateDom(ctx, me, element);
+            stickyUpdateDomFix(ctx, me, element);
             if (!ctx.lastSticky) return;
             var origEl = element.firstChild;
             var cloEl = origEl.nextSibling;
@@ -179,10 +181,120 @@ module StickyHeaderApp {
         }
     };
 
-    function stickyTable(borderCollapse: boolean, style: any, header: IBobrilNode, body: any): IBobrilNode {
+    function stickyTableFix(borderCollapse: boolean, style: any, header: IBobrilNode, body: any): IBobrilNode {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "table", attrs: { style: style }, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableComp };
+        return { tag: "table", attrs: { style: style }, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
+    }
+
+    function stickyUpdateDomAbs(ctx: any, me: IBobrilNode, element: HTMLElement) {
+        var scrollableArea = element.parentElement;
+        while (!b.isScrollable(scrollableArea)) scrollableArea = scrollableArea.parentElement;
+        var isWindowScrolling = scrollableArea === document.body;
+        var c: any = ctx;
+        var tableElement = <HTMLElement>element.firstChild;
+        var origHeader = <HTMLElement>tableElement.firstChild;
+        var newTopOffset = isWindowScrolling ? 0 : getOffset(scrollableArea)[1];
+        var offset = getOffset(tableElement);
+        var winScroll = b.getWindowScroll();
+        var scrollTop = winScroll[1] + newTopOffset;
+        var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
+        // twice header height for better UX
+        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) <
+            (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
+        var absElement = <HTMLElement>element.childNodes[1];
+        var absElementStyle = absElement.style;
+        if (scrolledPastTop && notScrolledPastBottom) {
+            absElementStyle.visibility = "visible";
+            var newTop = (isWindowScrolling ? winScroll[1] : newTopOffset) - offset[1];
+            absElementStyle.left = c.deltaCorr + "px";
+            absElementStyle.top = newTop + "px";
+            var absHeader = <HTMLElement>absElement.firstChild.firstChild;
+            if (origHeader.firstChild) {
+                var l1 = (<HTMLElement>absHeader.firstChild).getBoundingClientRect().left;
+                var l2 = (<HTMLElement>origHeader.firstChild).getBoundingClientRect().left;
+                var dif = l2 - l1;
+                c.deltaCorr += dif;
+                if (Math.abs(dif) > 0.1) {
+                    absElementStyle.left = c.deltaCorr + "px";
+                }
+                var ieWeirdness = b.ieVersion() <= 9;
+                for (var i = 0, l = origHeader.childNodes.length; i < l; i++) {
+                    var w: number;
+                    var origElc = <HTMLElement>origHeader.childNodes[i];
+                    if (ieWeirdness) {
+                        // w = origElc.offsetWidth; this does not work correctly in IE9
+                        var clientRect = origElc.getBoundingClientRect();
+                        w = clientRect.right - clientRect.left;
+                    } else {
+                        var computedStyle = window.getComputedStyle(origElc, null);
+                        if (computedStyle.boxSizing === "border-box") {
+                            w = origElc.offsetWidth;
+                        } else {
+                            w = parseFloat(computedStyle.width);
+                        }
+                    }
+                    var s = (<HTMLElement>absHeader.childNodes[i]).style;
+                    var w2 = w + "px";
+                    s.minWidth = w2;
+                    s.maxWidth = w2;
+                    if (ieWeirdness) {
+                        s.boxSizing = "border-box";
+                    }
+                }
+            }
+        } else {
+            absElementStyle.visibility = "hidden";
+        }
+    }
+
+    var StickyTableAbsComp: IBobrilComponent = {
+        id: "StickyTableAbs",
+        init(ctx: any) {
+            ctx.deltaCorr = 0;
+            ctx.onScroll = () => b.invalidate();
+        },
+        render(ctx: any, me: IBobrilNode) {
+            var header: IBobrilNode = ctx.data.header;
+            var headerClone = cloneObj(header);
+            var attrsClone = cloneObj(me.attrs);
+            attrsClone.style = cloneObj(attrsClone.style);
+            attrsClone.style.border = "none";
+            me.children = [
+                {
+                    tag: "table", attrs: me.attrs, children: [
+                        header,
+                        ctx.data.body
+                    ]
+                },
+                {
+                    tag: "div",
+                    attrs: { style: { visibility: "hidden", position: "absolute" } },
+                    children: {
+                        tag: "table",
+                        attrs: attrsClone,
+                        children: headerClone
+                    }
+                }
+            ];
+            me.attrs = { style: { position: "relative" } };
+        },
+        postInitDom(ctx: any, me: IBobrilNode, element: HTMLElement) {
+            b.addOnScroll(ctx.onScroll);
+            stickyUpdateDomAbs(ctx, me, element);
+        },
+        postUpdateDom(ctx: any, me: IBobrilCacheNode, element: HTMLElement) {
+            stickyUpdateDomAbs(ctx, me, element);
+        },
+        destroy(ctx: any, me: IBobrilNode, element: HTMLElement) {
+            b.removeOnScroll(ctx.onScroll);
+        }
+    };
+
+    function stickyTableAbs(borderCollapse: boolean, style: any, header: IBobrilNode, body: any): IBobrilNode {
+        style = cloneObj(style);
+        style.borderCollapse = (borderCollapse ? "collapse" : "separate");
+        return { tag: "div", attrs: { style: style }, data: { header: header, body: body }, component: StickyTableAbsComp };
     }
 
     function headerCell(content: string): IBobrilNode {
@@ -214,6 +326,7 @@ module StickyHeaderApp {
     var frame = 0;
     var borderSpacing = 5;
     var borderCollapse = false;
+    var implStrategyAbs = true;
     b.init(() => {
         frame++;
 
@@ -223,9 +336,14 @@ module StickyHeaderApp {
             });
         }
 
+        var stickyTable = implStrategyAbs ? stickyTableAbs : stickyTableFix;
         return [
             h("h1", "Sticky Header Bobril sample"),
             h("p", "Frame: " + frame),
+            h("label", checkbox(implStrategyAbs, v=> {
+                implStrategyAbs = v;
+                b.invalidate();
+            }), "Absolute Positioning"),
             h("label", checkbox(borderCollapse, v=> {
                 borderCollapse = v;
                 b.invalidate();
@@ -234,7 +352,17 @@ module StickyHeaderApp {
                 borderSpacing = v;
                 b.invalidate();
             }),
-            { tag: "div", attrs: { style: { height: "150px", width: "300px", overflow: "auto" } }, component: ScrollableComp, children: stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(j => headerCell("Header " + j))), rows()) },
+            {
+                tag: "div",
+                attrs: { style: { height: "150px", width: "300px", overflow: "auto" } },
+                component: ScrollableComp,
+                children: [
+                    h("p", "Before table"),
+                    stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(j => headerCell("Header " + j))), rows()),
+                    h("p", "Some text after table"),
+                    range(1, 10).map(i=> h("p", "" + i))
+                ]
+            },
             stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(j=> headerCell("Header " + j))), rows()),
             h("p", "Some text after table"),
             range(1, 30).map(i=> h("p", "" + i))
