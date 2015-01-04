@@ -152,10 +152,10 @@ module InputApp {
                 textInput(value, setValue),
                 h("p", "Entered: ", value),
                 h("label", checkbox(checked, setChecked), "Checkbox"),
-                h("p", "Checked: ", checked ? "Yes" : "No"),
+                h("p", "Checked: ", checked ? <any>"Yes" : "No"),
                 h("label", radiobox("g1", radio1, setRadio1), "Radio 1"),
                 h("label", radiobox("g1", radio2, setRadio2), "Radio 2"),
-                h("p", "Radio1: ", radio1 ? "Yes" : "No", " Radio2: ", radio2 ? "Yes" : "No"),
+                h("p", "Radio1: ", radio1 ? <any>"Yes" : "No", " Radio2: ", radio2 ? <any>"Yes" : "No"),
                 h("p", "Frame: " + frame)
             ], [
                 layoutPair([

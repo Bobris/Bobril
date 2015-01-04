@@ -133,7 +133,7 @@ class CoordList {
 
         startTime = now();
 
-        var touches: any = ev.touches && ev.touches.length ? ev.touches : [ev];
+        var touches: any = ev.touches && (ev.touches.length ? <any>ev.touches : [ev]);
         var e = touches[0].originalEvent || touches[0];
         touchStartX = e.clientX;
         touchStartY = e.clientY;

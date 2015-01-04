@@ -34,7 +34,7 @@
             var h = viewport.clientHeight;
             var o: any = (<any>window).orientation;
             var p = h >= w;
-            if (o == null) o = p ? 0 : 90;
+            if (o == null) o = (p ? 0 : 90);
             var device = 0;
             while (w > breaks[+!p][device]) device++;
             media = {
