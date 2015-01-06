@@ -17,32 +17,32 @@ module MouseApp {
 
         static onClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
-            return false;
+            return true;
         }
 
         static onDoubleClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
-            return false;
+            return true;
         }
 
         static onMouseDown(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
-            return false;
+            return true;
         }
 
         static onMouseUp(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
-            return false;
+            return true;
         }
 
         static onSwipeLeft(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
-            return false;
+            return true;
         }
 
         static onSwipeRight(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
-            return false;
+            return true;
         }
     }
 

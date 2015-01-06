@@ -152,7 +152,6 @@ class CoordList {
         var y = e.clientY;
         var dist = Math.sqrt(Math.pow(x - touchStartX, 2) + Math.pow(y - touchStartY, 2));
 
-        var stop = false;
         if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
             lastPreventedTime = now();
             // Blur the focused element (the button, probably) before firing the callback.
@@ -164,13 +163,14 @@ class CoordList {
 
             var disabled: any = node.attrs && node.attrs["disabled"];
             if (typeof disabled === "undefined" || disabled === false) {
-                stop = emitClickEvent(ev, target, node, x, y);
+                if (!emitClickEvent(ev, target, node, x, y))
+                    touchCoordinates.remove(x, y); //if event was NOT consumed, we dont bust it(eg. onchange plugin needs it)
             }
         }
 
         resetState();
 
-        return stop;
+        return false;
     }
 
     function emitClickEvent(ev: TouchEvent, target: Node, node: IBobrilCacheNode, x: number, y: number): boolean {
@@ -208,7 +208,7 @@ class CoordList {
             var param: IMouseEvent = buildParam(ev);
             if (b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
-                return true;
+             //   return true;
             }
             return false;
         };
@@ -306,6 +306,7 @@ class CoordList {
     addEvent("mouseup", 400, createHandler("onMouseUp"));
     addEvent("touchend", 400, createHandler("onMouseUp"));
     addEvent("mousemove", 400, createHandler("onMouseMove"));
+    addEvent("touchmove", 400, createHandler("onMouseMove"));
     addEvent("mouseover", 400, createHandler("onMouseOver"));
 
     addEvent("touchstart", 500, handleTouchStart);
