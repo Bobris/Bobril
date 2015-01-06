@@ -10,27 +10,27 @@ var MouseApp;
         };
         TrackClick.onClick = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
-            return false;
+            return true;
         };
         TrackClick.onDoubleClick = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
-            return false;
+            return true;
         };
         TrackClick.onMouseDown = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
-            return false;
+            return true;
         };
         TrackClick.onMouseUp = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
-            return false;
+            return true;
         };
         TrackClick.onSwipeLeft = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
-            return false;
+            return true;
         };
         TrackClick.onSwipeRight = function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
-            return false;
+            return true;
         };
         return TrackClick;
     })();
