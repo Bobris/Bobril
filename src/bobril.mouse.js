@@ -130,7 +130,6 @@ var CoordList = (function () {
         var x = e.clientX;
         var y = e.clientY;
         var dist = Math.sqrt(Math.pow(x - touchStartX, 2) + Math.pow(y - touchStartY, 2));
-        var stop = false;
         if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
             lastPreventedTime = now();
             // Blur the focused element (the button, probably) before firing the callback.
@@ -141,11 +140,12 @@ var CoordList = (function () {
             }
             var disabled = node.attrs && node.attrs["disabled"];
             if (typeof disabled === "undefined" || disabled === false) {
-                stop = emitClickEvent(ev, target, node, x, y);
+                if (!emitClickEvent(ev, target, node, x, y))
+                    touchCoordinates.remove(x, y); //if event was NOT consumed, we dont bust it(eg. onchange plugin needs it)
             }
         }
         resetState();
-        return stop;
+        return false;
     }
     function emitClickEvent(ev, target, node, x, y) {
         if (!node)
@@ -177,7 +177,6 @@ var CoordList = (function () {
             var param = buildParam(ev);
             if (b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
-                return true;
             }
             return false;
         };
