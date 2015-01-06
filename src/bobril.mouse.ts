@@ -306,6 +306,7 @@ class CoordList {
     addEvent("mouseup", 400, createHandler("onMouseUp"));
     addEvent("touchend", 400, createHandler("onMouseUp"));
     addEvent("mousemove", 400, createHandler("onMouseMove"));
+    addEvent("touchmove", 400, createHandler("onMouseMove"));
     addEvent("mouseover", 400, createHandler("onMouseOver"));
 
     addEvent("touchstart", 500, handleTouchStart);
