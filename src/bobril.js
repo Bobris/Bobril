@@ -324,15 +324,16 @@ b = (function (window, document) {
         var currentCacheArray = rootCacheChildren;
         while (nodeStack.length) {
             var currentNode = nodeStack.pop();
-            for (var i = 0, l = currentCacheArray.length; i < l; i++) {
-                var bn = currentCacheArray[i];
-                if (bn.element === currentNode) {
-                    res.push(bn);
-                    currentCacheArray = bn.children;
-                    currentNode = null;
-                    break;
+            if (currentCacheArray)
+                for (var i = 0, l = currentCacheArray.length; i < l; i++) {
+                    var bn = currentCacheArray[i];
+                    if (bn.element === currentNode) {
+                        res.push(bn);
+                        currentCacheArray = bn.children;
+                        currentNode = null;
+                        break;
+                    }
                 }
-            }
             if (currentNode) {
                 res.push(null);
                 break;
