@@ -321,7 +321,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var currentCacheArray = rootCacheChildren;
         while (nodeStack.length) {
             var currentNode = nodeStack.pop();
-            for (var i = 0, l = currentCacheArray.length; i < l; i++) {
+            if (currentCacheArray) for (var i = 0, l = currentCacheArray.length; i < l; i++) {
                 var bn = currentCacheArray[i];
                 if (bn.element === currentNode) {
                     res.push(bn);
