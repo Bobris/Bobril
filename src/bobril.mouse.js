@@ -181,34 +181,38 @@ var CoordList = (function () {
             return false;
         };
     }
-    function isValidMouseLeave(ev) {
-        var from = ev.fromElement;
-        var to = ev.toElement;
-        while (to) {
-            to = to.parentElement;
-            if (to == from) {
-                return false;
+    function mouseEnterAndLeave(ev, target, node) {
+        var param = buildParam(ev);
+        var fromPath = b.vdomPath(ev.fromElement);
+        var toPath = b.vdomPath(ev.toElement);
+        var common = 0;
+        while (common < fromPath.length && common < toPath.length && fromPath[common] === toPath[common])
+            common++;
+        var i = fromPath.length - 1;
+        var n;
+        var c;
+        while (i >= common) {
+            n = fromPath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseLeave)
+                    c.onMouseLeave(n.ctx, param);
             }
+            i--;
         }
-        return true;
-    }
-    function createNoBubblingHandler(handlerName, validator) {
-        return function (ev, target, node) {
-            if (!node)
-                return false;
-            var param = buildParam(ev);
-            var c = node.component;
-            if (c) {
-                if (validator && !validator(ev))
-                    return false;
-                var m = c[handlerName];
-                if (m) {
-                    m.call(c, node.ctx, param);
-                }
+        i = toPath.length - 1;
+        while (i >= common) {
+            n = toPath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseEnter)
+                    c.onMouseEnter(n.ctx, param);
             }
-            return false;
-        };
+            i--;
+        }
+        return false;
     }
+    ;
     function hasPointerEventsNone(target) {
         var bNode = b.deref(target);
         return bNode && bNode.attrs && bNode.attrs.style && bNode.attrs.style.pointerEvents && bNode.attrs.style.pointerEvents == "none";
@@ -264,8 +268,7 @@ var CoordList = (function () {
     addEvent("mouseup", 2, buster);
     addEvent("click", 2, buster);
     addEvent("touchstart", 3, collectCoordinates);
-    addEvent("mouseover", 300, createNoBubblingHandler("onMouseEnter")); // bubbling mouseover and out are same basically same as nonbubling mouseenter and leave
-    addEvent("mouseout", 300, createNoBubblingHandler("onMouseLeave", isValidMouseLeave));
+    addEvent("mouseover", 300, mouseEnterAndLeave);
     addEvent("click", 400, createHandler("onClick"));
     addEvent("dblclick", 400, createHandler("onDoubleClick"));
     addEvent("mousedown", 400, createHandler("onMouseDown"));
