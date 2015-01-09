@@ -208,45 +208,48 @@ class CoordList {
             var param: IMouseEvent = buildParam(ev);
             if (b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
-             //   return true;
             }
             return false;
         };
     }
 
-    function isValidMouseLeave(ev: MouseEvent): boolean {
-        var from = ev.fromElement;
-        var to = ev.toElement;
-        while (to) {
-            to = (<any>to).parentElement;
-            if (to == from) {
-                return false;
+   
+    function mouseEnterAndLeave(ev: MouseEvent, target: Node, node: IBobrilCacheNode):boolean {
+        var param: IMouseEvent = buildParam(ev);
+        var fromPath = b.vdomPath(ev.fromElement);
+        var toPath = b.vdomPath(ev.toElement);
+
+        var common = 0;
+        while (common < fromPath.length && common < toPath.length && fromPath[common] === toPath[common])
+            common++;
+
+        var i = fromPath.length - 1;
+        var n: IBobrilCacheNode;
+        var c: IBobrilComponent;
+        while (i >= common) {
+            n = fromPath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseLeave)
+                    c.onMouseLeave(n.ctx, param);
             }
+            i--;
         }
-        return true;
-    }
 
-    function createNoBubblingHandler(handlerName: string, validator?: (ev: IMouseEvent) => boolean) {
-        return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
-            if (!node)
-                return false;
-
-            var param: IMouseEvent = buildParam(ev);
-            var c = node.component;
-
-            if (c) {
-                if (validator && !validator(ev))
-                    return false;
-
-                var m = (<any>c)[handlerName];
-                if (m) {
-                    m.call(c, node.ctx, param);
-                }
+        i = toPath.length - 1;
+        while (i >= common) {
+            n = toPath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseEnter)
+                    c.onMouseEnter(n.ctx, param);
             }
-
-            return false;
-        };
-    }
+            i--;
+        }
+            
+        return false;
+    };
+    
 
     function hasPointerEventsNone(target: Node): boolean {
         var bNode = b.deref(target);
@@ -296,8 +299,7 @@ class CoordList {
     addEvent("click", 2, buster);
     addEvent("touchstart", 3, collectCoordinates);
 
-    addEvent("mouseover", 300, createNoBubblingHandler("onMouseEnter")); // bubbling mouseover and out are same basically same as nonbubling mouseenter and leave
-    addEvent("mouseout", 300, createNoBubblingHandler("onMouseLeave", isValidMouseLeave));
+    addEvent("mouseover", 300, mouseEnterAndLeave);
 
     addEvent("click", 400, createHandler("onClick"));
     addEvent("dblclick", 400, createHandler("onDoubleClick"));

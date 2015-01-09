@@ -54,8 +54,8 @@ module MouseEnterLeaveApp {
         }
 
        static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
-            ctx.backColor = mouseEnter;
-            b.invalidate();
+           ctx.backColor = mouseEnter;
+           b.invalidate();
         }
 
         static onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
@@ -93,7 +93,7 @@ module MouseEnterLeaveApp {
             backgroundColor: backColor, 
             border: "1px solid #6492BF",
             color: "#FFFFFF",
-            height: "100px",
+            height: "162px",
             left: "62px",
             lineHeight: "98px",
             position: "absolute",
