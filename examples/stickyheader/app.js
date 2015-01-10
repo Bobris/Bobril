@@ -133,12 +133,7 @@ var StickyHeaderApp;
             ctx.lastSticky = ctx.sticky;
             ctx.borderCollapse = ctx.data.borderCollapse;
             if (ctx.sticky) {
-                var clone = cloneObj(header);
-                if (clone.attrs) {
-                    clone.attrs = cloneObj(clone.attrs);
-                    if (clone.attrs.style)
-                        clone.attrs.style = cloneObj(clone.attrs.style);
-                }
+                var clone = b.cloneNode(header);
                 b.postEnhance(clone, StickyHeaderFixedComp);
                 clone.key = "StickyH";
                 me.children = [header, clone, ctx.data.body];
@@ -264,7 +259,7 @@ var StickyHeaderApp;
         },
         render: function (ctx, me) {
             var header = ctx.data.header;
-            var headerClone = cloneObj(header);
+            var headerClone = b.cloneNode(header);
             var attrsClone = cloneObj(me.attrs);
             attrsClone.style = cloneObj(attrsClone.style);
             attrsClone.style.border = "none";

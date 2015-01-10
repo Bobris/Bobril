@@ -21,4 +21,5 @@ interface IRouteConfig {
     url?: string;
     data?: Object;
     handler: IBobrilComponent;
+    keyBuilder?: (params: Params) => string;
 }

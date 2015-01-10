@@ -949,6 +949,15 @@ b = (function (window, document) {
         else
             event.returnValue = false;
     }
+    function cloneNode(node) {
+        var r = b.assign({}, node);
+        if (r.attrs) {
+            r.attrs = b.assign({}, r.attrs);
+            if (r.attrs.style)
+                r.attrs.style = b.assign({}, r.attrs.style);
+        }
+        return r;
+    }
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -970,7 +979,8 @@ b = (function (window, document) {
         addEvent: addEvent,
         bubble: bubbleEvent,
         preEnhance: preEnhance,
-        postEnhance: postEnhance
+        postEnhance: postEnhance,
+        cloneNode: cloneNode
     };
 })(window, document);
 //# sourceMappingURL=bobril.js.map

@@ -179,7 +179,7 @@
                     b.assign(data, otherdata);
                     data.activeRouteHandler = fninner;
                     data.routeParams = routeParams;
-                    return { data: data, component: r.handler };
+                    return { key: r.keyBuilder ? r.keyBuilder(routeParams) : undefined, data: data, component: r.handler };
                 };
             })(fn, matches[i], activeParams);
         }
@@ -225,13 +225,13 @@
         b.init(rootNodeFactory);
     }
     function route(config, nestedRoutes) {
-        return { name: config.name, url: config.url, data: config.data, handler: config.handler, children: nestedRoutes };
+        return { name: config.name, url: config.url, data: config.data, handler: config.handler, keyBuilder: config.keyBuilder, children: nestedRoutes };
     }
     function routeDefault(config) {
-        return { name: config.name, data: config.data, handler: config.handler, isDefault: true };
+        return { name: config.name, data: config.data, handler: config.handler, keyBuilder: config.keyBuilder, isDefault: true };
     }
     function routeNotFound(config) {
-        return { name: config.name, data: config.data, handler: config.handler, isNotFound: true };
+        return { name: config.name, data: config.data, handler: config.handler, keyBuilder: config.keyBuilder, isNotFound: true };
     }
     function isActive(name, params) {
         if (params) {

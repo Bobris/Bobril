@@ -904,7 +904,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 var origM = (<any>c1)[i];
                 if (i === "id") {
                     res[i] = ((origM != null) ? origM : "") + "/" + m;
-                } else if (typeof m === "function" && origM!=null && typeof origM === "function") {
+                } else if (typeof m === "function" && origM != null && typeof origM === "function") {
                     res[i] = merge(origM, m);
                 } else {
                     res[i] = m;
@@ -947,6 +947,15 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (pd) pd.call(event); else (<any>event).returnValue = false;
     }
 
+    function cloneNode(node: IBobrilNode): IBobrilNode {
+        var r = <IBobrilNode>b.assign({}, node);
+        if (r.attrs) {
+            r.attrs = <IBobrilAttributes>b.assign({}, r.attrs);
+            if (r.attrs.style) r.attrs.style = <any>b.assign({}, r.attrs.style);
+        }
+        return r;
+    }
+
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -968,6 +977,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         addEvent: addEvent,
         bubble: bubbleEvent,
         preEnhance: preEnhance,
-        postEnhance: postEnhance
+        postEnhance: postEnhance,
+        cloneNode: cloneNode
     };
 })(window, document);

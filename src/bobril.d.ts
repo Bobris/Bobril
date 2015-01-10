@@ -42,6 +42,8 @@ interface IBobrilStatic {
     preEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
     // merge components, methods will be called after already existing methods
     postEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
+    // clone IBobrilNode with attrs and attrs.style cloned deeply
+    cloneNode(node: IBobrilNode): IBobrilNode;
 }
 
 interface IBobrilAttributes {
