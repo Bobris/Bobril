@@ -8,6 +8,7 @@ interface IRoute {
     url?: string;
     data?: Object;
     handler: IBobrilComponent;
+    keyBuilder?: (params: Params) => string;
     children?: Array<IRoute>;
     isDefault?: boolean;
     isNotFound?: boolean;
@@ -215,13 +216,13 @@ interface OutFindMatch {
         activeParams = out.p;
         var fn: (otherdata?: any) => IBobrilNode = noop;
         for (var i = 0; i < matches.length; i++) {
-            ((fninner: Function, r: IRoute, routeParams: Object) => {
+            ((fninner: Function, r: IRoute, routeParams: Params) => {
                 fn = (otherdata?: any) => {
                     var data: any = r.data || {};
                     b.assign(data, otherdata);
                     data.activeRouteHandler = fninner;
                     data.routeParams = routeParams;
-                    return { data: data, component: r.handler };
+                    return { key: r.keyBuilder ? r.keyBuilder(routeParams): undefined, data: data, component: r.handler };
                 }
             })(fn, matches[i], activeParams);
         }
@@ -269,15 +270,15 @@ interface OutFindMatch {
     }
 
     function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRoute {
-        return { name: config.name, url: config.url, data: config.data, handler: config.handler, children: nestedRoutes };
+        return { name: config.name, url: config.url, data: config.data, handler: config.handler, keyBuilder: config.keyBuilder, children: nestedRoutes };
     }
 
     function routeDefault(config: IRouteConfig): IRoute {
-        return { name: config.name, data: config.data, handler: config.handler, isDefault: true };
+        return { name: config.name, data: config.data, handler: config.handler, keyBuilder: config.keyBuilder, isDefault: true };
     }
 
     function routeNotFound(config: IRouteConfig): IRoute {
-        return { name: config.name, data: config.data, handler: config.handler, isNotFound: true };
+        return { name: config.name, data: config.data, handler: config.handler, keyBuilder: config.keyBuilder, isNotFound: true };
     }
 
     function isActive(name: string, params?: Params): boolean {

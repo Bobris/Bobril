@@ -76,7 +76,7 @@ var MouseEnterLeaveApp;
             backgroundColor: backColor,
             border: "1px solid #6492BF",
             color: "#FFFFFF",
-            height: "100px",
+            height: "162px",
             left: "62px",
             lineHeight: "98px",
             position: "absolute",

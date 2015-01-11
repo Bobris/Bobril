@@ -324,15 +324,16 @@ b = (function (window, document) {
         var currentCacheArray = rootCacheChildren;
         while (nodeStack.length) {
             var currentNode = nodeStack.pop();
-            for (var i = 0, l = currentCacheArray.length; i < l; i++) {
-                var bn = currentCacheArray[i];
-                if (bn.element === currentNode) {
-                    res.push(bn);
-                    currentCacheArray = bn.children;
-                    currentNode = null;
-                    break;
+            if (currentCacheArray)
+                for (var i = 0, l = currentCacheArray.length; i < l; i++) {
+                    var bn = currentCacheArray[i];
+                    if (bn.element === currentNode) {
+                        res.push(bn);
+                        currentCacheArray = bn.children;
+                        currentNode = null;
+                        break;
+                    }
                 }
-            }
             if (currentNode) {
                 res.push(null);
                 break;
@@ -948,6 +949,15 @@ b = (function (window, document) {
         else
             event.returnValue = false;
     }
+    function cloneNode(node) {
+        var r = b.assign({}, node);
+        if (r.attrs) {
+            r.attrs = b.assign({}, r.attrs);
+            if (r.attrs.style)
+                r.attrs.style = b.assign({}, r.attrs.style);
+        }
+        return r;
+    }
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -969,7 +979,8 @@ b = (function (window, document) {
         addEvent: addEvent,
         bubble: bubbleEvent,
         preEnhance: preEnhance,
-        postEnhance: postEnhance
+        postEnhance: postEnhance,
+        cloneNode: cloneNode
     };
 })(window, document);
 //# sourceMappingURL=bobril.js.map

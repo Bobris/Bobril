@@ -60,14 +60,13 @@
         setTimeout(emitOnFocusChange, 10);
         emitOnFocusChange();
     }
-    var events = ["fucus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
+    var events = ["focus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 50, (b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
     if (b.ieVersion() === 8) {
         setInterval(emitOnFocusChange, 100);
     }
     function focused() {
-        //emitOnFocusChange();
         return currentFocusedNode;
     }
     // set focus to bobril node in parameter usually should be called from postInitDom method

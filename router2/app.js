@@ -64,6 +64,143 @@ var InputApp;
         };
         return SelectPlanet;
     })();
+    var AnimState;
+    (function (AnimState) {
+        AnimState[AnimState["New"] = 0] = "New";
+        AnimState[AnimState["WaitingForCreating"] = 1] = "WaitingForCreating";
+        AnimState[AnimState["Creating"] = 2] = "Creating";
+        AnimState[AnimState["Showing"] = 3] = "Showing";
+        AnimState[AnimState["WaitingForHiding"] = 4] = "WaitingForHiding";
+        AnimState[AnimState["Hiding"] = 5] = "Hiding";
+        AnimState[AnimState["Hidden"] = 6] = "Hidden";
+        AnimState[AnimState["Garbage"] = 7] = "Garbage";
+    })(AnimState || (AnimState = {}));
+    function isHiddenAnimState(state) {
+        return state === 0 /* New */ || state === 1 /* WaitingForCreating */ || state === 6 /* Hidden */ || state === 7 /* Garbage */;
+    }
+    function isStableAnimState(state) {
+        return state === 3 /* Showing */ || state === 4 /* WaitingForHiding */;
+    }
+    var transitionGroupComp = {
+        id: "TransitionGroup",
+        init: function (ctx, me) {
+            ctx.list = [];
+        },
+        render: function (ctx, me, oldMe) {
+            var curNodes = me.children;
+            if (curNodes == null)
+                curNodes = [];
+            else if (!b.isArray(curNodes))
+                curNodes = [curNodes];
+            function build(node, rootCtx, animCtx) {
+                node = b.assign({}, node);
+                b.postEnhance(node, {
+                    render: function (ctx, me, oldMe) {
+                        me.attrs = me.attrs || {};
+                        me.attrs.style = me.attrs.style || {};
+                        if (!animCtx.live) {
+                            me.attrs.style.position = "absolute";
+                            me.attrs.style.top = "0";
+                            me.attrs.style.left = "0";
+                        }
+                        if (isStableAnimState(animCtx.state)) {
+                            return;
+                        }
+                        if (isHiddenAnimState(animCtx.state)) {
+                            me.attrs.style.visibility = "hidden";
+                            return;
+                        }
+                        me.attrs.style.opacity = "" + animCtx.value;
+                    }
+                });
+                return node;
+            }
+            var list = ctx.list;
+            var i;
+            for (i = 0; i < list.length; i++) {
+                list[i].animCtx.live = false;
+            }
+            for (i = 0; i < curNodes.length; i++) {
+                var curNode = curNodes[i];
+                var curKey = curNode.key;
+                var j = 0;
+                for (; j < list.length; j++) {
+                    if (list[j].node.key === curKey) {
+                        list[j].node = build(curNode, ctx, list[j].animCtx);
+                        list[j].animCtx.live = true;
+                        break;
+                    }
+                }
+                if (j === list.length) {
+                    list.push({ node: null, animCtx: { state: 0 /* New */, live: true, lastChange: b.uptime() } });
+                    list[j].node = build(curNode, ctx, list[j].animCtx);
+                }
+            }
+            for (i = 0; i < list.length; i++) {
+                var a = list[i].animCtx;
+                if (a.state === 0 /* New */) {
+                    if (a.live) {
+                        a.state = 2 /* Creating */;
+                    }
+                    else {
+                        a.state = 7 /* Garbage */;
+                    }
+                }
+                else if (a.state === 1 /* WaitingForCreating */ && !a.live) {
+                    a.state = 7 /* Garbage */;
+                }
+                else if (a.state === 3 /* Showing */ && !a.live) {
+                    a.state = 5 /* Hiding */;
+                    a.lastChange = b.uptime();
+                }
+                else if (a.state === 2 /* Creating */) {
+                    a.value = (b.uptime() - a.lastChange) / 3000;
+                    if (a.live) {
+                        if (a.value > 1) {
+                            a.state = 3 /* Showing */;
+                        }
+                    }
+                    else {
+                        a.lastChange = b.uptime() - (1 - a.value) * 3000;
+                        a.state = 5 /* Hiding */;
+                    }
+                }
+                else if (a.state === 4 /* WaitingForHiding */ && a.live) {
+                    a.state = 3 /* Showing */;
+                }
+                else if (a.state === 5 /* Hiding */) {
+                    a.value = 1 - (b.uptime() - a.lastChange) / 3000;
+                    if (a.live) {
+                        a.state = 2 /* Creating */;
+                        a.lastChange = b.uptime() - a.value * 3000;
+                    }
+                    else {
+                        if (a.value < 0) {
+                            a.state = 7 /* Garbage */;
+                        }
+                    }
+                }
+                if (a.state === 7 /* Garbage */) {
+                    list.splice(i, 1);
+                    i--;
+                    continue;
+                }
+                if (!isStableAnimState(a.state)) {
+                    b.invalidate();
+                }
+                if (a.live) {
+                    list[i].nodeClone = b.cloneNode(list[i].node);
+                }
+                else {
+                    list[i].node = b.cloneNode(list[i].nodeClone);
+                }
+            }
+            me.children = list.map(function (item) { return item.node; });
+        }
+    };
+    function relativeTransitionGroup(node) {
+        return { tag: "div", attrs: { style: { position: "relative" } }, children: node, component: transitionGroupComp };
+    }
     var PlanetList = (function () {
         function PlanetList() {
         }
@@ -75,7 +212,7 @@ var InputApp;
                         return h("div", b.link(h("a", planet.name), "planet", { name: planet.name }));
                     })
                 ]),
-                h("td", me.data.activeRouteHandler())
+                h("td", relativeTransitionGroup(me.data.activeRouteHandler()))
             ]), "style", "vertical-align:top");
         };
         return PlanetList;
@@ -119,7 +256,9 @@ var InputApp;
     })();
     b.routes(b.route({ handler: App }, [
         b.route({ name: "planets", data: { planets: planetData }, handler: PlanetList }, [
-            b.route({ name: "planet", url: "/planet/:name", handler: PlanetImage }),
+            b.route({ name: "planet", url: "/planet/:name", handler: PlanetImage, keyBuilder: function (p) {
+                return p["name"];
+            } }),
             b.routeDefault({ handler: SelectPlanet })
         ]),
         b.route({ name: "about", handler: About }),
