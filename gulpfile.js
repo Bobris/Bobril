@@ -130,19 +130,26 @@ gulp.task('calc', ['uglify'], function () {
       return str;
     }	
 	function logInfo(name,tslines,jssize,minsize,gzipsize) {
-	   console.log(padString(12,name)+' '+padString(5,tslines,true)+' '+padString(6,jssize,true)+' '+padString(6,minsize,true)+' '+padString(6,gzipsize,true));
+	    console.log(padString(12,name)+' '+padString(5,tslines,true)+' '+padString(6,jssize,true)+' '+padString(6,minsize,true)+' '+padString(6,gzipsize,true));
     }
 	logInfo('Name','Lines','Orig','Minif','Gzip');
 	var totaltslines=0,totaljssize=0,totalminsize=0,totalgzipsize=0;
 	distList.forEach(function(o) {
-	   totaltslines+=o.tslines;
-	   totaljssize+=o.jssize;
-	   totalminsize+=o.minsize;
-	   totalgzipsize+=o.gzipsize;
-	   logInfo(o.name,o.tslines,o.jssize,o.minsize,o.gzipsize);
+	    totaltslines+=o.tslines;
+	    totaljssize+=o.jssize;
+	    totalminsize+=o.minsize;
+	    totalgzipsize+=o.gzipsize;
+	    logInfo(o.name,o.tslines,o.jssize,o.minsize,o.gzipsize);
 	});
 	logInfo('Total Sum',totaltslines,totaljssize,totalminsize,totalgzipsize);
-	logInfo('Concat','','','',gzipSync(wholebuf).length);
+	var concatgzip = gzipSync(wholebuf).length;
+	logInfo('Concat','','','',concatgzip);
+	var data = {
+        parts: distList.map(function(item) { return { name: item.name, tslines: item.tslines, jssize: item.jssize, minsize: item.minsize, gzipsize: item.gzipsize }; }),
+		total: { tslines: totaltslines, jssize: totaljssize, minsize: totalminsize, gzipsize: totalgzipsize },
+		concatgzipsize: concatgzip
+		};
+	fs.writeFileSync("examples/libsize/data.json",JSON.stringify(data));
 });
 
 gulp.task('default', ['watch']);
