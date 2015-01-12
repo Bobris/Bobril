@@ -149,7 +149,7 @@ gulp.task('calc', ['uglify'], function () {
 		total: { tslines: totaltslines, jssize: totaljssize, minsize: totalminsize, gzipsize: totalgzipsize },
 		concatgzipsize: concatgzip
 		};
-	fs.writeFileSync("examples/libsize/data.json",JSON.stringify(data));
+	fs.writeFileSync("examples/libsize/data.js","var libSizeData="+JSON.stringify(data));
 });
 
 gulp.task('default', ['watch']);
