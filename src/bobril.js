@@ -934,6 +934,8 @@ b = (function (window, document) {
         return node;
     }
     function assign(target, source) {
+        if (target == null)
+            target = {};
         if (source != null)
             for (var propname in source) {
                 if (!source.hasOwnProperty(propname))
