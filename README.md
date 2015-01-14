@@ -10,6 +10,7 @@ Features in core:
 - No additional dependencies
 - Virtual DOM diffing
 - Components remember state in VDom cache
+- Support for partial invalidates for even faster redraws
 - Normalization of Events
 - support for IE8+, Android 4.0+
 - batching of redrawing

@@ -3,12 +3,14 @@
 
 class TestComponent implements IBobrilComponent {
     actions: string = "";
+    contexts: { [name: string]: Object } = {};
 
     init(ctx: Object, me: IBobrilNode): void {
         this.actions += "i:" + me.data.name + ";";
     }
 
     render(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
+        this.contexts[me.data.name] = ctx;
         if (oldMe)
             this.actions += "ru:" + me.data.name + ";";
         else
@@ -162,6 +164,30 @@ describe("livecycle", () => {
         waitsFor(() => done);
     });
 
+    it("smallInvalidateUpdatesOnlyChild", () => {
+        var c = new TestComponent();
+        var state = 0;
+        var done = false;
+        var vdom = [{
+            tag: "div", component: c, data: { name: "1" }, children:
+            {
+                tag: "div", component: c, data: { name: "2", change: true }
+            }
+        }];
+        b.init(() => {
+            setTimeout(() => {
+                c.actions = "";
+                b.invalidate(c.contexts["2"]);
+                setTimeout(() => {
+                    expect(c.actions).toBe("sc:2;ru:2;U:2;pu:2;");
+                    done = true;
+                },100);
+            }, 0);
+            return vdom;
+        });
+        waitsFor(() => done);
+    });
+
     it("canFindDomInVdom"), () => {
         var done = false;
         var uid = 0;
@@ -186,5 +212,6 @@ describe("livecycle", () => {
     it("uptimeAndNowCouldBeCalled", () => {
         b.uptime();
         b.now();
+        b.frame();
     });
 });

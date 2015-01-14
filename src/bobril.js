@@ -800,8 +800,11 @@ b = (function (window, document) {
             }, delay);
         }
     }
+    var ctxInvalidated = "$invalidated";
+    var fullRecreateRequested = false;
     var scheduled = false;
     var uptime = 0;
+    var frame = 0;
     var regEvents = {};
     var registryEvents = {};
     function addEvent(name, priority, callback) {
@@ -851,15 +854,41 @@ b = (function (window, document) {
             addListener(body, eventNames[i]);
         }
     }
+    function selectedUpdate(cache) {
+        for (var i = 0; i < cache.length; i++) {
+            var node = cache[i];
+            if (node.ctx != null && node.ctx[ctxInvalidated] === frame) {
+                cache[i] = updateNode(assign({}, node), node);
+            }
+            else if (isArray(node.children)) {
+                selectedUpdate(node.children);
+            }
+        }
+    }
     function update(time) {
         initEvents();
+        frame++;
         uptime = time;
         scheduled = false;
-        var newChildren = rootFactory();
-        rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
+        if (fullRecreateRequested) {
+            fullRecreateRequested = false;
+            var newChildren = rootFactory();
+            rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
+        }
+        else {
+            selectedUpdate(rootCacheChildren);
+        }
         callPostCallbacks();
     }
-    function scheduleUpdate() {
+    function invalidate(ctx) {
+        if (fullRecreateRequested)
+            return;
+        if (ctx != null) {
+            ctx[ctxInvalidated] = frame + 1;
+        }
+        else {
+            fullRecreateRequested = true;
+        }
         if (scheduled)
             return;
         scheduled = true;
@@ -870,7 +899,7 @@ b = (function (window, document) {
             rootCacheChildren = updateChildren(document.body, [], rootCacheChildren, null);
         }
         rootFactory = factory;
-        scheduleUpdate();
+        invalidate();
     }
     function bubbleEvent(node, name, param) {
         while (node) {
@@ -971,9 +1000,10 @@ b = (function (window, document) {
         isArray: isArray,
         uptime: function () { return uptime; },
         now: now,
+        frame: function () { return frame; },
         assign: assign,
         ieVersion: function () { return document.documentMode; },
-        invalidate: scheduleUpdate,
+        invalidate: invalidate,
         preventDefault: preventDefault,
         vmlNode: function () { return inNamespace = true; },
         vdomPath: vdomPath,
