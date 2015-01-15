@@ -1,3 +1,4 @@
+![Bobril Logo](https://raw.githubusercontent.com/Bobris/Bobril/master/logo.png)
 Bobril
 ======
 
