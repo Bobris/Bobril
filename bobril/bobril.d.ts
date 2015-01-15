@@ -15,14 +15,19 @@ interface IBobrilStatic {
     setSetStyle(callback: (newValue: any) => void): (newValue: any) => void;
     // factory returns string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[]
     init(factory: () => any): void;
+    // Set callback after frame is done, returns previous callback to allow chaining
+    setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
-    invalidate(): void;
+    // you can pass just some ctx of some component and only that instance and its children will be rerendered
+    invalidate(ctx?:Object): void;
     // shim for [].isArray
     isArray(a: any): boolean;
     // time in miliseconds from start
     uptime(): number;
     // shim for Date.now()
     now(): number;
+    // returns actual number of redraws (partial or full)
+    frame(): number;
     // returns IE version 8 - 11, for other browsers returns undefined
     ieVersion(): number;
     // shalows copy all own members from source to target returns target, source could be null, target must be non-null 

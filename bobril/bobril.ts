@@ -792,8 +792,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
+    var ctxInvalidated = "$invalidated";
+    var fullRecreateRequested = false;
     var scheduled = false;
     var uptime = 0;
+    var frame = 0;
 
     var regEvents: { [name: string]: Array<(ev: Event, target: Node, node: IBobrilCacheNode) => boolean> } = {};
     var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean }> } = {};
@@ -847,16 +850,50 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
-    function update(time: number) {
-        initEvents();
-        uptime = time;
-        scheduled = false;
-        var newChildren = rootFactory();
-        rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
-        callPostCallbacks();
+    function selectedUpdate(cache: IBobrilCacheNode[]) {
+        for (var i = 0; i < cache.length; i++) {
+            var node = cache[i];
+            if (node.ctx != null && (<any>node.ctx)[ctxInvalidated] === frame) {
+                cache[i] = updateNode(assign({}, node), node);
+            } else if (isArray(node.children)) {
+                selectedUpdate(node.children);
+            }
+        }
     }
 
-    function scheduleUpdate() {
+    var afterFrameCallback: (root: IBobrilCacheNode[]) => void = () => {};
+
+    function setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void {
+        var res = afterFrameCallback;
+        afterFrameCallback = callback;
+        return res;
+    }
+
+    function update(time: number) {
+        initEvents();
+        frame++;
+        uptime = time;
+        scheduled = false;
+        if (fullRecreateRequested) {
+            fullRecreateRequested = false;
+            var newChildren = rootFactory();
+            rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
+        }
+        else {
+            selectedUpdate(rootCacheChildren);
+        }
+        callPostCallbacks();
+        afterFrameCallback(rootCacheChildren);
+    }
+
+    function invalidate(ctx?: Object) {
+        if (fullRecreateRequested)
+            return;
+        if (ctx != null) {
+            (<any>ctx)[ctxInvalidated] = frame+1;
+        } else {
+            fullRecreateRequested = true;
+        }
         if (scheduled)
             return;
         scheduled = true;
@@ -868,7 +905,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             rootCacheChildren = updateChildren(document.body, <any>[], rootCacheChildren, null);
         }
         rootFactory = factory;
-        scheduleUpdate();
+        invalidate();
     }
 
     function bubbleEvent(node: IBobrilCacheNode, name: string, param: any): boolean {
@@ -935,6 +972,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function assign(target: Object, source: Object): Object {
+        if (target == null) target = {};
         if (source != null) for (var propname in source) {
             if (!source.hasOwnProperty(propname)) continue;
             (<any>target)[propname] = (<any>source)[propname];
@@ -964,12 +1002,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         setSetValue: setSetValue,
         setSetStyle: setSetStyle,
         init: init,
+        setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: () => uptime,
         now: now,
+        frame: () => frame,
         assign: assign,
         ieVersion: () => document.documentMode,
-        invalidate: scheduleUpdate,
+        invalidate: invalidate,
         preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,
         vdomPath: vdomPath,
