@@ -13,6 +13,12 @@ module LibSizeApp {
         return { tag: tag, children: args };
     }
 
+    function hex2(n: number): string {
+        var res = n.toString(16);
+        if (res.length < 2) return "0" + res;
+        return res;
+    }
+
     b.init(() => {
         var media = b.getMedia();
         var screenWidth = media.width;
@@ -21,12 +27,77 @@ module LibSizeApp {
         var pieRadius = pieSize * 0.4;
         var angle = 0;
         var path: any[] = [];
-        for (var i = 0; i < libSizeData.parts.length; i++) {
-            var myangle = 360 * libSizeData.parts[i].jssize / libSizeData.total.jssize;
+        var texts: any[] = [];
+        var count = libSizeData.parts.length;
+        texts.push({
+            tag: "div", attrs: {
+                style: {
+                    position: "absolute",
+                    textAlign: "center",
+                    width: "500px",
+                    fontSize: "20px",
+                    top: Math.round(screenHeight * 0.5 - pieRadius - 35).toString() + "px",
+                    left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
+                }
+            },
+            children: "Bobril Minified Component Size"
+        });
+        texts.push({
+            tag: "div", attrs: {
+                style: {
+                    position: "absolute",
+                    textAlign: "center",
+                    width: "500px",
+                    top: Math.round(screenHeight * 0.5 + pieRadius + 15).toString() + "px",
+                    left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
+                }
+            },
+            children: "Total " + libSizeData.total.minsize.toString()+" bytes"
+        });
+        for (var i = 0; i < count; i++) {
+            var frequency = 6 / count;
+            var red = Math.round(Math.sin(frequency * i + 0) * 127 + 128);
+            var green = Math.round(Math.sin(frequency * i + 2) * 127 + 128);
+            var blue = Math.round(Math.sin(frequency * i + 4) * 127 + 128);
+
+            var myangle = 360 * libSizeData.parts[i].minsize / libSizeData.total.minsize;
             var exangle = angle + myangle * 0.5;
             exangle = exangle / 180 * Math.PI;
-            var expand = i==0? pieRadius * 0.05 : 0;
-            path.push("pie", screenWidth * 0.5 + expand * Math.sin(exangle), screenHeight * 0.5 - expand * Math.cos(exangle), pieRadius, 0, angle, angle + myangle);
+            var expand = i == 0 ? pieRadius * 0.04 : 0;
+            var legendx = screenWidth * 0.4 + pieRadius * 1.2;
+            var legendr = 20;
+            var legenddy = legendr + 5;
+            var legendy = screenHeight * 0.5 - legenddy * count * 0.5;
+            path.push(
+                {
+                    data: {
+                        path: ["pie", screenWidth * 0.4 + expand * Math.sin(exangle), screenHeight * 0.5 - expand * Math.cos(exangle), pieRadius, 0, angle, angle + myangle,
+                            "rect", legendx, legendy + i * legenddy, legendr, legendr], fill: "#" + hex2(red) + hex2(green) + hex2(blue), stroke: "#FFFFFF", strokeWidth: 1
+                    }
+                }
+                );
+            texts.push({
+                tag: "div", attrs: {
+                    style: {
+                        position: "absolute",
+                        top: Math.round(legendy + i * legenddy).toString() + "px",
+                        left: Math.round(legendx + legenddy).toString() + "px"
+                    }
+                },
+                children: libSizeData.parts[i].name
+            });
+            texts.push({
+                tag: "div", attrs: {
+                    style: {
+                        position: "absolute",
+                        textAlign: "right",
+                        width: "60px",
+                        top: Math.round(legendy + i * legenddy).toString() + "px",
+                        left: Math.round(legendx + legenddy + 60).toString() + "px"
+                    }
+                },
+                children: libSizeData.parts[i].minsize.toString()
+            });
             angle += myangle;
         }
         b.invalidate();
@@ -37,10 +108,9 @@ module LibSizeApp {
                 {
                     component: b.vg,
                     data: { width: screenWidth + "px", height: screenHeight + "px" },
-                    children: [
-                        { data: { path: path, fill: "#ff0000", stroke: "#000000", strokeWidth: 2 } }
-                    ]
-                }
+                    children: path
+                },
+                texts
             ]
         };
     });
