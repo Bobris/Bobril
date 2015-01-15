@@ -220,6 +220,25 @@ describe("livecycle", function () {
         });
         waitsFor(function () { return done; });
     };
+    it("afterFrameCallback", function () {
+        var c = new TestComponent();
+        var state = 0;
+        var done = false;
+        expect(b.setAfterFrame(function (root) {
+            expect(root[0].data.name).toBe("1");
+            done = true;
+            b.setAfterFrame(function () {
+            });
+        })).not.toBeNull();
+        b.init(function () {
+            return [{
+                tag: "div",
+                component: c,
+                data: { name: "1" }
+            }];
+        });
+        waitsFor(function () { return done; });
+    });
     it("uptimeAndNowCouldBeCalled", function () {
         b.uptime();
         b.now();

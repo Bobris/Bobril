@@ -861,6 +861,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
+    var afterFrameCallback: (root: IBobrilCacheNode[]) => void = () => {};
+
+    function setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void {
+        var res = afterFrameCallback;
+        afterFrameCallback = callback;
+        return res;
+    }
+
     function update(time: number) {
         initEvents();
         frame++;
@@ -875,6 +883,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             selectedUpdate(rootCacheChildren);
         }
         callPostCallbacks();
+        afterFrameCallback(rootCacheChildren);
     }
 
     function invalidate(ctx?: Object) {
@@ -993,6 +1002,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         setSetValue: setSetValue,
         setSetStyle: setSetStyle,
         init: init,
+        setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: () => uptime,
         now: now,

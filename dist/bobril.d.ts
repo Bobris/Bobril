@@ -15,6 +15,8 @@ interface IBobrilStatic {
     setSetStyle(callback: (newValue: any) => void): (newValue: any) => void;
     // factory returns string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[]
     init(factory: () => any): void;
+    // Set callback after frame is done, returns previous callback to allow chaining
+    setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
     // you can pass just some ctx of some component and only that instance and its children will be rerendered
     invalidate(ctx?:Object): void;

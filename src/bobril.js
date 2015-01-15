@@ -865,6 +865,13 @@ b = (function (window, document) {
             }
         }
     }
+    var afterFrameCallback = function () {
+    };
+    function setAfterFrame(callback) {
+        var res = afterFrameCallback;
+        afterFrameCallback = callback;
+        return res;
+    }
     function update(time) {
         initEvents();
         frame++;
@@ -879,6 +886,7 @@ b = (function (window, document) {
             selectedUpdate(rootCacheChildren);
         }
         callPostCallbacks();
+        afterFrameCallback(rootCacheChildren);
     }
     function invalidate(ctx) {
         if (fullRecreateRequested)
@@ -997,6 +1005,7 @@ b = (function (window, document) {
         setSetValue: setSetValue,
         setSetStyle: setSetStyle,
         init: init,
+        setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: function () { return uptime; },
         now: now,

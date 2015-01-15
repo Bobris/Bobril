@@ -74,7 +74,7 @@ describe("livecycle", () => {
 
     it("updateStringToComponetShouldWork", () => {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "", children:"a" }, null);
+        var r = b.createNode({ tag: "", children: "a" }, null);
         b.callPostCallbacks();
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
         b.callPostCallbacks();
@@ -137,7 +137,7 @@ describe("livecycle", () => {
         b.init(() => {
             setTimeout(() => {
                 expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
-                done=true;
+                done = true;
             }, 0);
             return { tag: "div", component: c, data: { name: "1" } }
         });
@@ -181,7 +181,7 @@ describe("livecycle", () => {
                 setTimeout(() => {
                     expect(c.actions).toBe("sc:2;ru:2;U:2;pu:2;");
                     done = true;
-                },100);
+                }, 100);
             }, 0);
             return vdom;
         });
@@ -192,7 +192,7 @@ describe("livecycle", () => {
         var done = false;
         var uid = 0;
         function d(...params: any[]) {
-            return { tag: "div", attrs: { id: "bobriltest"+(uid++) }, children: params };
+            return { tag: "div", attrs: { id: "bobriltest" + (uid++) }, children: params };
         }
 
         b.init(() => {
@@ -204,10 +204,27 @@ describe("livecycle", () => {
                 }
                 done = true;
             }, 0);
-            return [d(d(),d(),d(d(),d())),d(),d(d(d(d())))];
-        });    
+            return [d(d(), d(), d(d(), d())), d(), d(d(d(d())))];
+        });
         waitsFor(() => done);
     }
+
+    it("afterFrameCallback", () => {
+        var c = new TestComponent();
+        var state = 0;
+        var done = false;
+        expect(b.setAfterFrame((root) => {
+            expect(root[0].data.name).toBe("1");
+            done = true;
+            b.setAfterFrame(() => { });
+        })).not.toBeNull();
+        b.init(() => {
+            return [{
+                tag: "div", component: c, data: { name: "1" }
+            }];
+        });
+        waitsFor(() => done);
+    });
 
     it("uptimeAndNowCouldBeCalled", () => {
         b.uptime();
