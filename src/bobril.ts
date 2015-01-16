@@ -420,6 +420,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     }
                     if (c.attrs)
                         c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
+                    c.data = n.data;
                     inNamespace = backupInNamespace;
                     inSvg = backupInSvg;
                     pushInitCallback(c, true);
