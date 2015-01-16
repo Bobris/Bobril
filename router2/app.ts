@@ -87,7 +87,7 @@ module InputApp {
             ctx.list = <any>[];
         },
         render(ctx: any, me: IBobrilNode, oldMe: IBobrilCacheNode): void {
-            var curNodes = me.children;
+            var curNodes = <IBobrilNode[]>me.children;
             if (curNodes == null) curNodes = <IBobrilNode[]>[];
             else if (!b.isArray(curNodes)) curNodes = [curNodes];
             function build(node: IBobrilNode, rootCtx: any, animCtx: any) {

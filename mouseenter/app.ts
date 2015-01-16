@@ -50,7 +50,7 @@ module MouseEnterLeaveApp {
             };
 
             if (ctx.data.trackInner)
-                me.children.component = TrackInnerEvents;
+                (<IBobrilNode>me.children).component = TrackInnerEvents;
         }
 
        static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {

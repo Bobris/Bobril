@@ -226,8 +226,7 @@ b = (function (window, document) {
         if (!ch)
             return;
         if (!isArray(ch)) {
-            var type = typeof ch;
-            if (type === "string") {
+            if (typeof ch === "string") {
                 if (hasTextContent) {
                     element.textContent = ch;
                 }
@@ -427,6 +426,7 @@ b = (function (window, document) {
                     }
                     if (c.attrs)
                         c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
+                    c.data = n.data;
                     inNamespace = backupInNamespace;
                     inSvg = backupInSvg;
                     pushInitCallback(c, true);
