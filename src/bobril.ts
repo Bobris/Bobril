@@ -186,7 +186,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
         }
         if (n.tag === "") {
-            c.element = createTextNode(c.children);
+            c.element = createTextNode(<string>c.children);
             return c;
         } else if (n.tag === "/") {
             return c;
@@ -203,7 +203,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 component.postRender(c.ctx, n);
             }
         }
-        c.attrs = updateElement(c, c.element, c.attrs, {});
+        c.attrs = updateElement(c, <HTMLElement>c.element, c.attrs, {});
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
         pushInitCallback(c, false);
@@ -222,12 +222,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     function createChildren(c: IBobrilCacheNode): void {
         var ch = c.children;
-        var element = c.element;
+        var element = <HTMLElement>c.element;
         if (!ch)
             return;
         if (!isArray(ch)) {
-            var type = typeof ch;
-            if (type === "string") {
+            if (typeof ch === "string") {
                 if (hasTextContent) {
                     element.textContent = ch;
                 } else {
@@ -237,37 +236,37 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
             ch = [ch];
         }
-        ch = ch.slice(0);
-        var i = 0, l = ch.length;
+        ch = (<IBobrilNode[]>ch).slice(0);
+        var i = 0, l = (<IBobrilNode[]>ch).length;
         while (i < l) {
-            var item = ch[i];
+            var item = (<IBobrilNode[]>ch)[i];
             if (isArray(item)) {
-                ch.splice.apply(ch, [i, 1].concat(item));
-                l = ch.length;
+                (<IBobrilNode[]>ch).splice.apply(ch, (<any>[i, 1]).concat(item));
+                l = (<IBobrilNode[]>ch).length;
                 continue;
             }
             item = normalizeNode(item);
             if (item == null) {
-                ch.splice(i, 1);
+                (<IBobrilNode[]>ch).splice(i, 1);
                 l--;
                 continue;
             }
-            var j = ch[i] = createNode(item, c);
+            var j = (<IBobrilNode[]>ch)[i] = createNode(item, c);
             if (j.tag === "/") {
                 var before = element.lastChild;
-                c.element.insertAdjacentHTML("beforeend", j.children);
-                j.element = <any>[];
+                (<HTMLElement>c.element).insertAdjacentHTML("beforeend", <string>j.children);
+                j.element = <Node[]>[];
                 if (before) {
                     before = before.nextSibling;
                 } else {
                     before = element.firstChild;
                 }
                 while (before) {
-                    j.element.push(before);
+                    (<Node[]>j.element).push(before);
                     before = before.nextSibling;
                 }
             } else {
-                element.appendChild(j.element);
+                element.appendChild(<Node>j.element);
             }
             i++;
         }
@@ -277,14 +276,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function destroyNode(c: IBobrilCacheNode) {
         var ch = c.children;
         if (isArray(ch)) {
-            for (var i = 0, l = ch.length; i < l; i++) {
-                destroyNode(ch[i]);
+            for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
+                destroyNode((<IBobrilCacheNode[]>ch)[i]);
             }
         }
         var component = c.component;
         if (component) {
             if (component.destroy)
-                component.destroy(c.ctx, c, c.element);
+                component.destroy(c.ctx, c, <HTMLElement>c.element);
         }
     }
 
@@ -293,15 +292,15 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var el = c.element;
         c.parent = null;
         if (isArray(el)) {
-            var pa = el[0].parentNode;
+            var pa = (<Node[]>el)[0].parentNode;
             if (pa) {
-                for (var i = 0; i < el.length; i++) {
-                    pa.removeChild(el[i]);
+                for (var i = 0; i < (<Node[]>el).length; i++) {
+                    pa.removeChild((<Node[]>el)[i]);
                 }
             }
         } else {
-            var p = el.parentNode;
-            if (p) p.removeChild(el);
+            var p = (<Node>el).parentNode;
+            if (p) p.removeChild(<Node>el);
         }
     }
 
@@ -325,7 +324,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 var bn = currentCacheArray[i];
                 if (bn.element === currentNode) {
                     res.push(bn);
-                    currentCacheArray = bn.children;
+                    currentCacheArray = <IBobrilCacheNode[]>bn.children;
                     currentNode = null;
                     break;
                 }
@@ -419,7 +418,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                         }
                     }
                     if (c.attrs)
-                        c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
+                        c.attrs = updateElement(c, <HTMLElement>c.element, n.attrs, c.attrs);
                     c.data = n.data;
                     inNamespace = backupInNamespace;
                     inSvg = backupInSvg;
@@ -431,9 +430,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
         }
         var r = createNode(n, c.parent);
-        var pn = c.element.parentNode;
+        var pn = (<Node>c.element).parentNode;
         if (pn) {
-            pn.insertBefore(r.element, c.element);
+            pn.insertBefore(<Node>r.element, <Node>c.element);
         }
         removeNode(c);
         return r;
@@ -444,9 +443,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         for (var i = 0; i < count; i++) {
             var n = updateInstance[i];
             if (updateCall[i]) {
-                n.component.postUpdateDom(n.ctx, n, n.element);
+                n.component.postUpdateDom(n.ctx, n, <HTMLElement>n.element);
             } else {
-                n.component.postInitDom(n.ctx, n, n.element);
+                n.component.postInitDom(n.ctx, n, <HTMLElement>n.element);
             }
         }
         updateCall = [];
@@ -767,7 +766,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function updateChildrenNode(n: IBobrilNode, c: IBobrilCacheNode): void {
-        c.children = updateChildren(c.element, n.children, c.children, c);
+        c.children = updateChildren(<HTMLElement>c.element, n.children, c.children, c);
     }
 
     var hasNativeRaf = false;
@@ -857,7 +856,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (node.ctx != null && (<any>node.ctx)[ctxInvalidated] === frame) {
                 cache[i] = updateNode(assign({}, node), node);
             } else if (isArray(node.children)) {
-                selectedUpdate(node.children);
+                selectedUpdate(<IBobrilCacheNode[]>node.children);
             }
         }
     }

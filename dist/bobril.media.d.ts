@@ -1,9 +1,15 @@
+declare const enum BobrilDeviceCategory {
+    Mobile = 0,
+    Tablet = 1,
+    Desktop = 2,
+    LargeDesktop = 3
+}
+
 interface IBobrilMedia {
 	width: number;
 	height: number;
 	orientation: number;
-	// 0-mobile 1-tablet 2-desktop 3-large desktop
-	deviceCategory: number;
+	deviceCategory: BobrilDeviceCategory;
 	portrait: boolean;
 }
 

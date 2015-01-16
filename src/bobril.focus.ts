@@ -80,8 +80,8 @@
     function focus(node: IBobrilNode): void {
         if (node == null) return;
         var el = (<IBobrilCacheNode>node).element;
-        if (b.isArray(el)) el = el[0];
-        el.focus();
+        if (b.isArray(el)) el = (<Node[]>el)[0];
+        (<HTMLElement>el).focus();
         emitOnFocusChange();
     }
 

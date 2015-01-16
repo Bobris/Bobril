@@ -226,8 +226,7 @@ b = (function (window, document) {
         if (!ch)
             return;
         if (!isArray(ch)) {
-            var type = typeof ch;
-            if (type === "string") {
+            if (typeof ch === "string") {
                 if (hasTextContent) {
                     element.textContent = ch;
                 }

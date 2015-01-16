@@ -1,20 +1,23 @@
 declare var b: IBobrilStatic;
 
+declare type IBobrilChild = boolean|string|IBobrilNode;
+declare type IBobrilChildren = IBobrilChild|IBobrilChild[];
+
 interface IBobrilStatic {
     // Low level method used just for testing
     createNode(n: IBobrilNode, parentNode: IBobrilNode): IBobrilCacheNode;
     // Low level method used just for testing
     updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
     // Low level method used just for testing
-    updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any, parentNode: IBobrilNode): Array<IBobrilCacheNode>;
+    updateChildren(element: HTMLElement, newChildren: IBobrilChildren, cachedChildren: IBobrilChildren, parentNode: IBobrilNode): IBobrilCacheNode[];
     // Low level method used just for testing
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
     setSetValue(callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
     // Set update DOM attribute style callback by object, returns previous callback to allow chaining
     setSetStyle(callback: (newValue: any) => void): (newValue: any) => void;
-    // factory returns string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[]
-    init(factory: () => any): void;
+    // main function to specify factory function to update html body
+    init(factory: () => IBobrilChildren): void;
     // Set callback after frame is done, returns previous callback to allow chaining
     setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
@@ -56,8 +59,7 @@ interface IBobrilAttributes {
     href?: string;
     className?: string;
     style?: any;
-    // boolean | string
-    value?: any;
+    value?: boolean|string|string[];
     [name: string]: any;
 }
 
@@ -88,17 +90,15 @@ interface IBobrilNode {
     tag?: string;
     key?: string;
     attrs?: IBobrilAttributes;
-    /** string|boolean|IBobrilNode|(string|boolean|IBobrilNode)[] */
-    children?: any;
+    children?: IBobrilChildren;
     component?: IBobrilComponent;
     // Bobril does not touch this, it is completely for user passing custom data to component
-    // It is very similar to props in ReactJs
+    // It is very similar to props in ReactJs, it must be immutable
     data?: any;
 }
 
 interface IBobrilCacheNode extends IBobrilNode {
-    /** HTMLNode | HTMLNode[] */
-    element?: any;
+    element?: Node|Node[];
     parent?: IBobrilNode;
     ctx?: Object;
 }
