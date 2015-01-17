@@ -30,6 +30,7 @@ Features in extensions:
 - Scroll notification
 
 All extensions + core gziped are under 12kb
+Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:
 
@@ -38,6 +39,21 @@ Longer term extensions:
 - Prevent exit
 - Ajax
 
-Uses Karma, Jasmine, Coverage for testing
+Uses NodeJs, NPM, TypeScript 1.4, Karma, Jasmine, Coverage
 
 MIT Licensed
+
+
+How to develop
+--------------
+
+Use `npm up` to download all needed node modules.
+
+For TypeScript compilation you can use Visual Studio (even free version is perfect)
+On other platforms you can use `gulp ts`.
+
+Start `gulp` for minification and generating statistic for LibSize example.
+
+`gulp pages` upload examples to GitHub pages.
+
+If you want to work on something create bug with description, so work is not duplicated.
