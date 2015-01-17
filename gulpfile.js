@@ -152,4 +152,19 @@ gulp.task('calc', ['uglify'], function () {
 	fs.writeFileSync("examples/libsize/data.js","var libSizeData="+JSON.stringify(data));
 });
 
+
+var alltsfilesToWatch = ['./src/**.ts','./examples/**.ts','./test/**.ts'];
+var alltsfilesToCompile = alltsfilesToWatch.concat(['!./src/**.d.ts','!./examples/**.d.ts','!./test/**.d.ts']);
+
+gulp.task('ts', function () {
+    gulp.watch(alltsfilesToWatch, ['compilets']);
+});
+
+gulp.task('compilets', function () {
+    var typescript = require('gulp-tsc');
+    return gulp.src(alltsfilesToCompile)
+        .pipe(typescript({ tscSearch:["bundle"], noImplicitAny:true, sourcemap:true, emitError: false }))
+        .pipe(gulp.dest('.'));
+});
+
 gulp.task('default', ['watch']);

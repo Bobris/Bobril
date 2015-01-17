@@ -14,7 +14,7 @@
         var coord = getCoordinates(ev);
         return {
             x: coord.x,
-            y: coord.y,
+            y: coord.y
         };
     }
     // The total distance in any direction before we make the call on swipe vs. scroll.

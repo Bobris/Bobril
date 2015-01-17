@@ -24,6 +24,7 @@
     "gulp-if": "^1.2.5",
     "rimraf": "^2.2.8",
     "graceful-fs": "^3.0.5",
-    "browserify-zlib": "^0.1.4"
+    "browserify-zlib": "^0.1.4",
+    "gulp-tsc": "^0.9.2"
   }
 }

@@ -7,7 +7,7 @@
             ctrl: ev.ctrlKey,
             alt: ev.altKey,
             meta: ev.metaKey || false,
-            which: ev.which || ev.keyCode,
+            which: ev.which || ev.keyCode
         };
     }
     var preventDefault = b.preventDefault;
