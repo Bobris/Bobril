@@ -29,7 +29,7 @@
             var o = window.orientation;
             var p = h >= w;
             if (o == null)
-                o = p ? 0 : 90;
+                o = (p ? 0 : 90);
             var device = 0;
             while (w > breaks[+!p][device])
                 device++;

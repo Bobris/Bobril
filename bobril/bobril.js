@@ -128,7 +128,9 @@ b = (function (window, document) {
                             if (oldAttr)
                                 el.style.cssText = "";
                             for (rule in newAttr) {
-                                el.style[rule] = newAttr[rule];
+                                var v = newAttr[rule];
+                                if (v !== undefined)
+                                    el.style[rule] = v;
                             }
                         }
                     }

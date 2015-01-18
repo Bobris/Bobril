@@ -2,17 +2,35 @@
 
 ((b: IBobrilStatic) => {
     var chain = b.setSetStyle(styleShim);
-    var vendors = ["webkit", "moz", "ms", "o"];
+    var vendors = ["webkit", "Moz", "ms", "o"];
     var testingDivStyle: any = document.createElement("div").style;
     var mapping: any = {};
     if (b.ieVersion() === 8) {
         mapping.cssFloat = "styleFloat";
+        function addFilter(s: any, v: string) {
+            if (s.zoom == null) s.zoom = "1";
+            var f = s.filter;
+            s.filter = (f == null) ? v : f + " " + v;
+        }
         mapping.opacity = (s: any, v: any) => {
-            if (+v === v) {
-                s.zoom = s.zoom || "1";
-                s.opacity = undefined;
-                s.filter = (s.filter || "") + " alpha(opacity=" + (((<number>v) * 100) | 0) + ")";
-            }
+            s.opacity = undefined;
+            if (v === "") return; 
+            v = parseFloat(v);
+            addFilter(s, "alpha(opacity=" + (((<number>v) * 100) | 0) + ")");
+        }
+        function hex2(n: number):string {
+            if (n <= 0) return "00"; else if (n >= 255) return "ff";
+            var r = Math.round(n).toString(16);
+            if (r.length < 2) return "0" + r;
+            return r;
+        }
+        var rergba = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
+        mapping.background = (s: any, v: any) => {
+            var match = rergba.exec(v);
+            if (match == null) return;
+            var colorstr = hex2(parseFloat(match[4]) * 255) + hex2(parseFloat(match[1])) + hex2(parseFloat(match[2])) + hex2(parseFloat(match[3]));
+            s.background = "none";
+            addFilter(s, "progid:DXImageTransform.Microsoft.gradient(startColorstr=#" + colorstr + ",endColorstr=#" + colorstr + ")");
         }
         var deg2radians = Math.PI * 2 / 360;
         mapping.transform = (s: any, v: any) => {
@@ -43,7 +61,7 @@
             trans(0, origHeight);
             trans(origWidth, 0);
             trans(origWidth, origHeight);
-            s.filter = (s.filter || "") + " progid:DXImageTransform.Microsoft.Matrix(M11=" + m11 + ",M12=" + m12 + ",M21=" + m21 + ",M22=" + m22 + ",sizingMethod='auto expand')";
+            addFilter(s, "progid:DXImageTransform.Microsoft.Matrix(M11=" + m11 + ",M12=" + m12 + ",M21=" + m21 + ",M22=" + m22 + ",sizingMethod='auto expand')");
             s.left = Math.round((origWidth - (maxX - minX)) * 0.5) + "px";
             s.top = Math.round((origHeight - (maxY - minY)) * 0.5) + "px";
         }
