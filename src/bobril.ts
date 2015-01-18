@@ -137,7 +137,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                             if (oldAttr)
                                 el.style.cssText = "";
                             for (rule in newAttr) {
-                                el.style[<any>rule] = newAttr[rule];
+                                var v = newAttr[rule];
+                                if (v !== undefined)
+                                    el.style[<any>rule] = v;
                             }
                         }
                     } else {
