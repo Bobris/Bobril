@@ -25,6 +25,6 @@ HTML | Bobril
 `<h1 class="head">&lt;</h1>` | `{ tag:"h1", attrs: { className:"head" }, children:"<" }`
 `style="float:left"` | `style: { cssFloat:"left" }`
 `<div><br></div>` | `{ tag:"div", children: { tag:"br" } }`
-`<div><span>A</span>B</div>` | `{ tag:"div", children: [ { tag:"span", children:
+`<div><span>A</span>B</div>` | `{ tag:"div", children: [ { tag:"span", children: "A" }, "B" ] }`
 
 Note: Example with `cssFloat` does not work on IE8 without `bobril.styleshim` extension.
