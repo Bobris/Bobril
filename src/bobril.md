@@ -17,7 +17,7 @@ Virtual Dom
 Very basic examples how to build it by pure JS objects. Of course nothing prevents you to create your own helper functions to shorten code to less than original HTML.
 
 HTML | Bobril
------+-------
+---- | ------
 `<div></div>` | `{ tag:"div" }`
 `<span>Hello</span>` | `{ tag:"span", children:"Hello" }`
 `<a href="url">Ex</a>` | `{ tag:"a", attrs: { href:"url" }, children:"Ex" }`
