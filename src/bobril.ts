@@ -471,7 +471,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         if (cachedChildren == null) cachedChildren = <any>[];
         if (!isArray(cachedChildren)) {
-            element.removeChild(element.firstChild);
+            if (element.firstChild) element.removeChild(element.firstChild);
             cachedChildren = <any>[];
         }
         newChildren = newChildren.slice(0);

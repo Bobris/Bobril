@@ -481,7 +481,8 @@ b = (function (window, document) {
         if (cachedChildren == null)
             cachedChildren = [];
         if (!isArray(cachedChildren)) {
-            element.removeChild(element.firstChild);
+            if (element.firstChild)
+                element.removeChild(element.firstChild);
             cachedChildren = [];
         }
         newChildren = newChildren.slice(0);
