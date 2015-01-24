@@ -40,7 +40,57 @@ class CoordList {
     }
 }
 
+class MouseOwner {
+    ctx: any;
+    component: IBobrilComponent;
+    invoking: boolean;
+
+    isMouseOwner(ctx: any): boolean {
+        return this.ctx === ctx;
+    }
+
+    isMouseOwnerEvent(): boolean {
+        return this.invoking;
+    }
+
+    registerMouseOwner(ctx: any, component: IBobrilComponent): void {
+        this.ctx = ctx;
+        this.component = component;
+    }
+
+    reregisterMouseOwner(ctx: any, me: IBobrilNode): void {
+        if (this.isMouseOwner(ctx)) {
+            this.component = me.component;
+        }
+    }
+
+    releaseMouseOwner(): void {
+        this.ctx = null;
+        this.component = null;
+    }
+
+    private hasMouseOwner(): boolean {
+        return !!this.ctx;
+    }
+
+    invoke(handlerName: string, param: any): boolean {
+        if (!this.hasMouseOwner()) {
+            return false;
+        }
+
+        var handler = this.component[handlerName];
+        if (!handler) { // no handler available
+            return false;
+        }
+        this.invoking = true;
+        var stop = handler(this.ctx, param);
+        this.invoking = false;
+        return stop;
+    }
+}
+
 ((b: IBobrilStatic) => {
+    var mouseOwner = new MouseOwner();
     var preventDefault = b.preventDefault;
     var now = b.now;
     var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
@@ -203,9 +253,14 @@ class CoordList {
 
     function createHandler(handlerName: string) {
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
+            var param: IMouseEvent = buildParam(ev);
+            if (mouseOwner.invoke(handlerName, param)) {
+                return true;
+            }
+
             if (!node)
                 return false;
-            var param: IMouseEvent = buildParam(ev);
+
             if (b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
             }
@@ -315,4 +370,10 @@ class CoordList {
     addEvent("touchcancel", 500, tapCanceled);
     addEvent("touchend", 500, handleTouchEnd);
     addEvent("touchmove", 500, tapCanceled);
+
+    b.registerMouseOwner = (ctx: any, component: IBobrilComponent) => mouseOwner.registerMouseOwner(ctx, component);
+    b.reregisterMouseOwner = (ctx: any, me: IBobrilNode) => mouseOwner.reregisterMouseOwner(ctx, me);  // kvuli postenhance!!!! nebo modifikatorum
+    b.isMouseOwner = (ctx: any) => mouseOwner.isMouseOwner(ctx);
+    b.isMouseOwnerEvent = () => mouseOwner.isMouseOwnerEvent();
+    b.releaseMouseOwner = () => mouseOwner.releaseMouseOwner();
 })(b);

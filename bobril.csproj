@@ -66,6 +66,7 @@
     <Content Include="examples\libsize\index.html" />
     <Content Include="examples\media\index.html" />
     <Content Include="examples\mouseenter\index.html" />
+    <Content Include="examples\mouseOwner\index.html" />
     <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
     <Content Include="examples\opacity\index.html" />
@@ -86,6 +87,7 @@
     <TypeScriptCompile Include="examples\libsize\app.ts" />
     <TypeScriptCompile Include="examples\media\app.ts" />
     <TypeScriptCompile Include="examples\mouseenter\app.ts" />
+    <TypeScriptCompile Include="examples\mouseOwner\app.ts" />
     <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
     <TypeScriptCompile Include="examples\opacity\app.ts" />

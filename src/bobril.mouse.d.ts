@@ -1,4 +1,6 @@
-﻿interface ICoords {
+﻿/// <reference path="../src/bobril.d.ts"/>
+
+interface ICoords {
     x: number;
     y: number;
 }
@@ -17,4 +19,13 @@ interface IBobrilComponent {
     onMouseEnter? (ctx: Object, event: IMouseEvent): void;
     onMouseLeave? (ctx: Object, event: IMouseEvent): void;
     onMouseMove? (ctx: Object, event: IMouseEvent): boolean;
-} 
+}
+
+interface IBobrilStatic {
+    isMouseOwner(ctx: any): boolean;
+    isMouseOwnerEvent(): boolean;
+    registerMouseOwner(ctx: any, component: IBobrilComponent): void;
+    // need to be called in each render
+    reregisterMouseOwner(ctx: any, me: IBobrilNode): void;
+    releaseMouseOwner(): void;
+}
