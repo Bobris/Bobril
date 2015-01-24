@@ -83,7 +83,6 @@ interface IBobrilComponent {
     postUpdateDom? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
     // called just before removing node from dom
     destroy? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
-    [name: string]: any;
 }
 
 // new node should atleast have tag or component member

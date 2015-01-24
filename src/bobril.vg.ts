@@ -171,7 +171,7 @@
         me.attrs = attrs;
     }
 
-    var svgChildComponent = {
+    var svgChildComponent:IBobrilComponent = {
         render: svgChildComponentInit
     };
 
@@ -181,7 +181,7 @@
         recSetComponent(me.children, svgChildComponent);
     }
 
-    var svgComponent = {
+    var svgComponent:IBobrilComponent = {
         render: svgComponentInit
     }
 
@@ -242,7 +242,7 @@
         me.children = s;
     }
 
-    var vmlChildComponent = {
+    var vmlChildComponent:IBobrilComponent = {
         render: vmlChildComponentInit
     }
 
@@ -253,7 +253,7 @@
         b.vmlNode();
     }
 
-    var vmlComponent = {
+    var vmlComponent:IBobrilComponent = {
         render: vmlComponentInit
     }
     var defaultvml = "#default#VML";

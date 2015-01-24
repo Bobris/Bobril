@@ -179,7 +179,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var backupInSvg = inSvg;
         var component = c.component;
         if (component) {
-            c.ctx = { data: c.data || {} };
+            c.ctx = { data: c.data || {}, me: c };
             if (component.init) {
                 component.init(c.ctx, n);
             }
@@ -243,7 +243,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         while (i < l) {
             var item = (<IBobrilNode[]>ch)[i];
             if (isArray(item)) {
-                (<IBobrilNode[]>ch).splice.apply(ch, (<any>[i, 1]).concat(item));
+                (<IBobrilNode[]>ch).splice.apply(ch,(<any>[i, 1]).concat(item));
                 l = (<IBobrilNode[]>ch).length;
                 continue;
             }
@@ -856,14 +856,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         for (var i = 0; i < cache.length; i++) {
             var node = cache[i];
             if (node.ctx != null && (<any>node.ctx)[ctxInvalidated] === frame) {
-                cache[i] = updateNode(assign({}, node), node);
+                cache[i] = updateNode(cloneNode(node), node);
             } else if (isArray(node.children)) {
                 selectedUpdate(<IBobrilCacheNode[]>node.children);
             }
         }
     }
 
-    var afterFrameCallback: (root: IBobrilCacheNode[]) => void = () => {};
+    var afterFrameCallback: (root: IBobrilCacheNode[]) => void = () => { };
 
     function setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void {
         var res = afterFrameCallback;
@@ -892,7 +892,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (fullRecreateRequested)
             return;
         if (ctx != null) {
-            (<any>ctx)[ctxInvalidated] = frame+1;
+            (<any>ctx)[ctxInvalidated] = frame + 1;
         } else {
             fullRecreateRequested = true;
         }
@@ -987,11 +987,32 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (pd) pd.call(event); else (<any>event).returnValue = false;
     }
 
+    function cloneNodeArray(a: IBobrilChild[]): IBobrilChild[] {
+        a = a.slice(0);
+        for (var i = 0; i < a.length; i++) {
+            var n = a[i];
+            if (isArray(n)) {
+                a[i] = cloneNodeArray(<IBobrilChild[]>n);
+            } else if (typeof n === "object") {
+                a[i] = cloneNode(n);
+            }
+        }
+        return a;
+    }
+
     function cloneNode(node: IBobrilNode): IBobrilNode {
         var r = <IBobrilNode>b.assign({}, node);
         if (r.attrs) {
             r.attrs = <IBobrilAttributes>b.assign({}, r.attrs);
             if (r.attrs.style) r.attrs.style = <any>b.assign({}, r.attrs.style);
+        }
+        var ch = r.children;
+        if (ch) {
+            if (isArray(ch)) {
+                r.children = cloneNodeArray(<IBobrilChild[]>ch);
+            } else if (typeof ch === "object") {
+                r.children = cloneNode(ch);
+            }
         }
         return r;
     }

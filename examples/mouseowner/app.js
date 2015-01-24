@@ -7,55 +7,37 @@ var MouseOwnerApp;
             ctx.backColor = "#f0f0f0";
         },
         render: function (ctx, me, oldMe) {
-            b.reregisterMouseOwner(ctx, me);
             me.attrs.style.backgroundColor = ctx.backColor;
         },
         onMouseDown: function (ctx, event) {
             ctx.backColor = "red";
-            ctx.clickInProgress = true;
-            b.invalidate();
+            b.registerMouseOwner(ctx);
+            b.invalidate(ctx);
             return true;
         },
         onMouseUp: function (ctx, event) {
             ctx.backColor = "#f0f0f0";
-            ctx.clickInProgress = false;
             if (b.isMouseOwner(ctx)) {
                 b.releaseMouseOwner();
             }
-            b.invalidate();
+            b.invalidate(ctx);
             return true;
-        },
-        onMouseEnter: function (ctx, event) {
-            if (b.isMouseOwner(ctx)) {
-                b.releaseMouseOwner();
-            }
-        },
-        onMouseLeave: function (ctx, event) {
-            if (ctx.clickInProgress) {
-                b.registerMouseOwner(ctx, this);
-            }
-        },
+        }
     };
+    function twice(obj) {
+        return [obj, b.cloneNode(obj)];
+    }
     b.init(function () {
-        return [{
+        return twice({
             tag: "div",
             attrs: { style: { height: "500px", width: "500px", border: "solid 1px", position: "relative", cssFloat: "left" } },
             children: {
                 tag: "div",
                 component: button,
-                attrs: { style: { width: "120px", height: "20px", position: "absolute", left: "190px", top: "240px" } },
+                attrs: { style: { width: "120px", height: "20px", position: "absolute", border: "1px solid #000", left: "190px", top: "240px" } },
                 children: "Click and drag out"
             }
-        }, {
-            tag: "div",
-            attrs: { style: { height: "500px", width: "500px", border: "solid 1px", position: "relative", cssFloat: "left" } },
-            children: {
-                tag: "div",
-                component: button,
-                attrs: { style: { width: "120px", height: "20px", position: "absolute", left: "190px", top: "240px" } },
-                children: "Click and drag out"
-            }
-        }];
+        });
     });
 })(MouseOwnerApp || (MouseOwnerApp = {}));
 //# sourceMappingURL=app.js.map

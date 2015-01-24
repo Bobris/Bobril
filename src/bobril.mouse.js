@@ -40,48 +40,34 @@ var CoordList = (function () {
     };
     return CoordList;
 })();
-var MouseOwner = (function () {
-    function MouseOwner() {
+(function (b) {
+    var ownerCtx = null;
+    var invokingOwner;
+    function isMouseOwner(ctx) {
+        return ownerCtx === ctx;
     }
-    MouseOwner.prototype.isMouseOwner = function (ctx) {
-        return this.ctx === ctx;
-    };
-    MouseOwner.prototype.isMouseOwnerEvent = function () {
-        return this.invoking;
-    };
-    MouseOwner.prototype.registerMouseOwner = function (ctx, component) {
-        this.ctx = ctx;
-        this.component = component;
-    };
-    MouseOwner.prototype.reregisterMouseOwner = function (ctx, me) {
-        if (this.isMouseOwner(ctx)) {
-            this.component = me.component;
-        }
-    };
-    MouseOwner.prototype.releaseMouseOwner = function () {
-        this.ctx = null;
-        this.component = null;
-    };
-    MouseOwner.prototype.hasMouseOwner = function () {
-        return !!this.ctx;
-    };
-    MouseOwner.prototype.invoke = function (handlerName, param) {
-        if (!this.hasMouseOwner()) {
+    function isMouseOwnerEvent() {
+        return invokingOwner;
+    }
+    function registerMouseOwner(ctx) {
+        ownerCtx = ctx;
+    }
+    function releaseMouseOwner() {
+        ownerCtx = null;
+    }
+    function invokeMouseOwner(handlerName, param) {
+        if (ownerCtx == null) {
             return false;
         }
-        var handler = this.component[handlerName];
+        var handler = ownerCtx.me.component[handlerName];
         if (!handler) {
             return false;
         }
-        this.invoking = true;
-        var stop = handler(this.ctx, param);
-        this.invoking = false;
+        invokingOwner = true;
+        var stop = handler(ownerCtx, param);
+        invokingOwner = false;
         return stop;
-    };
-    return MouseOwner;
-})();
-(function (b) {
-    var mouseOwner = new MouseOwner();
+    }
     var preventDefault = b.preventDefault;
     var now = b.now;
     var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
@@ -214,7 +200,7 @@ var MouseOwner = (function () {
     function createHandler(handlerName) {
         return function (ev, target, node) {
             var param = buildParam(ev);
-            if (mouseOwner.invoke(handlerName, param)) {
+            if (invokeMouseOwner(handlerName, param)) {
                 return true;
             }
             if (!node)
@@ -326,9 +312,9 @@ var MouseOwner = (function () {
     addEvent("touchcancel", 500, tapCanceled);
     addEvent("touchend", 500, handleTouchEnd);
     addEvent("touchmove", 500, tapCanceled);
-    b.registerMouseOwner = function (ctx, component) { return mouseOwner.registerMouseOwner(ctx, component); };
-    b.reregisterMouseOwner = function (ctx, me) { return mouseOwner.reregisterMouseOwner(ctx, me); }; // kvuli postenhance!!!! nebo modifikatorum
-    b.isMouseOwner = function (ctx) { return mouseOwner.isMouseOwner(ctx); };
-    b.isMouseOwnerEvent = function () { return mouseOwner.isMouseOwnerEvent(); };
-    b.releaseMouseOwner = function () { return mouseOwner.releaseMouseOwner(); };
+    b.registerMouseOwner = registerMouseOwner;
+    b.isMouseOwner = isMouseOwner;
+    b.isMouseOwnerEvent = isMouseOwnerEvent;
+    b.releaseMouseOwner = releaseMouseOwner;
 })(b);
+//# sourceMappingURL=bobril.mouse.js.map

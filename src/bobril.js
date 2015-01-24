@@ -177,7 +177,7 @@ b = (function (window, document) {
         var backupInSvg = inSvg;
         var component = c.component;
         if (component) {
-            c.ctx = { data: c.data || {} };
+            c.ctx = { data: c.data || {}, me: c };
             if (component.init) {
                 component.init(c.ctx, n);
             }
@@ -861,7 +861,7 @@ b = (function (window, document) {
         for (var i = 0; i < cache.length; i++) {
             var node = cache[i];
             if (node.ctx != null && node.ctx[ctxInvalidated] === frame) {
-                cache[i] = updateNode(assign({}, node), node);
+                cache[i] = updateNode(cloneNode(node), node);
             }
             else if (isArray(node.children)) {
                 selectedUpdate(node.children);
@@ -991,12 +991,34 @@ b = (function (window, document) {
         else
             event.returnValue = false;
     }
+    function cloneNodeArray(a) {
+        a = a.slice(0);
+        for (var i = 0; i < a.length; i++) {
+            var n = a[i];
+            if (isArray(n)) {
+                a[i] = cloneNodeArray(n);
+            }
+            else if (typeof n === "object") {
+                a[i] = cloneNode(n);
+            }
+        }
+        return a;
+    }
     function cloneNode(node) {
         var r = b.assign({}, node);
         if (r.attrs) {
             r.attrs = b.assign({}, r.attrs);
             if (r.attrs.style)
                 r.attrs.style = b.assign({}, r.attrs.style);
+        }
+        var ch = r.children;
+        if (ch) {
+            if (isArray(ch)) {
+                r.children = cloneNodeArray(ch);
+            }
+            else if (typeof ch === "object") {
+                r.children = cloneNode(ch);
+            }
         }
         return r;
     }

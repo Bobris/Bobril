@@ -4,7 +4,7 @@
 
 class Coord implements ICoords {
     static CLICKBUSTER_THRESHOLD: number = 50; // 25 pixels in any dimension is the limit for busting clicks.
-    constructor(public x: number, public y: number) {}
+    constructor(public x: number, public y: number) { }
 
     hit(x: number, y: number): boolean {
         return Math.abs(this.x - x) < Coord.CLICKBUSTER_THRESHOLD && Math.abs(this.y - y) < Coord.CLICKBUSTER_THRESHOLD;
@@ -40,57 +40,42 @@ class CoordList {
     }
 }
 
-class MouseOwner {
-    ctx: any;
-    component: IBobrilComponent;
-    invoking: boolean;
+((b: IBobrilStatic) => {
 
-    isMouseOwner(ctx: any): boolean {
-        return this.ctx === ctx;
+    var ownerCtx: any = null;
+    var invokingOwner: boolean;
+
+    function isMouseOwner(ctx: any): boolean {
+        return ownerCtx === ctx;
     }
 
-    isMouseOwnerEvent(): boolean {
-        return this.invoking;
+    function isMouseOwnerEvent(): boolean {
+        return invokingOwner;
     }
 
-    registerMouseOwner(ctx: any, component: IBobrilComponent): void {
-        this.ctx = ctx;
-        this.component = component;
+    function registerMouseOwner(ctx: any): void {
+        ownerCtx = ctx;
     }
 
-    reregisterMouseOwner(ctx: any, me: IBobrilNode): void {
-        if (this.isMouseOwner(ctx)) {
-            this.component = me.component;
-        }
+    function releaseMouseOwner(): void {
+        ownerCtx = null;
     }
 
-    releaseMouseOwner(): void {
-        this.ctx = null;
-        this.component = null;
-    }
-
-    private hasMouseOwner(): boolean {
-        return !!this.ctx;
-    }
-
-    invoke(handlerName: string, param: any): boolean {
-        if (!this.hasMouseOwner()) {
+    function invokeMouseOwner(handlerName: string, param: any): boolean {
+        if (ownerCtx == null) {
             return false;
         }
 
-        var handler = this.component[handlerName];
+        var handler = ownerCtx.me.component[handlerName];
         if (!handler) { // no handler available
             return false;
         }
-        this.invoking = true;
-        var stop = handler(this.ctx, param);
-        this.invoking = false;
+        invokingOwner = true;
+        var stop = handler(ownerCtx, param);
+        invokingOwner = false;
         return stop;
     }
-}
 
-((b: IBobrilStatic) => {
-    var mouseOwner = new MouseOwner();
     var preventDefault = b.preventDefault;
     var now = b.now;
     var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
@@ -254,7 +239,7 @@ class MouseOwner {
     function createHandler(handlerName: string) {
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
             var param: IMouseEvent = buildParam(ev);
-            if (mouseOwner.invoke(handlerName, param)) {
+            if (invokeMouseOwner(handlerName, param)) {
                 return true;
             }
 
@@ -268,8 +253,8 @@ class MouseOwner {
         };
     }
 
-   
-    function mouseEnterAndLeave(ev: MouseEvent, target: Node, node: IBobrilCacheNode):boolean {
+
+    function mouseEnterAndLeave(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
         var param: IMouseEvent = buildParam(ev);
         var fromPath = b.vdomPath(ev.fromElement);
         var toPath = b.vdomPath(ev.toElement);
@@ -301,21 +286,21 @@ class MouseOwner {
             }
             i--;
         }
-            
+
         return false;
     };
-    
+
 
     function hasPointerEventsNone(target: Node): boolean {
         var bNode = b.deref(target);
         return bNode && bNode.attrs && bNode.attrs.style && bNode.attrs.style.pointerEvents && bNode.attrs.style.pointerEvents == "none";
     }
-    
+
     function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
         var hiddenEls: { target: HTMLElement; prevVisibility: string }[] = [];
         var t = <HTMLElement>target;
         while (hasPointerEventsNone(t)) {
-            hiddenEls.push({ target: t, prevVisibility: t.style.visibility});
+            hiddenEls.push({ target: t, prevVisibility: t.style.visibility });
             t.style.visibility = "hidden";
             t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
         }
@@ -348,7 +333,7 @@ class MouseOwner {
             addEvent(mouseEvents[i], 1, pointerThroughIE);
         }
     }
-    
+
     addEvent("mousedown", 2, buster);
     addEvent("mouseup", 2, buster);
     addEvent("click", 2, buster);
@@ -371,9 +356,8 @@ class MouseOwner {
     addEvent("touchend", 500, handleTouchEnd);
     addEvent("touchmove", 500, tapCanceled);
 
-    b.registerMouseOwner = (ctx: any, component: IBobrilComponent) => mouseOwner.registerMouseOwner(ctx, component);
-    b.reregisterMouseOwner = (ctx: any, me: IBobrilNode) => mouseOwner.reregisterMouseOwner(ctx, me);  // kvuli postenhance!!!! nebo modifikatorum
-    b.isMouseOwner = (ctx: any) => mouseOwner.isMouseOwner(ctx);
-    b.isMouseOwnerEvent = () => mouseOwner.isMouseOwnerEvent();
-    b.releaseMouseOwner = () => mouseOwner.releaseMouseOwner();
+    b.registerMouseOwner = registerMouseOwner;
+    b.isMouseOwner = isMouseOwner;
+    b.isMouseOwnerEvent = isMouseOwnerEvent;
+    b.releaseMouseOwner = releaseMouseOwner;
 })(b);

@@ -22,10 +22,8 @@ interface IBobrilComponent {
 }
 
 interface IBobrilStatic {
-    isMouseOwner(ctx: any): boolean;
-    isMouseOwnerEvent(): boolean;
-    registerMouseOwner(ctx: any, component: IBobrilComponent): void;
-    // need to be called in each render
-    reregisterMouseOwner(ctx: any, me: IBobrilNode): void;
-    releaseMouseOwner(): void;
+    isMouseOwner?(ctx: any): boolean;
+    isMouseOwnerEvent?(): boolean;
+    registerMouseOwner?(ctx: any): void;
+    releaseMouseOwner?(): void;
 }
