@@ -106,6 +106,8 @@
     <TypeScriptCompile Include="src\bobril.media.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.d.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.ts" />
+    <TypeScriptCompile Include="src\bobril.mouse2.d.ts" />
+    <TypeScriptCompile Include="src\bobril.mouse2.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.d.ts" />
     <TypeScriptCompile Include="src\bobril.onchange.ts" />
     <TypeScriptCompile Include="src\bobril.promise.d.ts" />
