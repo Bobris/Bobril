@@ -464,8 +464,7 @@ b = (function (window, document) {
         if (newChildren == null)
             newChildren = [];
         if (!isArray(newChildren)) {
-            var type = typeof newChildren;
-            if ((type === "string") && !isArray(cachedChildren)) {
+            if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
                 if (newChildren === cachedChildren)
                     return cachedChildren;
                 if (hasTextContent) {
@@ -820,10 +819,13 @@ b = (function (window, document) {
         if (events)
             for (var i = 0; i < events.length; i++) {
                 if (events[i](ev, target, node))
-                    break;
+                    return true;
             }
+        return false;
     }
     function addListener(el, name) {
+        if (name[0] == "!")
+            return;
         function enhanceEvent(ev) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement || el;
@@ -998,7 +1000,7 @@ b = (function (window, document) {
             if (isArray(n)) {
                 a[i] = cloneNodeArray(n);
             }
-            else if (typeof n === "object") {
+            else if (isObject(n)) {
                 a[i] = cloneNode(n);
             }
         }
@@ -1016,7 +1018,7 @@ b = (function (window, document) {
             if (isArray(ch)) {
                 r.children = cloneNodeArray(ch);
             }
-            else if (typeof ch === "object") {
+            else if (isObject(ch)) {
                 r.children = cloneNode(ch);
             }
         }
@@ -1043,6 +1045,7 @@ b = (function (window, document) {
         vdomPath: vdomPath,
         deref: getCacheNode,
         addEvent: addEvent,
+        emitEvent: emitEvent,
         bubble: bubbleEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,

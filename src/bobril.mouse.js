@@ -7,9 +7,8 @@ var Coord = (function () {
         this.y = y;
     }
     Coord.prototype.hit = function (x, y) {
-        return Math.abs(this.x - x) < Coord.CLICKBUSTER_THRESHOLD && Math.abs(this.y - y) < Coord.CLICKBUSTER_THRESHOLD;
+        return Math.abs(this.x - x) < 50 /* Threshold */ && Math.abs(this.y - y) < 50 /* Threshold */;
     };
-    Coord.CLICKBUSTER_THRESHOLD = 50; // 25 pixels in any dimension is the limit for busting clicks.
     return Coord;
 })();
 var CoordList = (function () {

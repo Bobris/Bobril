@@ -2,12 +2,13 @@
 /// <reference path="../src/bobril.mouse.d.ts"/>
 /// <reference path="../src/lib.touch.d.ts"/>
 
+const enum ClickBusterConst { Threshold = 50 } // 50 pixels in any dimension is the limit for busting clicks.
+
 class Coord implements ICoords {
-    static CLICKBUSTER_THRESHOLD: number = 50; // 25 pixels in any dimension is the limit for busting clicks.
     constructor(public x: number, public y: number) { }
 
     hit(x: number, y: number): boolean {
-        return Math.abs(this.x - x) < Coord.CLICKBUSTER_THRESHOLD && Math.abs(this.y - y) < Coord.CLICKBUSTER_THRESHOLD;
+        return Math.abs(this.x - x) < ClickBusterConst.Threshold && Math.abs(this.y - y) < ClickBusterConst.Threshold;
     }
 }
 

@@ -457,8 +457,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any, parentNode: IBobrilNode): Array<IBobrilCacheNode> {
         if (newChildren == null) newChildren = <any>[];
         if (!isArray(newChildren)) {
-            var type = typeof newChildren;
-            if ((type === "string") && !isArray(cachedChildren)) {
+            if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
                 if (newChildren === cachedChildren) return cachedChildren;
                 if (hasTextContent) {
                     element.textContent = newChildren;
@@ -800,24 +799,26 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var uptime = 0;
     var frame = 0;
 
-    var regEvents: { [name: string]: Array<(ev: Event, target: Node, node: IBobrilCacheNode) => boolean> } = {};
-    var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean }> } = {};
+    var regEvents: { [name: string]: Array<(ev: any, target: Node, node: IBobrilCacheNode) => boolean> } = {};
+    var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean }> } = {};
 
-    function addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void {
+    function addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void {
         var list = registryEvents[name] || [];
         list.push({ priority: priority, callback: callback });
         registryEvents[name] = list;
     }
 
-    function emitEvent(name: string, ev: Event, target: Node, node: IBobrilCacheNode) {
+    function emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean {
         var events = regEvents[name];
         if (events) for (var i = 0; i < events.length; i++) {
             if (events[i](ev, target, node))
-                break;
+                return true;
         }
+        return false;
     }
 
     function addListener(el: EventTarget, name: string) {
+        if (name[0] == "!") return;
         function enhanceEvent(ev: Event) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement || el;
@@ -993,7 +994,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var n = a[i];
             if (isArray(n)) {
                 a[i] = cloneNodeArray(<IBobrilChild[]>n);
-            } else if (typeof n === "object") {
+            } else if (isObject(n)) {
                 a[i] = cloneNode(n);
             }
         }
@@ -1010,7 +1011,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (ch) {
             if (isArray(ch)) {
                 r.children = cloneNodeArray(<IBobrilChild[]>ch);
-            } else if (typeof ch === "object") {
+            } else if (isObject(ch)) {
                 r.children = cloneNode(ch);
             }
         }
@@ -1038,6 +1039,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         vdomPath: vdomPath,
         deref: getCacheNode,
         addEvent: addEvent,
+        emitEvent: emitEvent,
         bubble: bubbleEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,

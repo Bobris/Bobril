@@ -43,8 +43,11 @@ interface IBobrilStatic {
     vdomPath(n: Node): IBobrilCacheNode[];
     // DOM to vdom leaf resolver
     deref(n: Node): IBobrilCacheNode;
-    // adds native event to window or body
-    addEvent(name: string, priority: number, callback: (ev: Event, target: Node, node: IBobrilCacheNode) => boolean): void;
+    // adds native event to window or body, if name starts with '!' it is not native but internal event which could be emited by code by emitEvent function
+    addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void;
+    // emit internal event it should start with '!'
+    emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean;
+    // bubble component event, returning true from event stops bubbling and returns true
     bubble(node: IBobrilCacheNode, name: string, param: any): boolean;
     // merge components, methods will be called before already existing methods
     preEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
