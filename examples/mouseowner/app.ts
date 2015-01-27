@@ -7,7 +7,7 @@ module MouseOwnerApp {
             ctx.backColor = "#f0f0f0";
         },
         render (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            me.attrs.style.backgroundColor = ctx.backColor;
+            me.style.backgroundColor = ctx.backColor;
         },
         onMouseDown(ctx: any, event: IMouseEvent): boolean {
             ctx.backColor = "red";
@@ -30,9 +30,9 @@ module MouseOwnerApp {
     b.init(() => {
         return twice({
             tag: "div",
-            attrs: { style: { height: "500px", width: "500px", border: "solid 1px", position: "relative", cssFloat: "left" } },
+            style: { height: "500px", width: "500px", border: "solid 1px", position: "relative", cssFloat: "left" },
             children: {
-                tag: "div", component: button, attrs: { style: { width: "120px", height: "20px", position: "absolute", border: "1px solid #000", left: "190px", top: "240px" } },
+                tag: "div", component: button, style: { width: "120px", height: "20px", position: "absolute", border: "1px solid #000", left: "190px", top: "240px" },
                 children: "Click and drag out"
             }
         });

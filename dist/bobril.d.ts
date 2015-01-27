@@ -60,8 +60,6 @@ interface IBobrilStatic {
 interface IBobrilAttributes {
     id?: string;
     href?: string;
-    className?: string;
-    style?: any;
     value?: boolean|string|string[];
     [name: string]: any;
 }
@@ -70,7 +68,7 @@ interface IBobrilComponent {
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;
-    // called before new node in vdom should be created, me members (tag, attrs, children) could be modified, ctx is initialized to { data: me.data||{} }
+    // called before new node in vdom should be created, me members (tag, attrs, children) could be modified, ctx is initialized to { data: me.data||{}, me: me }
     init? (ctx: Object, me: IBobrilNode): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
     // in case of init this is called after init method, oldMe is equal to undefined in that case
@@ -92,16 +90,19 @@ interface IBobrilComponent {
 interface IBobrilNode {
     tag?: string;
     key?: string;
+    className?: string;
+    style?: any;
     attrs?: IBobrilAttributes;
     children?: IBobrilChildren;
     component?: IBobrilComponent;
     // Bobril does not touch this, it is completely for user passing custom data to component
-    // It is very similar to props in ReactJs, it must be immutable
+    // It is very similar to props in ReactJs, it must be immutable, you have access to this through ctx.data
     data?: any;
 }
 
 interface IBobrilCacheNode extends IBobrilNode {
     element?: Node|Node[];
     parent?: IBobrilNode;
+    // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode
     ctx?: Object;
 }

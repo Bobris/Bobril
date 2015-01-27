@@ -61,7 +61,7 @@ var MouseApp;
         return [
             {
                 tag: "button",
-                attrs: { style: { fontSize: "3em", marginBottom: "10px" } },
+                style: { fontSize: "3em", marginBottom: "10px" },
                 children: "Click button",
                 component: TrackClick,
                 data: {
@@ -70,12 +70,12 @@ var MouseApp;
             },
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "120px" } },
+                style: { border: "1px solid", minHeight: "120px" },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }].concat(events.map(function (ev) { return e(ev); }))
+                children: [{ tag: "div", children: "Click here or swipe!", style: { fontSize: "2em" } }].concat(events.map(function (ev) { return e(ev); }))
             }
         ];
     });

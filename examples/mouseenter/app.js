@@ -11,7 +11,7 @@ var MouseEnterLeaveApp;
             ctx.backColor = "#B3C9DF";
         };
         TrackInnerEvents.render = function (ctx, me, oldMe) {
-            me.attrs = { style: constructInnerStyle(ctx.backColor) };
+            me.style = constructInnerStyle(ctx.backColor);
         };
         TrackInnerEvents.onMouseEnter = function (ctx, event) {
             ctx.backColor = mouseEnter;
@@ -31,11 +31,11 @@ var MouseEnterLeaveApp;
         };
         TrackEvents.render = function (ctx, me, oldMe) {
             me.tag = "div";
-            me.attrs = { style: constructOuterStyle(ctx.backColor) };
+            me.style = constructOuterStyle(ctx.backColor);
             me.children = {
                 tag: "span",
                 children: "Inner Span",
-                attrs: { style: constructInnerStyle("#B3C9DF") }
+                style: constructInnerStyle("#B3C9DF")
             };
             if (ctx.data.trackInner)
                 me.children.component = TrackInnerEvents;
@@ -89,12 +89,12 @@ var MouseEnterLeaveApp;
         return [
             {
                 tag: "div",
-                attrs: { style: { height: "20px", width: "100px", backgroundColor: mouseEnter } },
+                style: { height: "20px", width: "100px", backgroundColor: mouseEnter },
                 children: "Mouse enter"
             },
             {
                 tag: "div",
-                attrs: { style: { height: "20px", width: "100px", backgroundColor: mouseLeave } },
+                style: { height: "20px", width: "100px", backgroundColor: mouseLeave },
                 children: "Mouse leave"
             },
             {

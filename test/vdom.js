@@ -7,25 +7,25 @@ function expectInsensitive(s1, s2) {
 }
 describe("updateElement", function () {
     it("set className", function () {
-        var r = b.createNode({ tag: "div", attrs: { className: "a" } }, null);
+        var r = b.createNode({ tag: "div", className: "a" }, null);
         expect(r.element.className).toBe("a");
     });
     it("set style by object", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: { "fontSize": "10px" } } }, null);
+        var r = b.createNode({ tag: "div", style: { "fontSize": "10px" } }, null);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("set style by string", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: "font-size:10px" } }, null);
+        var r = b.createNode({ tag: "div", style: "font-size:10px" }, null);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("update style from string to object", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: "font-size:5px" } }, null);
-        r = b.updateNode({ tag: "div", attrs: { style: { "fontSize": "10px" } } }, r);
+        var r = b.createNode({ tag: "div", style: "font-size:5px" }, null);
+        r = b.updateNode({ tag: "div", style: { "fontSize": "10px" } }, r);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("update style from object to string", function () {
-        var r = b.createNode({ tag: "div", attrs: { style: { "fontSize": "5px" } } }, null);
-        r = b.updateNode({ tag: "div", attrs: { style: "font-size:10px" } }, r);
+        var r = b.createNode({ tag: "div", style: { "fontSize": "5px" } }, null);
+        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 });

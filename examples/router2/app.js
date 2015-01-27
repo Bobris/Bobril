@@ -96,21 +96,20 @@ var InputApp;
                 node = b.assign({}, node);
                 b.postEnhance(node, {
                     render: function (ctx, me, oldMe) {
-                        me.attrs = me.attrs || {};
-                        me.attrs.style = me.attrs.style || {};
+                        me.style = me.style || {};
                         if (!animCtx.live) {
-                            me.attrs.style.position = "absolute";
-                            me.attrs.style.top = "0";
-                            me.attrs.style.left = "0";
+                            me.style.position = "absolute";
+                            me.style.top = "0";
+                            me.style.left = "0";
                         }
                         if (isStableAnimState(animCtx.state)) {
                             return;
                         }
                         if (isHiddenAnimState(animCtx.state)) {
-                            me.attrs.style.visibility = "hidden";
+                            me.style.visibility = "hidden";
                             return;
                         }
-                        me.attrs.style.opacity = "" + animCtx.value;
+                        me.style.opacity = "" + animCtx.value;
                     }
                 });
                 return node;
@@ -199,21 +198,22 @@ var InputApp;
         }
     };
     function relativeTransitionGroup(node) {
-        return { tag: "div", attrs: { style: { position: "relative" } }, children: node, component: transitionGroupComp };
+        return { tag: "div", style: { position: "relative" }, children: node, component: transitionGroupComp };
     }
     var PlanetList = (function () {
         function PlanetList() {
         }
         PlanetList.render = function (ctx, me) {
             me.tag = "table";
-            me.children = a(h("tr", [
+            me.children = h("tr", [
                 h("td", [
                     ctx.data.planets.map(function (planet) {
                         return h("div", b.link(h("a", planet.name), "planet", { name: planet.name }));
                     })
                 ]),
                 h("td", relativeTransitionGroup(me.data.activeRouteHandler()))
-            ]), "style", "vertical-align:top");
+            ]);
+            me.children.style = { verticalAlign: "top" };
         };
         return PlanetList;
     })();
@@ -229,8 +229,8 @@ var InputApp;
             }
             if (planet) {
                 me.tag = "img";
+                me.style = { height: "auto", width: "20em" }; // < order of styles matter!
                 me.attrs = {
-                    style: { height: "auto", width: "20em" },
                     src: planet.image
                 };
             }

@@ -12,14 +12,14 @@ var InputApp;
         if (leftWidth === void 0) { leftWidth = "50%"; }
         return {
             tag: "div",
-            attrs: { style: { display: "table", width: "100%" } },
+            style: { display: "table", width: "100%" },
             children: [
-                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top", width: leftWidth } }, children: left },
-                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top" } }, children: right }
+                { tag: "div", style: { display: "table-cell", "vertical-align": "top", width: leftWidth }, children: left },
+                { tag: "div", style: { display: "table-cell", "vertical-align": "top" }, children: right }
             ]
         };
     }
-    var spacer = { tag: "div", attrs: { style: "height:1em" } };
+    var spacer = { tag: "div", style: "height:1em" };
     // Model
     var frame = 0;
     var value = "Change this";
@@ -113,7 +113,8 @@ var InputApp;
         if (rows === void 0) { rows = 5; }
         return {
             tag: "textarea",
-            attrs: { value: value, rows: rows, style: { width: "100%" } },
+            style: { width: "100%" },
+            attrs: { value: value, rows: rows },
             data: { onChange: onChange },
             component: OnChangeComponent
         };

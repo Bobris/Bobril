@@ -174,7 +174,8 @@ var GameApp;
             h("h1", "Game"),
             {
                 tag: "div",
-                attrs: { tabindex: "0", style: { width: boardX + "px", height: boardY + "px", outline: "0" } },
+                attrs: { tabindex: "0" },
+                style: { width: boardX + "px", height: boardY + "px", outline: "0" },
                 component: GameControler,
                 children: [
                     {

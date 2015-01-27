@@ -25,7 +25,7 @@ module TodoApp {
         static render(ctx: IAppCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             ctx.filter = ctx.data.filter;
             me.tag = "div";
-            me.attrs = { className: "main" };
+            me.className = "main";
             me.children = [
                 { 
                     component: Heading 
@@ -96,7 +96,7 @@ module TodoApp {
         static render(ctx: ITaskCreateCtx, me: IBobrilNode): void {
             ctx.newTaskName = ctx.newTaskName || "";
             me.tag = "div";
-            me.attrs = { className: "input-wrapper" },
+            me.className = "input-wrapper";
             me.children = [
                 this.createInputElement(ctx),
                 this.createSetAllCheckboxElement(ctx)
@@ -106,9 +106,9 @@ module TodoApp {
         static createInputElement(ctx: ITaskCreateCtx): IBobrilNode {
             return {
                 tag: "input",
+                className: "task-name",
                 attrs: {
                     placeholder: "What needs to be done?",
-                    className: "task-name",
                     value: ctx.newTaskName
                 },
                 component: {
@@ -146,9 +146,9 @@ module TodoApp {
         static createSetAllCheckboxElement(ctx: ITaskCreateCtx): IBobrilNode {
             return {
                 tag: "input",
+                className: "set-all-tasks",
                 attrs: {
                     type: "checkbox",
-                    className: "set-all-tasks",
                     value: ctx.data.isWholeListCompleted
                 },
                 component: {
@@ -185,9 +185,7 @@ module TodoApp {
         }
         static render(ctx: ITaskListCtx, me: IBobrilNode): void {
             me.tag = "ul";
-            me.attrs = {
-                className: "todo-list"
-            },
+            me.className = "todo-list";
             me.children = this.createTaskElements(ctx);
         }
 
@@ -249,7 +247,7 @@ module TodoApp {
                 liClasses += " readonly";
             }
             me.tag = "li";
-            me.attrs = { className: liClasses };
+            me.className = liClasses;
             me.children = [
                 ctx.data.justEditing || {
                     component: Checkbox,
@@ -266,7 +264,7 @@ module TodoApp {
                         }
                     }
                 },
-                { tag: "label", children: ctx.data.name, attrs: { className: labelClasses } },
+                { tag: "label", children: ctx.data.name, className: labelClasses },
                 {
                     component: DeleteButton,
                     data: {
@@ -293,7 +291,7 @@ module TodoApp {
                         }
                     }
                 },
-                { tag: "div", attrs: { className: "cleaner" } }
+                { tag: "div", className: "cleaner" }
             ];
         }
 
@@ -317,9 +315,9 @@ module TodoApp {
 
     export class Checkbox implements IBobrilComponent {
         static render(ctx: ICheckboxCtx, me: IBobrilNode): void {
-            var attributes: any = { type: "checkbox", className: "mark-as-completed", value: ctx.data.isChecked };
             me.tag = "input";
-            me.attrs = attributes;
+            me.className = "mark-as-completed";
+            me.attrs = { type: "checkbox", value: ctx.data.isChecked };
             me.data = ctx.data;
         }
 
@@ -345,7 +343,7 @@ module TodoApp {
         static render(ctx: IDeleteButtonCtx, me: IBobrilNode): void {
             me.tag = "a";
             me.children = "delete";
-            me.attrs = { className: "delete-button" };
+            me.className = "delete-button";
         }
 
         static onClick(ctx: IDeleteButtonCtx, event: IMouseEvent) {
@@ -370,7 +368,8 @@ module TodoApp {
         static render(ctx: IEditingInputCtx, me: IBobrilNode): void {
             ctx.newValue = ctx.newValue || "";
             me.tag = "input";
-            me.attrs = { type: "text", className: "task-edit", value: ctx.data.oldValue };
+            me.className = "task-edit";
+            me.attrs = { type: "text", value: ctx.data.oldValue };
             me.component = {
                 onKeyUp(ctx: IEditingInputCtx, event: IKeyDownUpEvent): boolean {
                     var handler = new KeyDownUpHandler();
@@ -419,14 +418,14 @@ module TodoApp {
             var clearAllButton = this.createClearCompleted(ctx);
 
             me.tag = "div";
-            me.attrs = { className: "footer" };
+            me.className = "footer";
             me.children = [
                 itemsLeftInfo,
                 filterButtons,
                 clearAllButton,
                 {
                     tag: "div",
-                    attrs: { className: "cleaner" }
+                    className: "cleaner"
                 }
             ];
         }
@@ -438,7 +437,7 @@ module TodoApp {
                 : itemsLeftCount + " items left";
             return {
                 tag: "div",
-                attrs: { className: "items-left-info" },
+                className: "items-left-info",
                 children: text
             };
         }
@@ -446,7 +445,7 @@ module TodoApp {
         static createFilterButtons(): IBobrilNode {
             return {
                 tag: "div",
-                attrs: { 'class': "filter" },
+                className: "filter",
                 children: [
                     b.link({ tag: "a", children: "All" }, "all"),
                     b.link({ tag: "a", children: "Active" }, "active"),
@@ -458,13 +457,13 @@ module TodoApp {
         static createClearCompleted(ctx: IFooterCtx): IBobrilNode {
             var numberOfCompletedTasks = ctx.data.completedTasksCount;
             var text = "Clear completed (" + numberOfCompletedTasks + ")";
-            var attributes: any = { className: "clear-completed-button" };
+            var className = "clear-completed-button";
             if (numberOfCompletedTasks < 1) {
-                attributes.className += " hidden";
+                className += " hidden";
             }
             return {
                 tag: "div",
-                attrs: attributes,
+                className: className,
                 children: text,
                 component: {
                     onClick(ctx: IFooterCtx): boolean {

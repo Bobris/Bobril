@@ -13,7 +13,7 @@ var TodoApp;
         App.render = function (ctx, me, oldMe) {
             ctx.filter = ctx.data.filter;
             me.tag = "div";
-            me.attrs = { className: "main" };
+            me.className = "main";
             me.children = [
                 {
                     component: Heading
@@ -70,7 +70,8 @@ var TodoApp;
         TaskCreate.render = function (ctx, me) {
             ctx.newTaskName = ctx.newTaskName || "";
             me.tag = "div";
-            me.attrs = { className: "input-wrapper" }, me.children = [
+            me.className = "input-wrapper";
+            me.children = [
                 this.createInputElement(ctx),
                 this.createSetAllCheckboxElement(ctx)
             ];
@@ -78,9 +79,9 @@ var TodoApp;
         TaskCreate.createInputElement = function (ctx) {
             return {
                 tag: "input",
+                className: "task-name",
                 attrs: {
                     placeholder: "What needs to be done?",
-                    className: "task-name",
                     value: ctx.newTaskName
                 },
                 component: {
@@ -114,9 +115,9 @@ var TodoApp;
         TaskCreate.createSetAllCheckboxElement = function (ctx) {
             return {
                 tag: "input",
+                className: "set-all-tasks",
                 attrs: {
                     type: "checkbox",
-                    className: "set-all-tasks",
                     value: ctx.data.isWholeListCompleted
                 },
                 component: {
@@ -146,9 +147,8 @@ var TodoApp;
         };
         TaskList.render = function (ctx, me) {
             me.tag = "ul";
-            me.attrs = {
-                className: "todo-list"
-            }, me.children = this.createTaskElements(ctx);
+            me.className = "todo-list";
+            me.children = this.createTaskElements(ctx);
         };
         TaskList.createTaskElements = function (ctx) {
             var res = [];
@@ -205,7 +205,7 @@ var TodoApp;
                 liClasses += " readonly";
             }
             me.tag = "li";
-            me.attrs = { className: liClasses };
+            me.className = liClasses;
             me.children = [
                 ctx.data.justEditing || {
                     component: Checkbox,
@@ -222,7 +222,7 @@ var TodoApp;
                         }
                     }
                 },
-                { tag: "label", children: ctx.data.name, attrs: { className: labelClasses } },
+                { tag: "label", children: ctx.data.name, className: labelClasses },
                 {
                     component: DeleteButton,
                     data: {
@@ -249,7 +249,7 @@ var TodoApp;
                         }
                     }
                 },
-                { tag: "div", attrs: { className: "cleaner" } }
+                { tag: "div", className: "cleaner" }
             ];
         };
         TaskItem.onDoubleClick = function (ctx) {
@@ -264,9 +264,9 @@ var TodoApp;
         function Checkbox() {
         }
         Checkbox.render = function (ctx, me) {
-            var attributes = { type: "checkbox", className: "mark-as-completed", value: ctx.data.isChecked };
             me.tag = "input";
-            me.attrs = attributes;
+            me.className = "mark-as-completed";
+            me.attrs = { type: "checkbox", value: ctx.data.isChecked };
             me.data = ctx.data;
         };
         Checkbox.onChange = function (ctx, value) {
@@ -286,7 +286,7 @@ var TodoApp;
         DeleteButton.render = function (ctx, me) {
             me.tag = "a";
             me.children = "delete";
-            me.attrs = { className: "delete-button" };
+            me.className = "delete-button";
         };
         DeleteButton.onClick = function (ctx, event) {
             ctx.data.performDelete(ctx.data.taskId);
@@ -301,7 +301,8 @@ var TodoApp;
         EditingInput.render = function (ctx, me) {
             ctx.newValue = ctx.newValue || "";
             me.tag = "input";
-            me.attrs = { type: "text", className: "task-edit", value: ctx.data.oldValue };
+            me.className = "task-edit";
+            me.attrs = { type: "text", value: ctx.data.oldValue };
             me.component = {
                 onKeyUp: function (ctx, event) {
                     var handler = new KeyDownUpHandler();
@@ -337,14 +338,14 @@ var TodoApp;
             var filterButtons = this.createFilterButtons();
             var clearAllButton = this.createClearCompleted(ctx);
             me.tag = "div";
-            me.attrs = { className: "footer" };
+            me.className = "footer";
             me.children = [
                 itemsLeftInfo,
                 filterButtons,
                 clearAllButton,
                 {
                     tag: "div",
-                    attrs: { className: "cleaner" }
+                    className: "cleaner"
                 }
             ];
         };
@@ -353,14 +354,14 @@ var TodoApp;
             var text = itemsLeftCount === 1 ? itemsLeftCount + " item left" : itemsLeftCount + " items left";
             return {
                 tag: "div",
-                attrs: { className: "items-left-info" },
+                className: "items-left-info",
                 children: text
             };
         };
         Footer.createFilterButtons = function () {
             return {
                 tag: "div",
-                attrs: { 'class': "filter" },
+                className: "filter",
                 children: [
                     b.link({ tag: "a", children: "All" }, "all"),
                     b.link({ tag: "a", children: "Active" }, "active"),
@@ -371,13 +372,13 @@ var TodoApp;
         Footer.createClearCompleted = function (ctx) {
             var numberOfCompletedTasks = ctx.data.completedTasksCount;
             var text = "Clear completed (" + numberOfCompletedTasks + ")";
-            var attributes = { className: "clear-completed-button" };
+            var className = "clear-completed-button";
             if (numberOfCompletedTasks < 1) {
-                attributes.className += " hidden";
+                className += " hidden";
             }
             return {
                 tag: "div",
-                attrs: attributes,
+                className: className,
                 children: text,
                 component: {
                     onClick: function (ctx) {

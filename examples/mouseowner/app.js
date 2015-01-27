@@ -7,7 +7,7 @@ var MouseOwnerApp;
             ctx.backColor = "#f0f0f0";
         },
         render: function (ctx, me, oldMe) {
-            me.attrs.style.backgroundColor = ctx.backColor;
+            me.style.backgroundColor = ctx.backColor;
         },
         onMouseDown: function (ctx, event) {
             ctx.backColor = "red";
@@ -30,11 +30,11 @@ var MouseOwnerApp;
     b.init(function () {
         return twice({
             tag: "div",
-            attrs: { style: { height: "500px", width: "500px", border: "solid 1px", position: "relative", cssFloat: "left" } },
+            style: { height: "500px", width: "500px", border: "solid 1px", position: "relative", cssFloat: "left" },
             children: {
                 tag: "div",
                 component: button,
-                attrs: { style: { width: "120px", height: "20px", position: "absolute", border: "1px solid #000", left: "190px", top: "240px" } },
+                style: { width: "120px", height: "20px", position: "absolute", border: "1px solid #000", left: "190px", top: "240px" },
                 children: "Click and drag out"
             }
         });

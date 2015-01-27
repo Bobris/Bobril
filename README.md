@@ -15,7 +15,7 @@ Features in core:
 - Normalization of Events
 - support for IE8+, Android 4.0+
 - batching of redrawing
-- under 10kb minified
+- under 11kb minified
 
 Features in extensions:
 - OnChange event and value attribute normalization

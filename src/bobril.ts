@@ -103,7 +103,52 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return prev;
     }
 
-    function updateElement(n: IBobrilCacheNode, el: HTMLElement, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
+    function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {
+        if (isObject(newStyle)) {
+            setStyleCallback(newStyle);
+            var rule: string;
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    if (!(rule in newStyle)) el.style[<any>rule] = "";
+                }
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined) {
+                        if (oldStyle[rule] !== v) el.style[<any>rule] = v;
+                    } else {
+                        el.style[<any>rule] = "";
+                    }
+                }
+            } else {
+                if (oldStyle)
+                    el.style.cssText = "";
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined)
+                        el.style[<any>rule] = v;
+                }
+            }
+        } else if (newStyle) {
+            el.style.cssText = newStyle;
+        } else {
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    if (!(rule in newStyle)) el.style[<any>rule] = "";
+                }
+            } else if (oldStyle) {
+                el.style.cssText = "";
+            }
+        }
+    }
+
+    function setClassName(el: Element, className: string) {
+        if (inNamespace)
+            el.setAttribute("class", className);
+        else
+            (<HTMLElement>el).className = className;
+    }
+
+    function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
         if (!newAttrs) return undefined;
         var attrName: string, newAttr: any, oldAttr: any, valueOldAttr: any, valueNewAttr: any;
         for (attrName in newAttrs) {
@@ -117,41 +162,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
             if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
-                if (attrName === "style") {
-                    if (isObject(newAttr)) {
-                        setStyleCallback(newAttr);
-                        var rule: string;
-                        if (isObject(oldAttr)) {
-                            for (rule in oldAttr) {
-                                if (!(rule in newAttr)) el.style[<any>rule] = "";
-                            }
-                            for (rule in newAttr) {
-                                var v = newAttr[rule];
-                                if (v !== undefined) {
-                                    if (oldAttr[rule] !== v) el.style[<any>rule] = v;
-                                } else {
-                                    el.style[<any>rule] = "";
-                                }
-                            }
-                        } else {
-                            if (oldAttr)
-                                el.style.cssText = "";
-                            for (rule in newAttr) {
-                                var v = newAttr[rule];
-                                if (v !== undefined)
-                                    el.style[<any>rule] = v;
-                            }
-                        }
-                    } else {
-                        el.style.cssText = newAttr;
-                    }
-                } else if (inNamespace) {
+                if (inNamespace) {
                     if (attrName === "href") el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
-                    else if (attrName === "className") el.setAttribute("class", newAttr);
                     else el.setAttribute(attrName, newAttr);
-                } else if (attrName === "value") {
-                    valueOldAttr = oldAttr;
-                    valueNewAttr = newAttr;
                 } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     (<any>el)[attrName] = newAttr;
                 } else el.setAttribute(attrName, newAttr);
@@ -187,25 +200,30 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 component.render(c.ctx, n);
             }
         }
+        var el: Element;
         if (n.tag === "") {
             c.element = createTextNode(<string>c.children);
             return c;
         } else if (n.tag === "/") {
             return c;
         } else if (inSvg || n.tag === "svg") {
-            c.element = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
+            el = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
             inSvg = true;
         } else {
-            c.element = document.createElement(n.tag);
+            el = document.createElement(n.tag);
         }
+        c.element = el;
         createChildren(c);
         if (component) {
             if (component.postRender) {
                 component.postRender(c.ctx, n);
             }
         }
-        c.attrs = updateElement(c, <HTMLElement>c.element, c.attrs, {});
+        if (c.attrs) c.attrs = updateElement(c, el, c.attrs, {});
+        if (c.style) updateStyle(c, <HTMLElement>el, c.style, undefined);
+        var className = c.className;
+        if (className) setClassName(el, className);
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
         pushInitCallback(c, false);
@@ -419,8 +437,16 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                             component.postRender(c.ctx, n, c);
                         }
                     }
+                    el = <HTMLElement>c.element;
                     if (c.attrs)
-                        c.attrs = updateElement(c, <HTMLElement>c.element, n.attrs, c.attrs);
+                        c.attrs = updateElement(c, el, n.attrs, c.attrs);
+                    updateStyle(c, el, n.style, c.style);
+                    c.style = n.style;
+                    var className = n.className;
+                    if (className !== c.className) {
+                        setClassName(el, className || "");
+                        c.className = className;
+                    }
                     c.data = n.data;
                     inNamespace = backupInNamespace;
                     inSvg = backupInSvg;
@@ -1005,7 +1031,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var r = <IBobrilNode>b.assign({}, node);
         if (r.attrs) {
             r.attrs = <IBobrilAttributes>b.assign({}, r.attrs);
-            if (r.attrs.style) r.attrs.style = <any>b.assign({}, r.attrs.style);
+        }
+        if (isObject(r.style)) {
+            r.style = b.assign({}, r.style);
         }
         var ch = r.children;
         if (ch) {
