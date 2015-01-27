@@ -21,8 +21,8 @@ HTML | Bobril
 `<div></div>` | `{ tag:"div" }`
 `<span>Hello</span>` | `{ tag:"span", children:"Hello" }`
 `<a href="url">Ex</a>` | `{ tag:"a", attrs: { href:"url" }, children:"Ex" }`
-`<span style="text-size:20px">Big</span>` | `{ tag:"span", attrs: { style: { textSize:"20px" } }, children:"Big" }`
-`<h1 class="head">&lt;</h1>` | `{ tag:"h1", attrs: { className:"head" }, children:"<" }`
+`<span style="text-size:20px">Big</span>` | `{ tag:"span", style: { textSize:"20px" }, children:"Big" }`
+`<h1 class="head">&lt;</h1>` | `{ tag:"h1", className:"head", children:"<" }`
 `style="float:left"` | `style: { cssFloat:"left" }`
 `<div><br></div>` | `{ tag:"div", children: { tag:"br" } }`
 `<div><span>A</span>B</div>` | `{ tag:"div", children: [ { tag:"span", children: "A" }, "B" ] }`
@@ -52,6 +52,6 @@ Note: Numbers are not supported and must be converted to strings before passing 
 
 When `tag` is `"svg"`, Bobril automatically adds all namespace crap, so your code is more readable.
 
-`attrs` member is just JS object. Because `class` and `for` are reserved words in JS they must be written as `className` and `htmlFor`.
+`attrs` member is just JS object. Because `for` is reserved word in JS it must be written as `htmlFor`.
 `style` attribute is handled specially. It could be string or object. String case for `style` should be used very rarely, because
 it is not enriched like object case. For `style` key `float` must be written as `cssFloat` because it is also reserved keyword.
