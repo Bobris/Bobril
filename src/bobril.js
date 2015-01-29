@@ -125,8 +125,7 @@ b = (function (window, document) {
         else {
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
-                    if (!(rule in newStyle))
-                        el.style[rule] = "";
+                    el.style[rule] = "";
                 }
             }
             else if (oldStyle) {

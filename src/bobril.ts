@@ -133,7 +133,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         } else {
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
-                    if (!(rule in newStyle)) el.style[<any>rule] = "";
+                    el.style[<any>rule] = "";
                 }
             } else if (oldStyle) {
                 el.style.cssText = "";
