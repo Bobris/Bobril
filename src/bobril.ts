@@ -946,6 +946,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     if (m.call(c, node.ctx, param))
                         return true;
                 }
+                m = (<any>c).shouldStopBubble;
+                if (m) {
+                    if (m.call(c, node.ctx, name, param))
+                        break;
+                }
             }
             node = node.parent;
         }

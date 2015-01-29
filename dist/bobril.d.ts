@@ -84,6 +84,8 @@ interface IBobrilComponent {
     postUpdateDom? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
     // called just before removing node from dom
     destroy? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
+    // called when bubling event to parent so you could stop bubling without preventing default handling
+    shouldStopBubble? (ctx: Object, name:string, param: Object): boolean;
 }
 
 // new node should atleast have tag or component member

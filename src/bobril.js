@@ -949,6 +949,11 @@ b = (function (window, document) {
                     if (m.call(c, node.ctx, param))
                         return true;
                 }
+                m = c.shouldStopBubble;
+                if (m) {
+                    if (m.call(c, node.ctx, name, param))
+                        break;
+                }
             }
             node = node.parent;
         }

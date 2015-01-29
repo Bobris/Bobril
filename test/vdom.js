@@ -232,4 +232,63 @@ describe("updateNode", function () {
         advancedTest("a:A,b:B,F", "a:C,c:E,b:D,d:E2,G", "a:C:0,c:E,b:D:1,d:E2,G:2");
     });
 });
+describe("stopBubbling", function () {
+    it("Without", function () {
+        var outer = false;
+        var inner = false;
+        var n = b.createNode({
+            tag: "div",
+            component: {
+                onClick: function () {
+                    outer = true;
+                    return true;
+                }
+            },
+            children: {
+                tag: "span",
+                component: {
+                    onClick: function () {
+                        inner = true;
+                        return false;
+                    }
+                }
+            }
+        }, null);
+        expect(b.bubble(n.children[0], "onClick", null)).toBeTruthy();
+        expect(inner).toBeTruthy();
+        expect(outer).toBeTruthy();
+    });
+    it("With", function () {
+        var outer = false;
+        var bub = false;
+        var inner = false;
+        var n = b.createNode({
+            tag: "div",
+            component: {
+                onClick: function () {
+                    outer = true;
+                    return true;
+                }
+            },
+            children: {
+                tag: "span",
+                component: {
+                    shouldStopBubble: function (ctx, name, param) {
+                        expect(name).toBe("onClick");
+                        bub = true;
+                        return true;
+                    },
+                    onClick: function () {
+                        inner = true;
+                        return false;
+                    }
+                }
+            }
+        }, null);
+        expect(b.bubble(n.children[0], "onClick", null)).toBeFalsy();
+        expect(inner).toBeTruthy();
+        expect(bub).toBeTruthy();
+        expect(outer).toBeFalsy();
+    });
+});
 //# sourceMappingURL=vdom.js.map
