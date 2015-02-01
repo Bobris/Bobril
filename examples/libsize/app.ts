@@ -1,6 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.vg.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.media.d.ts"/>
 
 declare var libSizeData: {
     parts: { name: string; tslines: number; jssize: number; minsize: number; gzipsize: number }[];

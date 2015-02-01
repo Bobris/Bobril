@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.focus.d.ts"/>
 var FocusApp;
 (function (FocusApp) {
     function h(tag) {

@@ -155,8 +155,8 @@ gulp.task('calc', ['uglify'], function () {
 });
 
 
-var alltsfilesToWatch = ['./src/**.ts','./examples/**.ts','./test/**.ts'];
-var alltsfilesToCompile = alltsfilesToWatch.concat(['!./src/**.d.ts','!./examples/**.d.ts','!./test/**.d.ts']);
+var alltsfilesToWatch = ['./src/**/*.ts','./examples/**/*.ts','./test/**/*.ts'];
+var alltsfilesToCompile = alltsfilesToWatch.concat(['!./src/**/*.d.ts','!./examples/**/*.d.ts','!./test/**/*.d.ts']);
 
 gulp.task('ts', function () {
     gulp.watch(alltsfilesToWatch, ['compilets']);

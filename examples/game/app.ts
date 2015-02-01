@@ -1,4 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.vg.d.ts"/>
+/// <reference path="../../src/bobril.onkey.d.ts"/>
 
 module GameApp {
     function h(tag: string, ...args: any[]) {

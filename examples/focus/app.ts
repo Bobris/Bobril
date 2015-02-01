@@ -1,4 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.focus.d.ts"/>
+
 module FocusApp {
     function h(tag: string, ...args: any[]) {
         return { tag: tag, children: args };
