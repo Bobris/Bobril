@@ -62,14 +62,11 @@ var InputApp;
         valuearea = v;
         b.invalidate();
     }
-    var OnChangeComponent = (function () {
-        function OnChangeComponent() {
-        }
-        OnChangeComponent.onChange = function (ctx, v) {
+    var OnChangeComponent = {
+        onChange: function (ctx, v) {
             ctx.data.onChange(v);
-        };
-        return OnChangeComponent;
-    })();
+        }
+    };
     function textInput(value, onChange) {
         return { tag: "input", attrs: { value: value }, data: { onChange: onChange }, component: OnChangeComponent };
     }

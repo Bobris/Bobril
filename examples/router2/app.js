@@ -1,7 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
-var InputApp;
-(function (InputApp) {
+var Router2App;
+(function (Router2App) {
     function h(tag) {
         var args = [];
         for (var _i = 1; _i < arguments.length; _i++) {
@@ -23,10 +23,8 @@ var InputApp;
         { name: "Earth", image: "http://solarsystem.nasa.gov/multimedia/gallery/VIIRS_4Jan2012_br.jpg" },
         { name: "Mars", image: "http://mars.jpl.nasa.gov/images/PIA02653-br2.jpg" }
     ];
-    var About = (function () {
-        function About() {
-        }
-        About.render = function (ctx, me) {
+    var About = {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = [
                 h("h3", "About"),
@@ -34,36 +32,26 @@ var InputApp;
                 h("div", a(h("a", "invalid link"), "href", "#/boring")),
                 h("div", a(h("a", "invalid planet"), "href", "#/planet/Unknownia"))
             ];
-        };
-        return About;
-    })();
-    var Empty = (function () {
-        function Empty() {
         }
-        Empty.render = function (ctx, me) {
+    };
+    var Empty = {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "Welcome");
-        };
-        return Empty;
-    })();
-    var NotFound = (function () {
-        function NotFound() {
         }
-        NotFound.render = function (ctx, me) {
+    };
+    var NotFound = {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "This page does not exist please continue by clicking links above");
-        };
-        return NotFound;
-    })();
-    var SelectPlanet = (function () {
-        function SelectPlanet() {
         }
-        SelectPlanet.render = function (ctx, me) {
+    };
+    var SelectPlanet = {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "Select planet to show on left");
-        };
-        return SelectPlanet;
-    })();
+        }
+    };
     var AnimState;
     (function (AnimState) {
         AnimState[AnimState["New"] = 0] = "New";
@@ -200,10 +188,8 @@ var InputApp;
     function relativeTransitionGroup(node) {
         return { tag: "div", style: { position: "relative" }, children: node, component: transitionGroupComp };
     }
-    var PlanetList = (function () {
-        function PlanetList() {
-        }
-        PlanetList.render = function (ctx, me) {
+    var PlanetList = {
+        render: function (ctx, me) {
             me.tag = "table";
             me.children = h("tr", [
                 h("td", [
@@ -214,13 +200,10 @@ var InputApp;
                 h("td", relativeTransitionGroup(me.data.activeRouteHandler()))
             ]);
             me.children.style = { verticalAlign: "top" };
-        };
-        return PlanetList;
-    })();
-    var PlanetImage = (function () {
-        function PlanetImage() {
         }
-        PlanetImage.render = function (ctx, me) {
+    };
+    var PlanetImage = {
+        render: function (ctx, me) {
             var name = ctx.data.routeParams.name;
             var planet = null;
             for (var i = 0; i < planetData.length; i++) {
@@ -238,22 +221,18 @@ var InputApp;
                 me.tag = "div";
                 me.children = h("p", "Don't have image of " + name);
             }
-        };
-        return PlanetImage;
-    })();
-    var App = (function () {
-        function App() {
         }
-        App.render = function (ctx, me) {
+    };
+    var App = {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = [
                 h("h1", "Advanced Router sample"),
                 h("ul", h("li", b.link(h("a", "About"), "about")), h("li", b.link(h("a", "Planets"), "planets"))),
                 me.data.activeRouteHandler()
             ];
-        };
-        return App;
-    })();
+        }
+    };
     b.routes(b.route({ handler: App }, [
         b.route({ name: "planets", data: { planets: planetData }, handler: PlanetList }, [
             b.route({ name: "planet", url: "/planet/:name", handler: PlanetImage, keyBuilder: function (p) {
@@ -265,5 +244,5 @@ var InputApp;
         b.routeDefault({ handler: Empty }),
         b.routeNotFound({ name: "notFound", handler: NotFound })
     ]));
-})(InputApp || (InputApp = {}));
+})(Router2App || (Router2App = {}));
 //# sourceMappingURL=app.js.map

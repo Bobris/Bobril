@@ -21,8 +21,8 @@ module TodoApp {
         filter: string;
     }
 
-    export class App implements IBobrilComponent {
-        static render(ctx: IAppCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+    export var App: IBobrilComponent = {
+        render(ctx: IAppCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             ctx.filter = ctx.data.filter;
             me.tag = "div";
             me.className = "main";
@@ -66,8 +66,8 @@ module TodoApp {
         }
     }
 
-    class Heading implements IBobrilComponent {
-        static init(ctx: Object, me: IBobrilNode): void {
+    var Heading: IBobrilComponent = {
+        init(ctx: Object, me: IBobrilNode): void {
             me.tag = "h3";
             me.children = "todos";
         }
@@ -92,8 +92,8 @@ module TodoApp {
         }
     }
 
-    class TaskCreate implements IBobrilComponent {
-        static render(ctx: ITaskCreateCtx, me: IBobrilNode): void {
+    var TaskCreate: IBobrilComponent = {
+        render(ctx: ITaskCreateCtx, me: IBobrilNode): void {
             ctx.newTaskName = ctx.newTaskName || "";
             me.tag = "div";
             me.className = "input-wrapper";
@@ -101,9 +101,9 @@ module TodoApp {
                 this.createInputElement(ctx),
                 this.createSetAllCheckboxElement(ctx)
             ];
-        }
+        },
 
-        static createInputElement(ctx: ITaskCreateCtx): IBobrilNode {
+        createInputElement(ctx: ITaskCreateCtx): IBobrilNode {
             return {
                 tag: "input",
                 className: "task-name",
@@ -141,9 +141,9 @@ module TodoApp {
                 },
                 data: ctx.data
             };
-        }
+        },
 
-        static createSetAllCheckboxElement(ctx: ITaskCreateCtx): IBobrilNode {
+        createSetAllCheckboxElement(ctx: ITaskCreateCtx): IBobrilNode {
             return {
                 tag: "input",
                 className: "set-all-tasks",
@@ -179,17 +179,17 @@ module TodoApp {
         editingTaskId: number;
     }
 
-    class TaskList implements IBobrilComponent {
-        static init(ctx: ITaskListCtx, me: IBobrilNode): void {
+    var TaskList: IBobrilComponent = {
+        init(ctx: ITaskListCtx, me: IBobrilNode): void {
             ctx.editingTaskId = -1;
-        }
-        static render(ctx: ITaskListCtx, me: IBobrilNode): void {
+        },
+        render(ctx: ITaskListCtx, me: IBobrilNode): void {
             me.tag = "ul";
             me.className = "todo-list";
             me.children = this.createTaskElements(ctx);
-        }
+        },
 
-        static createTaskElements(ctx: ITaskListCtx): Array<IBobrilNode> {
+        createTaskElements(ctx: ITaskListCtx): Array<IBobrilNode> {
             var res: Array<IBobrilNode> = [];
             var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
             var tasks = ctx.data.tasks;
@@ -234,8 +234,8 @@ module TodoApp {
         data: ITaskItemData;
     }
 
-    export class TaskItem implements IBobrilComponent {
-        static render(ctx: ITaskItemCtx, me: IBobrilNode): void {
+    export var TaskItem: IBobrilComponent = {
+        render(ctx: ITaskItemCtx, me: IBobrilNode): void {
             var liClasses = "task";
             var labelClasses: string = "";
             if (ctx.data.completed) {
@@ -293,9 +293,9 @@ module TodoApp {
                 },
                 { tag: "div", className: "cleaner" }
             ];
-        }
+        },
 
-        static onDoubleClick(ctx: ITaskItemCtx): boolean {
+        onDoubleClick(ctx: ITaskItemCtx): boolean {
             ctx.data.setEditingMode(ctx.data.id);
             b.invalidate();
             return true;
@@ -313,15 +313,15 @@ module TodoApp {
         data: ICheckboxData;
     }
 
-    export class Checkbox implements IBobrilComponent {
-        static render(ctx: ICheckboxCtx, me: IBobrilNode): void {
+    export var Checkbox: IBobrilComponent = {
+        render(ctx: ICheckboxCtx, me: IBobrilNode): void {
             me.tag = "input";
             me.className = "mark-as-completed";
             me.attrs = { type: "checkbox", value: ctx.data.isChecked };
             me.data = ctx.data;
-        }
+        },
 
-        static onChange(ctx: ICheckboxCtx, value: string) {
+        onChange(ctx: ICheckboxCtx, value: string) {
             if (value) {
                 ctx.data.performCheck(ctx.data.taskId);
             } else {
@@ -339,14 +339,14 @@ module TodoApp {
         data: IDeleteButtonData;
     }
 
-    export class DeleteButton implements IBobrilComponent {
-        static render(ctx: IDeleteButtonCtx, me: IBobrilNode): void {
+    export var DeleteButton: IBobrilComponent = {
+        render(ctx: IDeleteButtonCtx, me: IBobrilNode): void {
             me.tag = "a";
             me.children = "delete";
             me.className = "delete-button";
-        }
+        },
 
-        static onClick(ctx: IDeleteButtonCtx, event: IMouseEvent) {
+        onClick(ctx: IDeleteButtonCtx, event: IMouseEvent) {
             ctx.data.performDelete(ctx.data.taskId);
             return true;
         }
@@ -364,8 +364,8 @@ module TodoApp {
         newValue: string;
     }
 
-    export class EditingInput implements IBobrilComponent {
-        static render(ctx: IEditingInputCtx, me: IBobrilNode): void {
+    export var EditingInput: IBobrilComponent = {
+        render(ctx: IEditingInputCtx, me: IBobrilNode): void {
             ctx.newValue = ctx.newValue || "";
             me.tag = "input";
             me.className = "task-edit";
@@ -411,8 +411,8 @@ module TodoApp {
         data: IFooterData;
     }
 
-    class Footer implements IBobrilComponent {
-        static render(ctx: IFooterCtx, me: IBobrilNode): void {
+    var Footer: IBobrilComponent = {
+        render(ctx: IFooterCtx, me: IBobrilNode): void {
             var itemsLeftInfo = this.createItemsLeftInfo(ctx);
             var filterButtons = this.createFilterButtons();
             var clearAllButton = this.createClearCompleted(ctx);
@@ -428,9 +428,9 @@ module TodoApp {
                     className: "cleaner"
                 }
             ];
-        }
+        },
 
-        static createItemsLeftInfo(ctx: IFooterCtx): IBobrilNode {
+        createItemsLeftInfo(ctx: IFooterCtx): IBobrilNode {
             var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
             var text = itemsLeftCount === 1
                 ? itemsLeftCount + " item left"
@@ -440,9 +440,9 @@ module TodoApp {
                 className: "items-left-info",
                 children: text
             };
-        }
+        },
 
-        static createFilterButtons(): IBobrilNode {
+        createFilterButtons(): IBobrilNode {
             return {
                 tag: "div",
                 className: "filter",
@@ -452,9 +452,9 @@ module TodoApp {
                     b.link({ tag: "a", children: "Completed" }, "completed")
                 ]
             };
-        }
+        },
 
-        static createClearCompleted(ctx: IFooterCtx): IBobrilNode {
+        createClearCompleted(ctx: IFooterCtx): IBobrilNode {
             var numberOfCompletedTasks = ctx.data.completedTasksCount;
             var text = "Clear completed (" + numberOfCompletedTasks + ")";
             var className = "clear-completed-button";
@@ -487,5 +487,4 @@ module TodoApp {
             return false;
         }
     }
-
 }

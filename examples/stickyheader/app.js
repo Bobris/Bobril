@@ -17,14 +17,11 @@ var StickyHeaderApp;
         }
         return { tag: tag, style: style, children: args };
     }
-    var OnChangeComponent = (function () {
-        function OnChangeComponent() {
-        }
-        OnChangeComponent.onChange = function (ctx, v) {
+    var OnChangeComponent = {
+        onChange: function (ctx, v) {
             ctx.data.onChange(v);
-        };
-        return OnChangeComponent;
-    })();
+        }
+    };
     function checkbox(value, onChange) {
         return { tag: "input", attrs: { type: "checkbox", value: value }, data: { onChange: onChange }, component: OnChangeComponent };
     }

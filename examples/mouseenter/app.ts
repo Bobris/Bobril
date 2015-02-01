@@ -15,32 +15,32 @@ module MouseEnterLeaveApp {
     var mouseLeave = "red";
 
 
-    class TrackInnerEvents implements IBobrilComponent {
-        static init(ctx: ITrackClickCtx, me: IBobrilNode) {
+    var TrackInnerEvents: IBobrilComponent = {
+        init(ctx: ITrackClickCtx, me: IBobrilNode) {
             ctx.backColor = "#B3C9DF";
-        }
+        },
 
-        static render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+        render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             me.style = constructInnerStyle(ctx.backColor);
-        }
+        },
 
-        static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
+        onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
             ctx.backColor = mouseEnter;
             b.invalidate();
-        }
+        },
 
-        static onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
+        onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
             ctx.backColor = mouseLeave;
             b.invalidate();
         }
     }
 
-    class TrackEvents implements IBobrilComponent {
-        static init(ctx: ITrackClickCtx, me: IBobrilNode) {
+    var TrackEvents: IBobrilComponent = {
+        init(ctx: ITrackClickCtx, me: IBobrilNode) {
             ctx.backColor = "#F0F0F0";
-        }
+        },
 
-        static render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+        render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             me.tag = "div";
             me.style = constructOuterStyle(ctx.backColor);
             me.children = {
@@ -51,14 +51,14 @@ module MouseEnterLeaveApp {
 
             if (ctx.data.trackInner)
                 (<IBobrilNode>me.children).component = TrackInnerEvents;
-        }
+        },
 
-       static onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
-           ctx.backColor = mouseEnter;
-           b.invalidate();
-        }
+        onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
+            ctx.backColor = mouseEnter;
+            b.invalidate();
+        },
 
-        static onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
+        onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
             ctx.backColor = mouseLeave;
             b.invalidate();
         }
@@ -72,7 +72,7 @@ module MouseEnterLeaveApp {
         constructor(private ev: IMouseEvent, private eventName: string) { }
 
         toString(): string {
-            return this.eventName +" ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
         }
     }
 
@@ -90,7 +90,7 @@ module MouseEnterLeaveApp {
 
     function constructInnerStyle(backColor: string) {
         return {
-            backgroundColor: backColor, 
+            backgroundColor: backColor,
             border: "1px solid #6492BF",
             color: "#FFFFFF",
             height: "162px",

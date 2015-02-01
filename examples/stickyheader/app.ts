@@ -19,8 +19,8 @@ module StickyHeaderApp {
         data: IOnChangeData;
     }
 
-    class OnChangeComponent implements IBobrilComponent {
-        static onChange(ctx: IOnChangeCtx, v: any): void {
+    var OnChangeComponent: IBobrilComponent = {
+        onChange(ctx: IOnChangeCtx, v: any): void {
             ctx.data.onChange(v);
         }
     }

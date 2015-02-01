@@ -37,26 +37,23 @@ var OnKeyApp;
             evs.pop();
         b.invalidate();
     }
-    var TrackKeys = (function () {
-        function TrackKeys() {
-        }
-        TrackKeys.postInitDom = function (ctx, me, element) {
+    var TrackKeys = {
+        postInitDom: function (ctx, me, element) {
             element.focus();
-        };
-        TrackKeys.onKeyDown = function (ctx, event) {
+        },
+        onKeyDown: function (ctx, event) {
             ctx.data.onAdd(new KeyUpDown(true, event));
             return false;
-        };
-        TrackKeys.onKeyUp = function (ctx, event) {
+        },
+        onKeyUp: function (ctx, event) {
             ctx.data.onAdd(new KeyUpDown(false, event));
             return false;
-        };
-        TrackKeys.onKeyPress = function (ctx, event) {
+        },
+        onKeyPress: function (ctx, event) {
             ctx.data.onAdd(new KeyPress(event));
             return false;
-        };
-        return TrackKeys;
-    })();
+        }
+    };
     b.init(function () {
         return [
             {

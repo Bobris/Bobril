@@ -10,37 +10,37 @@ module MouseApp {
         data: ITrackClickData;
     }
 
-    class TrackClick implements IBobrilComponent {
-        static postInitDom(ctx: ITrackClickCtx, me: IBobrilNode, element: HTMLElement): void {
+    var TrackClick: IBobrilComponent = {
+        postInitDom(ctx: ITrackClickCtx, me: IBobrilNode, element: HTMLElement): void {
             element.focus();
-        }
+        },
 
-        static onClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
             return true;
-        }
+        },
 
-        static onDoubleClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onDoubleClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return true;
-        }
+        },
 
-        static onMouseDown(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onMouseDown(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return true;
-        }
+        },
 
-        static onMouseUp(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onMouseUp(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
             return true;
-        }
+        },
 
-        static onSwipeLeft(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onSwipeLeft(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
             return true;
-        }
+        },
 
-        static onSwipeRight(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onSwipeRight(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return true;
         }

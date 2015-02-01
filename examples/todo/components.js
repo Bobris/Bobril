@@ -7,10 +7,8 @@
 /// <reference path="model.ts"/>
 var TodoApp;
 (function (TodoApp) {
-    var App = (function () {
-        function App() {
-        }
-        App.render = function (ctx, me, oldMe) {
+    TodoApp.App = {
+        render: function (ctx, me, oldMe) {
             ctx.filter = ctx.data.filter;
             me.tag = "div";
             me.className = "main";
@@ -51,23 +49,16 @@ var TodoApp;
                     }
                 }
             ];
-        };
-        return App;
-    })();
-    TodoApp.App = App;
-    var Heading = (function () {
-        function Heading() {
         }
-        Heading.init = function (ctx, me) {
+    };
+    var Heading = {
+        init: function (ctx, me) {
             me.tag = "h3";
             me.children = "todos";
-        };
-        return Heading;
-    })();
-    var TaskCreate = (function () {
-        function TaskCreate() {
         }
-        TaskCreate.render = function (ctx, me) {
+    };
+    var TaskCreate = {
+        render: function (ctx, me) {
             ctx.newTaskName = ctx.newTaskName || "";
             me.tag = "div";
             me.className = "input-wrapper";
@@ -75,8 +66,8 @@ var TodoApp;
                 this.createInputElement(ctx),
                 this.createSetAllCheckboxElement(ctx)
             ];
-        };
-        TaskCreate.createInputElement = function (ctx) {
+        },
+        createInputElement: function (ctx) {
             return {
                 tag: "input",
                 className: "task-name",
@@ -111,8 +102,8 @@ var TodoApp;
                 },
                 data: ctx.data
             };
-        };
-        TaskCreate.createSetAllCheckboxElement = function (ctx) {
+        },
+        createSetAllCheckboxElement: function (ctx) {
             return {
                 tag: "input",
                 className: "set-all-tasks",
@@ -136,28 +127,25 @@ var TodoApp;
                     markAllTasksAsActive: ctx.data.markAllTasksAsActive
                 }
             };
-        };
-        return TaskCreate;
-    })();
-    var TaskList = (function () {
-        function TaskList() {
         }
-        TaskList.init = function (ctx, me) {
+    };
+    var TaskList = {
+        init: function (ctx, me) {
             ctx.editingTaskId = -1;
-        };
-        TaskList.render = function (ctx, me) {
+        },
+        render: function (ctx, me) {
             me.tag = "ul";
             me.className = "todo-list";
             me.children = this.createTaskElements(ctx);
-        };
-        TaskList.createTaskElements = function (ctx) {
+        },
+        createTaskElements: function (ctx) {
             var res = [];
             var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
             var tasks = ctx.data.tasks;
             for (var i = 0; i < taskItems.length; i++) {
                 var task = taskItems[i];
                 res.push({
-                    component: TaskItem,
+                    component: TodoApp.TaskItem,
                     data: {
                         id: task.id,
                         name: task.name,
@@ -186,13 +174,10 @@ var TodoApp;
                 });
             }
             return res;
-        };
-        return TaskList;
-    })();
-    var TaskItem = (function () {
-        function TaskItem() {
         }
-        TaskItem.render = function (ctx, me) {
+    };
+    TodoApp.TaskItem = {
+        render: function (ctx, me) {
             var liClasses = "task";
             var labelClasses = "";
             if (ctx.data.completed) {
@@ -208,7 +193,7 @@ var TodoApp;
             me.className = liClasses;
             me.children = [
                 ctx.data.justEditing || {
-                    component: Checkbox,
+                    component: TodoApp.Checkbox,
                     data: {
                         taskId: ctx.data.id,
                         isChecked: ctx.data.completed,
@@ -224,7 +209,7 @@ var TodoApp;
                 },
                 { tag: "label", children: ctx.data.name, className: labelClasses },
                 {
-                    component: DeleteButton,
+                    component: TodoApp.DeleteButton,
                     data: {
                         taskId: ctx.data.id,
                         invisible: ctx.data.justEditing,
@@ -235,7 +220,7 @@ var TodoApp;
                     }
                 },
                 ctx.data.justEditing && {
-                    component: EditingInput,
+                    component: TodoApp.EditingInput,
                     data: {
                         taskId: ctx.data.id,
                         oldValue: ctx.data.name,
@@ -251,54 +236,42 @@ var TodoApp;
                 },
                 { tag: "div", className: "cleaner" }
             ];
-        };
-        TaskItem.onDoubleClick = function (ctx) {
+        },
+        onDoubleClick: function (ctx) {
             ctx.data.setEditingMode(ctx.data.id);
             b.invalidate();
             return true;
-        };
-        return TaskItem;
-    })();
-    TodoApp.TaskItem = TaskItem;
-    var Checkbox = (function () {
-        function Checkbox() {
         }
-        Checkbox.render = function (ctx, me) {
+    };
+    TodoApp.Checkbox = {
+        render: function (ctx, me) {
             me.tag = "input";
             me.className = "mark-as-completed";
             me.attrs = { type: "checkbox", value: ctx.data.isChecked };
             me.data = ctx.data;
-        };
-        Checkbox.onChange = function (ctx, value) {
+        },
+        onChange: function (ctx, value) {
             if (value) {
                 ctx.data.performCheck(ctx.data.taskId);
             }
             else {
                 ctx.data.performUncheck(ctx.data.taskId);
             }
-        };
-        return Checkbox;
-    })();
-    TodoApp.Checkbox = Checkbox;
-    var DeleteButton = (function () {
-        function DeleteButton() {
         }
-        DeleteButton.render = function (ctx, me) {
+    };
+    TodoApp.DeleteButton = {
+        render: function (ctx, me) {
             me.tag = "a";
             me.children = "delete";
             me.className = "delete-button";
-        };
-        DeleteButton.onClick = function (ctx, event) {
+        },
+        onClick: function (ctx, event) {
             ctx.data.performDelete(ctx.data.taskId);
             return true;
-        };
-        return DeleteButton;
-    })();
-    TodoApp.DeleteButton = DeleteButton;
-    var EditingInput = (function () {
-        function EditingInput() {
         }
-        EditingInput.render = function (ctx, me) {
+    };
+    TodoApp.EditingInput = {
+        render: function (ctx, me) {
             ctx.newValue = ctx.newValue || "";
             me.tag = "input";
             me.className = "task-edit";
@@ -326,14 +299,10 @@ var TodoApp;
                 },
                 data: ctx.data
             };
-        };
-        return EditingInput;
-    })();
-    TodoApp.EditingInput = EditingInput;
-    var Footer = (function () {
-        function Footer() {
         }
-        Footer.render = function (ctx, me) {
+    };
+    var Footer = {
+        render: function (ctx, me) {
             var itemsLeftInfo = this.createItemsLeftInfo(ctx);
             var filterButtons = this.createFilterButtons();
             var clearAllButton = this.createClearCompleted(ctx);
@@ -348,8 +317,8 @@ var TodoApp;
                     className: "cleaner"
                 }
             ];
-        };
-        Footer.createItemsLeftInfo = function (ctx) {
+        },
+        createItemsLeftInfo: function (ctx) {
             var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
             var text = itemsLeftCount === 1 ? itemsLeftCount + " item left" : itemsLeftCount + " items left";
             return {
@@ -357,8 +326,8 @@ var TodoApp;
                 className: "items-left-info",
                 children: text
             };
-        };
-        Footer.createFilterButtons = function () {
+        },
+        createFilterButtons: function () {
             return {
                 tag: "div",
                 className: "filter",
@@ -368,8 +337,8 @@ var TodoApp;
                     b.link({ tag: "a", children: "Completed" }, "completed")
                 ]
             };
-        };
-        Footer.createClearCompleted = function (ctx) {
+        },
+        createClearCompleted: function (ctx) {
             var numberOfCompletedTasks = ctx.data.completedTasksCount;
             var text = "Clear completed (" + numberOfCompletedTasks + ")";
             var className = "clear-completed-button";
@@ -389,9 +358,8 @@ var TodoApp;
                 },
                 data: ctx.data
             };
-        };
-        return Footer;
-    })();
+        }
+    };
     var KeyDownUpHandler = (function () {
         function KeyDownUpHandler() {
         }

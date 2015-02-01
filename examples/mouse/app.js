@@ -2,38 +2,35 @@
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 var MouseApp;
 (function (MouseApp) {
-    var TrackClick = (function () {
-        function TrackClick() {
-        }
-        TrackClick.postInitDom = function (ctx, me, element) {
+    var TrackClick = {
+        postInitDom: function (ctx, me, element) {
             element.focus();
-        };
-        TrackClick.onClick = function (ctx, event) {
+        },
+        onClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
             return true;
-        };
-        TrackClick.onDoubleClick = function (ctx, event) {
+        },
+        onDoubleClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return true;
-        };
-        TrackClick.onMouseDown = function (ctx, event) {
+        },
+        onMouseDown: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return true;
-        };
-        TrackClick.onMouseUp = function (ctx, event) {
+        },
+        onMouseUp: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
             return true;
-        };
-        TrackClick.onSwipeLeft = function (ctx, event) {
+        },
+        onSwipeLeft: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
             return true;
-        };
-        TrackClick.onSwipeRight = function (ctx, event) {
+        },
+        onSwipeRight: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return true;
-        };
-        return TrackClick;
-    })();
+        }
+    };
     function e(ev) {
         return {
             tag: "div",
