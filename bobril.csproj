@@ -44,10 +44,10 @@
     </VisualStudio>
   </ProjectExtensions>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <TypeScriptTarget>ES5</TypeScriptTarget>
+    <TypeScriptTarget>ES3</TypeScriptTarget>
     <TypeScriptRemoveComments>false</TypeScriptRemoveComments>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
-    <TypeScriptModuleKind>CommonJs</TypeScriptModuleKind>
+    <TypeScriptModuleKind>none</TypeScriptModuleKind>
     <TypeScriptNoImplicitAny>True</TypeScriptNoImplicitAny>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -59,6 +59,7 @@
   <ItemGroup>
     <Content Include="examples\basic\index.html" />
     <Content Include="examples\focus\index.html" />
+    <Content Include="examples\freedraw\index.html" />
     <Content Include="examples\game\index.html" />
     <Content Include="examples\hanoitower\index.html" />
     <Content Include="examples\index.html" />
@@ -83,6 +84,7 @@
   <ItemGroup>
     <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="examples\focus\app.ts" />
+    <TypeScriptCompile Include="examples\freedraw\app.ts" />
     <TypeScriptCompile Include="examples\game\app.ts" />
     <TypeScriptCompile Include="examples\hanoitower\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />

@@ -244,7 +244,7 @@ var CoordList = (function () {
     ;
     function hasPointerEventsNone(target) {
         var bNode = b.deref(target);
-        return bNode && bNode.attrs && bNode.attrs.style && bNode.attrs.style.pointerEvents && bNode.attrs.style.pointerEvents == "none";
+        return bNode && bNode.style && bNode.style.pointerEvents && bNode.style.pointerEvents == "none";
     }
     function pointerThroughIE(ev, target, node) {
         var hiddenEls = [];

@@ -291,10 +291,9 @@ class CoordList {
         return false;
     };
 
-
     function hasPointerEventsNone(target: Node): boolean {
         var bNode = b.deref(target);
-        return bNode && bNode.attrs && bNode.attrs.style && bNode.attrs.style.pointerEvents && bNode.attrs.style.pointerEvents == "none";
+        return bNode && bNode.style && bNode.style.pointerEvents && bNode.style.pointerEvents == "none";
     }
 
     function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {

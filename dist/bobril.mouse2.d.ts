@@ -6,9 +6,9 @@ interface IBobrilMouseEvent {
 }
 
 declare const enum BobrilPointerType {
-    Mouse,
-    Touch,
-    Pen
+    Mouse = 0,
+    Touch = 1,
+    Pen = 2
 }
 
 interface IBobrilPointerEvent {
