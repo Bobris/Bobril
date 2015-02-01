@@ -49,10 +49,11 @@ How to develop
 
 Use `npm up` to download all needed node modules.
 
-For TypeScript compilation you can use Visual Studio (even free version is perfect)
-On other platforms you can use `gulp ts`.
+For helping writing TypeScript you can use Visual Studio (even free version is perfect). Compilation on save is disabled. So you have to work with gulp started in background. It also means Visual Studio is not required for work.
 
-Start `gulp` for minification and generating statistic for LibSize example.
+Start `gulp` for TS compilation, minification and generating statistic for LibSize example.
+
+`gulp compilets` force compilation of all TS files. All files are compiled independently with ES3 target, `<script>` module style and enabled source maps. It means you have to properly write all referenced definition files (something Visual Studio will not show you).
 
 `gulp pages` upload examples to GitHub pages.
 
