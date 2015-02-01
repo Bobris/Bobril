@@ -68,7 +68,7 @@
                     t.dispatchEvent(ev);
                 } catch (e) {
                     return false;
-                } 
+                }
             }
             preventDefault(ev);
             return true;
@@ -103,7 +103,7 @@
         return BobrilPointerType.Touch;
     }
 
-    function pointerEventsNoneFix(x:number, y:number, target: Node, node: IBobrilCacheNode): [Node, IBobrilCacheNode] {
+    function pointerEventsNoneFix(x: number, y: number, target: Node, node: IBobrilCacheNode): [Node, IBobrilCacheNode] {
         var hiddenEls: { target: HTMLElement; prevVisibility: string }[] = [];
         var t = <HTMLElement>target;
         while (hasPointerEventsNoneB(node)) {
@@ -195,11 +195,58 @@
 
     for (var j = 0; j < pointersEventNames.length; j++) {
         ((name: string) => {
+            var onname = "on" + name;
             addEvent("!" + name, 500,(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
-                return b.bubble(node, "on" + name, ev);
+                if (invokeMouseOwner(onname, ev))
+                    return true;
+                return b.bubble(node, onname, ev);
             });
         })(pointersEventNames[j]);
     }
+
+    function cleverPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        return false;
+    }
+
+    function cleverPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        return false;
+    }
+
+    function cleverPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        return false;
+    }
+
+    function cleverPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        return false;
+    }
+
+    function cleverClick(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        return false;
+    }
+
+    var cleverEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
+    var cleverEventHandlers = [cleverPointerDown, cleverPointerMove, cleverPointerUp, cleverPointerCancel, cleverClick];
+    for (var i = 0; i < cleverEventNames.length; i++) {
+        addEvent(cleverEventNames[i], 300, cleverEventHandlers[i]);
+    }
+
+    function createHandler(handlerName: string) {
+        return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
+            var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+                preventDefault(ev);
+                return true;
+            }
+            return false;
+        };
+    }
+
+    addEvent500("mousedown", createHandler("onMouseDown"));
+    addEvent500("mouseup", createHandler("onMouseUp"));
+    addEvent500("mousemove", createHandler("onMouseMove"));
+    addEvent500("click", createHandler("onClick"));
+    addEvent500("dblclick", createHandler("onDoubleClick"));
+    addEvent500("mouseover", createHandler("onMouseOver"));
 
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;

@@ -191,11 +191,50 @@
     }
     for (var j = 0; j < pointersEventNames.length; j++) {
         (function (name) {
+            var onname = "on" + name;
             addEvent("!" + name, 500, function (ev, target, node) {
-                return b.bubble(node, "on" + name, ev);
+                if (invokeMouseOwner(onname, ev))
+                    return true;
+                return b.bubble(node, onname, ev);
             });
         })(pointersEventNames[j]);
     }
+    function cleverPointerDown(ev, target, node) {
+        return false;
+    }
+    function cleverPointerMove(ev, target, node) {
+        return false;
+    }
+    function cleverPointerUp(ev, target, node) {
+        return false;
+    }
+    function cleverPointerCancel(ev, target, node) {
+        return false;
+    }
+    function cleverClick(ev, target, node) {
+        return false;
+    }
+    var cleverEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
+    var cleverEventHandlers = [cleverPointerDown, cleverPointerMove, cleverPointerUp, cleverPointerCancel, cleverClick];
+    for (var i = 0; i < cleverEventNames.length; i++) {
+        addEvent(cleverEventNames[i], 300, cleverEventHandlers[i]);
+    }
+    function createHandler(handlerName) {
+        return function (ev, target, node) {
+            var param = { x: ev.clientX, y: ev.clientY };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+                preventDefault(ev);
+                return true;
+            }
+            return false;
+        };
+    }
+    addEvent500("mousedown", createHandler("onMouseDown"));
+    addEvent500("mouseup", createHandler("onMouseUp"));
+    addEvent500("mousemove", createHandler("onMouseMove"));
+    addEvent500("click", createHandler("onClick"));
+    addEvent500("dblclick", createHandler("onDoubleClick"));
+    addEvent500("mouseover", createHandler("onMouseOver"));
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
