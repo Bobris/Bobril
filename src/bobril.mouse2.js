@@ -214,15 +214,50 @@
     function cleverClick(ev, target, node) {
         return false;
     }
-    var cleverEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
-    var cleverEventHandlers = [cleverPointerDown, cleverPointerMove, cleverPointerUp, cleverPointerCancel, cleverClick];
+    var prevMousePath = [];
+    function buildMouseParam(ev) {
+        return { x: ev.clientX, y: ev.clientY };
+    }
+    function mouseEnterAndLeave(ev, target, node) {
+        var param = buildMouseParam(ev);
+        var toPath = b.vdomPath(ev.toElement);
+        var common = 0;
+        while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
+            common++;
+        var i = prevMousePath.length;
+        var n;
+        var c;
+        while (i > common) {
+            i--;
+            n = prevMousePath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseLeave)
+                    c.onMouseLeave(n.ctx, param);
+            }
+        }
+        while (i < toPath.length) {
+            n = toPath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseEnter)
+                    c.onMouseEnter(n.ctx, param);
+            }
+            i++;
+        }
+        prevMousePath = toPath;
+        return false;
+    }
+    ;
+    var cleverEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click", "mouseover"];
+    var cleverEventHandlers = [cleverPointerDown, cleverPointerMove, cleverPointerUp, cleverPointerCancel, cleverClick, mouseEnterAndLeave];
     for (var i = 0; i < cleverEventNames.length; i++) {
         addEvent(cleverEventNames[i], 300, cleverEventHandlers[i]);
     }
-    function createHandler(handlerName) {
+    function createHandler(handlerName, dontSupportMouseOwner) {
         return function (ev, target, node) {
-            var param = { x: ev.clientX, y: ev.clientY };
-            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+            var param = buildMouseParam(ev);
+            if ((dontSupportMouseOwner ? false : invokeMouseOwner(handlerName, param)) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;
             }
@@ -234,7 +269,7 @@
     addEvent500("mousemove", createHandler("onMouseMove"));
     addEvent500("click", createHandler("onClick"));
     addEvent500("dblclick", createHandler("onDoubleClick"));
-    addEvent500("mouseover", createHandler("onMouseOver"));
+    addEvent500("mouseover", createHandler("onMouseOver", 1));
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
