@@ -2,6 +2,11 @@
 /// <reference path="bobril.mouse2.d.ts"/>
 /// <reference path="lib.touch.d.ts"/>
 
+const enum Consts {
+    MoveOverIsNotTap = 13,
+    TabShouldBeShorterThanMs = 750
+}
+
 ((b: IBobrilStatic, window: Window) => {
     var ownerCtx: any = null;
     var invokingOwner: boolean;
@@ -204,23 +209,71 @@
         })(pointersEventNames[j]);
     }
 
+    var pointersDown: { [id: number]: BobrilPointerType } = Object.create(null);
+    var toBust: Array<number>[] = [];
+    var firstPointerDown = -1;
+    var firstPointerDownTime = 0;
+    var firstPointerDownX = 0;
+    var firstPointerDownY = 0;
+    var tapCanceled = false;
+    var now = b.now;
+
+    function diffLess(n1: number, n2: number, diff: number) {
+        return Math.abs(n1 - n2) < diff;
+    }
+
     function cleverPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (firstPointerDown === -1 && Object.keys(pointersDown).length===0) {
+            firstPointerDown = ev.id;
+            firstPointerDownTime = now();
+            firstPointerDownX = ev.x;
+            firstPointerDownY = ev.y;
+            tapCanceled = false;
+        }
+        pointersDown[ev.id] = ev.type;
+        if (firstPointerDown !== ev.id) {
+            tapCanceled = true;
+        }
         return false;
     }
 
+
     function cleverPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (firstPointerDown === ev.id) {
+            if (!diffLess(firstPointerDownX, ev.x, Consts.MoveOverIsNotTap) || !diffLess(firstPointerDownY, ev.y, Consts.MoveOverIsNotTap))
+                tapCanceled = true;
+        }
         return false;
     }
 
     function cleverPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            firstPointerDown = -1;
+            if (!tapCanceled) {
+                if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
+                    b.emitEvent("!PointerCancel", ev, target, node);
+                    var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+                    if (invokeMouseOwner("onClick", param) || b.bubble(node, "onClick", param)) {
+                        toBust.push([ev.x,ev.y,now()]);
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
     function cleverPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            firstPointerDown = -1;
+        }
         return false;
     }
 
     function cleverClick(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        // TODO busting
         return false;
     }
 

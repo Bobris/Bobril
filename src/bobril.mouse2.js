@@ -199,19 +199,64 @@
             });
         })(pointersEventNames[j]);
     }
+    var pointersDown = Object.create(null);
+    var toBust = [];
+    var firstPointerDown = -1;
+    var firstPointerDownTime = 0;
+    var firstPointerDownX = 0;
+    var firstPointerDownY = 0;
+    var tapCanceled = false;
+    var now = b.now;
+    function diffLess(n1, n2, diff) {
+        return Math.abs(n1 - n2) < diff;
+    }
     function cleverPointerDown(ev, target, node) {
+        if (firstPointerDown === -1 && Object.keys(pointersDown).length === 0) {
+            firstPointerDown = ev.id;
+            firstPointerDownTime = now();
+            firstPointerDownX = ev.x;
+            firstPointerDownY = ev.y;
+            tapCanceled = false;
+        }
+        pointersDown[ev.id] = ev.type;
+        if (firstPointerDown !== ev.id) {
+            tapCanceled = true;
+        }
         return false;
     }
     function cleverPointerMove(ev, target, node) {
+        if (firstPointerDown === ev.id) {
+            if (!diffLess(firstPointerDownX, ev.x, 13 /* MoveOverIsNotTap */) || !diffLess(firstPointerDownY, ev.y, 13 /* MoveOverIsNotTap */))
+                tapCanceled = true;
+        }
         return false;
     }
     function cleverPointerUp(ev, target, node) {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            firstPointerDown = -1;
+            if (!tapCanceled) {
+                if (now() - firstPointerDownTime < 750 /* TabShouldBeShorterThanMs */) {
+                    b.emitEvent("!PointerCancel", ev, target, node);
+                    var param = { x: ev.x, y: ev.y };
+                    if (invokeMouseOwner("onClick", param) || b.bubble(node, "onClick", param)) {
+                        toBust.push([ev.x, ev.y, now()]);
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
     function cleverPointerCancel(ev, target, node) {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            firstPointerDown = -1;
+        }
         return false;
     }
     function cleverClick(ev, target, node) {
+        // TODO busting
         return false;
     }
     var prevMousePath = [];
