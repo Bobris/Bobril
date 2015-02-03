@@ -1,6 +1,6 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.mouse.d.ts"/>
-/// <reference path="../src/lib.touch.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.mouse.d.ts"/>
+/// <reference path="lib.touch.d.ts"/>
 var Coord = (function () {
     function Coord(x, y) {
         this.x = x;

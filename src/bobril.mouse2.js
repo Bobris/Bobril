@@ -1,6 +1,6 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.mouse2.d.ts"/>
-/// <reference path="../src/lib.touch.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.mouse2.d.ts"/>
+/// <reference path="lib.touch.d.ts"/>
 (function (b, window) {
     var ownerCtx = null;
     var invokingOwner;

@@ -1,7 +1,6 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-// ReSharper disable InconsistentNaming
+﻿/// <reference path="bobril.d.ts"/>
+
 declare var DEBUG: boolean;
-// ReSharper restore InconsistentNaming
 if (typeof DEBUG === "undefined") DEBUG = true;
 
 // IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19

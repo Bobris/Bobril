@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.router.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.router.d.ts"/>
 (function (b, window) {
     function emitOnHashChange() {
         b.invalidate();

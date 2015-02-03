@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onchange.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.onchange.d.ts"/>
 
 ((b: IBobrilStatic) => {
     var bvalue = "b$value";

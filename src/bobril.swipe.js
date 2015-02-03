@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.swipe.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.swipe.d.ts"/>
 (function (b) {
     var preventDefault = b.preventDefault;
     function getCoordinates(event) {

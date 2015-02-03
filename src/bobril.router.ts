@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.router.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.router.d.ts"/>
 
 // Heavily inspired by https://github.com/rackt/react-router/ Thanks to authors
 

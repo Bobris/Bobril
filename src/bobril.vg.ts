@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.vg.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.vg.d.ts"/>
 
 ((b: IBobrilStatic, window: Window, document: Document) => {
     function recSetComponent(a: any, c: IBobrilComponent) {

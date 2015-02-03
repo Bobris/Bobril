@@ -1,6 +1,6 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.mouse.d.ts"/>
-/// <reference path="../src/lib.touch.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.mouse.d.ts"/>
+/// <reference path="lib.touch.d.ts"/>
 
 const enum ClickBusterConst { Threshold = 50 } // 50 pixels in any dimension is the limit for busting clicks.
 

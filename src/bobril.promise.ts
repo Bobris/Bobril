@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.promise.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.promise.d.ts"/>
 
 ((b:IBobrilStatic, window: Window, document: Document) => {
     var asap = (() => {

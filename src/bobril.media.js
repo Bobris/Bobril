@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.media.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.media.d.ts"/>
 (function (b, window) {
     var media = null;
     var breaks = [
