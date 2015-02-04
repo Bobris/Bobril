@@ -1,5 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.mouse2.d.ts"/>
 var MouseEnterLeaveApp;
 (function (MouseEnterLeaveApp) {
     var mouseEnter = "green";
@@ -11,11 +11,11 @@ var MouseEnterLeaveApp;
         render: function (ctx, me, oldMe) {
             me.style = constructInnerStyle(ctx.backColor);
         },
-        onMouseEnter: function (ctx, event) {
+        onMouseEnter: function (ctx) {
             ctx.backColor = mouseEnter;
             b.invalidate();
         },
-        onMouseLeave: function (ctx, event) {
+        onMouseLeave: function (ctx) {
             ctx.backColor = mouseLeave;
             b.invalidate();
         }
@@ -35,30 +35,20 @@ var MouseEnterLeaveApp;
             if (ctx.data.trackInner)
                 me.children.component = TrackInnerEvents;
         },
-        onMouseEnter: function (ctx, event) {
+        onMouseEnter: function (ctx) {
             ctx.backColor = mouseEnter;
             b.invalidate();
         },
-        onMouseLeave: function (ctx, event) {
+        onMouseLeave: function (ctx) {
             ctx.backColor = mouseLeave;
             b.invalidate();
         }
     };
-    var EventWrapper = (function () {
-        function EventWrapper(ev, eventName) {
-            this.ev = ev;
-            this.eventName = eventName;
-        }
-        EventWrapper.prototype.toString = function () {
-            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
-        };
-        return EventWrapper;
-    })();
     function constructOuterStyle(backColor) {
         return {
             backgroundColor: backColor,
             border: "1px solid #D0D0D0",
-            "float": "left",
+            cssFloat: "left",
             height: "225px",
             position: "relative",
             width: "225px",
@@ -70,7 +60,7 @@ var MouseEnterLeaveApp;
             backgroundColor: backColor,
             border: "1px solid #6492BF",
             color: "#FFFFFF",
-            height: "162px",
+            height: "100px",
             left: "62px",
             lineHeight: "98px",
             position: "absolute",

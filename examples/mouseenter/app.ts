@@ -1,5 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.mouse2.d.ts"/>
 
 module MouseEnterLeaveApp {
     interface ITrackClickData {
@@ -24,12 +24,12 @@ module MouseEnterLeaveApp {
             me.style = constructInnerStyle(ctx.backColor);
         },
 
-        onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
+        onMouseEnter(ctx: ITrackClickCtx): void {
             ctx.backColor = mouseEnter;
             b.invalidate();
         },
 
-        onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
+        onMouseLeave(ctx: ITrackClickCtx): void {
             ctx.backColor = mouseLeave;
             b.invalidate();
         }
@@ -53,26 +53,14 @@ module MouseEnterLeaveApp {
                 (<IBobrilNode>me.children).component = TrackInnerEvents;
         },
 
-        onMouseEnter(ctx: ITrackClickCtx, event: IMouseEvent): void {
+        onMouseEnter(ctx: ITrackClickCtx): void {
             ctx.backColor = mouseEnter;
             b.invalidate();
         },
 
-        onMouseLeave(ctx: ITrackClickCtx, event: IMouseEvent): void {
+        onMouseLeave(ctx: ITrackClickCtx): void {
             ctx.backColor = mouseLeave;
             b.invalidate();
-        }
-    }
-
-    interface IEvent {
-        toString(): string;
-    }
-
-    class EventWrapper implements IEvent {
-        constructor(private ev: IMouseEvent, private eventName: string) { }
-
-        toString(): string {
-            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
         }
     }
 
@@ -80,7 +68,7 @@ module MouseEnterLeaveApp {
         return {
             backgroundColor: backColor,
             border: "1px solid #D0D0D0",
-            "float": "left",
+            cssFloat: "left",
             height: "225px",
             position: "relative",
             width: "225px",
@@ -93,7 +81,7 @@ module MouseEnterLeaveApp {
             backgroundColor: backColor,
             border: "1px solid #6492BF",
             color: "#FFFFFF",
-            height: "162px",
+            height: "100px",
             left: "62px",
             lineHeight: "98px",
             position: "absolute",

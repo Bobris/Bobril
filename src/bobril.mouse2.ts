@@ -4,12 +4,15 @@
 
 const enum Consts {
     MoveOverIsNotTap = 13,
-    TabShouldBeShorterThanMs = 750
+    TabShouldBeShorterThanMs = 750,
+    MaxBustDelay = 500,
+    BustDistance = 50
 }
 
-((b: IBobrilStatic, window: Window) => {
+((b: IBobrilStatic, window: Window, document: Document) => {
     var ownerCtx: any = null;
     var invokingOwner: boolean;
+    var onClickText = "onClick";
 
     function isMouseOwner(ctx: any): boolean {
         return ownerCtx === ctx;
@@ -53,39 +56,48 @@ const enum Consts {
         return hasPointerEventsNoneB(bNode);
     }
 
-    function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var hiddenEls: { target: HTMLElement; prevVisibility: string }[] = [];
-        var t = <HTMLElement>target;
-        while (hasPointerEventsNone(t)) {
-            hiddenEls.push({ target: t, prevVisibility: t.style.visibility });
-            t.style.visibility = "hidden";
-            t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
-        }
+    function revertVisibilityChanges(hiddenEls: { t: HTMLElement; p: string }[]): boolean {
         if (hiddenEls.length) {
             for (var i = hiddenEls.length - 1; i >= 0; --i) {
-                hiddenEls[i].target.style.visibility = hiddenEls[i].prevVisibility;
+                hiddenEls[i].t.style.visibility = hiddenEls[i].p;
             }
+            return true;
+        }
+        return false;
+    }
 
-            if (b.ieVersion() < 9)
-                t.fireEvent("on" + ev.type, ev);
-            else {
-                try {
+    function pushAndHide(hiddenEls: { t: HTMLElement; p: string }[], t: HTMLElement) {
+        hiddenEls.push({ t: t, p: t.style.visibility });
+        t.style.visibility = "hidden";
+    }
+
+    function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var hiddenEls: { t: HTMLElement; p: string }[] = [];
+        var t = <HTMLElement>target;
+        while (hasPointerEventsNone(t)) {
+            pushAndHide(hiddenEls, t);
+            t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
+        }
+        if (revertVisibilityChanges(hiddenEls)) {
+            try {
+                if (b.ieVersion() < 9)
+                    t.fireEvent("on" + ev.type, ev);
+                else {
                     t.dispatchEvent(ev);
-                } catch (e) {
-                    return false;
                 }
+            } catch (e) {
+                return false;
             }
             preventDefault(ev);
             return true;
         }
-
         return false;
     }
 
     var addEvent = b.addEvent;
 
-    function addEvent500(name: string, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean) {
-        addEvent(name, 500, callback);
+    function addEvent50(name: string, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean) {
+        addEvent(name, 50, callback);
     }
 
     var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
@@ -109,20 +121,15 @@ const enum Consts {
     }
 
     function pointerEventsNoneFix(x: number, y: number, target: Node, node: IBobrilCacheNode): [Node, IBobrilCacheNode] {
-        var hiddenEls: { target: HTMLElement; prevVisibility: string }[] = [];
+        var hiddenEls: { t: HTMLElement; p: string }[] = [];
         var t = <HTMLElement>target;
         while (hasPointerEventsNoneB(node)) {
-            hiddenEls.push({ target: t, prevVisibility: t.style.visibility });
-            t.style.visibility = "hidden";
+            pushAndHide(hiddenEls, t);
             t = <HTMLElement>document.elementFromPoint(x, y);
             node = b.deref(t);
         }
-        if (hiddenEls.length) {
-            for (var i = hiddenEls.length - 1; i >= 0; --i) {
-                hiddenEls[i].target.style.visibility = hiddenEls[i].prevVisibility;
-            }
-        }
-        return [target, node];
+        revertVisibilityChanges(hiddenEls);
+        return [t, node];
     }
 
     function buildHandlerPointer(name: string) {
@@ -175,36 +182,34 @@ const enum Consts {
     }
 
     if (window.onpointerdown !== undefined) {
-        for (i = 0; i < pointersEventNames.length; i++) {
+        for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
             ((name: string) => {
-                addEvent500(name.toLowerCase(), buildHandlerPointer(name));
+                addEvent50(name.toLowerCase(), buildHandlerPointer(name));
             })(pointersEventNames[i]);
         }
     } else if (window.onmspointerdown !== undefined) {
-        for (i = 0; i < pointersEventNames.length; i++) {
+        for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
             ((name: string) => {
-                addEvent500("MS" + name, buildHandlerPointer(name));
+                addEvent50("MS" + name, buildHandlerPointer(name));
             })(pointersEventNames[i]);
         }
     } else {
         if ((<any>window).ontouchstart !== undefined) {
-            addEvent500("touchstart", buildHandlerTouch("PointerDown"));
-            addEvent500("touchmove", buildHandlerTouch("PointerMove"));
-            addEvent500("touchend", buildHandlerTouch("PointerUp"));
-            addEvent500("touchcancel", buildHandlerTouch("PointerCancel"));
+            addEvent50("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
+            addEvent50("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
+            addEvent50("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
+            addEvent50("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
         }
-        addEvent500("mousedown", buildHandlerMouse("PointerDown"));
-        addEvent500("mousemove", buildHandlerMouse("PointerMove"));
-        addEvent500("mouseup", buildHandlerMouse("PointerUp"));
+        addEvent50("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
+        addEvent50("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
+        addEvent50("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
     }
 
-    for (var j = 0; j < pointersEventNames.length; j++) {
+    for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
         ((name: string) => {
             var onname = "on" + name;
-            addEvent("!" + name, 500,(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
-                if (invokeMouseOwner(onname, ev))
-                    return true;
-                return b.bubble(node, onname, ev);
+            addEvent("!" + name, 50,(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+                return invokeMouseOwner(onname, ev) || b.bubble(node, onname, ev);
             });
         })(pointersEventNames[j]);
     }
@@ -222,8 +227,8 @@ const enum Consts {
         return Math.abs(n1 - n2) < diff;
     }
 
-    function cleverPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
-        if (firstPointerDown === -1 && Object.keys(pointersDown).length===0) {
+    function bustingPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (firstPointerDown === -1 && Object.keys(pointersDown).length === 0) {
             firstPointerDown = ev.id;
             firstPointerDownTime = now();
             firstPointerDownX = ev.x;
@@ -238,7 +243,7 @@ const enum Consts {
     }
 
 
-    function cleverPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+    function bustingPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         if (firstPointerDown === ev.id) {
             if (!diffLess(firstPointerDownX, ev.x, Consts.MoveOverIsNotTap) || !diffLess(firstPointerDownY, ev.y, Consts.MoveOverIsNotTap))
                 tapCanceled = true;
@@ -246,7 +251,7 @@ const enum Consts {
         return false;
     }
 
-    function cleverPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+    function bustingPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         delete pointersDown[ev.id];
         if (firstPointerDown == ev.id) {
             firstPointerDown = -1;
@@ -254,8 +259,8 @@ const enum Consts {
                 if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-                    if (invokeMouseOwner("onClick", param) || b.bubble(node, "onClick", param)) {
-                        toBust.push([ev.x,ev.y,now()]);
+                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
+                        toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay]);
                         return true;
                     }
                 }
@@ -264,7 +269,7 @@ const enum Consts {
         return false;
     }
 
-    function cleverPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+    function bustingPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         delete pointersDown[ev.id];
         if (firstPointerDown == ev.id) {
             firstPointerDown = -1;
@@ -272,12 +277,24 @@ const enum Consts {
         return false;
     }
 
-    function cleverClick(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
-        // TODO busting
+    function bustingClick(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var n = now();
+        for (var i = 0; i < toBust.length; i++) {
+            var j = toBust[i];
+            if (j[2] < n) {
+                toBust.splice(i, 0);
+                i--;
+                continue;
+            }
+            if (diffLess(j[0], ev.x, Consts.BustDistance) && diffLess(j[1], ev.y, Consts.BustDistance)) {
+                toBust.splice(i, 0);
+                return true;
+            }
+        }
         return false;
     }
 
-    var prevMousePath:IBobrilCacheNode[] = [];
+    var prevMousePath: IBobrilCacheNode[] = [];
 
     function buildMouseParam(ev: MouseEvent): IBobrilMouseEvent {
         return { x: ev.clientX, y: ev.clientY };
@@ -285,7 +302,7 @@ const enum Consts {
 
     function mouseEnterAndLeave(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
         var param = buildMouseParam(ev);
-        var toPath = b.vdomPath(ev.toElement);
+        var toPath = b.vdomPath(<Node>ev.target);
 
         var common = 0;
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
@@ -316,16 +333,17 @@ const enum Consts {
         return false;
     };
 
-    var cleverEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click", "mouseover"];
-    var cleverEventHandlers = [cleverPointerDown, cleverPointerMove, cleverPointerUp, cleverPointerCancel, cleverClick, mouseEnterAndLeave];
-    for (var i = 0; i < cleverEventNames.length; i++) {
-        addEvent(cleverEventNames[i], 300, cleverEventHandlers[i]);
+    var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click", "mouseover"];
+    var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick, mouseEnterAndLeave];
+    for (var i = 0; i < 6 /*bustingEventNames.length*/; i++) {
+        addEvent(bustingEventNames[i], 30, bustingEventHandlers[i]);
     }
 
     function createHandler(handlerName: string, dontSupportMouseOwner?: number) {
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
             var param = buildMouseParam(ev);
-            if ((dontSupportMouseOwner? false:invokeMouseOwner(handlerName, param)) || b.bubble(node, handlerName, param)) {
+            console.log(handlerName, ownerCtx != null);
+            if ((dontSupportMouseOwner ? false : invokeMouseOwner(handlerName, param)) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;
             }
@@ -333,15 +351,15 @@ const enum Consts {
         };
     }
 
-    addEvent500("mousedown", createHandler("onMouseDown"));
-    addEvent500("mouseup", createHandler("onMouseUp"));
-    addEvent500("mousemove", createHandler("onMouseMove"));
-    addEvent500("click", createHandler("onClick"));
-    addEvent500("dblclick", createHandler("onDoubleClick"));
-    addEvent500("mouseover", createHandler("onMouseOver",1));
+    addEvent50("mousedown", createHandler("onMouseDown"));
+    addEvent50("mouseup", createHandler("onMouseUp"));
+    addEvent50("mousemove", createHandler("onMouseMove"));
+    addEvent50("click", createHandler(onClickText));
+    addEvent50("dblclick", createHandler("onDoubleClick"));
+    addEvent50("mouseover", createHandler("onMouseOver", 1));
 
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
-})(b, window);
+})(b, window, document);

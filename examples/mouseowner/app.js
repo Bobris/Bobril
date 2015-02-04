@@ -1,21 +1,21 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.mouse2.d.ts"/>
 var MouseOwnerApp;
 (function (MouseOwnerApp) {
     var button = {
         init: function (ctx, me) {
             ctx.backColor = "#f0f0f0";
         },
-        render: function (ctx, me, oldMe) {
+        render: function (ctx, me) {
             me.style.backgroundColor = ctx.backColor;
         },
-        onMouseDown: function (ctx, event) {
+        onMouseDown: function (ctx) {
             ctx.backColor = "red";
             b.registerMouseOwner(ctx);
             b.invalidate(ctx);
             return true;
         },
-        onMouseUp: function (ctx, event) {
+        onMouseUp: function (ctx) {
             ctx.backColor = "#f0f0f0";
             if (b.isMouseOwner(ctx)) {
                 b.releaseMouseOwner();

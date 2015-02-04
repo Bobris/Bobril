@@ -1,21 +1,21 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.mouse2.d.ts"/>
 
 module MouseOwnerApp {
     var button: IBobrilComponent = {
-        init (ctx: any, me: IBobrilNode): void {
+        init(ctx: any, me: IBobrilNode): void {
             ctx.backColor = "#f0f0f0";
         },
-        render (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+        render(ctx: any, me: IBobrilNode): void {
             me.style.backgroundColor = ctx.backColor;
         },
-        onMouseDown(ctx: any, event: IMouseEvent): boolean {
+        onMouseDown(ctx: any): boolean {
             ctx.backColor = "red";
             b.registerMouseOwner(ctx);
             b.invalidate(ctx);
             return true;
         },
-        onMouseUp(ctx: any, event: IMouseEvent): boolean {
+        onMouseUp(ctx: any): boolean {
             ctx.backColor = "#f0f0f0";
             if (b.isMouseOwner(ctx)) {
                 b.releaseMouseOwner();

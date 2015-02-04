@@ -1,9 +1,10 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.mouse2.d.ts"/>
 /// <reference path="lib.touch.d.ts"/>
-(function (b, window) {
+(function (b, window, document) {
     var ownerCtx = null;
     var invokingOwner;
+    var onClickText = "onClick";
     function isMouseOwner(ctx) {
         return ownerCtx === ctx;
     }
@@ -37,27 +38,36 @@
         var bNode = b.deref(target);
         return hasPointerEventsNoneB(bNode);
     }
+    function revertVisibilityChanges(hiddenEls) {
+        if (hiddenEls.length) {
+            for (var i = hiddenEls.length - 1; i >= 0; --i) {
+                hiddenEls[i].t.style.visibility = hiddenEls[i].p;
+            }
+            return true;
+        }
+        return false;
+    }
+    function pushAndHide(hiddenEls, t) {
+        hiddenEls.push({ t: t, p: t.style.visibility });
+        t.style.visibility = "hidden";
+    }
     function pointerThroughIE(ev, target, node) {
         var hiddenEls = [];
         var t = target;
         while (hasPointerEventsNone(t)) {
-            hiddenEls.push({ target: t, prevVisibility: t.style.visibility });
-            t.style.visibility = "hidden";
+            pushAndHide(hiddenEls, t);
             t = document.elementFromPoint(ev.x, ev.y);
         }
-        if (hiddenEls.length) {
-            for (var i = hiddenEls.length - 1; i >= 0; --i) {
-                hiddenEls[i].target.style.visibility = hiddenEls[i].prevVisibility;
-            }
-            if (b.ieVersion() < 9)
-                t.fireEvent("on" + ev.type, ev);
-            else {
-                try {
+        if (revertVisibilityChanges(hiddenEls)) {
+            try {
+                if (b.ieVersion() < 9)
+                    t.fireEvent("on" + ev.type, ev);
+                else {
                     t.dispatchEvent(ev);
                 }
-                catch (e) {
-                    return false;
-                }
+            }
+            catch (e) {
+                return false;
             }
             preventDefault(ev);
             return true;
@@ -65,8 +75,8 @@
         return false;
     }
     var addEvent = b.addEvent;
-    function addEvent500(name, callback) {
-        addEvent(name, 500, callback);
+    function addEvent50(name, callback) {
+        addEvent(name, 50, callback);
     }
     var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
     var i;
@@ -106,17 +116,12 @@
         var hiddenEls = [];
         var t = target;
         while (hasPointerEventsNoneB(node)) {
-            hiddenEls.push({ target: t, prevVisibility: t.style.visibility });
-            t.style.visibility = "hidden";
+            pushAndHide(hiddenEls, t);
             t = document.elementFromPoint(x, y);
             node = b.deref(t);
         }
-        if (hiddenEls.length) {
-            for (var i = hiddenEls.length - 1; i >= 0; --i) {
-                hiddenEls[i].target.style.visibility = hiddenEls[i].prevVisibility;
-            }
-        }
-        return [target, node];
+        revertVisibilityChanges(hiddenEls);
+        return [t, node];
     }
     function buildHandlerPointer(name) {
         return function handlePointerDown(ev, target, node) {
@@ -165,37 +170,35 @@
         };
     }
     if (window.onpointerdown !== undefined) {
-        for (i = 0; i < pointersEventNames.length; i++) {
+        for (i = 0; i < 4; i++) {
             (function (name) {
-                addEvent500(name.toLowerCase(), buildHandlerPointer(name));
+                addEvent50(name.toLowerCase(), buildHandlerPointer(name));
             })(pointersEventNames[i]);
         }
     }
     else if (window.onmspointerdown !== undefined) {
-        for (i = 0; i < pointersEventNames.length; i++) {
+        for (i = 0; i < 4; i++) {
             (function (name) {
-                addEvent500("MS" + name, buildHandlerPointer(name));
+                addEvent50("MS" + name, buildHandlerPointer(name));
             })(pointersEventNames[i]);
         }
     }
     else {
         if (window.ontouchstart !== undefined) {
-            addEvent500("touchstart", buildHandlerTouch("PointerDown"));
-            addEvent500("touchmove", buildHandlerTouch("PointerMove"));
-            addEvent500("touchend", buildHandlerTouch("PointerUp"));
-            addEvent500("touchcancel", buildHandlerTouch("PointerCancel"));
+            addEvent50("touchstart", buildHandlerTouch(pointersEventNames[0]));
+            addEvent50("touchmove", buildHandlerTouch(pointersEventNames[1]));
+            addEvent50("touchend", buildHandlerTouch(pointersEventNames[2]));
+            addEvent50("touchcancel", buildHandlerTouch(pointersEventNames[3]));
         }
-        addEvent500("mousedown", buildHandlerMouse("PointerDown"));
-        addEvent500("mousemove", buildHandlerMouse("PointerMove"));
-        addEvent500("mouseup", buildHandlerMouse("PointerUp"));
+        addEvent50("mousedown", buildHandlerMouse(pointersEventNames[0]));
+        addEvent50("mousemove", buildHandlerMouse(pointersEventNames[1]));
+        addEvent50("mouseup", buildHandlerMouse(pointersEventNames[2]));
     }
-    for (var j = 0; j < pointersEventNames.length; j++) {
+    for (var j = 0; j < 4; j++) {
         (function (name) {
             var onname = "on" + name;
-            addEvent("!" + name, 500, function (ev, target, node) {
-                if (invokeMouseOwner(onname, ev))
-                    return true;
-                return b.bubble(node, onname, ev);
+            addEvent("!" + name, 50, function (ev, target, node) {
+                return invokeMouseOwner(onname, ev) || b.bubble(node, onname, ev);
             });
         })(pointersEventNames[j]);
     }
@@ -210,7 +213,7 @@
     function diffLess(n1, n2, diff) {
         return Math.abs(n1 - n2) < diff;
     }
-    function cleverPointerDown(ev, target, node) {
+    function bustingPointerDown(ev, target, node) {
         if (firstPointerDown === -1 && Object.keys(pointersDown).length === 0) {
             firstPointerDown = ev.id;
             firstPointerDownTime = now();
@@ -224,14 +227,14 @@
         }
         return false;
     }
-    function cleverPointerMove(ev, target, node) {
+    function bustingPointerMove(ev, target, node) {
         if (firstPointerDown === ev.id) {
             if (!diffLess(firstPointerDownX, ev.x, 13 /* MoveOverIsNotTap */) || !diffLess(firstPointerDownY, ev.y, 13 /* MoveOverIsNotTap */))
                 tapCanceled = true;
         }
         return false;
     }
-    function cleverPointerUp(ev, target, node) {
+    function bustingPointerUp(ev, target, node) {
         delete pointersDown[ev.id];
         if (firstPointerDown == ev.id) {
             firstPointerDown = -1;
@@ -239,8 +242,8 @@
                 if (now() - firstPointerDownTime < 750 /* TabShouldBeShorterThanMs */) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param = { x: ev.x, y: ev.y };
-                    if (invokeMouseOwner("onClick", param) || b.bubble(node, "onClick", param)) {
-                        toBust.push([ev.x, ev.y, now()]);
+                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
+                        toBust.push([ev.x, ev.y, now() + 500 /* MaxBustDelay */]);
                         return true;
                     }
                 }
@@ -248,15 +251,27 @@
         }
         return false;
     }
-    function cleverPointerCancel(ev, target, node) {
+    function bustingPointerCancel(ev, target, node) {
         delete pointersDown[ev.id];
         if (firstPointerDown == ev.id) {
             firstPointerDown = -1;
         }
         return false;
     }
-    function cleverClick(ev, target, node) {
-        // TODO busting
+    function bustingClick(ev, target, node) {
+        var n = now();
+        for (var i = 0; i < toBust.length; i++) {
+            var j = toBust[i];
+            if (j[2] < n) {
+                toBust.splice(i, 0);
+                i--;
+                continue;
+            }
+            if (diffLess(j[0], ev.x, 50 /* BustDistance */) && diffLess(j[1], ev.y, 50 /* BustDistance */)) {
+                toBust.splice(i, 0);
+                return true;
+            }
+        }
         return false;
     }
     var prevMousePath = [];
@@ -265,7 +280,7 @@
     }
     function mouseEnterAndLeave(ev, target, node) {
         var param = buildMouseParam(ev);
-        var toPath = b.vdomPath(ev.toElement);
+        var toPath = b.vdomPath(ev.target);
         var common = 0;
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
             common++;
@@ -294,14 +309,15 @@
         return false;
     }
     ;
-    var cleverEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click", "mouseover"];
-    var cleverEventHandlers = [cleverPointerDown, cleverPointerMove, cleverPointerUp, cleverPointerCancel, cleverClick, mouseEnterAndLeave];
-    for (var i = 0; i < cleverEventNames.length; i++) {
-        addEvent(cleverEventNames[i], 300, cleverEventHandlers[i]);
+    var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click", "mouseover"];
+    var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick, mouseEnterAndLeave];
+    for (var i = 0; i < 6; i++) {
+        addEvent(bustingEventNames[i], 30, bustingEventHandlers[i]);
     }
     function createHandler(handlerName, dontSupportMouseOwner) {
         return function (ev, target, node) {
             var param = buildMouseParam(ev);
+            console.log(handlerName, ownerCtx != null);
             if ((dontSupportMouseOwner ? false : invokeMouseOwner(handlerName, param)) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;
@@ -309,15 +325,15 @@
             return false;
         };
     }
-    addEvent500("mousedown", createHandler("onMouseDown"));
-    addEvent500("mouseup", createHandler("onMouseUp"));
-    addEvent500("mousemove", createHandler("onMouseMove"));
-    addEvent500("click", createHandler("onClick"));
-    addEvent500("dblclick", createHandler("onDoubleClick"));
-    addEvent500("mouseover", createHandler("onMouseOver", 1));
+    addEvent50("mousedown", createHandler("onMouseDown"));
+    addEvent50("mouseup", createHandler("onMouseUp"));
+    addEvent50("mousemove", createHandler("onMouseMove"));
+    addEvent50("click", createHandler(onClickText));
+    addEvent50("dblclick", createHandler("onDoubleClick"));
+    addEvent50("mouseover", createHandler("onMouseOver", 1));
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
-})(b, window);
+})(b, window, document);
 //# sourceMappingURL=bobril.mouse2.js.map
