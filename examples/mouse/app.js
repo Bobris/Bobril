@@ -1,5 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.mouse2.d.ts"/>
 var MouseApp;
 (function (MouseApp) {
     var TrackClick = {

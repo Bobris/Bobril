@@ -213,74 +213,18 @@
     function diffLess(n1, n2, diff) {
         return Math.abs(n1 - n2) < diff;
     }
-    function bustingPointerDown(ev, target, node) {
-        if (firstPointerDown === -1 && Object.keys(pointersDown).length === 0) {
-            firstPointerDown = ev.id;
-            firstPointerDownTime = now();
-            firstPointerDownX = ev.x;
-            firstPointerDownY = ev.y;
-            tapCanceled = false;
-        }
-        pointersDown[ev.id] = ev.type;
-        if (firstPointerDown !== ev.id) {
-            tapCanceled = true;
-        }
-        return false;
-    }
-    function bustingPointerMove(ev, target, node) {
-        if (firstPointerDown === ev.id) {
-            if (!diffLess(firstPointerDownX, ev.x, 13 /* MoveOverIsNotTap */) || !diffLess(firstPointerDownY, ev.y, 13 /* MoveOverIsNotTap */))
-                tapCanceled = true;
-        }
-        return false;
-    }
-    function bustingPointerUp(ev, target, node) {
-        delete pointersDown[ev.id];
-        if (firstPointerDown == ev.id) {
-            firstPointerDown = -1;
-            if (!tapCanceled) {
-                if (now() - firstPointerDownTime < 750 /* TabShouldBeShorterThanMs */) {
-                    b.emitEvent("!PointerCancel", ev, target, node);
-                    var param = { x: ev.x, y: ev.y };
-                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
-                        toBust.push([ev.x, ev.y, now() + 500 /* MaxBustDelay */]);
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-    function bustingPointerCancel(ev, target, node) {
-        delete pointersDown[ev.id];
-        if (firstPointerDown == ev.id) {
-            firstPointerDown = -1;
-        }
-        return false;
-    }
-    function bustingClick(ev, target, node) {
-        var n = now();
-        for (var i = 0; i < toBust.length; i++) {
-            var j = toBust[i];
-            if (j[2] < n) {
-                toBust.splice(i, 0);
-                i--;
-                continue;
-            }
-            if (diffLess(j[0], ev.x, 50 /* BustDistance */) && diffLess(j[1], ev.y, 50 /* BustDistance */)) {
-                toBust.splice(i, 0);
-                return true;
-            }
-        }
-        return false;
-    }
     var prevMousePath = [];
-    function buildMouseParam(ev) {
-        return { x: ev.clientX, y: ev.clientY };
-    }
-    function mouseEnterAndLeave(ev, target, node) {
-        var param = buildMouseParam(ev);
-        var toPath = b.vdomPath(ev.target);
+    function mouseEnterAndLeave(ev) {
+        var param = { x: ev.x, y: ev.y };
+        var t = document.elementFromPoint(ev.x, ev.y);
+        var toPath = b.vdomPath(t);
+        var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node);
+            t = fixed[0];
+            toPath = b.vdomPath(t);
+        }
+        b.bubble(node, "onMouseOver", param);
         var common = 0;
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
             common++;
@@ -309,28 +253,114 @@
         return false;
     }
     ;
-    var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click", "mouseover"];
-    var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick, mouseEnterAndLeave];
-    for (var i = 0; i < 6; i++) {
+    function noPointersDown() {
+        return Object.keys(pointersDown).length === 0;
+    }
+    function bustingPointerDown(ev, target, node) {
+        if (firstPointerDown === -1 && noPointersDown()) {
+            firstPointerDown = ev.id;
+            firstPointerDownTime = now();
+            firstPointerDownX = ev.x;
+            firstPointerDownY = ev.y;
+            tapCanceled = false;
+            mouseEnterAndLeave(ev);
+        }
+        pointersDown[ev.id] = ev.type;
+        if (firstPointerDown !== ev.id) {
+            tapCanceled = true;
+        }
+        return false;
+    }
+    function bustingPointerMove(ev, target, node) {
+        if (firstPointerDown === ev.id) {
+            mouseEnterAndLeave(ev);
+            if (!diffLess(firstPointerDownX, ev.x, 13 /* MoveOverIsNotTap */) || !diffLess(firstPointerDownY, ev.y, 13 /* MoveOverIsNotTap */))
+                tapCanceled = true;
+        }
+        else if (noPointersDown()) {
+            mouseEnterAndLeave(ev);
+        }
+        return false;
+    }
+    function bustingPointerUp(ev, target, node) {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            mouseEnterAndLeave(ev);
+            firstPointerDown = -1;
+            if (!tapCanceled) {
+                if (now() - firstPointerDownTime < 750 /* TabShouldBeShorterThanMs */) {
+                    b.emitEvent("!PointerCancel", ev, target, node);
+                    var param = { x: ev.x, y: ev.y };
+                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
+                        toBust.push([ev.x, ev.y, now() + 500 /* MaxBustDelay */]);
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    function bustingPointerCancel(ev, target, node) {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            firstPointerDown = -1;
+        }
+        return false;
+    }
+    function bustingClick(ev, target, node) {
+        var n = now();
+        for (var i = 0; i < toBust.length; i++) {
+            var j = toBust[i];
+            if (j[2] < n) {
+                toBust.splice(i, 1);
+                i--;
+                continue;
+            }
+            if (diffLess(j[0], ev.clientX, 50 /* BustDistance */) && diffLess(j[1], ev.clientY, 50 /* BustDistance */)) {
+                toBust.splice(i, 1);
+                preventDefault(ev);
+                return true;
+            }
+        }
+        return false;
+    }
+    var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
+    var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
+    for (var i = 0; i < 5; i++) {
         addEvent(bustingEventNames[i], 30, bustingEventHandlers[i]);
     }
-    function createHandler(handlerName, dontSupportMouseOwner) {
+    function createHandlerMouse(handlerName) {
         return function (ev, target, node) {
-            var param = buildMouseParam(ev);
-            console.log(handlerName, ownerCtx != null);
-            if ((dontSupportMouseOwner ? false : invokeMouseOwner(handlerName, param)) || b.bubble(node, handlerName, param)) {
+            if (firstPointerDown != ev.id && !noPointersDown())
+                return false;
+            var param = { x: ev.x, y: ev.y };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+                return true;
+            }
+            return false;
+        };
+    }
+    var mouseHandlerNames = ["Down", "Move", "Up", "Up"];
+    for (var i = 0; i < 4; i++) {
+        addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
+    }
+    function createHandler(handlerName) {
+        return function (ev, target, node) {
+            var param = { x: ev.clientX, y: ev.clientY };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;
             }
             return false;
         };
     }
-    addEvent50("mousedown", createHandler("onMouseDown"));
-    addEvent50("mouseup", createHandler("onMouseUp"));
-    addEvent50("mousemove", createHandler("onMouseMove"));
     addEvent50("click", createHandler(onClickText));
     addEvent50("dblclick", createHandler("onDoubleClick"));
-    addEvent50("mouseover", createHandler("onMouseOver", 1));
+    b.pointersDownCount = function () { return Object.keys(pointersDown).length; };
+    b.firstPointerDownId = function () { return firstPointerDown; };
+    b.ignoreClick = function (x, y) {
+        toBust.push([x, y, now()]);
+    };
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;

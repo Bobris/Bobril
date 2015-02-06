@@ -227,82 +227,20 @@ const enum Consts {
         return Math.abs(n1 - n2) < diff;
     }
 
-    function bustingPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
-        if (firstPointerDown === -1 && Object.keys(pointersDown).length === 0) {
-            firstPointerDown = ev.id;
-            firstPointerDownTime = now();
-            firstPointerDownX = ev.x;
-            firstPointerDownY = ev.y;
-            tapCanceled = false;
-        }
-        pointersDown[ev.id] = ev.type;
-        if (firstPointerDown !== ev.id) {
-            tapCanceled = true;
-        }
-        return false;
-    }
-
-
-    function bustingPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
-        if (firstPointerDown === ev.id) {
-            if (!diffLess(firstPointerDownX, ev.x, Consts.MoveOverIsNotTap) || !diffLess(firstPointerDownY, ev.y, Consts.MoveOverIsNotTap))
-                tapCanceled = true;
-        }
-        return false;
-    }
-
-    function bustingPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
-        delete pointersDown[ev.id];
-        if (firstPointerDown == ev.id) {
-            firstPointerDown = -1;
-            if (!tapCanceled) {
-                if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
-                    b.emitEvent("!PointerCancel", ev, target, node);
-                    var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
-                        toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay]);
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    function bustingPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
-        delete pointersDown[ev.id];
-        if (firstPointerDown == ev.id) {
-            firstPointerDown = -1;
-        }
-        return false;
-    }
-
-    function bustingClick(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var n = now();
-        for (var i = 0; i < toBust.length; i++) {
-            var j = toBust[i];
-            if (j[2] < n) {
-                toBust.splice(i, 0);
-                i--;
-                continue;
-            }
-            if (diffLess(j[0], ev.x, Consts.BustDistance) && diffLess(j[1], ev.y, Consts.BustDistance)) {
-                toBust.splice(i, 0);
-                return true;
-            }
-        }
-        return false;
-    }
-
     var prevMousePath: IBobrilCacheNode[] = [];
 
-    function buildMouseParam(ev: MouseEvent): IBobrilMouseEvent {
-        return { x: ev.clientX, y: ev.clientY };
-    }
+    function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
+        var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+        var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
+        var toPath = b.vdomPath(t);
+        var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node);
+            t = <HTMLElement>fixed[0];
+            toPath = b.vdomPath(t);
+        }
 
-    function mouseEnterAndLeave(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var param = buildMouseParam(ev);
-        var toPath = b.vdomPath(<Node>ev.target);
+        b.bubble(node, "onMouseOver", param);
 
         var common = 0;
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
@@ -333,17 +271,108 @@ const enum Consts {
         return false;
     };
 
-    var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click", "mouseover"];
-    var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick, mouseEnterAndLeave];
-    for (var i = 0; i < 6 /*bustingEventNames.length*/; i++) {
+    function noPointersDown(): boolean {
+        return Object.keys(pointersDown).length === 0;
+    }
+
+    function bustingPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (firstPointerDown === -1 && noPointersDown()) {
+            firstPointerDown = ev.id;
+            firstPointerDownTime = now();
+            firstPointerDownX = ev.x;
+            firstPointerDownY = ev.y;
+            tapCanceled = false;
+            mouseEnterAndLeave(ev);
+        }
+        pointersDown[ev.id] = ev.type;
+        if (firstPointerDown !== ev.id) {
+            tapCanceled = true;
+        }
+        return false;
+    }
+
+    function bustingPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (firstPointerDown === ev.id) {
+            mouseEnterAndLeave(ev);
+            if (!diffLess(firstPointerDownX, ev.x, Consts.MoveOverIsNotTap) || !diffLess(firstPointerDownY, ev.y, Consts.MoveOverIsNotTap))
+                tapCanceled = true;
+        } else if (noPointersDown()) {
+            mouseEnterAndLeave(ev);
+        }
+        return false;
+    }
+
+    function bustingPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            mouseEnterAndLeave(ev);
+            firstPointerDown = -1;
+            if (!tapCanceled) {
+                if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
+                    b.emitEvent("!PointerCancel", ev, target, node);
+                    var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
+                        toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay]);
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function bustingPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            firstPointerDown = -1;
+        }
+        return false;
+    }
+
+    function bustingClick(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var n = now();
+        for (var i = 0; i < toBust.length; i++) {
+            var j = toBust[i];
+            if (j[2] < n) {
+                toBust.splice(i, 1);
+                i--;
+                continue;
+            }
+            if (diffLess(j[0], ev.clientX, Consts.BustDistance) && diffLess(j[1], ev.clientY, Consts.BustDistance)) {
+                toBust.splice(i, 1);
+                preventDefault(ev);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
+    var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
+    for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
         addEvent(bustingEventNames[i], 30, bustingEventHandlers[i]);
     }
 
-    function createHandler(handlerName: string, dontSupportMouseOwner?: number) {
+    function createHandlerMouse(handlerName: string) {
+        return (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+            if (firstPointerDown != ev.id && !noPointersDown()) return false;
+            var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+                return true;
+            }
+            return false;
+        };
+    }
+
+    var mouseHandlerNames = ["Down", "Move", "Up", "Up"];
+    for (var i = 0; i < 4; i++) {
+        addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
+    }
+
+    function createHandler(handlerName: string) {
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
-            var param = buildMouseParam(ev);
-            console.log(handlerName, ownerCtx != null);
-            if ((dontSupportMouseOwner ? false : invokeMouseOwner(handlerName, param)) || b.bubble(node, handlerName, param)) {
+            var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;
             }
@@ -351,12 +380,14 @@ const enum Consts {
         };
     }
 
-    addEvent50("mousedown", createHandler("onMouseDown"));
-    addEvent50("mouseup", createHandler("onMouseUp"));
-    addEvent50("mousemove", createHandler("onMouseMove"));
     addEvent50("click", createHandler(onClickText));
     addEvent50("dblclick", createHandler("onDoubleClick"));
-    addEvent50("mouseover", createHandler("onMouseOver", 1));
+
+    b.pointersDownCount = () => Object.keys(pointersDown).length;
+    b.firstPointerDownId = () => firstPointerDown;
+    b.ignoreClick = (x: number, y: number) => {
+        toBust.push([x, y, now()]);
+    };
 
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;

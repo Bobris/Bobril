@@ -1,5 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.mouse2.d.ts"/>
 
 module MouseApp {
     interface ITrackClickData {
@@ -15,32 +15,32 @@ module MouseApp {
             element.focus();
         },
 
-        onClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onClick(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
             return true;
         },
 
-        onDoubleClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onDoubleClick(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return true;
         },
 
-        onMouseDown(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onMouseDown(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return true;
         },
 
-        onMouseUp(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onMouseUp(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
             return true;
         },
 
-        onSwipeLeft(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onSwipeLeft(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
             return true;
         },
 
-        onSwipeRight(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onSwipeRight(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return true;
         }
@@ -58,7 +58,7 @@ module MouseApp {
     }
 
     class EventWrapper implements IEvent {
-        constructor(private ev: IMouseEvent, private eventName: string) { }
+        constructor(private ev: IBobrilMouseEvent, private eventName: string) { }
 
         toString(): string {
             return this.eventName +" ClientX: " + this.ev.x + " ClientY: " + this.ev.y;

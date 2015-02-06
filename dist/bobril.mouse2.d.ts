@@ -35,6 +35,9 @@ interface IBobrilComponent {
 }
 
 interface IBobrilStatic {
+    pointersDownCount?(): number;
+    firstPointerDownId?(): number;
+    ignoreClick?(x:number, y:number): void;
     isMouseOwner?(ctx: any): boolean;
     isMouseOwnerEvent?(): boolean;
     registerMouseOwner?(ctx: any): void;
