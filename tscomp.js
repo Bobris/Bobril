@@ -1,4 +1,41 @@
 var ts = require("typescript");
+var fs = require("graceful-fs");
+var path = require("path");
+
+var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.d.ts");
+
+var fc = Object.create(null);
+
+function getFileFromCache(fileName) {
+	var fci = fc[fileName];
+	if (fci!==undefined) {
+		if (fci.mtime==fs.statSync(fileName).mtime.getTime())
+			return fci;
+	}
+	var mtime = fs.statSync(fileName).mtime.getTime();
+	var text = ts.sys.readFile(fileName, 'utf-8');
+	/// <reference path="bobril.d.ts"/>
+	var re = /\/\/\/ +<reference +path *= *"(.*?)" *\/>/g;
+	var res;
+	var refs = [];
+	while( res = re.exec(text) ) {
+       refs.push(path.join(path.dirname(fileName),res[1]));
+	}
+	fci = { content: text, mtime: mtime, refs: refs };
+	fc[fileName] = fci;
+	return fci;	
+}
+
+function latestTime(fileNames) {
+	var res = 0;
+    for(var i=0;i<fileNames.length;i++)
+	{
+		var fci = getFileFromCache(fileNames[i]);
+		res = Math.max(res,fci.mtime);
+		res = Math.max(res,latestTime(fci.refs));
+	}
+	return res;
+}
 
 function createCompilerHost(currentDirectory) {
 	function getCanonicalFileName(fileName) {
@@ -7,7 +44,7 @@ function createCompilerHost(currentDirectory) {
 	var unsupportedFileEncodingErrorCode = -2147024809;
 	function getSourceFile(filename, languageVersion, onError) {
 		try {
-			var text = ts.sys.readFile(filename, 'utf-8');
+			var text = getFileFromCache(filename).content;
 		} catch (e) {
 			if (onError) {
 				onError(e.number === unsupportedFileEncodingErrorCode ? ts.createCompilerDiagnostic(ts.Diagnostics.Unsupported_file_encoding).messageText : e.message);
@@ -22,7 +59,10 @@ function createCompilerHost(currentDirectory) {
 		} catch (e) {
 			text = "";
 		}
-		if (text===data) return;
+		if (text===data) {
+			fs.utimesSync(fileName,new Date(),new Date());
+			return;
+		}
 		try {
 			console.log("Writing " + fileName);
 			ts.sys.writeFile(fileName, data, false);
@@ -34,7 +74,7 @@ function createCompilerHost(currentDirectory) {
 	}
 	return {
 		getSourceFile: getSourceFile,
-		getDefaultLibFilename: function (options) { return ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.d.ts"); },
+		getDefaultLibFilename: function (options) { return defaultLibFilename; },
 		writeFile: writeFile,
 		getCurrentDirectory: function () { return currentDirectory; },
 		useCaseSensitiveFileNames: function () { return ts.sys.useCaseSensitiveFileNames; },
@@ -64,6 +104,32 @@ function typeScriptCompile(fileNames, commonJs, sourceMap, currentDirectory) {
 	var curDir = currentDirectory || ts.sys.getCurrentDirectory();
 	if (!Array.isArray(fileNames)) fileNames=[fileNames];
 
+	var outputName = fileNames[0].substr(0,fileNames[0].length-3)+".js";
+	var outtime = 0;
+	try {
+		outtime = fs.statSync(outputName).mtime.getTime();
+	}
+	catch (e) { console.log(e); }
+	if (sourceMap) {
+		try {
+			outtime = Math.min(outtime, fs.statSync(outputName+".map").mtime.getTime());
+		}
+		catch (e) { console.log(e); }
+	}
+	
+	var sourcetime = 0;
+	try {
+		sourcetime = latestTime(fileNames);
+	}
+	catch(e) {
+		console.log(e);
+		sourcetime = (new Date()).getTime(); 
+	}
+	
+	if (sourcetime< outtime) {
+		return;
+	}
+	
 	var compilerOptions = {
 		sourceMap: sourceMap,
 		target: 0 /* ES3 */,
