@@ -1,27 +1,27 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 
-module InputApp {
+module RouterApp {
     function h(tag: string, ...args: any[]) {
         return { tag: tag, children: args };
     }
 
-    class Page1 implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var Page1: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("h3", "Page1");
         }
     }
 
-    class Page2 implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var Page2: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("h3", "Page2");
         }
     }
 
-    class App implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var App: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = [
                 h("h1", "Basic Router sample"),

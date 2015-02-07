@@ -1,4 +1,4 @@
-/// <reference path="../src/bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 (function (b) {
     var chain = b.setSetStyle(styleShim);
     var vendors = ["webkit", "Moz", "ms", "o"];

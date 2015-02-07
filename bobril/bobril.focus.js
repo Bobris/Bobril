@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.focus.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.focus.d.ts"/>
 (function (b) {
     var currentActiveElement = null;
     var currentFocusedNode = null;

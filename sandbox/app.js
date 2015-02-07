@@ -82,7 +82,8 @@ var SandboxApp;
             },
             {
                 tag: "div",
-                attrs: { id: "pastehack", tabIndex: "0", contentEditable: true, style: { position: "fixed", opacity: 0 } },
+                attrs: { id: "pastehack", tabIndex: "0", contentEditable: true },
+                style: { position: "fixed", opacity: 0 },
                 children: "\u00a0",
                 component: PasteImageContEditable
             },
@@ -91,9 +92,9 @@ var SandboxApp;
                 children: imagesrc != "" && {
                     tag: "img",
                     attrs: {
-                        src: imagesrc,
-                        style: { width: "200px", height: "auto" }
-                    }
+                        src: imagesrc
+                    },
+                    style: { width: "200px", height: "auto" }
                 }
             }
         ];

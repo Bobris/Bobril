@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onchange.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.onchange.d.ts"/>
 (function (b) {
     var bvalue = "b$value";
     var tvalue = "value";

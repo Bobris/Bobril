@@ -1,5 +1,4 @@
-/// <reference path="../src/bobril.d.ts"/>
-// ReSharper restore InconsistentNaming
+/// <reference path="bobril.d.ts"/>
 if (typeof DEBUG === "undefined")
     DEBUG = true;
 // IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
@@ -89,6 +88,56 @@ b = (function (window, document) {
         setStyleCallback = callback;
         return prev;
     }
+    function updateStyle(n, el, newStyle, oldStyle) {
+        if (isObject(newStyle)) {
+            setStyleCallback(newStyle);
+            var rule;
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    if (!(rule in newStyle))
+                        el.style[rule] = "";
+                }
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined) {
+                        if (oldStyle[rule] !== v)
+                            el.style[rule] = v;
+                    }
+                    else {
+                        el.style[rule] = "";
+                    }
+                }
+            }
+            else {
+                if (oldStyle)
+                    el.style.cssText = "";
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined)
+                        el.style[rule] = v;
+                }
+            }
+        }
+        else if (newStyle) {
+            el.style.cssText = newStyle;
+        }
+        else {
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    el.style[rule] = "";
+                }
+            }
+            else if (oldStyle) {
+                el.style.cssText = "";
+            }
+        }
+    }
+    function setClassName(el, className) {
+        if (inNamespace)
+            el.setAttribute("class", className);
+        else
+            el.className = className;
+    }
     function updateElement(n, el, newAttrs, oldAttrs) {
         if (!newAttrs)
             return undefined;
@@ -104,51 +153,11 @@ b = (function (window, document) {
             }
             if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
-                if (attrName === "style") {
-                    if (isObject(newAttr)) {
-                        setStyleCallback(newAttr);
-                        var rule;
-                        if (isObject(oldAttr)) {
-                            for (rule in oldAttr) {
-                                if (!(rule in newAttr))
-                                    el.style[rule] = "";
-                            }
-                            for (rule in newAttr) {
-                                var v = newAttr[rule];
-                                if (v !== undefined) {
-                                    if (oldAttr[rule] !== v)
-                                        el.style[rule] = v;
-                                }
-                                else {
-                                    el.style[rule] = "";
-                                }
-                            }
-                        }
-                        else {
-                            if (oldAttr)
-                                el.style.cssText = "";
-                            for (rule in newAttr) {
-                                var v = newAttr[rule];
-                                if (v !== undefined)
-                                    el.style[rule] = v;
-                            }
-                        }
-                    }
-                    else {
-                        el.style.cssText = newAttr;
-                    }
-                }
-                else if (inNamespace) {
+                if (inNamespace) {
                     if (attrName === "href")
                         el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
-                    else if (attrName === "className")
-                        el.setAttribute("class", newAttr);
                     else
                         el.setAttribute(attrName, newAttr);
-                }
-                else if (attrName === "value") {
-                    valueOldAttr = oldAttr;
-                    valueNewAttr = newAttr;
                 }
                 else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
@@ -177,7 +186,7 @@ b = (function (window, document) {
         var backupInSvg = inSvg;
         var component = c.component;
         if (component) {
-            c.ctx = { data: c.data || {} };
+            c.ctx = { data: c.data || {}, me: c };
             if (component.init) {
                 component.init(c.ctx, n);
             }
@@ -185,6 +194,7 @@ b = (function (window, document) {
                 component.render(c.ctx, n);
             }
         }
+        var el;
         if (n.tag === "") {
             c.element = createTextNode(c.children);
             return c;
@@ -193,20 +203,27 @@ b = (function (window, document) {
             return c;
         }
         else if (inSvg || n.tag === "svg") {
-            c.element = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
+            el = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inNamespace = true;
             inSvg = true;
         }
         else {
-            c.element = document.createElement(n.tag);
+            el = document.createElement(n.tag);
         }
+        c.element = el;
         createChildren(c);
         if (component) {
             if (component.postRender) {
                 component.postRender(c.ctx, n);
             }
         }
-        c.attrs = updateElement(c, c.element, c.attrs, {});
+        if (c.attrs)
+            c.attrs = updateElement(c, el, c.attrs, {});
+        if (c.style)
+            updateStyle(c, el, c.style, undefined);
+        var className = c.className;
+        if (className)
+            setClassName(el, className);
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
         pushInitCallback(c, false);
@@ -426,8 +443,16 @@ b = (function (window, document) {
                             component.postRender(c.ctx, n, c);
                         }
                     }
+                    el = c.element;
                     if (c.attrs)
-                        c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
+                        c.attrs = updateElement(c, el, n.attrs, c.attrs);
+                    updateStyle(c, el, n.style, c.style);
+                    c.style = n.style;
+                    var className = n.className;
+                    if (className !== c.className) {
+                        setClassName(el, className || "");
+                        c.className = className;
+                    }
                     c.data = n.data;
                     inNamespace = backupInNamespace;
                     inSvg = backupInSvg;
@@ -464,8 +489,7 @@ b = (function (window, document) {
         if (newChildren == null)
             newChildren = [];
         if (!isArray(newChildren)) {
-            var type = typeof newChildren;
-            if ((type === "string") && !isArray(cachedChildren)) {
+            if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
                 if (newChildren === cachedChildren)
                     return cachedChildren;
                 if (hasTextContent) {
@@ -820,10 +844,13 @@ b = (function (window, document) {
         if (events)
             for (var i = 0; i < events.length; i++) {
                 if (events[i](ev, target, node))
-                    break;
+                    return true;
             }
+        return false;
     }
     function addListener(el, name) {
+        if (name[0] == "!")
+            return;
         function enhanceEvent(ev) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement || el;
@@ -861,7 +888,7 @@ b = (function (window, document) {
         for (var i = 0; i < cache.length; i++) {
             var node = cache[i];
             if (node.ctx != null && node.ctx[ctxInvalidated] === frame) {
-                cache[i] = updateNode(assign({}, node), node);
+                cache[i] = updateNode(cloneNode(node), node);
             }
             else if (isArray(node.children)) {
                 selectedUpdate(node.children);
@@ -920,6 +947,11 @@ b = (function (window, document) {
                 if (m) {
                     if (m.call(c, node.ctx, param))
                         return true;
+                }
+                m = c.shouldStopBubble;
+                if (m) {
+                    if (m.call(c, node.ctx, name, param))
+                        break;
                 }
             }
             node = node.parent;
@@ -991,12 +1023,35 @@ b = (function (window, document) {
         else
             event.returnValue = false;
     }
+    function cloneNodeArray(a) {
+        a = a.slice(0);
+        for (var i = 0; i < a.length; i++) {
+            var n = a[i];
+            if (isArray(n)) {
+                a[i] = cloneNodeArray(n);
+            }
+            else if (isObject(n)) {
+                a[i] = cloneNode(n);
+            }
+        }
+        return a;
+    }
     function cloneNode(node) {
         var r = b.assign({}, node);
         if (r.attrs) {
             r.attrs = b.assign({}, r.attrs);
-            if (r.attrs.style)
-                r.attrs.style = b.assign({}, r.attrs.style);
+        }
+        if (isObject(r.style)) {
+            r.style = b.assign({}, r.style);
+        }
+        var ch = r.children;
+        if (ch) {
+            if (isArray(ch)) {
+                r.children = cloneNodeArray(ch);
+            }
+            else if (isObject(ch)) {
+                r.children = cloneNode(ch);
+            }
         }
         return r;
     }
@@ -1021,6 +1076,7 @@ b = (function (window, document) {
         vdomPath: vdomPath,
         deref: getCacheNode,
         addEvent: addEvent,
+        emitEvent: emitEvent,
         bubble: bubbleEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,

@@ -47,22 +47,22 @@ module OnKeyApp {
         data: ITrackKeysData;
     }
 
-    class TrackKeys implements IBobrilComponent {
-        static postInitDom(ctx: ITrackKeysCtx, me: IBobrilNode, element: HTMLElement): void {
+    var TrackKeys: IBobrilComponent = {
+        postInitDom(ctx: ITrackKeysCtx, me: IBobrilNode, element: HTMLElement): void {
             element.focus();
-        }
+        },
 
-        static onKeyDown(ctx: ITrackKeysCtx, event: IKeyDownUpEvent): boolean {
+        onKeyDown(ctx: ITrackKeysCtx, event: IKeyDownUpEvent): boolean {
             ctx.data.onAdd(new KeyUpDown(true, event));
             return false;
-        }
+        },
 
-        static onKeyUp(ctx: ITrackKeysCtx, event: IKeyDownUpEvent): boolean {
+        onKeyUp(ctx: ITrackKeysCtx, event: IKeyDownUpEvent): boolean {
             ctx.data.onAdd(new KeyUpDown(false, event));
             return false;
-        }
+        },
 
-        static onKeyPress(ctx: ITrackKeysCtx, event: IKeyPressEvent): boolean {
+        onKeyPress(ctx: ITrackKeysCtx, event: IKeyPressEvent): boolean {
             ctx.data.onAdd(new KeyPress(event));
             return false;
         }
@@ -72,7 +72,7 @@ module OnKeyApp {
         return [
             {
                 tag: "div",
-                attrs: { tabindex: "0"},
+                attrs: { tabindex: "0" },
                 data: { onAdd: addEvent },
                 component: TrackKeys,
                 children: [

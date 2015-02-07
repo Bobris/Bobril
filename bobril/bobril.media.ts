@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.media.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.media.d.ts"/>
 
 ((b: IBobrilStatic, window: Window) => {
     var media: IBobrilMedia = null;

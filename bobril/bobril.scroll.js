@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.scroll.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.scroll.d.ts"/>
 (function (b, window) {
     var scroll = "scroll";
     var callbacks = [];

@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.vg.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.vg.d.ts"/>
 (function (b, window, document) {
     function recSetComponent(a, c) {
         if (!a)

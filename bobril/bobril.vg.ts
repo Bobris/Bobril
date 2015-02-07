@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.vg.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.vg.d.ts"/>
 
 ((b: IBobrilStatic, window: Window, document: Document) => {
     function recSetComponent(a: any, c: IBobrilComponent) {
@@ -171,7 +171,7 @@
         me.attrs = attrs;
     }
 
-    var svgChildComponent = {
+    var svgChildComponent:IBobrilComponent = {
         render: svgChildComponentInit
     };
 
@@ -181,7 +181,7 @@
         recSetComponent(me.children, svgChildComponent);
     }
 
-    var svgComponent = {
+    var svgComponent:IBobrilComponent = {
         render: svgComponentInit
     }
 
@@ -242,7 +242,7 @@
         me.children = s;
     }
 
-    var vmlChildComponent = {
+    var vmlChildComponent:IBobrilComponent = {
         render: vmlChildComponentInit
     }
 
@@ -253,7 +253,7 @@
         b.vmlNode();
     }
 
-    var vmlComponent = {
+    var vmlComponent:IBobrilComponent = {
         render: vmlComponentInit
     }
     var defaultvml = "#default#VML";

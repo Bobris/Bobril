@@ -1,6 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.vg.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.media.d.ts"/>
 var LibSizeApp;
 (function (LibSizeApp) {
     function h(tag) {
@@ -28,28 +29,24 @@ var LibSizeApp;
         var count = libSizeData.parts.length;
         texts.push({
             tag: "div",
-            attrs: {
-                style: {
-                    position: "absolute",
-                    textAlign: "center",
-                    width: "500px",
-                    fontSize: "20px",
-                    top: Math.round(screenHeight * 0.5 - pieRadius - 35).toString() + "px",
-                    left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
-                }
+            style: {
+                position: "absolute",
+                textAlign: "center",
+                width: "500px",
+                fontSize: "20px",
+                top: Math.round(screenHeight * 0.5 - pieRadius - 35).toString() + "px",
+                left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
             },
             children: "Bobril Minified Component Size"
         });
         texts.push({
             tag: "div",
-            attrs: {
-                style: {
-                    position: "absolute",
-                    textAlign: "center",
-                    width: "500px",
-                    top: Math.round(screenHeight * 0.5 + pieRadius + 15).toString() + "px",
-                    left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
-                }
+            style: {
+                position: "absolute",
+                textAlign: "center",
+                width: "500px",
+                top: Math.round(screenHeight * 0.5 + pieRadius + 15).toString() + "px",
+                left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
             },
             children: "Total " + libSizeData.total.minsize.toString() + " bytes"
         });
@@ -76,25 +73,21 @@ var LibSizeApp;
             });
             texts.push({
                 tag: "div",
-                attrs: {
-                    style: {
-                        position: "absolute",
-                        top: Math.round(legendy + i * legenddy).toString() + "px",
-                        left: Math.round(legendx + legenddy).toString() + "px"
-                    }
+                style: {
+                    position: "absolute",
+                    top: Math.round(legendy + i * legenddy).toString() + "px",
+                    left: Math.round(legendx + legenddy).toString() + "px"
                 },
                 children: libSizeData.parts[i].name
             });
             texts.push({
                 tag: "div",
-                attrs: {
-                    style: {
-                        position: "absolute",
-                        textAlign: "right",
-                        width: "60px",
-                        top: Math.round(legendy + i * legenddy).toString() + "px",
-                        left: Math.round(legendx + legenddy + 60).toString() + "px"
-                    }
+                style: {
+                    position: "absolute",
+                    textAlign: "right",
+                    width: "60px",
+                    top: Math.round(legendy + i * legenddy).toString() + "px",
+                    left: Math.round(legendx + legenddy + 60).toString() + "px"
                 },
                 children: libSizeData.parts[i].minsize.toString()
             });
@@ -103,9 +96,7 @@ var LibSizeApp;
         b.invalidate();
         return {
             tag: "div",
-            attrs: {
-                style: { position: "relative", width: "100%", height: "100%" }
-            },
+            style: { position: "relative", width: "100%", height: "100%" },
             children: [
                 {
                     component: b.vg,

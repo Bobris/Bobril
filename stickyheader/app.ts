@@ -8,7 +8,7 @@ module StickyHeaderApp {
     }
 
     function hs(tag: string, style: any, ...args: any[]): IBobrilNode {
-        return { tag: tag, attrs: { style: style }, children: args };
+        return { tag: tag, style: style, children: args };
     }
 
     interface IOnChangeData {
@@ -19,8 +19,8 @@ module StickyHeaderApp {
         data: IOnChangeData;
     }
 
-    class OnChangeComponent implements IBobrilComponent {
-        static onChange(ctx: IOnChangeCtx, v: any): void {
+    var OnChangeComponent: IBobrilComponent = {
+        onChange(ctx: IOnChangeCtx, v: any): void {
             ctx.data.onChange(v);
         }
     }
@@ -31,7 +31,7 @@ module StickyHeaderApp {
 
     function smallbutton(onAction: () => void, content: any): IBobrilNode {
         return {
-            tag: "button", attrs: { style: { width: "2em", height: "2em" } }, component: {
+            tag: "button", style: { width: "2em", height: "2em" }, component: {
                 onClick() { onAction(); return true; }
             }, children: content
         };
@@ -104,13 +104,12 @@ module StickyHeaderApp {
 
     var StickyHeaderFixedComp: IBobrilComponent = {
         render(ctx: any, me: IBobrilNode) {
-            me.attrs = me.attrs || {};
-            me.attrs.style = me.attrs.style || {};
-            me.attrs.style.position = "fixed";
-            me.attrs.style.marginTop = "0px";
-            me.attrs.style.zIndex = "3";
-            me.attrs.style.left = "0";
-            me.attrs.style.top = "0";
+            me.style = me.style || {};
+            me.style.position = "fixed";
+            me.style.marginTop = "0px";
+            me.style.zIndex = "3";
+            me.style.left = "0";
+            me.style.top = "0";
         }
     }
 
@@ -180,7 +179,7 @@ module StickyHeaderApp {
     function stickyTableFix(borderCollapse: boolean, style: any, header: IBobrilNode, body: any): IBobrilNode {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "table", attrs: { style: style }, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
+        return { tag: "table", style: style, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
     }
 
     function stickyUpdateDomAbs(ctx: any, me: IBobrilNode, element: HTMLElement) {
@@ -253,27 +252,30 @@ module StickyHeaderApp {
         render(ctx: any, me: IBobrilNode) {
             var header: IBobrilNode = ctx.data.header;
             var headerClone = b.cloneNode(header);
-            var attrsClone = cloneObj(me.attrs);
-            attrsClone.style = cloneObj(attrsClone.style);
-            attrsClone.style.border = "none";
+            var styleClone = cloneObj(me.style);
+            styleClone.border = "none";
             me.children = [
                 {
-                    tag: "table", attrs: me.attrs, children: [
+                    tag: "table", attrs: me.attrs, className: me.className, style: me.style, children: [
                         header,
                         ctx.data.body
                     ]
                 },
                 {
                     tag: "div",
-                    attrs: { style: { visibility: "hidden", position: "absolute" } },
+                    style: { visibility: "hidden", position: "absolute" },
                     children: {
                         tag: "table",
-                        attrs: attrsClone,
+                        className: me.className,
+                        attrs: me.attrs,
+                        style: styleClone,
                         children: headerClone
                     }
                 }
             ];
-            me.attrs = { style: { position: "relative" } };
+            me.attrs = undefined;
+            me.className = undefined;
+            me.style = { position: "relative" }
         },
         postInitDom(ctx: any, me: IBobrilNode, element: HTMLElement) {
             b.addOnScroll(ctx.onScroll);
@@ -290,7 +292,7 @@ module StickyHeaderApp {
     function stickyTableAbs(borderCollapse: boolean, style: any, header: IBobrilNode, body: any): IBobrilNode {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "div", attrs: { style: style }, data: { header: header, body: body }, component: StickyTableAbsComp };
+        return { tag: "div", style: style, data: { header: header, body: body }, component: StickyTableAbsComp };
     }
 
     function headerCell(content: string): IBobrilNode {
@@ -350,7 +352,7 @@ module StickyHeaderApp {
             }),
             {
                 tag: "div",
-                attrs: { style: { height: "150px", width: "300px", overflow: "auto" } },
+                style: { height: "150px", width: "300px", overflow: "auto" },
                 component: ScrollableComp,
                 children: [
                     h("p", "Before table"),

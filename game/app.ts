@@ -1,4 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.vg.d.ts"/>
+/// <reference path="../../src/bobril.onkey.d.ts"/>
 
 module GameApp {
     function h(tag: string, ...args: any[]) {
@@ -185,7 +187,7 @@ module GameApp {
         return [
             h("h1", "Game"),
             {
-                tag: "div", attrs: { tabindex: "0", style: { width: boardX + "px", height: boardY + "px", outline: "0" } }, component: GameControler, children:
+                tag: "div", attrs: { tabindex: "0" }, style: { width: boardX + "px", height: boardY + "px", outline: "0" }, component: GameControler, children:
                 [
                     {
                         component: b.vg,

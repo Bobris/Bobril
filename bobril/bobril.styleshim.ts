@@ -1,4 +1,4 @@
-/// <reference path="../src/bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 
 ((b: IBobrilStatic) => {
     var chain = b.setSetStyle(styleShim);

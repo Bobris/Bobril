@@ -2,38 +2,68 @@
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 var MouseApp;
 (function (MouseApp) {
-    var TrackClick = (function () {
-        function TrackClick() {
-        }
-        TrackClick.postInitDom = function (ctx, me, element) {
-            element.focus();
+    function d(style, content) {
+        return {
+            tag: "div",
+            style: style,
+            children: content
         };
-        TrackClick.onClick = function (ctx, event) {
+    }
+    function h(name, content) {
+        return { tag: name, children: content };
+    }
+    function style(style, content) {
+        content.style = style;
+        return content;
+    }
+    function comp(component, content) {
+        if (content.component) {
+            b.postEnhance(content, component);
+        }
+        else {
+            content.component = component;
+        }
+        return content;
+    }
+    function layoutPair(left, right, leftWidth) {
+        if (leftWidth === void 0) { leftWidth = "50%"; }
+        return d({ display: "table", width: "100%" }, [
+            d({ display: "table-cell", verticalAlign: "top", width: leftWidth }, left),
+            d({ display: "table-cell", verticalAlign: "top" }, right)
+        ]);
+    }
+    function checkbox(value, onChange) {
+        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: function (ctx, v) { return onChange(v); } } };
+    }
+    var TrackClick = {
+        postInitDom: function (ctx, me, element) {
+            element.focus();
+        },
+        onClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
             return true;
-        };
-        TrackClick.onDoubleClick = function (ctx, event) {
+        },
+        onDoubleClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return true;
-        };
-        TrackClick.onMouseDown = function (ctx, event) {
+        },
+        onMouseDown: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return true;
-        };
-        TrackClick.onMouseUp = function (ctx, event) {
+        },
+        onMouseUp: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
             return true;
-        };
-        TrackClick.onSwipeLeft = function (ctx, event) {
+        },
+        onSwipeLeft: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
             return true;
-        };
-        TrackClick.onSwipeRight = function (ctx, event) {
+        },
+        onSwipeRight: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return true;
-        };
-        return TrackClick;
-    })();
+        }
+    };
     function e(ev) {
         return {
             tag: "div",
@@ -50,32 +80,58 @@ var MouseApp;
         };
         return EventWrapper;
     })();
+    var TextEvent = (function () {
+        function TextEvent(eventName) {
+            this.eventName = eventName;
+        }
+        TextEvent.prototype.toString = function () {
+            return this.eventName;
+        };
+        return TextEvent;
+    })();
     var events = [];
     function addEvent(ev) {
         events.push(ev);
-        if (events.length > 30)
+        if (events.length > 20)
             events.shift();
         b.invalidate();
     }
+    var v1 = false, v2 = false;
     b.init(function () {
         return [
-            {
+            layoutPair({
                 tag: "button",
-                attrs: { style: { fontSize: "3em", marginBottom: "10px" } },
+                style: { fontSize: "3em", marginBottom: "10px" },
                 children: "Click button",
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
                 }
-            },
+            }, [
+                d({ height: "2em" }, h("label", [checkbox(v1, function (v) {
+                    v1 = v;
+                    addEvent(new TextEvent("slow onChange"));
+                }), "Slow click checkbox"])),
+                d({ height: "2em" }, comp({
+                    onClick: function () {
+                        v2 = !v2;
+                        b.invalidate();
+                        addEvent(new TextEvent("fast onClick"));
+                        return true;
+                    }
+                }, h("label", [checkbox(v2, function (v) {
+                    v2 = v;
+                    addEvent(new TextEvent("fast onChange"));
+                }), "Fast click checkbox"])))
+            ]),
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "120px" } },
+                style: { border: "1px solid", minHeight: "120px" },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }].concat(events.map(function (ev) { return e(ev); }))
+                children: [{ tag: "div", children: "Click here or swipe!", style: { fontSize: "2em" } }].concat(events.map(function (ev) { return e(ev); }))
             }
         ];
     });
