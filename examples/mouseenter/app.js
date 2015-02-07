@@ -1,5 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse2.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
 var MouseEnterLeaveApp;
 (function (MouseEnterLeaveApp) {
     var mouseEnter = "green";

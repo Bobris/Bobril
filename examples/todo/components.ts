@@ -346,7 +346,7 @@ module TodoApp {
             me.className = "delete-button";
         },
 
-        onClick(ctx: IDeleteButtonCtx, event: IMouseEvent) {
+        onClick(ctx: IDeleteButtonCtx) {
             ctx.data.performDelete(ctx.data.taskId);
             return true;
         }

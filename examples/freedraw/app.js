@@ -1,6 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.vg.d.ts"/>
-/// <reference path="../../src/bobril.mouse2.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
 var FreeDrawApp;
 (function (FreeDrawApp) {
     var globPointerCounter = 0;

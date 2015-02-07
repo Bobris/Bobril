@@ -1,5 +1,5 @@
 ﻿/// <reference path="bobril.d.ts"/>
-/// <reference path="bobril.mouse2.d.ts"/>
+/// <reference path="bobril.mouse.d.ts"/>
 /// <reference path="bobril.swipe.d.ts"/>
 
 ((b: IBobrilStatic) => {

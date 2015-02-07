@@ -265,7 +265,7 @@ var TodoApp;
             me.children = "delete";
             me.className = "delete-button";
         },
-        onClick: function (ctx, event) {
+        onClick: function (ctx) {
             ctx.data.performDelete(ctx.data.taskId);
             return true;
         }
