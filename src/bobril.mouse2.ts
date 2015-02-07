@@ -307,7 +307,7 @@ const enum Consts {
         if (firstPointerDown == ev.id) {
             mouseEnterAndLeave(ev);
             firstPointerDown = -1;
-            if (!tapCanceled) {
+            if (ev.type == BobrilPointerType.Touch && !tapCanceled) {
                 if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };

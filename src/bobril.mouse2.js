@@ -287,7 +287,7 @@
         if (firstPointerDown == ev.id) {
             mouseEnterAndLeave(ev);
             firstPointerDown = -1;
-            if (!tapCanceled) {
+            if (ev.type == 1 /* Touch */ && !tapCanceled) {
                 if (now() - firstPointerDownTime < 750 /* TabShouldBeShorterThanMs */) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param = { x: ev.x, y: ev.y };

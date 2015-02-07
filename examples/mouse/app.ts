@@ -2,6 +2,43 @@
 /// <reference path="../../src/bobril.mouse2.d.ts"/>
 
 module MouseApp {
+    function d(style: any, content: IBobrilChildren): IBobrilNode {
+        return {
+            tag: "div",
+            style: style,
+            children: content
+        };
+    }
+
+    function h(name: string, content: IBobrilChildren): IBobrilNode {
+        return { tag: name, children: content };
+    }
+
+    function style(style: any, content: IBobrilNode): IBobrilNode {
+        content.style = style;
+        return content;
+    }
+
+    function comp(component: IBobrilComponent, content: IBobrilNode): IBobrilNode {
+        if (content.component) {
+            b.postEnhance(content, component);
+        } else {
+            content.component = component;
+        }
+        return content;
+    }
+
+    function layoutPair(left: any, right: any, leftWidth = "50%"): IBobrilNode {
+        return d({ display: "table", width: "100%" }, [
+            d({ display: "table-cell", verticalAlign: "top", width: leftWidth }, left),
+            d({ display: "table-cell", verticalAlign: "top" }, right)
+        ]);
+    }
+
+    function checkbox(value: boolean, onChange: (value: boolean) => void): IBobrilNode {
+        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: (ctx:any, v:boolean) => onChange(v) } };
+    }
+
     interface ITrackClickData {
         onAdd: (e: IEvent) => void;
     }
@@ -46,7 +83,7 @@ module MouseApp {
         }
     }
 
-    function e(ev: IEvent):any {
+    function e(ev: IEvent): any {
         return {
             tag: "div",
             children: ev.toString()
@@ -61,31 +98,55 @@ module MouseApp {
         constructor(private ev: IBobrilMouseEvent, private eventName: string) { }
 
         toString(): string {
-            return this.eventName +" ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
         }
     }
 
+    class TextEvent implements IEvent {
+        constructor(private eventName: string) { }
+
+        toString(): string {
+            return this.eventName;
+        }
+    }
 
     var events: IEvent[] = [];
 
     function addEvent(ev: IEvent) {
         events.push(ev);
-        if (events.length > 30)
+        if (events.length > 20)
             events.shift();
         b.invalidate();
     }
 
+    var v1 = false, v2 = false;
+
     b.init(() => {
         return [
-            {
-                tag: "button",
-                style: { fontSize: "3em", marginBottom: "10px" },
-                children: "Click button",
-                component: TrackClick,
-                data: {
-                    onAdd: addEvent
-                }
-            },
+            layoutPair(
+                {
+                    tag: "button",
+                    style: { fontSize: "3em", marginBottom: "10px" },
+                    children: "Click button",
+                    component: TrackClick,
+                    data: {
+                        onAdd: addEvent
+                    }
+                }, [
+                    d({ height: "2em" },
+                        h("label", [checkbox(v1,(v) => { v1 = v; addEvent(new TextEvent("slow onChange")); }), "Slow click checkbox"])
+                        ),
+                    d({ height: "2em" },
+                        comp({
+                            onClick: () => {
+                                v2 = !v2;
+                                b.invalidate();
+                                addEvent(new TextEvent("fast onClick"));
+                                return true;
+                            }
+                        }, h("label", [checkbox(v2,(v) => { v2 = v; addEvent(new TextEvent("fast onChange")); } ), "Fast click checkbox"]))
+                        )
+                ]),
             {
                 tag: "div",
                 style: { border: "1px solid", minHeight: "120px" },
@@ -94,7 +155,7 @@ module MouseApp {
                     onAdd: addEvent
                 },
                 children: [{ tag: "div", children: "Click here or swipe!", style: { fontSize: "2em" } }]
-                            .concat(events.map((ev: IEvent) => e(ev)))
+                    .concat(events.map((ev: IEvent) => e(ev)))
             }
         ];
     });

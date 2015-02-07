@@ -4,18 +4,20 @@ module InputApp {
         return { tag: tag, children: args };
     }
 
-    function layoutPair(left: any, right: any, leftWidth= "50%"): IBobrilNode {
+    function layoutPair(left: any, right: any, leftWidth = "50%"): IBobrilNode {
         return {
             tag: "div",
             style: { display: "table", width: "100%" },
             children: [
-                { tag: "div", style: { display: "table-cell", "vertical-align": "top", width: leftWidth }, children: left },
-                { tag: "div", style: { display: "table-cell", "vertical-align": "top" }, children: right }
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top", width: leftWidth }, children: left },
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top" }, children: right }
             ]
         };
     }
 
-    var spacer = { tag: "div", style: "height:1em" };
+    function spacer() {
+        return { tag: "div", style: "height:1em" };
+    }
 
     // Model
     var frame = 0;
@@ -60,7 +62,7 @@ module InputApp {
         b.invalidate();
     }
 
-    var optionm:string[] = [];
+    var optionm: string[] = [];
 
     function setOptionm(v: string[]) {
         optionm = v;
@@ -159,27 +161,27 @@ module InputApp {
                 h("p", "Radio1: ", radio1 ? <any>"Yes" : "No", " Radio2: ", radio2 ? <any>"Yes" : "No"),
                 h("p", "Frame: " + frame)
             ], [
-                layoutPair([
-                    combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
-                ], [
-                    h("div", "Combobox: ", option)
-                ]),
-                spacer,
-                layoutPair([
-                    listbox(option2, setOption2, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
-                ], [
-                    h("div", "Listbox: ", option2)
-                ]),
-                spacer,
-                layoutPair([
-                    listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
-                ], [
-                    h("div", "Multiselect: ", optionm.join(", "))
-                ]),
-                spacer,
-                textarea(valuearea, setValueArea),
-                h("pre", valuearea)
-            ])
+                    layoutPair([
+                        combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                    ], [
+                            h("div", "Combobox: ", option)
+                        ]),
+                    spacer(),
+                    layoutPair([
+                        listbox(option2, setOption2, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                    ], [
+                            h("div", "Listbox: ", option2)
+                        ]),
+                    spacer(),
+                    layoutPair([
+                        listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                    ], [
+                            h("div", "Multiselect: ", optionm.join(", "))
+                        ]),
+                    spacer(),
+                    textarea(valuearea, setValueArea),
+                    h("pre", valuearea)
+                ])
         ];
     });
 }

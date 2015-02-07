@@ -14,12 +14,14 @@ var InputApp;
             tag: "div",
             style: { display: "table", width: "100%" },
             children: [
-                { tag: "div", style: { display: "table-cell", "vertical-align": "top", width: leftWidth }, children: left },
-                { tag: "div", style: { display: "table-cell", "vertical-align": "top" }, children: right }
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top", width: leftWidth }, children: left },
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top" }, children: right }
             ]
         };
     }
-    var spacer = { tag: "div", style: "height:1em" };
+    function spacer() {
+        return { tag: "div", style: "height:1em" };
+    }
     // Model
     var frame = 0;
     var value = "Change this";
@@ -135,19 +137,19 @@ var InputApp;
                 ], [
                     h("div", "Combobox: ", option)
                 ]),
-                spacer,
+                spacer(),
                 layoutPair([
                     listbox(option2, setOption2, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
                 ], [
                     h("div", "Listbox: ", option2)
                 ]),
-                spacer,
+                spacer(),
                 layoutPair([
                     listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
                 ], [
                     h("div", "Multiselect: ", optionm.join(", "))
                 ]),
-                spacer,
+                spacer(),
                 textarea(valuearea, setValueArea),
                 h("pre", valuearea)
             ])
