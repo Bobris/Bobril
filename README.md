@@ -7,6 +7,8 @@ Easy automatic generation of code and its speed has higher priority over simplic
 
 Examples: http://bobris.github.io/Bobril/
 
+See it in vdom-benchmarks: http://vdom-benchmark.github.io/vdom-benchmark/
+
 Features in core:
 - No additional dependencies
 - Virtual DOM diffing
