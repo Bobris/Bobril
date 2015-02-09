@@ -79,6 +79,8 @@
             var ki = k[i];
             var mi = mapping[ki];
             var vi = newValue[ki];
+            if (vi === undefined)
+                continue; // don't want to map undefined
             if (mi === undefined) {
                 if (typeof testingDivStyle[ki] === "string") {
                     mi = null;
