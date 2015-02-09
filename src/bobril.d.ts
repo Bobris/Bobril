@@ -2,6 +2,7 @@
 
 declare type IBobrilChild = boolean|string|IBobrilNode;
 declare type IBobrilChildren = IBobrilChild|IBobrilChild[];
+declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
 interface IBobrilStatic {
     // Low level method used just for testing
@@ -14,18 +15,18 @@ interface IBobrilStatic {
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
     setSetValue(callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
-    // Set update DOM attribute style callback by object, returns previous callback to allow chaining
-    setSetStyle(callback: (newValue: any) => void): (newValue: any) => void;
+    // Register new style shim, look at bobril.styleshim.ts for examples
+    setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;
     // main function to specify factory function to update html body
     init(factory: () => IBobrilChildren): void;
     // Set callback after frame is done, returns previous callback to allow chaining
     setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
     // you can pass just some ctx of some component and only that instance and its children will be rerendered
-    invalidate(ctx?:Object): void;
+    invalidate(ctx?: Object): void;
     // shim for [].isArray
     isArray(a: any): boolean;
-    // time in miliseconds from start
+    // time in miliseconds from start only use from init factory function
     uptime(): number;
     // shim for Date.now()
     now(): number;
@@ -85,7 +86,7 @@ interface IBobrilComponent {
     // called just before removing node from dom
     destroy? (ctx: Object, me: IBobrilNode, element: HTMLElement): void;
     // called when bubling event to parent so you could stop bubling without preventing default handling
-    shouldStopBubble? (ctx: Object, name:string, param: Object): boolean;
+    shouldStopBubble? (ctx: Object, name: string, param: Object): boolean;
 }
 
 // new node should atleast have tag or component member

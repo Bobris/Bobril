@@ -98,18 +98,69 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return prev;
     }
 
-    var setStyleCallback: (newValue: any) => void = (): void => {
+    function newHashObj() {
+        return Object.create(null);
     }
 
-    function setSetStyle(callback: (newValue: any) => void): (newValue: any) => void {
-        var prev = setStyleCallback;
-        setStyleCallback = callback;
-        return prev;
+    var vendors = ["webkit", "Moz", "ms", "o"];
+    var testingDivStyle: any = document.createElement("div").style;
+    function testPropExistence(name: string) {
+        return typeof testingDivStyle[name] === "string";
+    }
+
+    var mapping: IBobrilShimStyleMapping = newHashObj();
+
+    function renamer(newName: string) {
+        return (style: any, value: any, oldName: string) => {
+            style[newName] = value;
+            style[oldName] = undefined;
+        };
+    };
+
+    function ieVersion() {
+        return document.documentMode;
+    }
+
+    if (ieVersion() === 8) {
+        (<any>mapping).cssFloat = renamer("styleFloat");
+    }
+
+    function shimStyle(newValue: any) {
+        var k = Object.keys(newValue);
+        for (var i = 0, l = k.length; i < l; i++) {
+            var ki = k[i];
+            var mi = mapping[ki];
+            var vi = newValue[ki];
+            if (vi === undefined) continue;  // don't want to map undefined
+            if (mi === undefined) {
+                if (DEBUG) {
+                    if (ki === "float" && window.console && console.error) console.error("In style instead of 'float' you have to use 'cssFloat'");
+                    if (/-/.test(ki) && window.console && console.warn) console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
+                }
+                if (testPropExistence(ki)) {
+                    mi = null;
+                } else {
+                    var titleCaseKi = ki.replace(/^\w/, match => match.toUpperCase());
+                    for (var j = 0; j < vendors.length; j++) {
+                        if (testPropExistence(vendors[j] + titleCaseKi)) {
+                            mi = renamer(vendors[j] + titleCaseKi); break;
+                        }
+                    }
+                    if (mi === undefined) {
+                        mi = null;
+                        if (DEBUG && window.console && console.warn) console.warn("Style property " + ki + " is not supported in this browser");
+                    }
+                }
+                mapping[ki] = mi;
+            }
+            if (mi !== null)
+                mi(newValue, vi, ki);
+        }
     }
 
     function removeProperty(s: MSStyleCSSProperties, name: string) {
         if (hasRemovePropertyInStyle)
-            (<any>s)[name]="";
+            (<any>s)[name] = "";
         else
             s.removeAttribute(name);
     }
@@ -117,7 +168,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {
         var s = el.style;
         if (isObject(newStyle)) {
-            setStyleCallback(newStyle);
+            shimStyle(newStyle);
             var rule: string;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
@@ -601,8 +652,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             return cachedChildren;
         }
         // order of keyed nodes ware changed => reorder keyed nodes first
-        var cachedKeys: { [keyName: string]: number } = {};
-        var newKeys: { [keyName: string]: number } = {};
+        var cachedKeys: { [keyName: string]: number } = newHashObj();
+        var newKeys: { [keyName: string]: number } = newHashObj();
         var key: string;
         var node: IBobrilNode;
         var backupNewIndex = newIndex;
@@ -1071,7 +1122,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
         setSetValue: setSetValue,
-        setSetStyle: setSetStyle,
+        setStyleShim: (name: string, action: (style: any, value: any, oldName: string) => void) => mapping[name] = action,
         init: init,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
@@ -1079,7 +1130,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         now: now,
         frame: () => frame,
         assign: assign,
-        ieVersion: () => document.documentMode,
+        ieVersion: ieVersion,
         invalidate: invalidate,
         preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,

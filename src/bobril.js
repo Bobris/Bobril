@@ -85,12 +85,65 @@ b = (function (window, document) {
         setValueCallback = callback;
         return prev;
     }
-    var setStyleCallback = function () {
-    };
-    function setSetStyle(callback) {
-        var prev = setStyleCallback;
-        setStyleCallback = callback;
-        return prev;
+    function newHashObj() {
+        return Object.create(null);
+    }
+    var vendors = ["webkit", "Moz", "ms", "o"];
+    var testingDivStyle = document.createElement("div").style;
+    function testPropExistence(name) {
+        return typeof testingDivStyle[name] === "string";
+    }
+    var mapping = newHashObj();
+    function renamer(newName) {
+        return function (style, value, oldName) {
+            style[newName] = value;
+            style[oldName] = undefined;
+        };
+    }
+    ;
+    function ieVersion() {
+        return document.documentMode;
+    }
+    if (ieVersion() === 8) {
+        mapping.cssFloat = renamer("styleFloat");
+    }
+    function shimStyle(newValue) {
+        var k = Object.keys(newValue);
+        for (var i = 0, l = k.length; i < l; i++) {
+            var ki = k[i];
+            var mi = mapping[ki];
+            var vi = newValue[ki];
+            if (vi === undefined)
+                continue; // don't want to map undefined
+            if (mi === undefined) {
+                if (DEBUG) {
+                    if (ki === "float" && window.console && console.error)
+                        console.error("In style instead of 'float' you have to use 'cssFloat'");
+                    if (/-/.test(ki) && window.console && console.warn)
+                        console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
+                }
+                if (testPropExistence(ki)) {
+                    mi = null;
+                }
+                else {
+                    var titleCaseKi = ki.replace(/^\w/, function (match) { return match.toUpperCase(); });
+                    for (var j = 0; j < vendors.length; j++) {
+                        if (testPropExistence(vendors[j] + titleCaseKi)) {
+                            mi = renamer(vendors[j] + titleCaseKi);
+                            break;
+                        }
+                    }
+                    if (mi === undefined) {
+                        mi = null;
+                        if (DEBUG && window.console && console.warn)
+                            console.warn("Style property " + ki + " is not supported in this browser");
+                    }
+                }
+                mapping[ki] = mi;
+            }
+            if (mi !== null)
+                mi(newValue, vi, ki);
+        }
     }
     function removeProperty(s, name) {
         if (hasRemovePropertyInStyle)
@@ -101,7 +154,7 @@ b = (function (window, document) {
     function updateStyle(n, el, newStyle, oldStyle) {
         var s = el.style;
         if (isObject(newStyle)) {
-            setStyleCallback(newStyle);
+            shimStyle(newStyle);
             var rule;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
@@ -606,8 +659,8 @@ b = (function (window, document) {
             return cachedChildren;
         }
         // order of keyed nodes ware changed => reorder keyed nodes first
-        var cachedKeys = {};
-        var newKeys = {};
+        var cachedKeys = newHashObj();
+        var newKeys = newHashObj();
         var key;
         var node;
         var backupNewIndex = newIndex;
@@ -1072,7 +1125,7 @@ b = (function (window, document) {
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
         setSetValue: setSetValue,
-        setSetStyle: setSetStyle,
+        setStyleShim: function (name, action) { return mapping[name] = action; },
         init: init,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
@@ -1080,7 +1133,7 @@ b = (function (window, document) {
         now: now,
         frame: function () { return frame; },
         assign: assign,
-        ieVersion: function () { return document.documentMode; },
+        ieVersion: ieVersion,
         invalidate: invalidate,
         preventDefault: preventDefault,
         vmlNode: function () { return inNamespace = true; },

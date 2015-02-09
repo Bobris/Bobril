@@ -5,7 +5,7 @@ It has no dependencies.
 
 It polyfills for IE8 - `Array.isArray`, `Array.map`, `Object.create`, `Object.keys`
 
-There is used `DEBUG` variable which could be predefined to false and remove some code by uglify
+There is used `DEBUG` variable which could be predefined to false and remove some code by uglify, also remove warnings for developer mistakes, so make sure you are using nonminified version in development.
 
 It defines global variable `b` which is used like namespace for all bobril methods.
 
@@ -26,8 +26,6 @@ HTML | Bobril
 `style="float:left"` | `style: { cssFloat:"left" }`
 `<div><br></div>` | `{ tag:"div", children: { tag:"br" } }`
 `<div><span>A</span>B</div>` | `{ tag:"div", children: [ { tag:"span", children: "A" }, "B" ] }`
-
-Note: Example with `cssFloat` does not work on IE8 without `bobril.styleshim` extension.
 
 Children member in virtual dom could be `undefined`, `null`, `false`, `true`, string, object or array of all these items.
 `undefined`, `null`, `false` and `true` are automatically skipped. Nested arrays are flattened. Strings are DOM text nodes.
