@@ -1,3 +1,4 @@
+/// <reference path="../../src/bobril.d.ts"/>
 var AlmHours;
 (function (AlmHours) {
     function h(tag) {

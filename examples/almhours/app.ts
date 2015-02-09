@@ -1,4 +1,6 @@
-﻿module AlmHours {
+﻿/// <reference path="../../src/bobril.d.ts"/>
+
+module AlmHours {
     function h(tag: string, ...args: any[]) {
         return { tag: tag, children: args };
     }
