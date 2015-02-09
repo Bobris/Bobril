@@ -1,19 +1,31 @@
 ﻿/// <reference path="bobril.d.ts"/>
 
+declare var DEBUG: boolean;
+if (typeof DEBUG === "undefined") DEBUG = true;
+
 ((b: IBobrilStatic) => {
     var chain = b.setSetStyle(styleShim);
     var vendors = ["webkit", "Moz", "ms", "o"];
     var testingDivStyle: any = document.createElement("div").style;
+    function testPropExistence(name: string) {
+        return typeof testingDivStyle[name] === "string";
+    }
     var mapping: any = {};
+    function rename(newName: string) {
+        return (style: any, value: any, oldName: string) => {
+            style[newName] = value;
+            style[oldName] = undefined;
+        };
+    };
     if (b.ieVersion() === 8) {
-        mapping.cssFloat = "styleFloat";
+        mapping.cssFloat = rename("styleFloat");
         function addFilter(s: any, v: string) {
             if (s.zoom == null) s.zoom = "1";
             var f = s.filter;
             s.filter = (f == null) ? v : f + " " + v;
         }
-        mapping.opacity = (s: any, v: any) => {
-            s.opacity = undefined;
+        mapping.opacity = (s: any, v: any, oldName:string) => {
+            s[oldName] = undefined;
             if (v === "") return; 
             v = parseFloat(v);
             addFilter(s, "alpha(opacity=" + (((<number>v) * 100) | 0) + ")");
@@ -25,16 +37,16 @@
             return r;
         }
         var rergba = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
-        mapping.background = (s: any, v: any) => {
+        mapping.background = (s: any, v: any, oldName:string) => {
             var match = rergba.exec(v);
             if (match == null) return;
             var colorstr = hex2(parseFloat(match[4]) * 255) + hex2(parseFloat(match[1])) + hex2(parseFloat(match[2])) + hex2(parseFloat(match[3]));
-            s.background = "none";
+            s[oldName] = "none";
             addFilter(s, "progid:DXImageTransform.Microsoft.gradient(startColorstr=#" + colorstr + ",endColorstr=#" + colorstr + ")");
         }
         var deg2radians = Math.PI * 2 / 360;
-        mapping.transform = (s: any, v: any) => {
-            s.transform = undefined;
+        mapping.transform = (s: any, v: any, oldName:string) => {
+            s[oldName] = undefined;
             var match = /^rotate\((\d+)deg\)$/.exec(v);
             if (match == null) return;
             var match2 = match[1];
@@ -73,31 +85,29 @@
             var mi = mapping[ki];
             var vi = newValue[ki];
             if (vi === undefined) continue;  // don't want to map undefined
-
             if (mi === undefined) {
-                if (typeof testingDivStyle[ki] === "string") {
+                if (DEBUG) {
+                    if (ki === "float" && window.console && console.error) console.error("In style instead of 'float' you have to use 'cssFloat'");
+                    if (/-/.test(ki) && window.console && console.warn) console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
+                }
+                if (testPropExistence(ki)) {
                     mi = null;
                 } else {
                     var titleCaseKi = ki.replace(/^\w/, match => match.toUpperCase());
                     for (var j = 0; j < vendors.length; j++) {
-                        if (typeof testingDivStyle[vendors[j] + titleCaseKi] === "string") {
-                            mi = vendors[j] + titleCaseKi; break;
+                        if (testPropExistence(vendors[j] + titleCaseKi)) {
+                            mi = rename(vendors[j] + titleCaseKi); break;
                         }
                     }
                     if (mi === undefined) {
                         mi = null;
-                        if (window.console && console.warn) console.warn("style property " + ki + " is not supported in this browser");
+                        if (DEBUG && window.console && console.warn) console.warn("Style property " + ki + " is not supported in this browser");
                     }
                 }
                 mapping[ki] = mi;
             }
-            if (mi === null) continue;
-            if (typeof mi === "function") {
-                mi(newValue, vi);
-            } else {
-                newValue[mi] = vi;
-                newValue[ki] = undefined;
-            }
+            if (mi !== null)
+                mi(newValue, vi, ki);
         }
         chain(newValue);
     }
