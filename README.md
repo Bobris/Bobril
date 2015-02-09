@@ -31,7 +31,7 @@ Features in extensions:
 - Asap (setImmediate) and Promise A+ implementation - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 - Scroll notification
 
-All extensions + core gziped are under 12kb
+All extensions + core gziped are under 13kb
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:

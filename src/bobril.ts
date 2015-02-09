@@ -72,7 +72,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return document.createTextNode(content);
     }
 
+    function createElement(name: string): HTMLElement {
+        return document.createElement(name);
+    }
+
     var hasTextContent = "textContent" in createTextNode("");
+    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
 
     function isObject(value: any): boolean {
         return typeof value === "object";
@@ -102,40 +107,49 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return prev;
     }
 
+    function removeProperty(s: MSStyleCSSProperties, name: string) {
+        if (hasRemovePropertyInStyle)
+            (<any>s)[name]="";
+        else
+            s.removeAttribute(name);
+    }
+
     function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {
+        var s = el.style;
         if (isObject(newStyle)) {
             setStyleCallback(newStyle);
             var rule: string;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
-                    if (!(rule in newStyle)) el.style[<any>rule] = "";
+                    if (!(rule in newStyle))
+                        removeProperty(s, rule);
                 }
                 for (rule in newStyle) {
                     var v = newStyle[rule];
                     if (v !== undefined) {
-                        if (oldStyle[rule] !== v) el.style[<any>rule] = v;
+                        if (oldStyle[rule] !== v) s[<any>rule] = v;
                     } else {
-                        el.style[<any>rule] = "";
+                        removeProperty(s, rule);
                     }
                 }
             } else {
                 if (oldStyle)
-                    el.style.cssText = "";
+                    s.cssText = "";
                 for (rule in newStyle) {
                     var v = newStyle[rule];
                     if (v !== undefined)
-                        el.style[<any>rule] = v;
+                        s[<any>rule] = v;
                 }
             }
         } else if (newStyle) {
-            el.style.cssText = newStyle;
+            s.cssText = newStyle;
         } else {
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
-                    el.style[<any>rule] = "";
+                    removeProperty(s, rule);
                 }
             } else if (oldStyle) {
-                el.style.cssText = "";
+                s.cssText = "";
             }
         }
     }
@@ -148,7 +162,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
-        if (!newAttrs) return undefined;
         var attrName: string, newAttr: any, oldAttr: any, valueOldAttr: any, valueNewAttr: any;
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
@@ -167,6 +180,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     (<any>el)[attrName] = newAttr;
                 } else el.setAttribute(attrName, newAttr);
+            }
+        }
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
             }
         }
         if (valueNewAttr !== undefined) {
@@ -210,7 +229,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             inNamespace = true;
             inSvg = true;
         } else {
-            el = document.createElement(n.tag);
+            el = createElement(n.tag);
         }
         c.element = el;
         createChildren(c);
@@ -390,7 +409,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var removeEl = false;
             var parent = el.parentNode;
             if (!el.insertAdjacentHTML) {
-                el = parent.insertBefore(document.createElement("i"), el);
+                el = parent.insertBefore(createElement("i"), el);
                 removeEl = true;
             }
             el.insertAdjacentHTML("beforebegin", n.children);
@@ -429,31 +448,27 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     inNamespace = true;
                     inSvg = true;
                 }
-                if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildrenNode(n, c);
-                    if (component) {
-                        if (component.postRender) {
-                            component.postRender(c.ctx, n, c);
-                        }
+                updateChildrenNode(n, c);
+                if (component) {
+                    if (component.postRender) {
+                        component.postRender(c.ctx, n, c);
                     }
-                    el = <HTMLElement>c.element;
-                    if (c.attrs)
-                        c.attrs = updateElement(c, el, n.attrs, c.attrs);
-                    updateStyle(c, el, n.style, c.style);
-                    c.style = n.style;
-                    var className = n.className;
-                    if (className !== c.className) {
-                        setClassName(el, className || "");
-                        c.className = className;
-                    }
-                    c.data = n.data;
-                    inNamespace = backupInNamespace;
-                    inSvg = backupInSvg;
-                    pushInitCallback(c, true);
-                    return c;
                 }
-                inSvg = backupInSvg;
+                el = <HTMLElement>c.element;
+                if (c.attrs || n.attrs)
+                    c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
+                updateStyle(c, el, n.style, c.style);
+                c.style = n.style;
+                var className = n.className;
+                if (className !== c.className) {
+                    setClassName(el, className || "");
+                    c.className = className;
+                }
+                c.data = n.data;
                 inNamespace = backupInNamespace;
+                inSvg = backupInSvg;
+                pushInitCallback(c, true);
+                return c;
             }
         }
         var r = createNode(n, c.parent);

@@ -64,7 +64,11 @@ b = (function (window, document) {
     function createTextNode(content) {
         return document.createTextNode(content);
     }
+    function createElement(name) {
+        return document.createElement(name);
+    }
     var hasTextContent = "textContent" in createTextNode("");
+    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
     function isObject(value) {
         return typeof value === "object";
     }
@@ -88,47 +92,54 @@ b = (function (window, document) {
         setStyleCallback = callback;
         return prev;
     }
+    function removeProperty(s, name) {
+        if (hasRemovePropertyInStyle)
+            s[name] = "";
+        else
+            s.removeAttribute(name);
+    }
     function updateStyle(n, el, newStyle, oldStyle) {
+        var s = el.style;
         if (isObject(newStyle)) {
             setStyleCallback(newStyle);
             var rule;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
                     if (!(rule in newStyle))
-                        el.style[rule] = "";
+                        removeProperty(s, rule);
                 }
                 for (rule in newStyle) {
                     var v = newStyle[rule];
                     if (v !== undefined) {
                         if (oldStyle[rule] !== v)
-                            el.style[rule] = v;
+                            s[rule] = v;
                     }
                     else {
-                        el.style[rule] = "";
+                        removeProperty(s, rule);
                     }
                 }
             }
             else {
                 if (oldStyle)
-                    el.style.cssText = "";
+                    s.cssText = "";
                 for (rule in newStyle) {
                     var v = newStyle[rule];
                     if (v !== undefined)
-                        el.style[rule] = v;
+                        s[rule] = v;
                 }
             }
         }
         else if (newStyle) {
-            el.style.cssText = newStyle;
+            s.cssText = newStyle;
         }
         else {
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
-                    el.style[rule] = "";
+                    removeProperty(s, rule);
                 }
             }
             else if (oldStyle) {
-                el.style.cssText = "";
+                s.cssText = "";
             }
         }
     }
@@ -139,8 +150,6 @@ b = (function (window, document) {
             el.className = className;
     }
     function updateElement(n, el, newAttrs, oldAttrs) {
-        if (!newAttrs)
-            return undefined;
         var attrName, newAttr, oldAttr, valueOldAttr, valueNewAttr;
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
@@ -164,6 +173,12 @@ b = (function (window, document) {
                 }
                 else
                     el.setAttribute(attrName, newAttr);
+            }
+        }
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
             }
         }
         if (valueNewAttr !== undefined) {
@@ -208,7 +223,7 @@ b = (function (window, document) {
             inSvg = true;
         }
         else {
-            el = document.createElement(n.tag);
+            el = createElement(n.tag);
         }
         c.element = el;
         createChildren(c);
@@ -395,7 +410,7 @@ b = (function (window, document) {
             var removeEl = false;
             var parent = el.parentNode;
             if (!el.insertAdjacentHTML) {
-                el = parent.insertBefore(document.createElement("i"), el);
+                el = parent.insertBefore(createElement("i"), el);
                 removeEl = true;
             }
             el.insertAdjacentHTML("beforebegin", n.children);
@@ -436,31 +451,27 @@ b = (function (window, document) {
                     inNamespace = true;
                     inSvg = true;
                 }
-                if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildrenNode(n, c);
-                    if (component) {
-                        if (component.postRender) {
-                            component.postRender(c.ctx, n, c);
-                        }
+                updateChildrenNode(n, c);
+                if (component) {
+                    if (component.postRender) {
+                        component.postRender(c.ctx, n, c);
                     }
-                    el = c.element;
-                    if (c.attrs)
-                        c.attrs = updateElement(c, el, n.attrs, c.attrs);
-                    updateStyle(c, el, n.style, c.style);
-                    c.style = n.style;
-                    var className = n.className;
-                    if (className !== c.className) {
-                        setClassName(el, className || "");
-                        c.className = className;
-                    }
-                    c.data = n.data;
-                    inNamespace = backupInNamespace;
-                    inSvg = backupInSvg;
-                    pushInitCallback(c, true);
-                    return c;
                 }
-                inSvg = backupInSvg;
+                el = c.element;
+                if (c.attrs || n.attrs)
+                    c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
+                updateStyle(c, el, n.style, c.style);
+                c.style = n.style;
+                var className = n.className;
+                if (className !== c.className) {
+                    setClassName(el, className || "");
+                    c.className = className;
+                }
+                c.data = n.data;
                 inNamespace = backupInNamespace;
+                inSvg = backupInSvg;
+                pushInitCallback(c, true);
+                return c;
             }
         }
         var r = createNode(n, c.parent);
