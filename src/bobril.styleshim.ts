@@ -71,6 +71,7 @@
         for (var i = 0, l = k.length; i < l; i++) {
             var ki = k[i];
             var mi = mapping[ki];
+            if(mi in newValue) continue; // already mapped
             var vi = newValue[ki];
             if (mi === undefined) {
                 if (typeof testingDivStyle[ki] === "string") {
