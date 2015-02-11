@@ -66,9 +66,9 @@ var StickyHeaderApp;
     }
     function stickyUpdateDomFix(ctx, me, element) {
         var scrollableArea = element.parentElement;
-        while (!b.isScrollable(scrollableArea))
+        while (scrollableArea && !b.isScrollable(scrollableArea)[1])
             scrollableArea = scrollableArea.parentElement;
-        var isWindowScrolling = scrollableArea === document.body;
+        var isWindowScrolling = scrollableArea === document.documentElement || scrollableArea == null;
         var c = ctx;
         var tableElement = element;
         var origHeader = tableElement.firstChild;
@@ -186,9 +186,9 @@ var StickyHeaderApp;
     }
     function stickyUpdateDomAbs(ctx, me, element) {
         var scrollableArea = element.parentElement;
-        while (!b.isScrollable(scrollableArea))
+        while (scrollableArea && !b.isScrollable(scrollableArea)[1])
             scrollableArea = scrollableArea.parentElement;
-        var isWindowScrolling = scrollableArea === document.body;
+        var isWindowScrolling = scrollableArea === document.documentElement || scrollableArea == null;
         var c = ctx;
         var tableElement = element.firstChild;
         var origHeader = tableElement.firstChild;
