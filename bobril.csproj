@@ -76,6 +76,7 @@
     <Content Include="examples\router2\index.html" />
     <Content Include="examples\router\index.html" />
     <Content Include="examples\stickyheader\index.html" />
+    <Content Include="examples\teamrole\index.html" />
     <Content Include="examples\todo\delete.png" />
     <Content Include="examples\todo\index.html" />
     <Content Include="examples\todo\styles.css" />
@@ -101,6 +102,8 @@
     <TypeScriptCompile Include="examples\router\app.ts" />
     <TypeScriptCompile Include="examples\sandbox\app.ts" />
     <TypeScriptCompile Include="examples\stickyheader\app.ts" />
+    <TypeScriptCompile Include="examples\teamrole\app.ts" />
+    <TypeScriptCompile Include="examples\teamrole\polldata.ts" />
     <TypeScriptCompile Include="examples\todo\app.ts" />
     <TypeScriptCompile Include="examples\todo\components.ts" />
     <TypeScriptCompile Include="examples\todo\model.ts" />
