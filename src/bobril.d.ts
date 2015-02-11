@@ -24,6 +24,8 @@ interface IBobrilStatic {
     // recreate whole vdom in next frame, next invalidates before next frame are noop
     // you can pass just some ctx of some component and only that instance and its children will be rerendered
     invalidate(ctx?: Object): void;
+    // When you need to know if next frame/update is already scheduled
+    invalidated(): boolean;
     // shim for [].isArray
     isArray(a: any): boolean;
     // time in miliseconds from start only use from init factory function

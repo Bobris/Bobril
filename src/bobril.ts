@@ -257,6 +257,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     function createNode(n: IBobrilNode, parentNode: IBobrilNode): IBobrilCacheNode {
         var c = <IBobrilCacheNode>n;
+        c.parent = parentNode;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
         var component = c.component;
@@ -296,7 +297,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
         pushInitCallback(c, false);
-        c.parent = parentNode;
         return c;
     }
 
@@ -1132,6 +1132,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
+        invalidated: ()=>scheduled,
         preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,
         vdomPath: vdomPath,

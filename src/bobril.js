@@ -250,6 +250,7 @@ b = (function (window, document) {
     }
     function createNode(n, parentNode) {
         var c = n;
+        c.parent = parentNode;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
         var component = c.component;
@@ -295,7 +296,6 @@ b = (function (window, document) {
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
         pushInitCallback(c, false);
-        c.parent = parentNode;
         return c;
     }
     function normalizeNode(n) {
@@ -1135,6 +1135,7 @@ b = (function (window, document) {
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
+        invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
         vmlNode: function () { return inNamespace = true; },
         vdomPath: vdomPath,
