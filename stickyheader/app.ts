@@ -62,8 +62,8 @@ module StickyHeaderApp {
 
     function stickyUpdateDomFix(ctx: any, me: IBobrilNode, element: HTMLElement) {
         var scrollableArea = element.parentElement;
-        while (!b.isScrollable(scrollableArea)) scrollableArea = scrollableArea.parentElement;
-        var isWindowScrolling = scrollableArea === document.body;
+        while (scrollableArea && !b.isScrollable(scrollableArea)[1]) scrollableArea = scrollableArea.parentElement;
+        var isWindowScrolling = scrollableArea === document.documentElement || scrollableArea == null;
         var c: any = ctx;
         var tableElement = element;
         var origHeader = <HTMLElement>tableElement.firstChild;
@@ -184,8 +184,8 @@ module StickyHeaderApp {
 
     function stickyUpdateDomAbs(ctx: any, me: IBobrilNode, element: HTMLElement) {
         var scrollableArea = element.parentElement;
-        while (!b.isScrollable(scrollableArea)) scrollableArea = scrollableArea.parentElement;
-        var isWindowScrolling = scrollableArea === document.body;
+        while (scrollableArea && !b.isScrollable(scrollableArea)[1]) scrollableArea = scrollableArea.parentElement;
+        var isWindowScrolling = scrollableArea === document.documentElement || scrollableArea == null;
         var c: any = ctx;
         var tableElement = <HTMLElement>element.firstChild;
         var origHeader = <HTMLElement>tableElement.firstChild;
@@ -346,7 +346,7 @@ module StickyHeaderApp {
                 borderCollapse = v;
                 b.invalidate();
             }), "Collapse borders"),
-            " Border Spacing: ", pxinput(borderSpacing, (v) => {
+            " Border Spacing: ", pxinput(borderSpacing,(v) => {
                 borderSpacing = v;
                 b.invalidate();
             }),

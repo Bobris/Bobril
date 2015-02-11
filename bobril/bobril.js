@@ -64,7 +64,11 @@ b = (function (window, document) {
     function createTextNode(content) {
         return document.createTextNode(content);
     }
+    function createElement(name) {
+        return document.createElement(name);
+    }
     var hasTextContent = "textContent" in createTextNode("");
+    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
     function isObject(value) {
         return typeof value === "object";
     }
@@ -81,54 +85,114 @@ b = (function (window, document) {
         setValueCallback = callback;
         return prev;
     }
-    var setStyleCallback = function () {
-    };
-    function setSetStyle(callback) {
-        var prev = setStyleCallback;
-        setStyleCallback = callback;
-        return prev;
+    function newHashObj() {
+        return Object.create(null);
+    }
+    var vendors = ["webkit", "Moz", "ms", "o"];
+    var testingDivStyle = document.createElement("div").style;
+    function testPropExistence(name) {
+        return typeof testingDivStyle[name] === "string";
+    }
+    var mapping = newHashObj();
+    function renamer(newName) {
+        return function (style, value, oldName) {
+            style[newName] = value;
+            style[oldName] = undefined;
+        };
+    }
+    ;
+    function ieVersion() {
+        return document.documentMode;
+    }
+    if (ieVersion() === 8) {
+        mapping.cssFloat = renamer("styleFloat");
+    }
+    function shimStyle(newValue) {
+        var k = Object.keys(newValue);
+        for (var i = 0, l = k.length; i < l; i++) {
+            var ki = k[i];
+            var mi = mapping[ki];
+            var vi = newValue[ki];
+            if (vi === undefined)
+                continue; // don't want to map undefined
+            if (mi === undefined) {
+                if (DEBUG) {
+                    if (ki === "float" && window.console && console.error)
+                        console.error("In style instead of 'float' you have to use 'cssFloat'");
+                    if (/-/.test(ki) && window.console && console.warn)
+                        console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
+                }
+                if (testPropExistence(ki)) {
+                    mi = null;
+                }
+                else {
+                    var titleCaseKi = ki.replace(/^\w/, function (match) { return match.toUpperCase(); });
+                    for (var j = 0; j < vendors.length; j++) {
+                        if (testPropExistence(vendors[j] + titleCaseKi)) {
+                            mi = renamer(vendors[j] + titleCaseKi);
+                            break;
+                        }
+                    }
+                    if (mi === undefined) {
+                        mi = null;
+                        if (DEBUG && window.console && console.warn)
+                            console.warn("Style property " + ki + " is not supported in this browser");
+                    }
+                }
+                mapping[ki] = mi;
+            }
+            if (mi !== null)
+                mi(newValue, vi, ki);
+        }
+    }
+    function removeProperty(s, name) {
+        if (hasRemovePropertyInStyle)
+            s[name] = "";
+        else
+            s.removeAttribute(name);
     }
     function updateStyle(n, el, newStyle, oldStyle) {
+        var s = el.style;
         if (isObject(newStyle)) {
-            setStyleCallback(newStyle);
+            shimStyle(newStyle);
             var rule;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
                     if (!(rule in newStyle))
-                        el.style[rule] = "";
+                        removeProperty(s, rule);
                 }
                 for (rule in newStyle) {
                     var v = newStyle[rule];
                     if (v !== undefined) {
                         if (oldStyle[rule] !== v)
-                            el.style[rule] = v;
+                            s[rule] = v;
                     }
                     else {
-                        el.style[rule] = "";
+                        removeProperty(s, rule);
                     }
                 }
             }
             else {
                 if (oldStyle)
-                    el.style.cssText = "";
+                    s.cssText = "";
                 for (rule in newStyle) {
                     var v = newStyle[rule];
                     if (v !== undefined)
-                        el.style[rule] = v;
+                        s[rule] = v;
                 }
             }
         }
         else if (newStyle) {
-            el.style.cssText = newStyle;
+            s.cssText = newStyle;
         }
         else {
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
-                    el.style[rule] = "";
+                    removeProperty(s, rule);
                 }
             }
             else if (oldStyle) {
-                el.style.cssText = "";
+                s.cssText = "";
             }
         }
     }
@@ -139,8 +203,6 @@ b = (function (window, document) {
             el.className = className;
     }
     function updateElement(n, el, newAttrs, oldAttrs) {
-        if (!newAttrs)
-            return undefined;
         var attrName, newAttr, oldAttr, valueOldAttr, valueNewAttr;
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
@@ -166,6 +228,12 @@ b = (function (window, document) {
                     el.setAttribute(attrName, newAttr);
             }
         }
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
+            }
+        }
         if (valueNewAttr !== undefined) {
             setValueCallback(el, n, valueNewAttr, valueOldAttr);
         }
@@ -182,6 +250,7 @@ b = (function (window, document) {
     }
     function createNode(n, parentNode) {
         var c = n;
+        c.parent = parentNode;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
         var component = c.component;
@@ -208,7 +277,7 @@ b = (function (window, document) {
             inSvg = true;
         }
         else {
-            el = document.createElement(n.tag);
+            el = createElement(n.tag);
         }
         c.element = el;
         createChildren(c);
@@ -227,7 +296,6 @@ b = (function (window, document) {
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
         pushInitCallback(c, false);
-        c.parent = parentNode;
         return c;
     }
     function normalizeNode(n) {
@@ -395,7 +463,7 @@ b = (function (window, document) {
             var removeEl = false;
             var parent = el.parentNode;
             if (!el.insertAdjacentHTML) {
-                el = parent.insertBefore(document.createElement("i"), el);
+                el = parent.insertBefore(createElement("i"), el);
                 removeEl = true;
             }
             el.insertAdjacentHTML("beforebegin", n.children);
@@ -436,31 +504,27 @@ b = (function (window, document) {
                     inNamespace = true;
                     inSvg = true;
                 }
-                if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildrenNode(n, c);
-                    if (component) {
-                        if (component.postRender) {
-                            component.postRender(c.ctx, n, c);
-                        }
+                updateChildrenNode(n, c);
+                if (component) {
+                    if (component.postRender) {
+                        component.postRender(c.ctx, n, c);
                     }
-                    el = c.element;
-                    if (c.attrs)
-                        c.attrs = updateElement(c, el, n.attrs, c.attrs);
-                    updateStyle(c, el, n.style, c.style);
-                    c.style = n.style;
-                    var className = n.className;
-                    if (className !== c.className) {
-                        setClassName(el, className || "");
-                        c.className = className;
-                    }
-                    c.data = n.data;
-                    inNamespace = backupInNamespace;
-                    inSvg = backupInSvg;
-                    pushInitCallback(c, true);
-                    return c;
                 }
-                inSvg = backupInSvg;
+                el = c.element;
+                if (c.attrs || n.attrs)
+                    c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
+                updateStyle(c, el, n.style, c.style);
+                c.style = n.style;
+                var className = n.className;
+                if (className !== c.className) {
+                    setClassName(el, className || "");
+                    c.className = className;
+                }
+                c.data = n.data;
                 inNamespace = backupInNamespace;
+                inSvg = backupInSvg;
+                pushInitCallback(c, true);
+                return c;
             }
         }
         var r = createNode(n, c.parent);
@@ -595,8 +659,8 @@ b = (function (window, document) {
             return cachedChildren;
         }
         // order of keyed nodes ware changed => reorder keyed nodes first
-        var cachedKeys = {};
-        var newKeys = {};
+        var cachedKeys = newHashObj();
+        var newKeys = newHashObj();
         var key;
         var node;
         var backupNewIndex = newIndex;
@@ -1061,7 +1125,7 @@ b = (function (window, document) {
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
         setSetValue: setSetValue,
-        setSetStyle: setSetStyle,
+        setStyleShim: function (name, action) { return mapping[name] = action; },
         init: init,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
@@ -1069,8 +1133,9 @@ b = (function (window, document) {
         now: now,
         frame: function () { return frame; },
         assign: assign,
-        ieVersion: function () { return document.documentMode; },
+        ieVersion: ieVersion,
         invalidate: invalidate,
+        invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
         vmlNode: function () { return inNamespace = true; },
         vdomPath: vdomPath,
