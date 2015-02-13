@@ -3,7 +3,8 @@ var fs = require("graceful-fs");
 var path = require("path");
 
 var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.d.ts");
-
+var lastLibVersion;
+var lastLibPrecompiled;
 var fc = Object.create(null);
 
 function getFileFromCache(fileName) {
@@ -41,17 +42,24 @@ function createCompilerHost(currentDirectory) {
 	function getCanonicalFileName(fileName) {
 		return ts.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
 	}
-	var unsupportedFileEncodingErrorCode = -2147024809;
 	function getSourceFile(filename, languageVersion, onError) {
+		if (filename===defaultLibFilename && languageVersion===lastLibVersion) {
+			return lastLibPrecompiled;
+		}
 		try {
 			var text = getFileFromCache(filename).content;
 		} catch (e) {
 			if (onError) {
-				onError(e.number === unsupportedFileEncodingErrorCode ? ts.createCompilerDiagnostic(ts.Diagnostics.Unsupported_file_encoding).messageText : e.message);
+				onError(e.message);
 			}
 			text = "";
 		}
-		return text !== undefined ? ts.createSourceFile(filename, text, languageVersion, "0") : undefined;
+		if (filename===defaultLibFilename) {
+			lastLibVersion=languageVersion;
+			lastLibPrecompiled=ts.createSourceFile(filename, text, languageVersion, true);
+			return lastLibPrecompiled;
+		}
+		return ts.createSourceFile(filename, text, languageVersion, true);
 	}
 	function writeFile(fileName, data, writeByteOrderMark, onError) {
 		try {
@@ -93,6 +101,7 @@ function reportDiagnostic(diagnostic) {
 	output += category + " TS" + diagnostic.code + ": " + diagnostic.messageText + ts.sys.newLine;
 	ts.sys.write(output);
 }
+
 function reportDiagnostics(diagnostics) {
 	for (var i = 0; i < diagnostics.length; i++) {
 		reportDiagnostic(diagnostics[i]);
@@ -126,7 +135,7 @@ function typeScriptCompile(fileNames, commonJs, sourceMap, currentDirectory) {
 		sourcetime = (new Date()).getTime(); 
 	}
 	
-	if (sourcetime< outtime) {
+	if (sourcetime < outtime) {
 		return;
 	}
 	
