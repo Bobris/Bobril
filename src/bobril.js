@@ -248,6 +248,20 @@ b = (function (window, document) {
             }
         }
     }
+    function findCfg(parent) {
+        var cfg;
+        while (parent) {
+            cfg = parent.cfg;
+            if (cfg !== undefined)
+                break;
+            if (parent.ctx) {
+                cfg = parent.ctx.cfg;
+                break;
+            }
+            parent = parent.parent;
+        }
+        return cfg;
+    }
     function createNode(n, parentNode) {
         var c = n;
         c.parent = parentNode;
@@ -255,7 +269,7 @@ b = (function (window, document) {
         var backupInSvg = inSvg;
         var component = c.component;
         if (component) {
-            c.ctx = { data: c.data || {}, me: c };
+            c.ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             if (component.init) {
                 component.init(c.ctx, n);
             }
@@ -393,6 +407,7 @@ b = (function (window, document) {
                 p.removeChild(el);
         }
     }
+    var rootElement;
     var rootFactory;
     var rootCacheChildren = [];
     function vdomPath(n) {
@@ -443,6 +458,7 @@ b = (function (window, document) {
                 bigChange = true;
             }
             else {
+                c.ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
                     if (!component.shouldChange(c.ctx, n, c))
                         return c;
@@ -450,6 +466,7 @@ b = (function (window, document) {
                 c.component = component;
                 if (component.render)
                     component.render(c.ctx, n, c);
+                c.cfg = n.cfg;
             }
         }
         var el;
@@ -974,7 +991,8 @@ b = (function (window, document) {
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
             var newChildren = rootFactory();
-            rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
+            rootElement = rootElement || document.body;
+            rootCacheChildren = updateChildren(rootElement, newChildren, rootCacheChildren, null);
         }
         else {
             selectedUpdate(rootCacheChildren);
@@ -996,10 +1014,11 @@ b = (function (window, document) {
         scheduled = true;
         requestAnimationFrame(update);
     }
-    function init(factory) {
+    function init(factory, element) {
         if (rootCacheChildren.length) {
-            rootCacheChildren = updateChildren(document.body, [], rootCacheChildren, null);
+            rootCacheChildren = updateChildren(rootElement, [], rootCacheChildren, null);
         }
+        rootElement = element;
         rootFactory = factory;
         invalidate();
     }
@@ -1007,20 +1026,51 @@ b = (function (window, document) {
         while (node) {
             var c = node.component;
             if (c) {
+                var ctx = node.ctx;
                 var m = c[name];
                 if (m) {
-                    if (m.call(c, node.ctx, param))
+                    if (m.call(c, ctx, param))
                         return true;
                 }
                 m = c.shouldStopBubble;
                 if (m) {
-                    if (m.call(c, node.ctx, name, param))
+                    if (m.call(c, ctx, name, param))
                         break;
                 }
             }
             node = node.parent;
         }
         return false;
+    }
+    function broadcastEventToNode(node, name, param) {
+        if (!node)
+            return false;
+        var c = node.component;
+        if (c) {
+            var ctx = node.ctx;
+            if (c.shouldStopBroadcast(ctx, name, param))
+                return false;
+            var m = c[name];
+            if (m) {
+                if (m.call(c, ctx, param))
+                    return true;
+            }
+        }
+        return broadcastEvent(node, name, param);
+    }
+    function broadcastEvent(node, name, param) {
+        if (!node)
+            return false;
+        var ch = node.children;
+        if (isArray(ch)) {
+            for (var i = 0; i < ch.length; i++) {
+                if (broadcastEventToNode(ch[i], name, param))
+                    return true;
+            }
+        }
+        else {
+            return broadcastEventToNode(ch, name, param);
+        }
     }
     function merge(f1, f2) {
         var _this = this;
@@ -1143,6 +1193,7 @@ b = (function (window, document) {
         addEvent: addEvent,
         emitEvent: emitEvent,
         bubble: bubbleEvent,
+        broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
         cloneNode: cloneNode

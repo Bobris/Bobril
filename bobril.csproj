@@ -73,6 +73,7 @@
     <Content Include="examples\mouse\index.html" />
     <Content Include="examples\onkey\index.html" />
     <Content Include="examples\opacity\index.html" />
+    <Content Include="examples\popup\index.html" />
     <Content Include="examples\router2\index.html" />
     <Content Include="examples\router\index.html" />
     <Content Include="examples\stickyheader\index.html" />
@@ -98,6 +99,7 @@
     <TypeScriptCompile Include="examples\mouse\app.ts" />
     <TypeScriptCompile Include="examples\onkey\app.ts" />
     <TypeScriptCompile Include="examples\opacity\app.ts" />
+    <TypeScriptCompile Include="examples\popup\app.ts" />
     <TypeScriptCompile Include="examples\router2\app.ts" />
     <TypeScriptCompile Include="examples\router\app.ts" />
     <TypeScriptCompile Include="examples\sandbox\app.ts" />
