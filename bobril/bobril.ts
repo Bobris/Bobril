@@ -255,6 +255,20 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
+    function findCfg(parent: IBobrilCacheNode): any {
+        var cfg: any;
+        while (parent) {
+            cfg = parent.cfg;
+            if (cfg !== undefined) break;
+            if (parent.ctx) {
+                cfg = parent.ctx.cfg;
+                break;
+            }
+            parent = parent.parent;
+        }
+        return cfg;
+    }
+
     function createNode(n: IBobrilNode, parentNode: IBobrilNode): IBobrilCacheNode {
         var c = <IBobrilCacheNode>n;
         c.parent = parentNode;
@@ -262,7 +276,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var backupInSvg = inSvg;
         var component = c.component;
         if (component) {
-            c.ctx = { data: c.data || {}, me: c };
+            c.ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             if (component.init) {
                 component.init(c.ctx, n);
             }
@@ -393,6 +407,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
+    var rootElement: HTMLElement;
     var rootFactory: () => any;
     var rootCacheChildren: Array<IBobrilCacheNode> = [];
 
@@ -441,6 +456,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (component.id !== c.component.id) {
                 bigChange = true;
             } else {
+                c.ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
                     if (!component.shouldChange(c.ctx, n, c))
                         return c;
@@ -448,6 +464,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 c.component = component;
                 if (component.render)
                     component.render(c.ctx, n, c);
+                c.cfg = n.cfg;
             }
         }
         var el: any;
@@ -971,7 +988,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
             var newChildren = rootFactory();
-            rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
+            rootElement = rootElement || document.body;
+            rootCacheChildren = updateChildren(rootElement, newChildren, rootCacheChildren, null);
         }
         else {
             selectedUpdate(rootCacheChildren);
@@ -994,10 +1012,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         requestAnimationFrame(update);
     }
 
-    function init(factory: () => any) {
+    function init(factory: () => any, element?: HTMLElement) {
         if (rootCacheChildren.length) {
-            rootCacheChildren = updateChildren(document.body, <any>[], rootCacheChildren, null);
+            rootCacheChildren = updateChildren(rootElement, <any>[], rootCacheChildren, null);
         }
+        rootElement = element;
         rootFactory = factory;
         invalidate();
     }
@@ -1006,20 +1025,52 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         while (node) {
             var c = node.component;
             if (c) {
+                var ctx = node.ctx;
                 var m = (<any>c)[name];
                 if (m) {
-                    if (m.call(c, node.ctx, param))
+                    if (m.call(c, ctx, param))
                         return true;
                 }
                 m = (<any>c).shouldStopBubble;
                 if (m) {
-                    if (m.call(c, node.ctx, name, param))
+                    if (m.call(c, ctx, name, param))
                         break;
                 }
             }
             node = node.parent;
         }
         return false;
+    }
+
+    function broadcastEventToNode(node: IBobrilCacheNode, name: string, param: any): boolean {
+        if (!node)
+            return false;
+        var c = node.component;
+        if (c) {
+            var ctx = node.ctx;
+            if (c.shouldStopBroadcast(ctx, name, param))
+                return false;
+            var m = (<any>c)[name];
+            if (m) {
+                if (m.call(c, ctx, param))
+                    return true;
+            }            
+        }
+        return broadcastEvent(node, name, param);
+    }
+
+    function broadcastEvent(node: IBobrilCacheNode, name: string, param: any): boolean {
+        if (!node)
+            return false;
+        var ch = node.children;
+        if (isArray(ch)) {
+            for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
+                if (broadcastEventToNode((<IBobrilCacheNode[]>ch)[i], name, param))
+                    return true;
+            }
+        } else {
+            return broadcastEventToNode(ch, name, param);
+        }
     }
 
     function merge(f1: Function, f2: Function): Function {
@@ -1132,7 +1183,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
-        invalidated: ()=>scheduled,
+        invalidated: () => scheduled,
         preventDefault: preventDefault,
         vmlNode: () => inNamespace = true,
         vdomPath: vdomPath,
@@ -1140,6 +1191,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         addEvent: addEvent,
         emitEvent: emitEvent,
         bubble: bubbleEvent,
+        broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
         cloneNode: cloneNode
