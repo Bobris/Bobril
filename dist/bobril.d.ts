@@ -85,9 +85,9 @@ interface IBobrilComponent {
     // return false when whole subtree should not be changed from last time, you can still update any me members except key, default implementation always return true
     shouldChange? (ctx: IBobrilCtx, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
     // called from children to parents order for new nodes
-    postInitDom? (ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement): void;
+    postInitDom? (ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
     // called from children to parents order for updated nodes
-    postUpdateDom? (ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement): void;
+    postUpdateDom? (ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
     // called just before removing node from dom
     destroy? (ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement): void;
     // called when bubling event to parent so you could stop bubling without preventing default handling
