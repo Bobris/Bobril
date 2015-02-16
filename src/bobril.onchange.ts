@@ -164,7 +164,7 @@
         return false;
     }
 
-    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click"];
+    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "blur"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 100, emitOnChange);
+        b.addEvent(events[i], 10, emitOnChange);
 })(b);
