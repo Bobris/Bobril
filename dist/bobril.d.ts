@@ -34,6 +34,8 @@ interface IBobrilStatic {
     now(): number;
     // returns actual number of redraws (partial or full)
     frame(): number;
+    // returns duration of last update in ms
+    lastFrameDuration(): number;
     // returns IE version 8 - 11, for other browsers returns undefined
     ieVersion(): number;
     // shalows copy all own members from source to target returns target, source could be null, target must be non-null 
