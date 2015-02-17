@@ -4,6 +4,7 @@
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 /// <reference path="../../src/bobril.focus.d.ts"/>
 /// <reference path="../../src/bobril.media.d.ts"/>
+/// <reference path="../../src/bobril.promise.d.ts"/>
 var PopupApp;
 (function (PopupApp) {
     function d(style, content) {
@@ -176,13 +177,20 @@ var PopupApp;
             var action = function () { return true; };
             if (bb.action)
                 action = bb.action;
-            if ((bb.style & 3 /* DefaultCancel */) != 0) {
-                action = (function (act) { return function () {
-                    if (act())
+            action = (function (act) { return function () {
+                var res = act();
+                if (typeof res === "boolean") {
+                    if (res)
                         hideAction();
-                    return true;
-                }; })(action);
-            }
+                }
+                else {
+                    res.then(function (v) {
+                        if (v)
+                            hideAction();
+                    });
+                }
+                return true;
+            }; })(action);
             if ((bb.style & 1 /* Default */) != 0)
                 defaultAction = action;
             if ((bb.style & 2 /* Cancel */) != 0)
@@ -193,6 +201,7 @@ var PopupApp;
             tag: "div",
             style: {
                 position: "fixed",
+                zIndex: "1",
                 top: "0",
                 left: "0",
                 width: "100%",
@@ -305,7 +314,8 @@ var PopupApp;
             }
         };
     }
-    var v1 = false, v2 = false, v3 = false;
+    var v1 = false, v2 = false, v3 = false, v4 = false, v5 = false, v6 = false;
+    var v6resolver;
     var s1 = "", s2 = "";
     b.init(function () {
         return {
@@ -332,7 +342,7 @@ var PopupApp;
                 d({}, [button("Show popup", function () {
                     v2 = true;
                     b.invalidate();
-                }), v2 && popup("First popup", "200px", [{
+                }), v2 && popup("First popup", "300px", [{
                     content: "Ok",
                     style: 1 /* Default */,
                     action: function () {
@@ -340,10 +350,53 @@ var PopupApp;
                         b.invalidate();
                         return true;
                     }
-                }, { content: "Cancel", style: 2 /* Cancel */ }], function () {
+                }, {
+                    content: "Cancel",
+                    style: 2 /* Cancel */,
+                    action: function () {
+                        if (v5) {
+                            v6 = true;
+                            b.invalidate();
+                            return new b.Promise(function (resolve, reject) {
+                                v6resolver = resolve;
+                            });
+                        }
+                        return true;
+                    }
+                }], function () {
                     v2 = false;
                     b.invalidate();
-                }, [layoutPair(h("label", "First:"), input(s1, function (v) { return s1 = v; }), "40%"), layoutPair(h("label", "Second:"), input(s2, function (v) { return s2 = v; }), "40%")]), "", v3 && popup("Info", "150px", [{ content: "Ok", style: 3 /* DefaultCancel */ }], function () {
+                }, [layoutPair(h("label", "First:"), input(s1, function (v) { return s1 = v; }), "40%"), layoutPair(h("label", "Second:"), input(s2, function (v) { return s2 = v; }), "40%"), h("div", h("label", [checkbox(v5, function (v) {
+                    v5 = v;
+                    b.invalidate();
+                }), "Annoying cancel"])), button("Show nested popup", function () {
+                    v4 = true;
+                    b.invalidate();
+                }), v4 && popup("Nested", "200px", [{ content: "Ok", style: 3 /* DefaultCancel */ }], function () {
+                    v4 = false;
+                    b.invalidate();
+                }, [
+                    h("p", "Hello from nested dialog. Cool, isn't it!")
+                ]), "", v6 && popup("Annoying", "150px", [{
+                    content: "Yes",
+                    style: 1 /* Default */,
+                    action: function () {
+                        v6resolver(true);
+                        v6resolver = null;
+                        return true;
+                    }
+                }, {
+                    content: "No",
+                    style: 1 /* Default */,
+                    action: function () {
+                        v6resolver(false);
+                        v6resolver = null;
+                        return true;
+                    }
+                }], function () {
+                    v6 = false;
+                    b.invalidate();
+                }, h("p", "Are you sure to lose all data?"))]), "", v3 && popup("Info", "150px", [{ content: "Ok", style: 3 /* DefaultCancel */ }], function () {
                     v3 = false;
                     b.invalidate();
                 }, h("p", "Selected Ok"))])
