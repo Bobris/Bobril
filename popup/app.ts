@@ -65,7 +65,7 @@ module PopupApp {
             ctx.disabled = ctx.data.action === null;
             ctx.down = ctx.hover && ctx.mousedown || ctx.keydown;
             me.style = ctx.cfg.buttonStyle(ctx);
-            me.attrs.tabIndex = ctx.disabled ? undefined : 0;
+            me.attrs.tabIndex = ctx.disabled ? -1 : 0;
         },
         onFocus(ctx: any): boolean {
             if (ctx.disabled) return false;
@@ -106,6 +106,9 @@ module PopupApp {
                 }
             }
             return false;
+        },
+        onClick(): boolean {
+            return true;
         },
         onKeyDown(ctx: any, param: IKeyDownUpEvent): boolean {
             if (ctx.disabled) return false;
@@ -149,6 +152,11 @@ module PopupApp {
         return content;
     }
 
+    function comp(component: IBobrilComponent, node: IBobrilNode): IBobrilNode {
+        b.postEnhance(node, component);
+        return node;
+    }
+
     function layoutPair(left: any, right: any, leftWidth = "50%"): IBobrilNode {
         return d({ display: "table", width: "100%" }, [
             d({ display: "table-cell", verticalAlign: "top", width: leftWidth }, left),
@@ -163,7 +171,8 @@ module PopupApp {
     enum PopupButtonStyle {
         Normal = 0,
         Default = 1,
-        Cancel = 2
+        Cancel = 2,
+        DefaultCancel = 3
     }
 
     interface IPopupButton {
@@ -173,22 +182,23 @@ module PopupApp {
     }
 
     function popup(title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
-        function renderButtons(buttons: IPopupButton[], hideAction: () => void): IBobrilChild[] {
-            var res: IBobrilChild[] = [];
-            for (var i = 0; i < buttons.length; i++) {
-                if (i > 0) res.push(" ");
-                var bb = buttons[i];
-                var action: () => boolean = () => true;
-                if (bb.action) action = bb.action;
-                if (bb.style === PopupButtonStyle.Default || bb.style === PopupButtonStyle.Cancel) {
-                    action = ((act: () => boolean) => () => {
-                        if (act()) hideAction();
-                        return true;
-                    })(action);
-                }
-                res.push(button(bb.content, action));
+        var buttonNodes: IBobrilChild[] = [];
+        var defaultAction: () => boolean = () => false;
+        var cancelAction: () => boolean = () => false;
+        for (var i = 0; i < buttons.length; i++) {
+            if (i > 0) buttonNodes.push(" ");
+            var bb = buttons[i];
+            var action: () => boolean = () => true;
+            if (bb.action) action = bb.action;
+            if ((bb.style & PopupButtonStyle.DefaultCancel) != 0) {
+                action = ((act: () => boolean) => () => {
+                    if (act()) hideAction();
+                    return true;
+                })(action);
             }
-            return res;
+            if ((bb.style & PopupButtonStyle.Default) != 0) defaultAction = action;
+            if ((bb.style & PopupButtonStyle.Cancel) != 0) cancelAction = action;
+            buttonNodes.push(button(bb.content, action));
         }
         return {
             tag: "div",
@@ -200,6 +210,23 @@ module PopupApp {
                 height: "100%",
                 background: "rgba(0,0,0,0.5)",
                 display: "table"
+            },
+            component: {
+                onKeyDown(ctx: any, param: IKeyDownUpEvent): boolean {
+                    if (param.which == 13) {
+                        return defaultAction();
+                    }
+                    if (param.which == 27) {
+                        return cancelAction();
+                    }
+                    return false;
+                },
+                shouldStopBubble(): boolean {
+                    return true;
+                },
+                postInitDom(ctx: any, me: IBobrilCacheNode) {
+                    b.focus(me);
+                }
             },
             children: {
                 tag: "div",
@@ -231,17 +258,21 @@ module PopupApp {
                                     borderRadius: "3px",
                                     border: "#000 solid 1px"
                                 }, h("td", title)),
-                                style({
-                                    padding: "2px",
-                                    width: "1.5em",
-                                    borderRadius: "3px",
-                                    border: "#000 solid 1px",
-                                    textAlign: "center",
-                                    cursor: "pointer",
-                                    userSelect: "none",
-                                    fontWeight: "bold"
-                                }, h("td", "×"))
-                            ]),
+                                comp({
+                                    onClick(): boolean {
+                                        return cancelAction();
+                                    }
+                                }, style({
+                                        padding: "2px",
+                                        width: "1.5em",
+                                        borderRadius: "3px",
+                                        border: "#000 solid 1px",
+                                        textAlign: "center",
+                                        cursor: "pointer",
+                                        userSelect: "none",
+                                        fontWeight: "bold"
+                                    }, h("td", "×"))
+                                    )]),
                             h("tr", {
                                 tag: "td",
                                 attrs: { colSpan: 2 },
@@ -260,7 +291,7 @@ module PopupApp {
                                     width: "auto",
                                     textAlign: "center"
                                 },
-                                children: renderButtons(buttons, hideAction)
+                                children: buttonNodes
                             })
                         ]
                     }
@@ -269,7 +300,26 @@ module PopupApp {
         };
     }
 
+    function input(value:string,change:(v:string)=>void):IBobrilNode {
+        return {
+            tag: "input",
+            style: {
+                width: "100%",
+                boxSizing: "border-box"
+            },
+            attrs: {
+                value: value
+            },
+            component: {
+                onChange(ctx: any, v: string) {
+                    change(v);
+                }
+            }
+        };
+    }
+
     var v1 = false, v2 = false, v3 = false;
+    var s1 = "", s2 = "";
 
     b.init(() => {
         return {
@@ -305,11 +355,13 @@ module PopupApp {
                     }, { content: "Cancel", style: PopupButtonStyle.Cancel }],() => {
                             v2 = false;
                             b.invalidate();
-                        }, [h("h2", "Some content"), h("p", "Lorem ipsum ...")]),
-                    v3 && popup("Info", "150px", [{ content: "Ok", style: PopupButtonStyle.Default }],() => {
+                        }, [layoutPair(h("label", "First:"), input(s1,(v) => s1 = v), "40%"),
+                        layoutPair(h("label", "Second:"), input(s2,(v) => s2 = v), "40%")]),
+                    "",
+                    v3 && popup("Info", "150px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }],() => {
                         v3 = false;
                         b.invalidate();
-                    }, h("p","Clicked Ok"))
+                    }, h("p", "Selected Ok"))
                 ])
             ]
         };

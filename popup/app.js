@@ -56,7 +56,7 @@ var PopupApp;
             ctx.disabled = ctx.data.action === null;
             ctx.down = ctx.hover && ctx.mousedown || ctx.keydown;
             me.style = ctx.cfg.buttonStyle(ctx);
-            me.attrs.tabIndex = ctx.disabled ? undefined : 0;
+            me.attrs.tabIndex = ctx.disabled ? -1 : 0;
         },
         onFocus: function (ctx) {
             if (ctx.disabled)
@@ -101,6 +101,9 @@ var PopupApp;
             }
             return false;
         },
+        onClick: function () {
+            return true;
+        },
         onKeyDown: function (ctx, param) {
             if (ctx.disabled)
                 return false;
@@ -141,6 +144,10 @@ var PopupApp;
         content.style = style;
         return content;
     }
+    function comp(component, node) {
+        b.postEnhance(node, component);
+        return node;
+    }
     function layoutPair(left, right, leftWidth) {
         if (leftWidth === void 0) { leftWidth = "50%"; }
         return d({ display: "table", width: "100%" }, [
@@ -156,27 +163,31 @@ var PopupApp;
         PopupButtonStyle[PopupButtonStyle["Normal"] = 0] = "Normal";
         PopupButtonStyle[PopupButtonStyle["Default"] = 1] = "Default";
         PopupButtonStyle[PopupButtonStyle["Cancel"] = 2] = "Cancel";
+        PopupButtonStyle[PopupButtonStyle["DefaultCancel"] = 3] = "DefaultCancel";
     })(PopupButtonStyle || (PopupButtonStyle = {}));
     function popup(title, width, buttons, hideAction, content) {
-        function renderButtons(buttons, hideAction) {
-            var res = [];
-            for (var i = 0; i < buttons.length; i++) {
-                if (i > 0)
-                    res.push(" ");
-                var bb = buttons[i];
-                var action = function () { return true; };
-                if (bb.action)
-                    action = bb.action;
-                if (bb.style === 1 /* Default */ || bb.style === 2 /* Cancel */) {
-                    action = (function (act) { return function () {
-                        if (act())
-                            hideAction();
-                        return true;
-                    }; })(action);
-                }
-                res.push(button(bb.content, action));
+        var buttonNodes = [];
+        var defaultAction = function () { return false; };
+        var cancelAction = function () { return false; };
+        for (var i = 0; i < buttons.length; i++) {
+            if (i > 0)
+                buttonNodes.push(" ");
+            var bb = buttons[i];
+            var action = function () { return true; };
+            if (bb.action)
+                action = bb.action;
+            if ((bb.style & 3 /* DefaultCancel */) != 0) {
+                action = (function (act) { return function () {
+                    if (act())
+                        hideAction();
+                    return true;
+                }; })(action);
             }
-            return res;
+            if ((bb.style & 1 /* Default */) != 0)
+                defaultAction = action;
+            if ((bb.style & 2 /* Cancel */) != 0)
+                cancelAction = action;
+            buttonNodes.push(button(bb.content, action));
         }
         return {
             tag: "div",
@@ -188,6 +199,23 @@ var PopupApp;
                 height: "100%",
                 background: "rgba(0,0,0,0.5)",
                 display: "table"
+            },
+            component: {
+                onKeyDown: function (ctx, param) {
+                    if (param.which == 13) {
+                        return defaultAction();
+                    }
+                    if (param.which == 27) {
+                        return cancelAction();
+                    }
+                    return false;
+                },
+                shouldStopBubble: function () {
+                    return true;
+                },
+                postInitDom: function (ctx, me) {
+                    b.focus(me);
+                }
             },
             children: {
                 tag: "div",
@@ -219,7 +247,11 @@ var PopupApp;
                                     borderRadius: "3px",
                                     border: "#000 solid 1px"
                                 }, h("td", title)),
-                                style({
+                                comp({
+                                    onClick: function () {
+                                        return cancelAction();
+                                    }
+                                }, style({
                                     padding: "2px",
                                     width: "1.5em",
                                     borderRadius: "3px",
@@ -228,7 +260,7 @@ var PopupApp;
                                     cursor: "pointer",
                                     userSelect: "none",
                                     fontWeight: "bold"
-                                }, h("td", "×"))
+                                }, h("td", "×")))
                             ]),
                             h("tr", {
                                 tag: "td",
@@ -248,7 +280,7 @@ var PopupApp;
                                     width: "auto",
                                     textAlign: "center"
                                 },
-                                children: renderButtons(buttons, hideAction)
+                                children: buttonNodes
                             })
                         ]
                     }
@@ -256,7 +288,25 @@ var PopupApp;
             }
         };
     }
+    function input(value, change) {
+        return {
+            tag: "input",
+            style: {
+                width: "100%",
+                boxSizing: "border-box"
+            },
+            attrs: {
+                value: value
+            },
+            component: {
+                onChange: function (ctx, v) {
+                    change(v);
+                }
+            }
+        };
+    }
     var v1 = false, v2 = false, v3 = false;
+    var s1 = "", s2 = "";
     b.init(function () {
         return {
             tag: "div",
@@ -293,10 +343,10 @@ var PopupApp;
                 }, { content: "Cancel", style: 2 /* Cancel */ }], function () {
                     v2 = false;
                     b.invalidate();
-                }, [h("h2", "Some content"), h("p", "Lorem ipsum ...")]), v3 && popup("Info", "150px", [{ content: "Ok", style: 1 /* Default */ }], function () {
+                }, [layoutPair(h("label", "First:"), input(s1, function (v) { return s1 = v; }), "40%"), layoutPair(h("label", "Second:"), input(s2, function (v) { return s2 = v; }), "40%")]), "", v3 && popup("Info", "150px", [{ content: "Ok", style: 3 /* DefaultCancel */ }], function () {
                     v3 = false;
                     b.invalidate();
-                }, h("p", "Clicked Ok"))])
+                }, h("p", "Selected Ok"))])
             ]
         };
     });

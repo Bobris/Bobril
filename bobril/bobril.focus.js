@@ -69,15 +69,40 @@
     function focused() {
         return currentFocusedNode;
     }
-    // set focus to bobril node in parameter usually should be called from postInitDom method
+    var focusableTag = /^input$|^select$|^textarea$|^button$/;
     function focus(node) {
         if (node == null)
-            return;
-        var el = node.element;
-        if (b.isArray(el))
-            el = el[0];
-        el.focus();
-        emitOnFocusChange();
+            return false;
+        if (typeof node === "string")
+            return false;
+        var style = node.style;
+        if (style != null) {
+            if (style.visibility === "hidden")
+                return false;
+            if (style.display === "none")
+                return false;
+        }
+        var attrs = node.attrs;
+        if (attrs != null) {
+            var ti = attrs.tabIndex;
+            if (ti !== undefined || focusableTag.test(node.tag)) {
+                if (+ti === -1)
+                    return false;
+                var el = node.element;
+                el.focus();
+                emitOnFocusChange();
+                return true;
+            }
+        }
+        var children = node.children;
+        if (b.isArray(children)) {
+            for (var i = 0; i < children.length; i++) {
+                if (focus(children[i]))
+                    return true;
+            }
+            return false;
+        }
+        return focus(children);
     }
     b.focused = focused;
     b.focus = focus;

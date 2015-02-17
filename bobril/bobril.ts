@@ -906,6 +906,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var scheduled = false;
     var uptime = 0;
     var frame = 0;
+    var lastFrameDuration = 0;
+    var renderFrameBegin = 0;
 
     var regEvents: { [name: string]: Array<(ev: any, target: Node, node: IBobrilCacheNode) => boolean> } = {};
     var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean }> } = {};
@@ -981,6 +983,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function update(time: number) {
+        renderFrameBegin = now();
         initEvents();
         frame++;
         uptime = time;
@@ -996,6 +999,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         callPostCallbacks();
         afterFrameCallback(rootCacheChildren);
+        lastFrameDuration = now() - renderFrameBegin;
     }
 
     function invalidate(ctx?: Object) {
@@ -1178,6 +1182,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: () => uptime,
+        lastFrameDuration: () => lastFrameDuration,
         now: now,
         frame: () => frame,
         assign: assign,

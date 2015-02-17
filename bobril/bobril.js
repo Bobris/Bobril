@@ -913,6 +913,8 @@ b = (function (window, document) {
     var scheduled = false;
     var uptime = 0;
     var frame = 0;
+    var lastFrameDuration = 0;
+    var renderFrameBegin = 0;
     var regEvents = {};
     var registryEvents = {};
     function addEvent(name, priority, callback) {
@@ -984,6 +986,7 @@ b = (function (window, document) {
         return res;
     }
     function update(time) {
+        renderFrameBegin = now();
         initEvents();
         frame++;
         uptime = time;
@@ -999,6 +1002,7 @@ b = (function (window, document) {
         }
         callPostCallbacks();
         afterFrameCallback(rootCacheChildren);
+        lastFrameDuration = now() - renderFrameBegin;
     }
     function invalidate(ctx) {
         if (fullRecreateRequested)
@@ -1180,6 +1184,7 @@ b = (function (window, document) {
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: function () { return uptime; },
+        lastFrameDuration: function () { return lastFrameDuration; },
         now: now,
         frame: function () { return frame; },
         assign: assign,
