@@ -166,7 +166,7 @@ var PopupApp;
         PopupButtonStyle[PopupButtonStyle["Cancel"] = 2] = "Cancel";
         PopupButtonStyle[PopupButtonStyle["DefaultCancel"] = 3] = "DefaultCancel";
     })(PopupButtonStyle || (PopupButtonStyle = {}));
-    function popup(title, width, buttons, hideAction, content) {
+    function innerpopup(cfg, title, width, buttons, hideAction, content) {
         var buttonNodes = [];
         var defaultAction = function () { return false; };
         var cancelAction = function () { return false; };
@@ -199,6 +199,7 @@ var PopupApp;
         }
         return {
             tag: "div",
+            data: { cfg: cfg },
             style: {
                 position: "fixed",
                 zIndex: "1",
@@ -210,6 +211,12 @@ var PopupApp;
                 display: "table"
             },
             component: {
+                init: function (ctx) {
+                    ctx.cfg = ctx.data.cfg;
+                },
+                render: function (ctx) {
+                    ctx.cfg = ctx.data.cfg;
+                },
                 onKeyDown: function (ctx, param) {
                     if (param.which == 13) {
                         return defaultAction();
@@ -293,6 +300,23 @@ var PopupApp;
                             })
                         ]
                     }
+                }
+            }
+        };
+    }
+    function popup(title, width, buttons, hideAction, content) {
+        return {
+            tag: "span",
+            data: { title: title, width: width, buttons: buttons, hideAction: hideAction, content: content },
+            component: {
+                init: function (ctx, me) {
+                    ctx.rid = b.addRoot(function () {
+                        var c = ctx.data;
+                        return innerpopup(ctx.cfg, c.title, c.width, c.buttons, c.hideAction, c.content);
+                    });
+                },
+                destroy: function (ctx) {
+                    b.removeRoot(ctx.rid);
                 }
             }
         };

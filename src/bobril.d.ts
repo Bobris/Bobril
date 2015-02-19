@@ -4,7 +4,30 @@ declare type IBobrilChild = boolean|string|IBobrilNode;
 declare type IBobrilChildren = IBobrilChild|IBobrilChild[];
 declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
+interface IBobrilRoot {
+    f: () => IBobrilChildren;
+    e: HTMLElement;
+    c: IBobrilCacheNode[];
+}
+
+declare type IBobrilRoots = { [id: string]: IBobrilRoot };
+
 interface IBobrilStatic {
+    // main function to specify factory function to update html body or element passed as parameter
+    // this basicaly overwrite root with id "0"
+    init(factory: () => IBobrilChildren, element?: HTMLElement): void;
+    // recreate whole vdom in next frame, next invalidates before next frame are noop
+    // you can pass just some ctx of some component and only that instance and its children will be rerendered
+    invalidate(ctx?: Object): void;
+    // When you need to know if next frame/update is already scheduled
+    invalidated(): boolean;
+    // Register new root and return its id
+    addRoot(factory: () => IBobrilChildren, element?: HTMLElement): string;
+    // Unregister root with specified id
+    removeRoot(id: string): void;
+    // Returns all information about all roots
+    getRoots(): IBobrilRoots;
+
     // Low level method used just for testing
     createNode(n: IBobrilNode, parentNode: IBobrilNode): IBobrilCacheNode;
     // Low level method used just for testing
@@ -17,18 +40,11 @@ interface IBobrilStatic {
     setSetValue(callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
     // Register new style shim, look at bobril.styleshim.ts for examples
     setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;
-    // main function to specify factory function to update html body or element passed as parameter
-    init(factory: () => IBobrilChildren, element?: HTMLElement): void;
     // Set callback after frame is done, returns previous callback to allow chaining
     setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
-    // recreate whole vdom in next frame, next invalidates before next frame are noop
-    // you can pass just some ctx of some component and only that instance and its children will be rerendered
-    invalidate(ctx?: Object): void;
-    // When you need to know if next frame/update is already scheduled
-    invalidated(): boolean;
     // shim for [].isArray
     isArray(a: any): boolean;
-    // time in miliseconds from start only use from init factory function
+    // time in miliseconds from start only use from roots factory function
     uptime(): number;
     // shim for Date.now()
     now(): number;

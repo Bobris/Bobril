@@ -407,25 +407,42 @@ b = (function (window, document) {
                 p.removeChild(el);
         }
     }
-    var rootElement;
-    var rootFactory;
-    var rootCacheChildren = [];
+    var roots = Object.create(null);
     function vdomPath(n) {
         var res = [];
         if (n == null)
             return res;
-        var root = document.body;
+        var rootIds = Object.keys(roots);
+        var rootElements = rootIds.map(function (i) { return roots[i].e || document.body; });
         var nodeStack = [];
-        while (n && n !== root) {
+        rootFound: while (n) {
+            for (var j = 0; j < rootElements.length; j++) {
+                if (n === rootElements[j])
+                    break rootFound;
+            }
             nodeStack.push(n);
             n = n.parentNode;
         }
-        if (!n)
+        if (!n || nodeStack.length === 0)
             return res;
-        var currentCacheArray = rootCacheChildren;
+        var currentCacheArray = null;
+        var currentNode = nodeStack.pop();
+        rootFound2: for (j = 0; j < rootElements.length; j++) {
+            if (n === rootElements[j]) {
+                var rc = roots[rootIds[j]].c;
+                for (var k = 0; k < rc.length; k++) {
+                    var rck = rc[k];
+                    if (rck.element === currentNode) {
+                        res.push(rck);
+                        currentCacheArray = rck.children;
+                        break rootFound2;
+                    }
+                }
+            }
+        }
         while (nodeStack.length) {
-            var currentNode = nodeStack.pop();
-            if (currentCacheArray)
+            currentNode = nodeStack.pop();
+            if (currentCacheArray && currentCacheArray.length)
                 for (var i = 0, l = currentCacheArray.length; i < l; i++) {
                     var bn = currentCacheArray[i];
                     if (bn.element === currentNode) {
@@ -991,17 +1008,27 @@ b = (function (window, document) {
         frame++;
         uptime = time;
         scheduled = false;
+        var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
-            var newChildren = rootFactory();
-            rootElement = rootElement || document.body;
-            rootCacheChildren = updateChildren(rootElement, newChildren, rootCacheChildren, null);
+            fullRefresh = true;
         }
-        else {
-            selectedUpdate(rootCacheChildren);
+        var rootIds = Object.keys(roots);
+        for (var i = 0; i < rootIds.length; i++) {
+            var r = roots[rootIds[i]];
+            if (!r)
+                continue;
+            if (fullRefresh) {
+                var newChildren = r.f();
+                r.e = r.e || document.body;
+                r.c = updateChildren(r.e, newChildren, r.c, null);
+            }
+            else {
+                selectedUpdate(r.c);
+            }
         }
         callPostCallbacks();
-        afterFrameCallback(rootCacheChildren);
+        afterFrameCallback(roots["0"].c);
         lastFrameDuration = now() - renderFrameBegin;
     }
     function invalidate(ctx) {
@@ -1018,12 +1045,29 @@ b = (function (window, document) {
         scheduled = true;
         requestAnimationFrame(update);
     }
-    function init(factory, element) {
-        if (rootCacheChildren.length) {
-            rootCacheChildren = updateChildren(rootElement, [], rootCacheChildren, null);
+    var lastRootId = 0;
+    function addRoot(factory, element) {
+        lastRootId++;
+        var rootId = "" + lastRootId;
+        roots[rootId] = { f: factory, e: element, c: [] };
+        invalidate();
+        return rootId;
+    }
+    function removeRoot(id) {
+        var root = roots[id];
+        if (!root)
+            return;
+        if (root.c.length) {
+            root.c = updateChildren(root.e, [], root.c, null);
         }
-        rootElement = element;
-        rootFactory = factory;
+        delete roots[id];
+    }
+    function getRoots() {
+        return roots;
+    }
+    function init(factory, element) {
+        removeRoot("0");
+        roots["0"] = { f: factory, e: element, c: [] };
         invalidate();
     }
     function bubbleEvent(node, name, param) {
@@ -1181,6 +1225,9 @@ b = (function (window, document) {
         setSetValue: setSetValue,
         setStyleShim: function (name, action) { return mapping[name] = action; },
         init: init,
+        addRoot: addRoot,
+        removeRoot: removeRoot,
+        getRoots: getRoots,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: function () { return uptime; },

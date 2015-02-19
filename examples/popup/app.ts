@@ -182,7 +182,7 @@ module PopupApp {
         action?: () => boolean | Thenable<boolean>;
     }
 
-    function popup(title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
+    function innerpopup(cfg: any, title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
         var buttonNodes: IBobrilChild[] = [];
         var defaultAction: () => boolean = () => false;
         var cancelAction: () => boolean = () => false;
@@ -208,6 +208,7 @@ module PopupApp {
         }
         return {
             tag: "div",
+            data: { cfg:cfg },
             style: {
                 position: "fixed",
                 zIndex: "1",
@@ -219,6 +220,12 @@ module PopupApp {
                 display: "table"
             },
             component: {
+                init(ctx: any) {
+                    ctx.cfg=ctx.data.cfg;
+                },
+                render(ctx: any) {
+                    ctx.cfg = ctx.data.cfg;                  
+                },
                 onKeyDown(ctx: any, param: IKeyDownUpEvent): boolean {
                     if (param.which == 13) {
                         return defaultAction();
@@ -305,6 +312,24 @@ module PopupApp {
                 }
             }
         };
+    }
+
+    function popup(title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
+        return {
+            tag: "span",
+            data: { title: title, width: width, buttons: buttons, hideAction: hideAction, content: content },
+            component: {
+                init(ctx: any, me: IBobrilNode) {
+                    ctx.rid = b.addRoot(() => {
+                        var c = ctx.data;
+                        return innerpopup(ctx.cfg, c.title, c.width, c.buttons, c.hideAction, c.content);
+                    });
+                },
+                destroy(ctx: any) {
+                    b.removeRoot(ctx.rid);
+                }
+            }
+        }
     }
 
     function input(value: string, change: (v: string) => void): IBobrilNode {
