@@ -4,6 +4,7 @@
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 /// <reference path="../../src/bobril.focus.d.ts"/>
 /// <reference path="../../src/bobril.media.d.ts"/>
+/// <reference path="../../src/bobril.promise.d.ts"/>
 
 module PopupApp {
     function d(style: any, content: IBobrilChildren): IBobrilNode {
@@ -178,32 +179,39 @@ module PopupApp {
     interface IPopupButton {
         content: IBobrilChildren;
         style: PopupButtonStyle;
-        action?: () => boolean;
+        action?: () => boolean | Thenable<boolean>;
     }
 
-    function popup(title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
+    function innerpopup(cfg: any, title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
         var buttonNodes: IBobrilChild[] = [];
         var defaultAction: () => boolean = () => false;
         var cancelAction: () => boolean = () => false;
         for (var i = 0; i < buttons.length; i++) {
             if (i > 0) buttonNodes.push(" ");
             var bb = buttons[i];
-            var action: () => boolean = () => true;
+            var action: () => boolean | Thenable<boolean> = () => true;
             if (bb.action) action = bb.action;
-            if ((bb.style & PopupButtonStyle.DefaultCancel) != 0) {
-                action = ((act: () => boolean) => () => {
-                    if (act()) hideAction();
-                    return true;
-                })(action);
-            }
-            if ((bb.style & PopupButtonStyle.Default) != 0) defaultAction = action;
-            if ((bb.style & PopupButtonStyle.Cancel) != 0) cancelAction = action;
-            buttonNodes.push(button(bb.content, action));
+            action = ((act: () => boolean | Thenable<boolean>) => () => {
+                var res = act();
+                if (typeof res === "boolean") {
+                    if (res) hideAction();
+                } else {
+                    (<Thenable<boolean>>res).then((v) => {
+                        if (v) hideAction();
+                    });
+                }
+                return true;
+            })(action);
+            if ((bb.style & PopupButtonStyle.Default) != 0) defaultAction = <() => boolean>action;
+            if ((bb.style & PopupButtonStyle.Cancel) != 0) cancelAction = <() => boolean>action;
+            buttonNodes.push(button(bb.content, <() => boolean>action));
         }
         return {
             tag: "div",
+            data: { cfg:cfg },
             style: {
                 position: "fixed",
+                zIndex: "1",
                 top: "0",
                 left: "0",
                 width: "100%",
@@ -212,6 +220,12 @@ module PopupApp {
                 display: "table"
             },
             component: {
+                init(ctx: any) {
+                    ctx.cfg=ctx.data.cfg;
+                },
+                render(ctx: any) {
+                    ctx.cfg = ctx.data.cfg;                  
+                },
                 onKeyDown(ctx: any, param: IKeyDownUpEvent): boolean {
                     if (param.which == 13) {
                         return defaultAction();
@@ -300,7 +314,25 @@ module PopupApp {
         };
     }
 
-    function input(value:string,change:(v:string)=>void):IBobrilNode {
+    function popup(title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
+        return {
+            tag: "span",
+            data: { title: title, width: width, buttons: buttons, hideAction: hideAction, content: content },
+            component: {
+                init(ctx: any, me: IBobrilNode) {
+                    ctx.rid = b.addRoot(() => {
+                        var c = ctx.data;
+                        return innerpopup(ctx.cfg, c.title, c.width, c.buttons, c.hideAction, c.content);
+                    });
+                },
+                destroy(ctx: any) {
+                    b.removeRoot(ctx.rid);
+                }
+            }
+        }
+    }
+
+    function input(value: string, change: (v: string) => void): IBobrilNode {
         return {
             tag: "input",
             style: {
@@ -318,7 +350,8 @@ module PopupApp {
         };
     }
 
-    var v1 = false, v2 = false, v3 = false;
+    var v1 = false, v2 = false, v3 = false, v4 = false, v5 = false, v6 = false;
+    var v6resolver: (v: boolean) => void;
     var s1 = "", s2 = "";
 
     b.init(() => {
@@ -346,17 +379,61 @@ module PopupApp {
                     v2 = true;
                     b.invalidate();
                 }),
-                    v2 && popup("First popup", "200px", [{
+                    v2 && popup("First popup", "300px", [{
                         content: "Ok", style: PopupButtonStyle.Default, action: () => {
                             v3 = true;
                             b.invalidate();
                             return true;
                         }
-                    }, { content: "Cancel", style: PopupButtonStyle.Cancel }],() => {
+                    }, {
+                            content: "Cancel", style: PopupButtonStyle.Cancel, action: () => {
+                                if (v5) {
+                                    v6 = true;
+                                    b.invalidate();
+                                    return new b.Promise<boolean>((resolve, reject) => {
+                                        v6resolver = resolve;
+                                    });
+                                }
+                                return true;
+                            }
+                        }],() => {
                             v2 = false;
                             b.invalidate();
                         }, [layoutPair(h("label", "First:"), input(s1,(v) => s1 = v), "40%"),
-                        layoutPair(h("label", "Second:"), input(s2,(v) => s2 = v), "40%")]),
+                            layoutPair(h("label", "Second:"), input(s2,(v) => s2 = v), "40%"),
+                            h("div", h("label", [checkbox(v5,(v) => {
+                                v5 = v;
+                                b.invalidate();
+                            }), "Annoying cancel"])),
+                            button("Show nested popup",() => {
+                                v4 = true;
+                                b.invalidate();
+                            }),
+                            v4 && popup("Nested", "200px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }],
+                                () => {
+                                    v4 = false;
+                                    b.invalidate();
+                                }, [
+                                    h("p", "Hello from nested dialog. Cool, isn't it!")
+                                ]),
+                            "",
+                            v6 && popup("Annoying", "150px", [{
+                                content: "Yes", style: PopupButtonStyle.Default, action: () => {
+                                    v6resolver(true);
+                                    v6resolver = null;
+                                    return true;
+                                }
+                            }, {
+                                    content: "No", style: PopupButtonStyle.Default, action: () => {
+                                        v6resolver(false);
+                                        v6resolver = null;
+                                        return true;
+                                    }
+                                }],() => {
+                                    v6 = false;
+                                    b.invalidate();
+                                }, h("p", "Are you sure to lose all data?"))
+                        ]),
                     "",
                     v3 && popup("Info", "150px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }],() => {
                         v3 = false;

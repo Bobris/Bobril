@@ -407,25 +407,41 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
-    var rootElement: HTMLElement;
-    var rootFactory: () => any;
-    var rootCacheChildren: Array<IBobrilCacheNode> = [];
+    var roots: IBobrilRoots = Object.create(null);
 
     function vdomPath(n: Node): IBobrilCacheNode[] {
         var res: IBobrilCacheNode[] = [];
         if (n == null) return res;
-        var root = document.body;
+        var rootIds = Object.keys(roots);
+        var rootElements = rootIds.map((i) => roots[i].e || document.body);
         var nodeStack: Node[] = [];
-        while (n && n !== root) {
+        rootFound: while (n) {
+            for (var j = 0; j < rootElements.length; j++) {
+                if (n === rootElements[j]) break rootFound;
+            }
             nodeStack.push(n);
             n = n.parentNode;
         }
-        if (!n) return res;
-        var currentCacheArray = rootCacheChildren;
+        if (!n || nodeStack.length===0) return res;
+        var currentCacheArray: IBobrilChildren = null;
+        var currentNode = nodeStack.pop();
+        rootFound2: for (j = 0; j < rootElements.length; j++) {
+            if (n === rootElements[j]) {
+                var rc = roots[rootIds[j]].c;
+                for (var k = 0; k < rc.length; k++) {
+                    var rck = rc[k];
+                    if (rck.element === currentNode) {
+                        res.push(rck);
+                        currentCacheArray = rck.children;
+                        break rootFound2;
+                    }                    
+                }
+            }
+        }
         while (nodeStack.length) {
-            var currentNode = nodeStack.pop();
-            if (currentCacheArray) for (var i = 0, l = currentCacheArray.length; i < l; i++) {
-                var bn = currentCacheArray[i];
+            currentNode = nodeStack.pop();
+            if (currentCacheArray && (<any>currentCacheArray).length) for (var i = 0, l = (<any>currentCacheArray).length; i < l; i++) {
+                var bn = (<IBobrilCacheNode[]>currentCacheArray)[i];
                 if (bn.element === currentNode) {
                     res.push(bn);
                     currentCacheArray = <IBobrilCacheNode[]>bn.children;
@@ -988,17 +1004,26 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         frame++;
         uptime = time;
         scheduled = false;
+        var fullRefresh = false; 
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
-            var newChildren = rootFactory();
-            rootElement = rootElement || document.body;
-            rootCacheChildren = updateChildren(rootElement, newChildren, rootCacheChildren, null);
+            fullRefresh = true;
         }
-        else {
-            selectedUpdate(rootCacheChildren);
+        var rootIds = Object.keys(roots);
+        for (var i = 0; i < rootIds.length; i++) {
+            var r = roots[rootIds[i]];
+            if (!r) continue;
+            if (fullRefresh) {
+                var newChildren = r.f();
+                r.e = r.e || document.body;
+                r.c = updateChildren(r.e, newChildren, r.c, null);
+            }
+            else {
+                selectedUpdate(r.c);
+            }
         }
         callPostCallbacks();
-        afterFrameCallback(rootCacheChildren);
+        afterFrameCallback(roots["0"].c);
         lastFrameDuration = now() - renderFrameBegin;
     }
 
@@ -1016,12 +1041,34 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         requestAnimationFrame(update);
     }
 
-    function init(factory: () => any, element?: HTMLElement) {
-        if (rootCacheChildren.length) {
-            rootCacheChildren = updateChildren(rootElement, <any>[], rootCacheChildren, null);
+    var lastRootId = 0;
+
+    function addRoot(factory: () => IBobrilChildren, element?: HTMLElement): string
+    {
+        lastRootId++;
+        var rootId = "" + lastRootId;
+        roots[rootId] = { f: factory, e: element, c: [] };
+        invalidate();
+        return rootId;
+    }
+
+    function removeRoot(id: string): void {
+        var root = roots[id];
+        if (!root) return;
+        if (root.c.length) {
+            root.c = updateChildren(root.e, <any>[], root.c, null);
         }
-        rootElement = element;
-        rootFactory = factory;
+        delete roots[id];
+    }
+
+    function getRoots(): IBobrilRoots
+    {
+        return roots;
+    }
+
+    function init(factory: () => any, element?: HTMLElement) {
+        removeRoot("0");
+        roots["0"] = { f: factory, e: element, c: [] };
         invalidate();
     }
 
@@ -1179,6 +1226,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         setSetValue: setSetValue,
         setStyleShim: (name: string, action: (style: any, value: any, oldName: string) => void) => mapping[name] = action,
         init: init,
+        addRoot: addRoot,
+        removeRoot: removeRoot,
+        getRoots: getRoots,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: () => uptime,
