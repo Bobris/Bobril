@@ -9,6 +9,8 @@ Examples: http://bobris.github.io/Bobril/
 
 See it in vdom-benchmarks: http://vdom-benchmark.github.io/vdom-benchmark/
 
+Documentation: https://github.com/Bobris/Bobril/blob/master/src/bobril.md
+
 Features in core:
 - No additional dependencies
 - Virtual DOM diffing

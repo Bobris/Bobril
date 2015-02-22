@@ -57,4 +57,4 @@ it is not enriched like object case. For `style` key `float` must be written as 
 Components
 ----------
 
-![Bobril Component Lifecycle](https://raw.githubusercontent.com/Bobris/Bobril/master/src/BobrilComponentLifecycle.png)
+![Bobril Component Lifecycle](https://raw.githubusercontent.com/Bobris/Bobril/master/src/BobrilComponentLifecycle.png =377x)
