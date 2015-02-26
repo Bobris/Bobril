@@ -2,6 +2,8 @@
 Bobril
 ======
 
+[![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Component oriented framework inspired by Mithril and ReactJs (work in progress)
 Easy automatic generation of code and its speed has higher priority over simplicity.
 
