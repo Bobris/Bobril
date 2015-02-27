@@ -7,13 +7,22 @@ module RouterApp {
     }
 
     var Page1: IBobrilComponent = {
+		id: "Page1",
+	    init(ctx: any, me: IBobrilNode) {
+		    ctx.ticks = 0;
+		    ctx.timer = setInterval(()=>{ ctx.ticks++; b.invalidate(); },1000);
+		},
         render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
-            me.children = h("h3", "Page1");
-        }
+            me.children = [h("h3", "Page1"),h("p", "Ticks :"+ctx.ticks)];
+        },
+		destroy(ctx: any, me: IBobrilNode) {
+			clearInterval(ctx.timer);
+		}
     }
 
     var Page2: IBobrilComponent = {
+		id: "Page2",
         render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("h3", "Page2");
