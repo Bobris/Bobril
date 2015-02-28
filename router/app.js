@@ -10,12 +10,24 @@ var RouterApp;
         return { tag: tag, children: args };
     }
     var Page1 = {
+        id: "Page1",
+        init: function (ctx, me) {
+            ctx.ticks = 0;
+            ctx.timer = setInterval(function () {
+                ctx.ticks++;
+                b.invalidate();
+            }, 1000);
+        },
         render: function (ctx, me) {
             me.tag = "div";
-            me.children = h("h3", "Page1");
+            me.children = [h("h3", "Page1"), h("p", "Ticks :" + ctx.ticks)];
+        },
+        destroy: function (ctx, me) {
+            clearInterval(ctx.timer);
         }
     };
     var Page2 = {
+        id: "Page2",
         render: function (ctx, me) {
             me.tag = "div";
             me.children = h("h3", "Page2");

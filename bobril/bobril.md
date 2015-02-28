@@ -53,3 +53,8 @@ When `tag` is `"svg"`, Bobril automatically adds all namespace crap, so your cod
 `attrs` member is just JS object. Because `for` is reserved word in JS it must be written as `htmlFor`.
 `style` attribute is handled specially. It could be string or object. String case for `style` should be used very rarely, because
 it is not enriched like object case. For `style` key `float` must be written as `cssFloat` because it is also reserved keyword.
+
+Components
+----------
+
+<img src="https://raw.githubusercontent.com/Bobris/Bobril/master/src/BobrilComponentLifecycle.png" width="377px">
