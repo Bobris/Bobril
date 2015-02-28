@@ -4,8 +4,11 @@ Bobril
 
 [![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Component oriented framework inspired by Mithril and ReactJs (work in progress)
-Easy automatic generation of code and its speed has higher priority over simplicity.
+Version 1.0.0
+
+Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework). 
+Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE8. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
+Because it is already used in Production code, further development must not broke any functionality. Any new feature must be optional or its perceived value to minified size ratio must be high enough.
 
 Examples: http://bobris.github.io/Bobril/
 
@@ -28,14 +31,14 @@ Features in core:
 Features in extensions:
 - OnChange event and value attribute normalization
 - Key events
-- Mouse, Touch and Swipe Events (polyfill pointerEvents:none)
+- Mouse, Touch and Swipe Events (includes polyfill pointerEvents:none)
 - Vector graphic in spirit of React-Art just very limited in features, but under 4kb with SVG and VML backends
 - Router inspired by https://github.com/rackt/react-router/
 - Media detection
 - Focus, Blur, FocusIn, FocusOut events
 - Transparently add vendor prefixes for inline styles
 - Asap (setImmediate) and Promise A+ implementation - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
-- Scroll notification
+- Scroll notification (crude solution to non-bubbling onScroll)
 
 All extensions + core gziped are under 13kb
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
@@ -43,9 +46,9 @@ Of course you don't need all extensions, it is pure a la carte, so actual applic
 Near term planned extensions:
 
 Longer term extensions:
-- New/Deleted Node animation
-- Prevent exit
-- Ajax
+- New/Deleted Node animation (prototype in Router2 example)
+- Prevent exit (Should be integrated with Router)
+- Ajax (should mostly copy Mithril implementation)
 
 Uses NodeJs, NPM, TypeScript 1.4, Karma, Jasmine, Coverage
 
