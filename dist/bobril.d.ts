@@ -7,7 +7,7 @@ declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any
 interface IBobrilRoot {
     f: () => IBobrilChildren;
     e: HTMLElement;
-    c: IBobrilCacheNode[];
+    c: IBobrilCacheNode[]; 
 }
 
 declare type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -135,6 +135,15 @@ interface IBobrilCacheNode extends IBobrilNode {
     parent?: IBobrilNode;
     // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode
     ctx?: IBobrilCtx;
+    // This is internal member to implement Layouting
+    layout?: IBobrilLayout;
+}
+
+interface IBobrilLayout {
+    prevStyleIgnore: (name: string) => boolean;
+    prevStyleItemIgnore: (name: string) => boolean;
+    curStyleIgnore: (name: string) => boolean;
+    curStyleItemIgnore: (name: string) => boolean;
 }
 
 interface IBobrilCtx {
