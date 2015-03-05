@@ -16,6 +16,9 @@ See it in vdom-benchmarks: http://vdom-benchmark.github.io/vdom-benchmark/
 
 Documentation: https://github.com/Bobris/Bobril/blob/master/src/bobril.md
 
+Chrome plugin to help you to inspect running Bobril application: https://chrome.google.com/webstore/detail/clouseau/npfemnefhbkiahihigplihehpbgkbhbj
+(Github source for it is here: https://github.com/klesta490/bobril-clouseau)
+
 Features in core:
 - No additional dependencies
 - Virtual DOM diffing
