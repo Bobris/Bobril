@@ -7,7 +7,7 @@ declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any
 interface IBobrilRoot {
     f: () => IBobrilChildren;
     e: HTMLElement;
-    c: IBobrilCacheNode[]; 
+    c: IBobrilCacheNode[];
 }
 
 declare type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -42,6 +42,8 @@ interface IBobrilStatic {
     setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;
     // Set callback after frame is done, returns previous callback to allow chaining
     setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
+    // Set advanced layout polyfilling method
+    setSetupLayout(callback: (n: IBobrilNode, c: IBobrilNode, parentLayout: IBobrilLayout) => IBobrilLayout): void;
     // shim for [].isArray
     isArray(a: any): boolean;
     // time in miliseconds from start only use from roots factory function
@@ -136,14 +138,23 @@ interface IBobrilCacheNode extends IBobrilNode {
     // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode
     ctx?: IBobrilCtx;
     // This is internal member to implement Layouting
-    layout?: IBobrilLayout;
+    layout?: IBobrilNodeLayout;
+}
+
+interface IBobrilNodeLayout {
+    styleIgnore(name: string): boolean;
+    styleItemIgnore(name: string): boolean;
+    postLayoutDom(me: IBobrilCacheNode, element: HTMLElement): void;
+    layout: IBobrilLayout;
 }
 
 interface IBobrilLayout {
-    prevStyleIgnore: (name: string) => boolean;
-    prevStyleItemIgnore: (name: string) => boolean;
-    curStyleIgnore: (name: string) => boolean;
-    curStyleItemIgnore: (name: string) => boolean;
+    detectBigChange(n: IBobrilNode): boolean;
+    isItem(style: any): boolean;
+    styleIgnore(name: string): boolean;
+    styleItemIgnore(name: string): boolean;
+    initContainer(element: HTMLElement, style: any): void;
+    postLayoutDom(me: IBobrilCacheNode, element: HTMLElement): void;
 }
 
 interface IBobrilCtx {

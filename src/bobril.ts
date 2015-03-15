@@ -83,9 +83,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return typeof value === "object";
     }
 
+    var setupLayout: (n: IBobrilNode, c: IBobrilNode, parentLayout: IBobrilLayout) => IBobrilLayout = (n, c, parentLayout) => null;
     var inNamespace: boolean = false;
     var inSvg: boolean = false;
-    var updateCall: Array<boolean> = [];
+    var inLayout: IBobrilLayout = null;
+    var updateCall: Array<number> = [];
     var updateInstance: Array<IBobrilCacheNode> = [];
     var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
         if (newValue !== oldValue)
@@ -166,16 +168,27 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {
+        var layoutFilter: (name:string) => boolean = null;
+        var layoutItemFilter: (name: string) => boolean = null;
+        var layout = n.layout;
+        if (layout) {
+            layoutFilter = layout.styleIgnore;
+            layoutItemFilter = layout.styleItemIgnore;
+        }
         var s = el.style;
         if (isObject(newStyle)) {
             shimStyle(newStyle);
             var rule: string;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
+                    if (layoutFilter != null && (layoutFilter(rule) || layoutItemFilter(rule)))
+                        continue;
                     if (!(rule in newStyle))
                         removeProperty(s, rule);
                 }
                 for (rule in newStyle) {
+                    if (layoutFilter != null && (layoutFilter(rule) || layoutItemFilter(rule)))
+                        continue;
                     var v = newStyle[rule];
                     if (v !== undefined) {
                         if (oldStyle[rule] !== v) s[<any>rule] = v;
@@ -249,7 +262,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var cc = c.component;
         if (cc) {
             if ((<any>cc)[aupdate ? "postUpdateDom" : "postInitDom"]) {
-                updateCall.push(aupdate);
+                updateCall.push(aupdate?1:0);
+                updateInstance.push(c);
+            }
+        }
+        var cl = c.layout;
+        if (cl) {
+            if (cl.postLayoutDom) {
+                updateCall.push(2);
                 updateInstance.push(c);
             }
         }
@@ -274,6 +294,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         c.parent = parentNode;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
+        var backupInLayout = inLayout;
         var component = c.component;
         if (component) {
             c.ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
@@ -298,6 +319,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             el = createElement(n.tag);
         }
         c.element = el;
+        inLayout = setupLayout(n, c, inLayout);
         createChildren(c);
         if (component) {
             if (component.postRender) {
@@ -310,6 +332,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (className) setClassName(el, className);
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
+        inLayout = backupInLayout;
         pushInitCallback(c, false);
         return c;
     }
@@ -467,6 +490,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var component = n.component;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
+        var backupInLayout = inLayout;
         var bigChange = false;
         if (component && c.ctx != null) {
             if (component.id !== c.component.id) {
@@ -483,6 +507,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 c.cfg = n.cfg;
             }
         }
+        if (bigChange == false && c.layout != null && c.layout.layout.detectBigChange(n))
+            bigChange = true;
         var el: any;
         if (bigChange || (component && c.ctx == null)) {
             // it is big change of component.id or old one was not even component => recreate
@@ -532,6 +558,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     inNamespace = true;
                     inSvg = true;
                 }
+                inLayout = setupLayout(n, c, inLayout);
                 updateChildrenNode(n, c);
                 if (component) {
                     if (component.postRender) {
@@ -551,6 +578,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 c.data = n.data;
                 inNamespace = backupInNamespace;
                 inSvg = backupInSvg;
+                inLayout = backupInLayout;
                 pushInitCallback(c, true);
                 return c;
             }
@@ -568,10 +596,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
             var n = updateInstance[i];
-            if (updateCall[i]) {
-                n.component.postUpdateDom(n.ctx, n, <HTMLElement>n.element);
-            } else {
-                n.component.postInitDom(n.ctx, n, <HTMLElement>n.element);
+            switch (updateCall[i]) {
+                case 0: n.component.postInitDom(n.ctx, n, <HTMLElement>n.element); break;
+                case 1: n.component.postUpdateDom(n.ctx, n, <HTMLElement>n.element); break;
+                case 2: n.layout.postLayoutDom(n, <HTMLElement>n.element); break;
             }
         }
         updateCall = [];
@@ -1230,6 +1258,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         removeRoot: removeRoot,
         getRoots: getRoots,
         setAfterFrame: setAfterFrame,
+        setSetupLayout: (callback: (n: IBobrilNode, c: IBobrilNode, parentLayout: IBobrilLayout) => IBobrilLayout) => { setupLayout = callback },
         isArray: isArray,
         uptime: () => uptime,
         lastFrameDuration: () => lastFrameDuration,

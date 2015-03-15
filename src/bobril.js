@@ -72,8 +72,10 @@ b = (function (window, document) {
     function isObject(value) {
         return typeof value === "object";
     }
+    var setupLayout = function (n, c, parentLayout) { return null; };
     var inNamespace = false;
     var inSvg = false;
+    var inLayout = null;
     var updateCall = [];
     var updateInstance = [];
     var setValueCallback = function (el, node, newValue, oldValue) {
@@ -152,16 +154,27 @@ b = (function (window, document) {
             s.removeAttribute(name);
     }
     function updateStyle(n, el, newStyle, oldStyle) {
+        var layoutFilter = null;
+        var layoutItemFilter = null;
+        var layout = n.layout;
+        if (layout) {
+            layoutFilter = layout.styleIgnore;
+            layoutItemFilter = layout.styleItemIgnore;
+        }
         var s = el.style;
         if (isObject(newStyle)) {
             shimStyle(newStyle);
             var rule;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
+                    if (layoutFilter != null && (layoutFilter(rule) || layoutItemFilter(rule)))
+                        continue;
                     if (!(rule in newStyle))
                         removeProperty(s, rule);
                 }
                 for (rule in newStyle) {
+                    if (layoutFilter != null && (layoutFilter(rule) || layoutItemFilter(rule)))
+                        continue;
                     var v = newStyle[rule];
                     if (v !== undefined) {
                         if (oldStyle[rule] !== v)
@@ -243,7 +256,14 @@ b = (function (window, document) {
         var cc = c.component;
         if (cc) {
             if (cc[aupdate ? "postUpdateDom" : "postInitDom"]) {
-                updateCall.push(aupdate);
+                updateCall.push(aupdate ? 1 : 0);
+                updateInstance.push(c);
+            }
+        }
+        var cl = c.layout;
+        if (cl) {
+            if (cl.postLayoutDom) {
+                updateCall.push(2);
                 updateInstance.push(c);
             }
         }
@@ -267,6 +287,7 @@ b = (function (window, document) {
         c.parent = parentNode;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
+        var backupInLayout = inLayout;
         var component = c.component;
         if (component) {
             c.ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
@@ -294,6 +315,7 @@ b = (function (window, document) {
             el = createElement(n.tag);
         }
         c.element = el;
+        inLayout = setupLayout(n, c, inLayout);
         createChildren(c);
         if (component) {
             if (component.postRender) {
@@ -309,6 +331,7 @@ b = (function (window, document) {
             setClassName(el, className);
         inNamespace = backupInNamespace;
         inSvg = backupInSvg;
+        inLayout = backupInLayout;
         pushInitCallback(c, false);
         return c;
     }
@@ -469,6 +492,7 @@ b = (function (window, document) {
         var component = n.component;
         var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
+        var backupInLayout = inLayout;
         var bigChange = false;
         if (component && c.ctx != null) {
             if (component.id !== c.component.id) {
@@ -486,6 +510,8 @@ b = (function (window, document) {
                 c.cfg = n.cfg;
             }
         }
+        if (bigChange == false && c.layout != null && c.layout.layout.detectBigChange(n))
+            bigChange = true;
         var el;
         if (bigChange || (component && c.ctx == null)) {
         }
@@ -538,6 +564,7 @@ b = (function (window, document) {
                     inNamespace = true;
                     inSvg = true;
                 }
+                inLayout = setupLayout(n, c, inLayout);
                 updateChildrenNode(n, c);
                 if (component) {
                     if (component.postRender) {
@@ -557,6 +584,7 @@ b = (function (window, document) {
                 c.data = n.data;
                 inNamespace = backupInNamespace;
                 inSvg = backupInSvg;
+                inLayout = backupInLayout;
                 pushInitCallback(c, true);
                 return c;
             }
@@ -573,11 +601,16 @@ b = (function (window, document) {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
             var n = updateInstance[i];
-            if (updateCall[i]) {
-                n.component.postUpdateDom(n.ctx, n, n.element);
-            }
-            else {
-                n.component.postInitDom(n.ctx, n, n.element);
+            switch (updateCall[i]) {
+                case 0:
+                    n.component.postInitDom(n.ctx, n, n.element);
+                    break;
+                case 1:
+                    n.component.postUpdateDom(n.ctx, n, n.element);
+                    break;
+                case 2:
+                    n.layout.postLayoutDom(n, n.element);
+                    break;
             }
         }
         updateCall = [];
@@ -1229,6 +1262,9 @@ b = (function (window, document) {
         removeRoot: removeRoot,
         getRoots: getRoots,
         setAfterFrame: setAfterFrame,
+        setSetupLayout: function (callback) {
+            setupLayout = callback;
+        },
         isArray: isArray,
         uptime: function () { return uptime; },
         lastFrameDuration: function () { return lastFrameDuration; },

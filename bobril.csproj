@@ -113,6 +113,7 @@
     <TypeScriptCompile Include="src\bobril.d.ts" />
     <TypeScriptCompile Include="src\bobril.focus.d.ts" />
     <TypeScriptCompile Include="src\bobril.focus.ts" />
+    <TypeScriptCompile Include="src\bobril.layout.core.ts" />
     <TypeScriptCompile Include="src\bobril.media.d.ts" />
     <TypeScriptCompile Include="src\bobril.media.ts" />
     <TypeScriptCompile Include="src\bobril.mouse.d.ts" />
