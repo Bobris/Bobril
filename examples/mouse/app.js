@@ -41,27 +41,27 @@ var MouseApp;
         },
         onClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
-            return true;
+            return ctx.data.stopPropagation;
         },
         onDoubleClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
-            return true;
+            return ctx.data.stopPropagation;
         },
         onMouseDown: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
-            return true;
+            return ctx.data.stopPropagation;
         },
         onMouseUp: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
-            return true;
+            return ctx.data.stopPropagation;
         },
         onSwipeLeft: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
-            return true;
+            return ctx.data.stopPropagation;
         },
         onSwipeRight: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
-            return true;
+            return ctx.data.stopPropagation;
         }
     };
     function e(ev) {
@@ -99,15 +99,25 @@ var MouseApp;
     var v1 = false, v2 = false;
     b.init(function () {
         return [
-            layoutPair({
+            layoutPair([{
                 tag: "button",
-                style: { fontSize: "3em", marginBottom: "10px" },
+                style: { fontSize: "2em", marginBottom: "10px" },
                 children: "Click button",
                 component: TrackClick,
                 data: {
-                    onAdd: addEvent
+                    onAdd: addEvent,
+                    stopPropagation: true
                 }
-            }, [
+            }, {
+                tag: "button",
+                style: { fontSize: "2em", marginBottom: "10px" },
+                children: "Does not stop prop",
+                component: TrackClick,
+                data: {
+                    onAdd: addEvent,
+                    stopPropagation: false
+                }
+            }], [
                 d({ height: "2em" }, h("label", [checkbox(v1, function (v) {
                     v1 = v;
                     addEvent(new TextEvent("slow onChange"));

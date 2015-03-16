@@ -96,8 +96,8 @@ const enum Consts {
 
     var addEvent = b.addEvent;
 
-    function addEvent50(name: string, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean) {
-        addEvent(name, 50, callback);
+    function addEvent5(name: string, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean) {
+        addEvent(name, 5, callback);
     }
 
     var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
@@ -184,25 +184,25 @@ const enum Consts {
     if (window.onpointerdown !== undefined) {
         for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
             ((name: string) => {
-                addEvent50(name.toLowerCase(), buildHandlerPointer(name));
+                addEvent5(name.toLowerCase(), buildHandlerPointer(name));
             })(pointersEventNames[i]);
         }
     } else if (window.onmspointerdown !== undefined) {
         for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
             ((name: string) => {
-                addEvent50("MS" + name, buildHandlerPointer(name));
+                addEvent5("MS" + name, buildHandlerPointer(name));
             })(pointersEventNames[i]);
         }
     } else {
         if ((<any>window).ontouchstart !== undefined) {
-            addEvent50("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
-            addEvent50("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
-            addEvent50("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
-            addEvent50("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
+            addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
+            addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
+            addEvent5("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
+            addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
         }
-        addEvent50("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
-        addEvent50("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
-        addEvent50("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
+        addEvent5("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
+        addEvent5("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
+        addEvent5("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
     }
 
     for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
@@ -380,8 +380,9 @@ const enum Consts {
         };
     }
 
-    addEvent50("click", createHandler(onClickText));
-    addEvent50("dblclick", createHandler("onDoubleClick"));
+    // click must have higher priority over onchange detection
+    addEvent5("click", createHandler(onClickText));
+    addEvent5("dblclick", createHandler("onDoubleClick"));
 
     b.pointersDownCount = () => Object.keys(pointersDown).length;
     b.firstPointerDownId = () => firstPointerDown;
