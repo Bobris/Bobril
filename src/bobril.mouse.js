@@ -291,10 +291,9 @@
                 if (now() - firstPointerDownTime < 750 /* TabShouldBeShorterThanMs */) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param = { x: ev.x, y: ev.y };
-                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
-                        toBust.push([ev.x, ev.y, now() + 500 /* MaxBustDelay */]);
-                        return true;
-                    }
+                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
+                    toBust.push([ev.x, ev.y, now() + 500 /* MaxBustDelay */, handled ? 1 : 0]);
+                    return true;
                 }
             }
         }
@@ -318,7 +317,8 @@
             }
             if (diffLess(j[0], ev.clientX, 50 /* BustDistance */) && diffLess(j[1], ev.clientY, 50 /* BustDistance */)) {
                 toBust.splice(i, 1);
-                preventDefault(ev);
+                if (j[3])
+                    preventDefault(ev);
                 return true;
             }
         }
@@ -327,7 +327,7 @@
     var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
     var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
     for (var i = 0; i < 5; i++) {
-        addEvent(bustingEventNames[i], 30, bustingEventHandlers[i]);
+        addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
     }
     function createHandlerMouse(handlerName) {
         return function (ev, target, node) {
@@ -360,7 +360,7 @@
     b.pointersDownCount = function () { return Object.keys(pointersDown).length; };
     b.firstPointerDownId = function () { return firstPointerDown; };
     b.ignoreClick = function (x, y) {
-        toBust.push([x, y, now()]);
+        toBust.push([x, y, now() + 500 /* MaxBustDelay */, 1]);
     };
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;

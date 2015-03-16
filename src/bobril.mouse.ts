@@ -311,10 +311,9 @@ const enum Consts {
                 if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
-                        toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay]);
-                        return true;
-                    }
+                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
+                    toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay, handled ? 1 : 0]);
+                    return true;
                 }
             }
         }
@@ -340,7 +339,7 @@ const enum Consts {
             }
             if (diffLess(j[0], ev.clientX, Consts.BustDistance) && diffLess(j[1], ev.clientY, Consts.BustDistance)) {
                 toBust.splice(i, 1);
-                preventDefault(ev);
+                if (j[3]) preventDefault(ev);
                 return true;
             }
         }
@@ -350,7 +349,7 @@ const enum Consts {
     var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
     var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
     for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
-        addEvent(bustingEventNames[i], 30, bustingEventHandlers[i]);
+        addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
     }
 
     function createHandlerMouse(handlerName: string) {
@@ -387,7 +386,7 @@ const enum Consts {
     b.pointersDownCount = () => Object.keys(pointersDown).length;
     b.firstPointerDownId = () => firstPointerDown;
     b.ignoreClick = (x: number, y: number) => {
-        toBust.push([x, y, now()]);
+        toBust.push([x, y, now() + Consts.MaxBustDelay, 1]);
     };
 
     b.registerMouseOwner = registerMouseOwner;
