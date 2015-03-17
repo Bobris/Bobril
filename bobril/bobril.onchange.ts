@@ -20,7 +20,7 @@
     }
 
     function stringArrayContains(a: string[], v: string): boolean {
-        for (var j = 0, l = a.length; j < l; j++) {
+        for (var j = 0; j < a.length; j++) {
             if (a[j] === v) return true;
         }
         return false;
@@ -131,6 +131,10 @@
                 c.onChange(ctx, vs);
             }
         } else if (isCheckboxlike(<HTMLInputElement>target)) {
+            // In chrome change is triggered before click preventing speed up of checkbox on mobiles
+            // On IE it must be handled, Firefox "works" both ways
+            if (b.ieVersion() == null && ev.type === "change")
+                return false;
             if ((<HTMLInputElement>target).type === "radio") {
                 var radios = document.getElementsByName((<HTMLInputElement>target).name);
                 for (var j = 0; j < radios.length; j++) {
@@ -164,6 +168,7 @@
         return false;
     }
 
+    // click here must have lower priority (higher number) over mouse handlers
     var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 10, emitOnChange);

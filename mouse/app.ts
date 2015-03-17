@@ -36,11 +36,12 @@ module MouseApp {
     }
 
     function checkbox(value: boolean, onChange: (value: boolean) => void): IBobrilNode {
-        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: (ctx:any, v:boolean) => onChange(v) } };
+        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: (ctx: any, v: boolean) => onChange(v) } };
     }
 
     interface ITrackClickData {
         onAdd: (e: IEvent) => void;
+        stopPropagation: boolean;
     }
 
     interface ITrackClickCtx {
@@ -54,32 +55,32 @@ module MouseApp {
 
         onClick(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
-            return true;
+            return ctx.data.stopPropagation;
         },
 
         onDoubleClick(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
-            return true;
+            return ctx.data.stopPropagation;
         },
 
         onMouseDown(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
-            return true;
+            return ctx.data.stopPropagation;
         },
 
         onMouseUp(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
-            return true;
+            return ctx.data.stopPropagation;
         },
 
         onSwipeLeft(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
-            return true;
+            return ctx.data.stopPropagation;
         },
 
         onSwipeRight(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
-            return true;
+            return ctx.data.stopPropagation;
         }
     }
 
@@ -124,15 +125,25 @@ module MouseApp {
     b.init(() => {
         return [
             layoutPair(
-                {
+                [{
                     tag: "button",
-                    style: { fontSize: "3em", marginBottom: "10px" },
+                    style: { fontSize: "2em", marginBottom: "10px" },
                     children: "Click button",
                     component: TrackClick,
                     data: {
-                        onAdd: addEvent
+                        onAdd: addEvent,
+                        stopPropagation: true
                     }
-                }, [
+                }, {
+                        tag: "button",
+                        style: { fontSize: "2em", marginBottom: "10px" },
+                        children: "Does not stop prop",
+                        component: TrackClick,
+                        data: {
+                            onAdd: addEvent,
+                            stopPropagation: false
+                        }
+                    }], [
                     d({ height: "2em" },
                         h("label", [checkbox(v1,(v) => { v1 = v; addEvent(new TextEvent("slow onChange")); }), "Slow click checkbox"])
                         ),
@@ -144,12 +155,15 @@ module MouseApp {
                                 addEvent(new TextEvent("fast onClick"));
                                 return true;
                             }
-                        }, h("label", [checkbox(v2,(v) => { v2 = v; addEvent(new TextEvent("fast onChange")); } ), "Fast click checkbox"]))
+                        }, h("label", [checkbox(v2,(v) => {
+                                v2 = v;
+                                addEvent(new TextEvent("fast onChange"));
+                            }), "Fast click checkbox"]))
                         )
                 ]),
             {
                 tag: "div",
-                style: { border: "1px solid", minHeight: "120px" },
+                style: { border: "1px solid", minHeight: "120px", touchAction: "pan-y pinch-zoom" },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent

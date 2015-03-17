@@ -96,8 +96,8 @@ const enum Consts {
 
     var addEvent = b.addEvent;
 
-    function addEvent50(name: string, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean) {
-        addEvent(name, 50, callback);
+    function addEvent5(name: string, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean) {
+        addEvent(name, 5, callback);
     }
 
     var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
@@ -166,7 +166,7 @@ const enum Consts {
     }
 
     function buildHandlerMouse(name: string) {
-        return function handlePointerDown(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+        return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
             if (hasPointerEventsNoneB(node)) {
                 var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
                 target = fixed[0];
@@ -183,26 +183,24 @@ const enum Consts {
 
     if (window.onpointerdown !== undefined) {
         for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
-            ((name: string) => {
-                addEvent50(name.toLowerCase(), buildHandlerPointer(name));
-            })(pointersEventNames[i]);
+            var name = pointersEventNames[i];
+            addEvent5(name.toLowerCase(), buildHandlerPointer(name));
         }
     } else if (window.onmspointerdown !== undefined) {
         for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
-            ((name: string) => {
-                addEvent50("MS" + name, buildHandlerPointer(name));
-            })(pointersEventNames[i]);
+            var name = pointersEventNames[i];
+            addEvent5("MS" + name, buildHandlerPointer(name));
         }
     } else {
         if ((<any>window).ontouchstart !== undefined) {
-            addEvent50("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
-            addEvent50("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
-            addEvent50("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
-            addEvent50("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
+            addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
+            addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
+            addEvent5("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
+            addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
         }
-        addEvent50("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
-        addEvent50("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
-        addEvent50("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
+        addEvent5("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
+        addEvent5("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
+        addEvent5("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
     }
 
     for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
@@ -311,10 +309,9 @@ const enum Consts {
                 if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-                    if (invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param)) {
-                        toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay]);
-                        return true;
-                    }
+                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
+                    toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay, handled ? 1 : 0]);
+                    return true;
                 }
             }
         }
@@ -340,7 +337,7 @@ const enum Consts {
             }
             if (diffLess(j[0], ev.clientX, Consts.BustDistance) && diffLess(j[1], ev.clientY, Consts.BustDistance)) {
                 toBust.splice(i, 1);
-                preventDefault(ev);
+                if (j[3]) preventDefault(ev);
                 return true;
             }
         }
@@ -350,7 +347,7 @@ const enum Consts {
     var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
     var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
     for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
-        addEvent(bustingEventNames[i], 30, bustingEventHandlers[i]);
+        addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
     }
 
     function createHandlerMouse(handlerName: string) {
@@ -380,13 +377,14 @@ const enum Consts {
         };
     }
 
-    addEvent50("click", createHandler(onClickText));
-    addEvent50("dblclick", createHandler("onDoubleClick"));
+    // click must have higher priority over onchange detection
+    addEvent5("click", createHandler(onClickText));
+    addEvent5("dblclick", createHandler("onDoubleClick"));
 
     b.pointersDownCount = () => Object.keys(pointersDown).length;
     b.firstPointerDownId = () => firstPointerDown;
     b.ignoreClick = (x: number, y: number) => {
-        toBust.push([x, y, now()]);
+        toBust.push([x, y, now() + Consts.MaxBustDelay, 1]);
     };
 
     b.registerMouseOwner = registerMouseOwner;
