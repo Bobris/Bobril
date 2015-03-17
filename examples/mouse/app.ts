@@ -163,7 +163,7 @@ module MouseApp {
                 ]),
             {
                 tag: "div",
-                style: { border: "1px solid", minHeight: "120px" },
+                style: { border: "1px solid", minHeight: "120px", touchAction: "pan-y pinch-zoom" },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent

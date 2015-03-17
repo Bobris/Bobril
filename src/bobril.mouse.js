@@ -155,7 +155,7 @@
         };
     }
     function buildHandlerMouse(name) {
-        return function handlePointerDown(ev, target, node) {
+        return function handlePointer(ev, target, node) {
             if (hasPointerEventsNoneB(node)) {
                 var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
                 target = fixed[0];
@@ -171,16 +171,14 @@
     }
     if (window.onpointerdown !== undefined) {
         for (i = 0; i < 4; i++) {
-            (function (name) {
-                addEvent5(name.toLowerCase(), buildHandlerPointer(name));
-            })(pointersEventNames[i]);
+            var name = pointersEventNames[i];
+            addEvent5(name.toLowerCase(), buildHandlerPointer(name));
         }
     }
     else if (window.onmspointerdown !== undefined) {
         for (i = 0; i < 4; i++) {
-            (function (name) {
-                addEvent5("MS" + name, buildHandlerPointer(name));
-            })(pointersEventNames[i]);
+            var name = pointersEventNames[i];
+            addEvent5("MS" + name, buildHandlerPointer(name));
         }
     }
     else {

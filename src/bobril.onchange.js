@@ -139,7 +139,8 @@
         }
         else if (isCheckboxlike(target)) {
             // In chrome change is triggered before click preventing speed up of checkbox on mobiles
-            if (ev.type === "change")
+            // On IE it must be handled, Firefox "works" both ways
+            if (b.ieVersion() == null && ev.type === "change")
                 return false;
             if (target.type === "radio") {
                 var radios = document.getElementsByName(target.name);

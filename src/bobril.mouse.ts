@@ -166,7 +166,7 @@ const enum Consts {
     }
 
     function buildHandlerMouse(name: string) {
-        return function handlePointerDown(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+        return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
             if (hasPointerEventsNoneB(node)) {
                 var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
                 target = fixed[0];
@@ -183,15 +183,13 @@ const enum Consts {
 
     if (window.onpointerdown !== undefined) {
         for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
-            ((name: string) => {
-                addEvent5(name.toLowerCase(), buildHandlerPointer(name));
-            })(pointersEventNames[i]);
+            var name = pointersEventNames[i];
+            addEvent5(name.toLowerCase(), buildHandlerPointer(name));
         }
     } else if (window.onmspointerdown !== undefined) {
         for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
-            ((name: string) => {
-                addEvent5("MS" + name, buildHandlerPointer(name));
-            })(pointersEventNames[i]);
+            var name = pointersEventNames[i];
+            addEvent5("MS" + name, buildHandlerPointer(name));
         }
     } else {
         if ((<any>window).ontouchstart !== undefined) {
