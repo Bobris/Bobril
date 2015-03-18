@@ -2,12 +2,13 @@
 
 declare type IBobrilChild = boolean|string|IBobrilNode;
 declare type IBobrilChildren = IBobrilChild|IBobrilChild[];
+declare type IBobrilCacheChildren = string|IBobrilCacheNode[];
 declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
 interface IBobrilRoot {
     f: () => IBobrilChildren;
     e: HTMLElement;
-    c: IBobrilCacheNode[];
+    c: IBobrilCacheChildren;
 }
 
 declare type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -33,7 +34,7 @@ interface IBobrilStatic {
     // Low level method used just for testing
     updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
     // Low level method used just for testing
-    updateChildren(element: HTMLElement, newChildren: IBobrilChildren, cachedChildren: IBobrilChildren, parentNode: IBobrilNode): IBobrilCacheNode[];
+    updateChildren(element: HTMLElement, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilNode): IBobrilCacheChildren;
     // Low level method used just for testing
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
@@ -54,7 +55,7 @@ interface IBobrilStatic {
     lastFrameDuration(): number;
     // returns IE version 8 - 11, for other browsers returns undefined
     ieVersion(): number;
-    // shalows copy all own members from source to target returns target, source could be null, target must be non-null 
+    // shalows copy all own members from source to target returns target, source could be null, target must be non-null
     assign(target: Object, source: Object): Object;
     // shim for Event.preventDefault()
     preventDefault(event: Event): void;
@@ -73,10 +74,10 @@ interface IBobrilStatic {
     // broadcast component event, returning true from event stops broadcast and returns true
     broadcast(node: IBobrilCacheNode, name: string, param: any): boolean;
     // merge components, methods will be called before already existing methods
-    preEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
+    preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
     // merge components, methods will be called after already existing methods
-    postEnhance(node: IBobrilNode, methods: IBobrilComponent): void;
-    // clone IBobrilNode with attrs and attrs.style cloned deeply
+    postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
+    // clone IBobrilNode with attrs, style, children cloned deeply
     cloneNode(node: IBobrilNode): IBobrilNode;
 }
 
@@ -138,7 +139,7 @@ interface IBobrilCacheNode extends IBobrilNode {
 }
 
 interface IBobrilCtx {
-    // properties passed from parent component, treat it as immutable 
+    // properties passed from parent component, treat it as immutable
     data?: any;
     me?: IBobrilCacheNode;
     // properties passed from parent component automaticaly, but could be extended for children to IBobrilNode.cfg
