@@ -291,7 +291,7 @@
                     var param = { x: ev.x, y: ev.y };
                     var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
                     toBust.push([ev.x, ev.y, now() + 500 /* MaxBustDelay */, handled ? 1 : 0]);
-                    return true;
+                    return handled;
                 }
             }
         }

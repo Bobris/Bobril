@@ -430,14 +430,15 @@ b = (function (window, document) {
         rootFound2: for (j = 0; j < rootElements.length; j++) {
             if (n === rootElements[j]) {
                 var rc = roots[rootIds[j]].c;
-                for (var k = 0; k < rc.length; k++) {
-                    var rck = rc[k];
-                    if (rck.element === currentNode) {
-                        res.push(rck);
-                        currentCacheArray = rck.children;
-                        break rootFound2;
+                if (typeof rc !== "string")
+                    for (var k = 0; k < rc.length; k++) {
+                        var rck = rc[k];
+                        if (rck.element === currentNode) {
+                            res.push(rck);
+                            currentCacheArray = rck.children;
+                            break rootFound2;
+                        }
                     }
-                }
             }
         }
         while (nodeStack.length) {
@@ -1018,13 +1019,15 @@ b = (function (window, document) {
             var r = roots[rootIds[i]];
             if (!r)
                 continue;
+            var rc = r.c;
             if (fullRefresh) {
                 var newChildren = r.f();
                 r.e = r.e || document.body;
-                r.c = updateChildren(r.e, newChildren, r.c, null);
+                r.c = updateChildren(r.e, newChildren, rc, null);
             }
             else {
-                selectedUpdate(r.c);
+                if (typeof rc !== "string")
+                    selectedUpdate(rc);
             }
         }
         callPostCallbacks();
@@ -1123,10 +1126,14 @@ b = (function (window, document) {
     function merge(f1, f2) {
         var _this = this;
         return function () {
-            var result = f1.apply(_this, arguments);
+            var params = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                params[_i - 0] = arguments[_i];
+            }
+            var result = f1.apply(_this, params);
             if (result)
                 return result;
-            return f2.apply(_this, arguments);
+            return f2.apply(_this, params);
         };
     }
     var emptyObject = {};

@@ -428,13 +428,13 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         rootFound2: for (j = 0; j < rootElements.length; j++) {
             if (n === rootElements[j]) {
                 var rc = roots[rootIds[j]].c;
-                for (var k = 0; k < rc.length; k++) {
+                if (typeof rc!=="string") for (var k = 0; k < rc.length; k++) {
                     var rck = rc[k];
                     if (rck.element === currentNode) {
                         res.push(rck);
                         currentCacheArray = rck.children;
                         break rootFound2;
-                    }                    
+                    }
                 }
             }
         }
@@ -578,7 +578,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         updateInstance = [];
     }
 
-    function updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any, parentNode: IBobrilNode): Array<IBobrilCacheNode> {
+    function updateChildren(element: HTMLElement, newChildren: any, cachedChildren: any, parentNode: IBobrilNode): Array<IBobrilCacheNode>|string {
         if (newChildren == null) newChildren = <any>[];
         if (!isArray(newChildren)) {
             if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
@@ -990,9 +990,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
-    var afterFrameCallback: (root: IBobrilCacheNode[]) => void = () => { };
+    var afterFrameCallback: (root: IBobrilCacheChildren) => void = () => { };
 
-    function setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void {
+    function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void {
         var res = afterFrameCallback;
         afterFrameCallback = callback;
         return res;
@@ -1004,7 +1004,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         frame++;
         uptime = time;
         scheduled = false;
-        var fullRefresh = false; 
+        var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
             fullRefresh = true;
@@ -1013,13 +1013,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         for (var i = 0; i < rootIds.length; i++) {
             var r = roots[rootIds[i]];
             if (!r) continue;
+            var rc = r.c;
             if (fullRefresh) {
                 var newChildren = r.f();
                 r.e = r.e || document.body;
-                r.c = updateChildren(r.e, newChildren, r.c, null);
+                r.c = updateChildren(r.e, newChildren, rc, null);
             }
             else {
-                selectedUpdate(r.c);
+                if (typeof rc!=="string") selectedUpdate(rc);
             }
         }
         callPostCallbacks();
@@ -1056,7 +1057,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var root = roots[id];
         if (!root) return;
         if (root.c.length) {
-            root.c = updateChildren(root.e, <any>[], root.c, null);
+            root.c = <any>updateChildren(root.e, <any>[], root.c, null);
         }
         delete roots[id];
     }
@@ -1105,7 +1106,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (m) {
                 if (m.call(c, ctx, param))
                     return true;
-            }            
+            }
         }
         return broadcastEvent(node, name, param);
     }
@@ -1125,10 +1126,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function merge(f1: Function, f2: Function): Function {
-        return () => {
-            var result = f1.apply(this, arguments);
+        return (... params:any[]) => {
+            var result = f1.apply(this, params);
             if (result) return result;
-            return f2.apply(this, arguments);
+            return f2.apply(this, params);
         }
     }
 
