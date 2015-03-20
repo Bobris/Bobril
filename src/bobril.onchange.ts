@@ -131,10 +131,13 @@
                 c.onChange(ctx, vs);
             }
         } else if (isCheckboxlike(<HTMLInputElement>target)) {
-            // In chrome change is triggered before click preventing speed up of checkbox on mobiles
-            // On IE it must be handled, Firefox "works" both ways
-            if (b.ieVersion() == null && ev && ev.type === "change")
+            // Postpone change event so onCLick will be processed before it
+            if (ev && ev.type === "change") {
+                setTimeout(() => {
+                    emitOnChange(null, target, node);
+                }, 10);
                 return false;
+            }
             if ((<HTMLInputElement>target).type === "radio") {
                 var radios = document.getElementsByName((<HTMLInputElement>target).name);
                 for (var j = 0; j < radios.length; j++) {
