@@ -171,7 +171,7 @@
         me.attrs = attrs;
     }
 
-    var svgChildComponent:IBobrilComponent = {
+    var svgChildComponent: IBobrilComponent = {
         render: svgChildComponentInit
     };
 
@@ -181,43 +181,77 @@
         recSetComponent(me.children, svgChildComponent);
     }
 
-    var svgComponent:IBobrilComponent = {
+    var svgComponent: IBobrilComponent = {
         render: svgComponentInit
     }
 
-    function vmlChildComponentInit(ctx: Object, me: IBobrilNode) {
-        me.tag = "/";
-        var s = "<v:shape coordorigin=\"0 0\" coordsize=\"100 100\"";
-        var sInner = "";
+    var vmlDocument: Document;
+    var urldefaultvml = "url(#default#VML)";
+
+    function createVmlElement(tag: string): HTMLElement {
+        var el = vmlDocument.createElement("v:" + tag);
+        return el;
+    }
+
+    function vmlChildComponentInit(ctx: Object, me: IBobrilNode, createInto: Element, createBefore: Node) {
+        var el: HTMLElement;
+        el = createVmlElement("shape");
+        (<any>me).element = el;
+        createInto.insertBefore(el, createBefore);
+        var style = el.style;
+        style.position = "absolute";
+        (<any>style).left = 0;
+        (<any>style).top = 0;
+        (<any>style)["behavior"] = urldefaultvml;
+        style.width = "10px";
+        style.height = "10px";
+        (<any>el).coordorigin = "0,0";
+        (<any>el).coordsize = "100,100";
+    }
+
+    function vmlChildComponentRender(ctx: IBobrilCtx, me: IBobrilNode, oldMe: IBobrilCacheNode) {
+        var el = <HTMLElement>ctx.me.element;
         var data = me.data;
         var vfill = data.fill;
         var v: any;
         if (vfill) {
+            (<any>el).filled = true;
+            var vmlFill: any = (<any>el).fill;
+            if (!vmlFill) {
+                vmlFill = createVmlElement("fill");
+                el.appendChild(vmlFill);
+                (<any>el).fill = vmlFill;
+            }
+            vmlFill.color = vfill;
             v = data.fillOpacity;
-            if (v)
-                sInner += "<v:fill color=\"" + vfill + "\" opacity=\"" + v + "\"/>";
-            else s += " fillcolor=\"" + vfill + "\"";
+            vmlFill.opacity = v != null ? v : 1;
         } else {
-            s += " filled=\"false\"";
+            (<any>el).filled = false;
         }
         v = data.stroke;
         if (v) {
-            sInner += "<v:stroke color=\"" + v;
+            (<any>el).stroked = true;
+            var vmlStroke: any = (<any>el).stroke;
+            if (!vmlStroke) {
+                vmlStroke = createVmlElement("stroke");
+                el.appendChild(vmlStroke);
+                (<any>el).stroke = vmlStroke;
+            }
+            vmlStroke.color = v;
             v = data.strokeOpacity;
-            if (v) sInner += "\" opacity=\"" + v;
+            vmlStroke.opacity = v != null ? v : 1;
             v = data.strokeWidth;
-            if (v) sInner += "\" weight=\"" + v + "px";
+            vmlStroke.weight = (v != null ? v : 1) + "px";
             v = data.lineCap;
-            if (v) sInner += "\" endcap=\"" + (v === "butt" ? "flat" : v);
-            sInner += "\" joinstyle=\"" + (data.lineJoin || "miter");
+            vmlStroke.endcap = v != null ? (v === "butt" ? "flat" : v) : "flat";
+            vmlStroke.joinstyle = data.lineJoin || "miter";
             v = data.miterLimit;
-            if (v) sInner += "\" miterlimit=\"" + v;
-            sInner += "\"/>";
+            vmlStroke.miterlimit = v != null ? v : 10;
         } else {
-            s += " stroked=\"false\"";
+            (<any>el).stroked = false;
         }
         var path = data.path || <any>[];
-        s += " path=\"";
+        var s = "";
         var index = 0;
         var descriptor: any;
         var paramCount = 0;
@@ -238,26 +272,29 @@
                 s += handler.apply(null, path.slice(index, index + paramCount));
             index += paramCount;
         }
-        s += "\">" + sInner + "</v:shape>";
-        me.children = s;
+        (<any>el).path = s;
     }
 
-    var vmlChildComponent:IBobrilComponent = {
-        render: vmlChildComponentInit
+    var vmlChildComponent: IBobrilComponent = {
+        init: vmlChildComponentInit,
+        render: vmlChildComponentRender
     }
 
-    function vmlComponentInit(ctx: Object, me: IBobrilNode) {
+    function vmlComponentInit(ctx: IBobrilCtx, me: IBobrilNode) {
         me.tag = "div";
-        me.attrs = { style: { position: "absolute", width: me.data.width, height: me.data.height, clip: "rect(0," + me.data.width + "," + me.data.height + ",0)" } };
+        me.style = {
+            position: "absolute",
+            width: me.data.width,
+            height: me.data.height,
+            clip: "rect(0," + me.data.width + "," + me.data.height + ",0)"
+        };
         recSetComponent(me.children, vmlChildComponent);
-        b.vmlNode();
     }
 
-    var vmlComponent:IBobrilComponent = {
+    var vmlComponent: IBobrilComponent = {
         render: vmlComponentInit
-    }
-    var defaultvml = "#default#VML";
-    var urldefaultvml = "url(" + defaultvml + ")";
+    };
+
     var implType = ((<any>window).SVGAngle || document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1") ? 1 : 2);
     if (implType === 2) {
         var testingdiv = document.createElement("div");
@@ -269,14 +306,9 @@
         }
     }
     if (implType === 2) {
-        if (!(<any>document).namespaces["v"]) {
-            document.namespaces.add("v", "urn:schemas-microsoft-com:vml", defaultvml);
-        }
-        var behaviururldefaultvml = "behavior:" + urldefaultvml + ";}";
-        var ss = document.createStyleSheet();
-        ss.cssText = "v\\:shape{position:absolute;width:10px;height:10px;" + behaviururldefaultvml +
-        " v\\:fill{" + behaviururldefaultvml +
-        " v\\:stroke{" + behaviururldefaultvml;
+        // In IE DocumentFragment is actually fully featured Document
+        vmlDocument = <Document>document.createDocumentFragment();
+        vmlDocument.namespaces.add("v", "urn:schemas-microsoft-com:vml");
         b.vg = vmlComponent;
     } else if (implType === 1) {
         b.vg = svgComponent;
