@@ -103,7 +103,8 @@ b = (function (window, document) {
     function ieVersion() {
         return document.documentMode;
     }
-    if (ieVersion() === 8) {
+    var onIE8 = ieVersion() === 8;
+    if (onIE8) {
         mapping.cssFloat = renamer("styleFloat");
     }
     function shimStyle(newValue) {
@@ -220,7 +221,9 @@ b = (function (window, document) {
                     else
                         el.setAttribute(attrName, newAttr);
                 }
-                else if (attrName in el && !(attrName === "list" || attrName === "form" || attrName === "type")) {
+                else if (onIE8 && attrName === "type" && el.nodeName === "input") {
+                }
+                else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
                 }
                 else
@@ -338,6 +341,10 @@ b = (function (window, document) {
         }
         else if (!el) {
             el = createElement(n.tag);
+        }
+        if (onIE8 && n.tag === "input" && "type" in n.attrs) {
+            // On IE8 input.type has to be written before writing adding to document
+            el.type = c.attrs.type;
         }
         createInto.insertBefore(el, createBeforeNode);
         c.element = el;

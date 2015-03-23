@@ -120,7 +120,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return document.documentMode;
     }
 
-    if (ieVersion() === 8) {
+    var onIE8 = ieVersion()===8;
+
+    if (onIE8) {
         (<any>mapping).cssFloat = renamer("styleFloat");
     }
 
@@ -227,7 +229,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (inSvg) {
                     if (attrName === "href") el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
                     else el.setAttribute(attrName, newAttr);
-                } else if (attrName in el && !(attrName === "list" || attrName === "form" || attrName === "type")) {
+                } else if (onIE8 && attrName==="type" && el.nodeName==="input") {
+                    // Already set before adding to document
+                } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     (<any>el)[attrName] = newAttr;
                 } else el.setAttribute(attrName, newAttr);
             }
@@ -338,6 +342,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             inSvg = true;
         } else if (!el) {
             el = createElement(n.tag);
+        }
+        if (onIE8 && n.tag==="input" && "type" in n.attrs) {
+            // On IE8 input.type has to be written before writing adding to document
+            (<HTMLInputElement>el).type=(<any>c.attrs).type;
         }
         createInto.insertBefore(el, createBeforeNode);
         c.element = el;
