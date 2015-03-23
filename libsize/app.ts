@@ -34,10 +34,10 @@ module LibSizeApp {
             tag: "div", style: {
                 position: "absolute",
                 textAlign: "center",
-                width: "500px",
-                fontSize: "20px",
-                top: Math.round(screenHeight * 0.5 - pieRadius - 35).toString() + "px",
-                left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
+                width: 500,
+                fontSize: 20,
+                top: Math.round(screenHeight * 0.5 - pieRadius - 35),
+                left: Math.round(screenWidth * 0.5 - 250)
             },
             children: "Bobril Minified Component Size"
         });
@@ -45,9 +45,9 @@ module LibSizeApp {
             tag: "div", style: {
                 position: "absolute",
                 textAlign: "center",
-                width: "500px",
-                top: Math.round(screenHeight * 0.5 + pieRadius + 15).toString() + "px",
-                left: Math.round(screenWidth * 0.5 - 250).toString() + "px"
+                width: 500,
+                top: Math.round(screenHeight * 0.5 + pieRadius + 15),
+                left: Math.round(screenWidth * 0.5 - 250)
             },
             children: "Total " + libSizeData.total.minsize.toString() + " bytes"
         });
@@ -76,8 +76,8 @@ module LibSizeApp {
             texts.push({
                 tag: "div", style: {
                     position: "absolute",
-                    top: Math.round(legendy + i * legenddy).toString() + "px",
-                    left: Math.round(legendx + legenddy).toString() + "px"
+                    top: Math.round(legendy + i * legenddy),
+                    left: Math.round(legendx + legenddy)
                 },
                 children: libSizeData.parts[i].name
             });
@@ -85,9 +85,9 @@ module LibSizeApp {
                 tag: "div", style: {
                     position: "absolute",
                     textAlign: "right",
-                    width: "60px",
-                    top: Math.round(legendy + i * legenddy).toString() + "px",
-                    left: Math.round(legendx + legenddy + 60).toString() + "px"
+                    width: 60,
+                    top: Math.round(legendy + i * legenddy),
+                    left: Math.round(legendx + legenddy + 60)
                 },
                 children: libSizeData.parts[i].minsize.toString()
             });
@@ -99,7 +99,7 @@ module LibSizeApp {
             children: [
                 {
                     component: b.vg,
-                    data: { width: screenWidth + "px", height: screenHeight + "px" },
+                    data: { width: screenWidth, height: screenHeight },
                     children: path
                 },
                 texts

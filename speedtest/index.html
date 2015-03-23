@@ -17,9 +17,8 @@
 			var ch=[];
 			for(i=0;i<j;i++) ch.push({tag:"span", key: i, children: ""+i});
 			var t1 = +new Date();
-			var rootnode=b.createNode({tag:"div", children:ch},null);
+			var rootnode=b.createNode({tag:"div", children:ch},null,root,null);
 			var t2 = +new Date();
-			root.appendChild(rootnode.element);
             var h1=root.offsetHeight;
 			root.removeChild(rootnode.element);
 			var t3 = +new Date();
@@ -53,7 +52,7 @@
 			root.removeChild(root.firstChild);
 			var t7 = +new Date();
 			var results = document.getElementById("results");
-			results.innerHTML+="<div>"+j+": init:"+(t1-t0)+" bobril:"+(t2-t1)+" todom:"+(t3-t2)+" createElement:"+(t4-t3)+" todom:"+(t5-t4)+" innerHTML:"+(t6-t5)+" todom:"+(t7-t6)+" H1:"+h1+" H2:"+h2+" H3:"+h2+"</div>"; 
+			results.innerHTML+="<div>"+j+": init:"+(t1-t0)+" bobril:"+(t2-t1)+" todom:"+(t3-t2)+" createElement:"+(t4-t3)+" todom:"+(t5-t4)+" innerHTML:"+(t6-t5)+" todom:"+(t7-t6)+" H1:"+h1+" H2:"+h2+" H3:"+h2+"</div>";
 		}
 		},0);
 	</script>

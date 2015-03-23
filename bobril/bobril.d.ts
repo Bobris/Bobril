@@ -30,7 +30,7 @@ interface IBobrilStatic {
     getRoots(): IBobrilRoots;
 
     // Low level method used just for testing
-    createNode(n: IBobrilNode, parentNode: IBobrilNode): IBobrilCacheNode;
+    createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto:Element, createBefore:Node|Node[]): IBobrilCacheNode;
     // Low level method used just for testing
     updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
     // Low level method used just for testing
@@ -59,8 +59,6 @@ interface IBobrilStatic {
     assign(target: Object, source: Object): Object;
     // shim for Event.preventDefault()
     preventDefault(event: Event): void;
-    // this could be called only from component init and forces recreation of child nodes
-    vmlNode(): void;
     // DOM to vdom stack resolver
     vdomPath(n: Node): IBobrilCacheNode[];
     // DOM to vdom leaf resolver
@@ -94,7 +92,7 @@ interface IBobrilComponent {
     // it does prevent calling render method twice on same node
     id?: string;
     // called before new node in vdom should be created, me members (tag, attrs, children) could be modified, ctx is initialized to { data: me.data||{}, me: me }
-    init? (ctx: IBobrilCtx, me: IBobrilNode): void;
+    init? (ctx: IBobrilCtx, me: IBobrilCacheNode, createInto:Element, createBefore:Node): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
     // in case of init this is called after init method, oldMe is equal to undefined in that case
     render? (ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
