@@ -109,12 +109,46 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var mapping: IBobrilShimStyleMapping = newHashObj();
 
+    var isUnitlessNumber = {
+        boxFlex: true,
+        boxFlexGroup: true,
+        columnCount: true,
+        flex: true,
+        flexGrow: true,
+        flexShrink: true,
+        fontWeight: true,
+        lineClamp: true,
+        lineHeight: true,
+        opacity: true,
+        order: true,
+        orphans: true,
+        widows: true,
+        zIndex: true,
+        zoom: true,
+    };
+
     function renamer(newName: string) {
         return (style: any, value: any, oldName: string) => {
             style[newName] = value;
             style[oldName] = undefined;
         };
     };
+
+    function renamerpx(newName: string) {
+        return (style: any, value: any, oldName: string) => {
+            if (typeof value === "number") {
+                style[newName] = value + "px";
+            } else {
+                style[newName] = value;
+            }
+            style[oldName] = undefined;
+        };
+    }
+
+    function pxadder(style: any, value: any, name: string) {
+        if (typeof value === "number")
+            style[name] = value + "px";
+    }
 
     function ieVersion() {
         return document.documentMode;
@@ -139,16 +173,16 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     if (/-/.test(ki) && window.console && console.warn) console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
                 }
                 if (testPropExistence(ki)) {
-                    mi = null;
+                    mi = ((<any>isUnitlessNumber)[ki] === true) ? null : pxadder;
                 } else {
                     var titleCaseKi = ki.replace(/^\w/, match => match.toUpperCase());
                     for (var j = 0; j < vendors.length; j++) {
                         if (testPropExistence(vendors[j] + titleCaseKi)) {
-                            mi = renamer(vendors[j] + titleCaseKi); break;
+                            mi = (((<any>isUnitlessNumber)[ki] === true) ? renamer : renamerpx)(vendors[j] + titleCaseKi); break;
                         }
                     }
                     if (mi === undefined) {
-                        mi = null;
+                        mi = ((<any>isUnitlessNumber)[ki] === true) ? null : pxadder;
                         if (DEBUG && window.console && console.warn) console.warn("Style property " + ki + " is not supported in this browser");
                     }
                 }

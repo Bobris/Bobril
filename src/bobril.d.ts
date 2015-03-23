@@ -92,7 +92,7 @@ interface IBobrilComponent {
     // it does prevent calling render method twice on same node
     id?: string;
     // called before new node in vdom should be created, me members (tag, attrs, children) could be modified, ctx is initialized to { data: me.data||{}, me: me }
-    init? (ctx: IBobrilCtx, me: IBobrilNode, createInto:Element, createBefore:Node): void;
+    init? (ctx: IBobrilCtx, me: IBobrilCacheNode, createInto:Element, createBefore:Node): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
     // in case of init this is called after init method, oldMe is equal to undefined in that case
     render? (ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
