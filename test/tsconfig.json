@@ -13,6 +13,8 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
+        "./examples/gameoflife/model/cell.ts",
+        "./examples/gameoflife/model/world.ts",
         "./helpers.ts",
         "./jasmine.d.ts",
         "./livecycle.ts",

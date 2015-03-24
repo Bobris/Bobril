@@ -59,6 +59,18 @@ describe("createNode", function () {
         var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }, { tag: "/", children: "d<i>e</i>" }] }, null, document.createElement("div"), null);
         expectInsensitive(r.element.outerHTML, "<div>a<span>b</span>cd<i>e</i></div>");
     });
+    it("supports ref", function () {
+        var comp1 = {
+            render: function (ctx, me) {
+                me.tag = "div";
+                me.children = { tag: "span", ref: [ctx, "test"], children: "cool" };
+            },
+            postRender: function (ctx) {
+                expect(ctx.refs["test"].tag).toBe("span");
+            }
+        };
+        b.createNode({ component: comp1 }, null, document.createElement("div"), null);
+    });
 });
 describe("updateNode", function () {
     it("simple", function () {
