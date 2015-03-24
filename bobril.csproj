@@ -60,6 +60,7 @@
     <Content Include="examples\basic\index.html" />
     <Content Include="examples\focus\index.html" />
     <Content Include="examples\game\index.html" />
+    <Content Include="examples\gameoflife\index.html" />
     <Content Include="examples\index.html" />
     <Content Include="examples\input\index.html" />
     <Content Include="examples\libsize\data.js" />
@@ -77,11 +78,19 @@
     <Content Include="examples\todo\styles.css" />
     <Content Include="examples\vg\index.html" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <TypeScriptCompile Include="examples\basic\app.ts" />
     <TypeScriptCompile Include="examples\focus\app.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\components\header.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\model\cell.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\components\button.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\components\canvas.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\components\gameControlPanel.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\components\spinner.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\gameController.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\model\world.ts" />
     <TypeScriptCompile Include="examples\game\app.ts" />
+    <TypeScriptCompile Include="examples\gameoflife\app.ts" />
     <TypeScriptCompile Include="examples\input\app.ts" />
     <TypeScriptCompile Include="examples\libsize\app.ts" />
     <TypeScriptCompile Include="examples\media\app.ts" />
@@ -121,6 +130,8 @@
     <TypeScriptCompile Include="src\bobril.vg.d.ts" />
     <TypeScriptCompile Include="src\bobril.vg.ts" />
     <TypeScriptCompile Include="src\lib.touch.d.ts" />
+    <TypeScriptCompile Include="test\examples\gameoflife\model\cell.ts" />
+    <TypeScriptCompile Include="test\examples\gameoflife\model\world.ts" />
     <TypeScriptCompile Include="test\helpers.ts" />
     <TypeScriptCompile Include="test\jasmine.d.ts" />
     <TypeScriptCompile Include="test\livecycle.ts" />
