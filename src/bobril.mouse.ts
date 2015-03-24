@@ -1,287 +1,107 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.mouse.d.ts"/>
-/// <reference path="../src/lib.touch.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.mouse.d.ts"/>
+/// <reference path="lib.touch.d.ts"/>
 
-class Coord implements ICoords {
-    static CLICKBUSTER_THRESHOLD: number = 50; // 25 pixels in any dimension is the limit for busting clicks.
-    constructor(public x: number, public y: number) {}
-
-    hit(x: number, y: number): boolean {
-        return Math.abs(this.x - x) < Coord.CLICKBUSTER_THRESHOLD && Math.abs(this.y - y) < Coord.CLICKBUSTER_THRESHOLD;
-    }
+const enum Consts {
+    MoveOverIsNotTap = 13,
+    TabShouldBeShorterThanMs = 750,
+    MaxBustDelay = 500,
+    BustDistance = 50
 }
 
-class CoordList {
-    public coords: Coord[] = [];
+((b: IBobrilStatic, window: Window, document: Document) => {
+    var ownerCtx: any = null;
+    var invokingOwner: boolean;
+    var onClickText = "onClick";
 
-    containsTouchedRegion(x: number, y: number, removeIfHit: boolean) {
-        for (var i = 0; i < this.coords.length; i += 1) {
-            if (this.coords[i].hit(x, y)) {
-                if (removeIfHit) {
-                    this.coords.splice(i, 1);
-                }
-                return true; // allowable region
-            }
+    function isMouseOwner(ctx: any): boolean {
+        return ownerCtx === ctx;
+    }
+
+    function isMouseOwnerEvent(): boolean {
+        return invokingOwner;
+    }
+
+    function registerMouseOwner(ctx: any): void {
+        ownerCtx = ctx;
+    }
+
+    function releaseMouseOwner(): void {
+        ownerCtx = null;
+    }
+
+    function invokeMouseOwner(handlerName: string, param: any): boolean {
+        if (ownerCtx == null) {
+            return false;
         }
-        return false; // No allowable region; bust it.
-    }
 
-    push(x: number, y: number): void {
-        this.coords.push(new Coord(x, y));
-    }
-
-    remove(x: number, y: number): void {
-        for (var i = 0; i < this.coords.length; i += 1) {
-            if (this.coords[i].x == x && this.coords[i].y == y) {
-                this.coords.splice(i, 1);
-                return;
-            }
+        var handler = ownerCtx.me.component[handlerName];
+        if (!handler) { // no handler available
+            return false;
         }
+        invokingOwner = true;
+        var stop = handler(ownerCtx, param);
+        invokingOwner = false;
+        return stop;
     }
-}
 
-((b: IBobrilStatic) => {
     var preventDefault = b.preventDefault;
-    var now = b.now;
-    var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
 
-    function getCoordinates(event: any): ICoords {
-        var touches = event.touches && event.touches.length ? event.touches : [event];
-        var e = (event.changedTouches && event.changedTouches[0]) ||
-            (event.originalEvent && event.originalEvent.changedTouches &&
-                event.originalEvent.changedTouches[0]) ||
-            touches[0].originalEvent || touches[0];
-
-        return {
-            x: e.clientX,
-            y: e.clientY
-        };
+    function hasPointerEventsNoneB(node: IBobrilNode): boolean {
+        return node && node.style && node.style.pointerEvents === "none";
     }
-
-    var lastPreventedTime: number = 0;
-    var touchCoordinates: CoordList = new CoordList();
-    var lastLabelClickCoordinates: number[];
-
-    function buster(event: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        if (now() - lastPreventedTime > PREVENT_DURATION) {
-            return false; // Too old.
-        }
-        var touches = event.touches && event.touches.length ? <any>event.touches : [event];
-        var x = touches[0].clientX;
-        var y = touches[0].clientY;
-        // Work around desktop Webkit quirk where clicking a label will fire two clicks (on the label
-        // and on the input element). Depending on the exact browser, this second click we don't want
-        // to bust has either (0,0), negative coordinates, or coordinates equal to triggering label
-        // click event
-        if (x < 1 && y < 1) {
-            return false; // offscreen
-        }
-        if (lastLabelClickCoordinates &&
-            lastLabelClickCoordinates[0] === x && lastLabelClickCoordinates[1] === y) {
-            return false; // input click triggered by label click
-        }
-        // reset label click coordinates on first subsequent click
-        if (lastLabelClickCoordinates) {
-            lastLabelClickCoordinates = null;
-        }
-        // remember label click coordinates to prevent click busting of trigger click event on input
-        if ((<any>event.target).tagName.toLowerCase() === "label") {
-            lastLabelClickCoordinates = [x, y];
-        }
-
-        if (!touchCoordinates.containsTouchedRegion(x, y, event.type == "click")) {
-            return false;
-        }
-
-        // If we didn't find an allowable region, bust the click.
-        preventDefault(event);
-
-        // Blur focused form elements
-        event.target && (<any>event.target).blur();
-        return true;
-    }
-
-    // Global touchstart handler that creates an allowable region for a click event.
-    // This allowable region can be removed by preventGhostClick if we want to bust it.
-    function collectCoordinates(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var touches = ev.touches && ev.touches.length ? <any>ev.touches : [ev];
-        var x = touches[0].clientX;
-        var y = touches[0].clientY;
-        touchCoordinates.push(x, y);
-
-        setTimeout(() => {
-            // Remove the allowable region.
-            touchCoordinates.remove(x, y);
-        }, PREVENT_DURATION);
-
-        return false;
-    }
-
-    var tapping: boolean = false;
-    var tapElement: Node;
-    var startTime: number;
-    var touchStartX: number;
-    var touchStartY: number;
-
-    function handleTouchStart(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        tapping = true;
-        tapElement = target;
-        // Hack for Safari, which can target text nodes instead of containers.
-        if (tapElement.nodeType == 3) {
-            tapElement = tapElement.parentNode;
-        }
-
-        startTime = now();
-
-        var touches: any = ev.touches && (ev.touches.length ? <any>ev.touches : [ev]);
-        var e = touches[0].originalEvent || touches[0];
-        touchStartX = e.clientX;
-        touchStartY = e.clientY;
-        return false;
-    }
-
-    var TAP_DURATION = 750; // Shorter than 750ms is a tap, longer is a taphold or drag.
-    var MOVE_TOLERANCE = 12; // 12px seems to work in most mobile browsers.
-
-    function handleTouchEnd(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var diff = now() - startTime;
-
-        var touches: any = (ev.changedTouches && ev.changedTouches.length) ? ev.changedTouches : ((ev.touches && ev.touches.length) ? <any>ev.touches : [ev]);
-        var e = touches[0].originalEvent || touches[0];
-        var x = e.clientX;
-        var y = e.clientY;
-        var dist = Math.sqrt(Math.pow(x - touchStartX, 2) + Math.pow(y - touchStartY, 2));
-
-        if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
-            lastPreventedTime = now();
-            // Blur the focused element (the button, probably) before firing the callback.
-            // This doesn't work perfectly on Android Chrome, but seems to work elsewhere.
-            // I couldn't get anything to work reliably on Android Chrome.
-            if (tapElement) {
-                (<any>tapElement).blur();
-            }
-
-            var disabled: any = node.attrs && node.attrs["disabled"];
-            if (typeof disabled === "undefined" || disabled === false) {
-                if (!emitClickEvent(ev, target, node, x, y))
-                    touchCoordinates.remove(x, y); //if event was NOT consumed, we dont bust it(eg. onchange plugin needs it)
-            }
-        }
-
-        resetState();
-
-        return false;
-    }
-
-    function emitClickEvent(ev: TouchEvent, target: Node, node: IBobrilCacheNode, x: number, y: number): boolean {
-        if (!node)
-            return false;
-
-        if (b.bubble(node, "onClick", { x: x, y: y })) {
-            preventDefault(ev);
-            return true;
-        }
-        return false;
-    }
-
-    function resetState() {
-        tapping = false;
-    }
-
-    function tapCanceled(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
-        resetState();
-        return false;
-    }
-
-    function buildParam(event: MouseEvent): IMouseEvent {
-        var coords = getCoordinates(event);
-        return {
-            x: coords.x,
-            y: coords.y
-        }
-    }
-
-    function createHandler(handlerName: string) {
-        return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
-            if (!node)
-                return false;
-            var param: IMouseEvent = buildParam(ev);
-            if (b.bubble(node, handlerName, param)) {
-                preventDefault(ev);
-            }
-            return false;
-        };
-    }
-
-   
-    function mouseEnterAndLeave(ev: MouseEvent, target: Node, node: IBobrilCacheNode):boolean {
-        var param: IMouseEvent = buildParam(ev);
-        var fromPath = b.vdomPath(ev.fromElement);
-        var toPath = b.vdomPath(ev.toElement);
-
-        var common = 0;
-        while (common < fromPath.length && common < toPath.length && fromPath[common] === toPath[common])
-            common++;
-
-        var i = fromPath.length - 1;
-        var n: IBobrilCacheNode;
-        var c: IBobrilComponent;
-        while (i >= common) {
-            n = fromPath[i];
-            if (n) {
-                c = n.component;
-                if (c && c.onMouseLeave)
-                    c.onMouseLeave(n.ctx, param);
-            }
-            i--;
-        }
-
-        i = toPath.length - 1;
-        while (i >= common) {
-            n = toPath[i];
-            if (n) {
-                c = n.component;
-                if (c && c.onMouseEnter)
-                    c.onMouseEnter(n.ctx, param);
-            }
-            i--;
-        }
-            
-        return false;
-    };
-    
 
     function hasPointerEventsNone(target: Node): boolean {
         var bNode = b.deref(target);
-        return bNode && bNode.attrs && bNode.attrs.style && bNode.attrs.style.pointerEvents && bNode.attrs.style.pointerEvents == "none";
+        return hasPointerEventsNoneB(bNode);
     }
-    
-    function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
-        var hiddenEls: { target: HTMLElement; prevVisibility: string }[] = [];
-        var t = <HTMLElement>target;
-        while (hasPointerEventsNone(t)) {
-            hiddenEls.push({ target: t, prevVisibility: t.style.visibility});
-            t.style.visibility = "hidden";
-            t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
-        }
+
+    function revertVisibilityChanges(hiddenEls: { t: HTMLElement; p: string }[]): boolean {
         if (hiddenEls.length) {
             for (var i = hiddenEls.length - 1; i >= 0; --i) {
-                hiddenEls[i].target.style.visibility = hiddenEls[i].prevVisibility;
+                hiddenEls[i].t.style.visibility = hiddenEls[i].p;
             }
+            return true;
+        }
+        return false;
+    }
 
-            if (b.ieVersion() < 9)
-                t.fireEvent("on" + ev.type, ev);
-            else
-                t.dispatchEvent(ev);
+    function pushAndHide(hiddenEls: { t: HTMLElement; p: string }[], t: HTMLElement) {
+        hiddenEls.push({ t: t, p: t.style.visibility });
+        t.style.visibility = "hidden";
+    }
+
+    function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var hiddenEls: { t: HTMLElement; p: string }[] = [];
+        var t = <HTMLElement>target;
+        while (hasPointerEventsNone(t)) {
+            pushAndHide(hiddenEls, t);
+            t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
+        }
+        if (revertVisibilityChanges(hiddenEls)) {
+            try {
+                if (b.ieVersion() < 9)
+                    t.fireEvent("on" + ev.type, ev);
+                else {
+                    t.dispatchEvent(ev);
+                }
+            } catch (e) {
+                return false;
+            }
             preventDefault(ev);
             return true;
         }
-
         return false;
     }
 
     var addEvent = b.addEvent;
 
+    function addEvent5(name: string, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean) {
+        addEvent(name, 5, callback);
+    }
+
+    var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
+    var i: number;
     if (b.ieVersion() && b.ieVersion() < 11) {
         // emulate pointer-events: none in older ie
         var mouseEvents = [
@@ -289,30 +109,286 @@ class CoordList {
             "dragenter", "dragleave", "dragover", "dragstart",
             "drop", "mousedown", "mousemove", "mouseout",
             "mouseover", "mouseup", "mousewheel", "scroll", "wheel"];
-        for (var i = 0; i < mouseEvents.length; ++i) {
+        for (i = 0; i < mouseEvents.length; ++i) {
             addEvent(mouseEvents[i], 1, pointerThroughIE);
         }
     }
-    
-    addEvent("mousedown", 2, buster);
-    addEvent("mouseup", 2, buster);
-    addEvent("click", 2, buster);
-    addEvent("touchstart", 3, collectCoordinates);
 
-    addEvent("mouseover", 300, mouseEnterAndLeave);
+    function type2Bobril(t: any): BobrilPointerType {
+        if (t == "mouse") return BobrilPointerType.Mouse;
+        if (t == "pen") return BobrilPointerType.Pen;
+        return BobrilPointerType.Touch;
+    }
 
-    addEvent("click", 400, createHandler("onClick"));
-    addEvent("dblclick", 400, createHandler("onDoubleClick"));
-    addEvent("mousedown", 400, createHandler("onMouseDown"));
-    addEvent("touchstart", 400, createHandler("onMouseDown"));
-    addEvent("mouseup", 400, createHandler("onMouseUp"));
-    addEvent("touchend", 400, createHandler("onMouseUp"));
-    addEvent("mousemove", 400, createHandler("onMouseMove"));
-    addEvent("touchmove", 400, createHandler("onMouseMove"));
-    addEvent("mouseover", 400, createHandler("onMouseOver"));
+    function pointerEventsNoneFix(x: number, y: number, target: Node, node: IBobrilCacheNode): [Node, IBobrilCacheNode] {
+        var hiddenEls: { t: HTMLElement; p: string }[] = [];
+        var t = <HTMLElement>target;
+        while (hasPointerEventsNoneB(node)) {
+            pushAndHide(hiddenEls, t);
+            t = <HTMLElement>document.elementFromPoint(x, y);
+            node = b.deref(t);
+        }
+        revertVisibilityChanges(hiddenEls);
+        return [t, node];
+    }
 
-    addEvent("touchstart", 500, handleTouchStart);
-    addEvent("touchcancel", 500, tapCanceled);
-    addEvent("touchend", 500, handleTouchEnd);
-    addEvent("touchmove", 500, tapCanceled);
-})(b);
+    function buildHandlerPointer(name: string) {
+        return function handlePointerDown(ev: PointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+            if (hasPointerEventsNoneB(node)) {
+                var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+                target = fixed[0];
+                node = fixed[1];
+            }
+            var param: IBobrilPointerEvent = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY };
+            if (b.emitEvent("!" + name, param, target, node)) {
+                preventDefault(ev);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    function buildHandlerTouch(name: string) {
+        return function handlePointerDown(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
+            var preventDef = false;
+            for (var i = 0; i < ev.changedTouches.length; i++) {
+                var t = ev.changedTouches[i];
+                var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY };
+                if (b.emitEvent("!" + name, param, target, node))
+                    preventDef = true;
+            }
+            if (preventDef) {
+                preventDefault(ev);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    function buildHandlerMouse(name: string) {
+        return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+            if (hasPointerEventsNoneB(node)) {
+                var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+                target = fixed[0];
+                node = fixed[1];
+            }
+            var param: IBobrilPointerEvent = { id: 1, type: BobrilPointerType.Mouse, x: ev.clientX, y: ev.clientY };
+            if (b.emitEvent("!" + name, param, target, node)) {
+                preventDefault(ev);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    if (window.onpointerdown !== undefined) {
+        for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
+            var name = pointersEventNames[i];
+            addEvent5(name.toLowerCase(), buildHandlerPointer(name));
+        }
+    } else if (window.onmspointerdown !== undefined) {
+        for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
+            var name = pointersEventNames[i];
+            addEvent5("MS" + name, buildHandlerPointer(name));
+        }
+    } else {
+        if ((<any>window).ontouchstart !== undefined) {
+            addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
+            addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
+            addEvent5("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
+            addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
+        }
+        addEvent5("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
+        addEvent5("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
+        addEvent5("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
+    }
+
+    for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
+        ((name: string) => {
+            var onname = "on" + name;
+            addEvent("!" + name, 50,(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+                return invokeMouseOwner(onname, ev) || b.bubble(node, onname, ev);
+            });
+        })(pointersEventNames[j]);
+    }
+
+    var pointersDown: { [id: number]: BobrilPointerType } = Object.create(null);
+    var toBust: Array<number>[] = [];
+    var firstPointerDown = -1;
+    var firstPointerDownTime = 0;
+    var firstPointerDownX = 0;
+    var firstPointerDownY = 0;
+    var tapCanceled = false;
+    var now = b.now;
+
+    function diffLess(n1: number, n2: number, diff: number) {
+        return Math.abs(n1 - n2) < diff;
+    }
+
+    var prevMousePath: IBobrilCacheNode[] = [];
+
+    function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
+        var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+        var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
+        var toPath = b.vdomPath(t);
+        var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node);
+            t = <HTMLElement>fixed[0];
+            toPath = b.vdomPath(t);
+        }
+
+        b.bubble(node, "onMouseOver", param);
+
+        var common = 0;
+        while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
+            common++;
+
+        var i = prevMousePath.length;
+        var n: IBobrilCacheNode;
+        var c: IBobrilComponent;
+        while (i > common) {
+            i--;
+            n = prevMousePath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseLeave)
+                    c.onMouseLeave(n.ctx, param);
+            }
+        }
+        while (i < toPath.length) {
+            n = toPath[i];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseEnter)
+                    c.onMouseEnter(n.ctx, param);
+            }
+            i++;
+        }
+        prevMousePath = toPath;
+        return false;
+    };
+
+    function noPointersDown(): boolean {
+        return Object.keys(pointersDown).length === 0;
+    }
+
+    function bustingPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (firstPointerDown === -1 && noPointersDown()) {
+            firstPointerDown = ev.id;
+            firstPointerDownTime = now();
+            firstPointerDownX = ev.x;
+            firstPointerDownY = ev.y;
+            tapCanceled = false;
+            mouseEnterAndLeave(ev);
+        }
+        pointersDown[ev.id] = ev.type;
+        if (firstPointerDown !== ev.id) {
+            tapCanceled = true;
+        }
+        return false;
+    }
+
+    function bustingPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (firstPointerDown === ev.id) {
+            mouseEnterAndLeave(ev);
+            if (!diffLess(firstPointerDownX, ev.x, Consts.MoveOverIsNotTap) || !diffLess(firstPointerDownY, ev.y, Consts.MoveOverIsNotTap))
+                tapCanceled = true;
+        } else if (noPointersDown()) {
+            mouseEnterAndLeave(ev);
+        }
+        return false;
+    }
+
+    function bustingPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            mouseEnterAndLeave(ev);
+            firstPointerDown = -1;
+            if (ev.type == BobrilPointerType.Touch && !tapCanceled) {
+                if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
+                    b.emitEvent("!PointerCancel", ev, target, node);
+                    var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
+                    toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay, handled ? 1 : 0]);
+                    return handled;
+                }
+            }
+        }
+        return false;
+    }
+
+    function bustingPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        delete pointersDown[ev.id];
+        if (firstPointerDown == ev.id) {
+            firstPointerDown = -1;
+        }
+        return false;
+    }
+
+    function bustingClick(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var n = now();
+        for (var i = 0; i < toBust.length; i++) {
+            var j = toBust[i];
+            if (j[2] < n) {
+                toBust.splice(i, 1);
+                i--;
+                continue;
+            }
+            if (diffLess(j[0], ev.clientX, Consts.BustDistance) && diffLess(j[1], ev.clientY, Consts.BustDistance)) {
+                toBust.splice(i, 1);
+                if (j[3]) preventDefault(ev);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
+    var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
+    for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
+        addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
+    }
+
+    function createHandlerMouse(handlerName: string) {
+        return (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+            if (firstPointerDown != ev.id && !noPointersDown()) return false;
+            var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+                return true;
+            }
+            return false;
+        };
+    }
+
+    var mouseHandlerNames = ["Down", "Move", "Up", "Up"];
+    for (var i = 0; i < 4; i++) {
+        addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
+    }
+
+    function createHandler(handlerName: string) {
+        return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
+            var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY };
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+                preventDefault(ev);
+                return true;
+            }
+            return false;
+        };
+    }
+
+    // click must have higher priority over onchange detection
+    addEvent5("click", createHandler(onClickText));
+    addEvent5("dblclick", createHandler("onDoubleClick"));
+
+    b.pointersDownCount = () => Object.keys(pointersDown).length;
+    b.firstPointerDownId = () => firstPointerDown;
+    b.ignoreClick = (x: number, y: number) => {
+        toBust.push([x, y, now() + Consts.MaxBustDelay, 1]);
+    };
+
+    b.registerMouseOwner = registerMouseOwner;
+    b.isMouseOwner = isMouseOwner;
+    b.isMouseOwnerEvent = isMouseOwnerEvent;
+    b.releaseMouseOwner = releaseMouseOwner;
+})(b, window, document);

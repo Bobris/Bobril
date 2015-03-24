@@ -1,6 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
-module BasicApp {
-    var spacer = { tag: "div", attrs: { style: "height:2px" } };
+module OpacityApp {
+    var spacer = { tag: "div", style: { height: "2px" } };
 
     var animtype = 0;
     var opacity: any = 0;
@@ -29,21 +29,27 @@ module BasicApp {
                 b.invalidate();
                 break;
         }
+        var bg = "rgba(0,255,0," + ((opacity === "") ? 1 : opacity.toFixed(3)) + ")";
         return [
             { tag: "h1", children: "Bobril sample for opacity" },
-            { tag: "p", attrs: { style: { userSelect: "none" } }, children: "This text should not be selectable" },
-            radiobox("a", animtype, 0, (v) => animtype = v, "Solid"), spacer,
-            radiobox("a", animtype, 1, (v) => animtype = v, "Half"), spacer,
-            radiobox("a", animtype, 2, (v) => animtype = v, "Transparent"), spacer,
-            radiobox("a", animtype, 3, (v) => animtype = v, "Pulsing"), spacer,
+            { tag: "p", style: { userSelect: "none" }, children: "This text should not be selectable" },
+            radiobox("a", animtype, 0,(v) => animtype = v, "Solid"), spacer,
+            radiobox("a", animtype, 1,(v) => animtype = v, "Half"), spacer,
+            radiobox("a", animtype, 2,(v) => animtype = v, "Transparent"), spacer,
+            radiobox("a", animtype, 3,(v) => animtype = v, "Pulsing"), spacer,
+            { tag: "p", children: "Left has opacity:" + opacity + " Right has background:" + bg },
             {
                 tag: "div",
-                attrs: { style: { background: "#f88", width: "10em", height: "10em" } },
-                children: {
+                style: { background: "#f88", width: "20em", height: "10em" },
+                children: [{
                     tag: "div",
-                    attrs: { style: { width: "5em", height: "5em", "padding": "2.5em" } },
-                    children: { tag: "div", attrs: { style: { opacity: opacity, background: "#0F0", width: "5em", height: "5em" } }, children: "Hello" }
-                }
+                    style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
+                    children: { tag: "div", style: { opacity: opacity, background: "#0F0", border:"2px solid #00F", width: "5em", height: "5em" }, children: "Hello" }
+                }, {
+                        tag: "div",
+                        style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
+                        children: { tag: "div", style: { background: bg, border: "2px solid #00F", width: "5em", height: "5em" }, children: "World" }
+                    }]
             }
         ];
     });

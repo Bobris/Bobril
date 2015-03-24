@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.router.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.router.d.ts"/>
 (function (b, window) {
     function emitOnHashChange() {
         b.invalidate();
@@ -261,9 +261,9 @@
                 if (me.tag === "a") {
                     me.attrs.href = "#" + url;
                 }
-                me.attrs.className = me.attrs.className || "";
+                me.className = me.className || "";
                 if (ctx.data.active) {
-                    me.attrs.className += " active";
+                    me.className += " active";
                 }
             },
             onClick: function (ctx) {

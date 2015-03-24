@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.vg.d.ts"/>
 
 module VgApp {
     function h(tag: string, ...args: any[]) {

@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onchange.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.onchange.d.ts"/>
 
 ((b: IBobrilStatic) => {
     var bvalue = "b$value";
@@ -20,7 +20,7 @@
     }
 
     function stringArrayContains(a: string[], v: string): boolean {
-        for (var j = 0, l = a.length; j < l; j++) {
+        for (var j = 0; j < a.length; j++) {
             if (a[j] === v) return true;
         }
         return false;
@@ -131,6 +131,13 @@
                 c.onChange(ctx, vs);
             }
         } else if (isCheckboxlike(<HTMLInputElement>target)) {
+            // Postpone change event so onCLick will be processed before it
+            if (ev && ev.type === "change") {
+                setTimeout(() => {
+                    emitOnChange(null, target, node);
+                }, 10);
+                return false;
+            }
             if ((<HTMLInputElement>target).type === "radio") {
                 var radios = document.getElementsByName((<HTMLInputElement>target).name);
                 for (var j = 0; j < radios.length; j++) {
@@ -164,7 +171,8 @@
         return false;
     }
 
-    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click"];
+    // click here must have lower priority (higher number) over mouse handlers
+    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 100, emitOnChange);
+        b.addEvent(events[i], 10, emitOnChange);
 })(b);

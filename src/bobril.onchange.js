@@ -1,5 +1,5 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onchange.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.onchange.d.ts"/>
 (function (b) {
     var bvalue = "b$value";
     var tvalue = "value";
@@ -18,7 +18,7 @@
         return true;
     }
     function stringArrayContains(a, v) {
-        for (var j = 0, l = a.length; j < l; j++) {
+        for (var j = 0; j < a.length; j++) {
             if (a[j] === v)
                 return true;
         }
@@ -138,6 +138,13 @@
             }
         }
         else if (isCheckboxlike(target)) {
+            // Postpone change event so onCLick will be processed before it
+            if (ev && ev.type === "change") {
+                setTimeout(function () {
+                    emitOnChange(null, target, node);
+                }, 10);
+                return false;
+            }
             if (target.type === "radio") {
                 var radios = document.getElementsByName(target.name);
                 for (var j = 0; j < radios.length; j++) {
@@ -175,8 +182,9 @@
         }
         return false;
     }
-    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click"];
+    // click here must have lower priority (higher number) over mouse handlers
+    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 100, emitOnChange);
+        b.addEvent(events[i], 10, emitOnChange);
 })(b);
 //# sourceMappingURL=bobril.onchange.js.map

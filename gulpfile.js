@@ -1,6 +1,8 @@
 var gulp = require('gulp');
 var gulpif = require('gulp-if');
 var fs = require('graceful-fs');
+var typeScriptCompile = require('./tscomp.js');
+var through2 = require('through2'); 
 
 var sources = ['src/**/*.js'];
 var testSources = ['test/**/*.js'];
@@ -30,7 +32,7 @@ gulp.task('copydef', function() {
 
 gulp.task('dist', ['copydef','uglify','calc']);
 
-gulp.task('watch', ['dist'], function() {
+gulp.task('watch', ['ts','dist'], function() {
   gulp.watch(sources, function() {
     gulp.run('dist');
   });
@@ -153,18 +155,19 @@ gulp.task('calc', ['uglify'], function () {
 });
 
 
-var alltsfilesToWatch = ['./src/**.ts','./examples/**.ts','./test/**.ts'];
-var alltsfilesToCompile = alltsfilesToWatch.concat(['!./src/**.d.ts','!./examples/**.d.ts','!./test/**.d.ts']);
+var alltsfilesToWatch = ['./src/**/*.ts','./examples/**/*.ts','./test/**/*.ts'];
+var alltsfilesToCompile = alltsfilesToWatch.concat(['!./src/**/*.d.ts','!./examples/**/*.d.ts','!./test/**/*.d.ts']);
 
 gulp.task('ts', function () {
     gulp.watch(alltsfilesToWatch, ['compilets']);
 });
 
 gulp.task('compilets', function () {
-    var typescript = require('gulp-tsc');
-    return gulp.src(alltsfilesToCompile)
-        .pipe(typescript({ tscSearch:["bundle"], noImplicitAny:true, sourcemap:true, emitError: false }))
-        .pipe(gulp.dest('.'));
+    return gulp.src(alltsfilesToCompile, { read:false })
+	      .pipe(through2.obj(function(file,enc,cb) {
+			  typeScriptCompile(file.path, false, true);
+			  setImmediate(cb);			  
+			  }));
 });
 
 gulp.task('default', ['watch']);

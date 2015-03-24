@@ -39,7 +39,7 @@ var TestComponent = (function () {
 describe("livecycle", function () {
     it("createNodeCallsInitAndPostInit", function () {
         var c = new TestComponent();
-        b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
+        b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
     });
@@ -54,13 +54,13 @@ describe("livecycle", function () {
                 component: c,
                 data: { name: "2" }
             }
-        }, null);
+        }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;ri:1;i:2;ri:2;I:2;I:1;pi:2;pi:1;");
     });
     it("updateNodeCallsShouldUpdateAndPostUpdate", function () {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
+        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
@@ -69,7 +69,7 @@ describe("livecycle", function () {
     });
     it("updateStringToComponetShouldWork", function () {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "", children: "a" }, null);
+        var r = b.createNode({ tag: "", children: "a" }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
         b.callPostCallbacks();
@@ -77,7 +77,7 @@ describe("livecycle", function () {
     });
     it("shouldUpdateReturningFalseDoesNotPostUpdate", function () {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
+        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({ tag: "div", component: c, data: { name: "1", change: false } }, r);
@@ -95,7 +95,7 @@ describe("livecycle", function () {
                 component: c,
                 data: { name: "2" }
             }
-        }, null);
+        }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({
@@ -122,7 +122,7 @@ describe("livecycle", function () {
                 component: c,
                 data: { name: "2" }
             }
-        }, null);
+        }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({

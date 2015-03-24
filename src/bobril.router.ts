@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.router.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.router.d.ts"/>
 
 // Heavily inspired by https://github.com/rackt/react-router/ Thanks to authors
 
@@ -309,9 +309,9 @@ interface OutFindMatch {
                 if (me.tag === "a") {
                     me.attrs.href = "#" + url;
                 }
-                me.attrs.className = me.attrs.className || "";
+                me.className = me.className || "";
                 if (ctx.data.active) {
-                    me.attrs.className += " active";
+                    me.className += " active";
                 }
             },
             onClick(ctx: any) {

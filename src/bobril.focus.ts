@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.focus.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.focus.d.ts"/>
 
 ((b: IBobrilStatic) => {
     var currentActiveElement: Element = null;
@@ -76,13 +76,38 @@
         return currentFocusedNode;
     }
 
-    // set focus to bobril node in parameter usually should be called from postInitDom method
-    function focus(node: IBobrilNode): void {
-        if (node == null) return;
-        var el = (<IBobrilCacheNode>node).element;
-        if (b.isArray(el)) el = (<Node[]>el)[0];
-        (<HTMLElement>el).focus();
-        emitOnFocusChange();
+    var focusableTag = /^input$|^select$|^textarea$|^button$/;
+    function focus(node: IBobrilCacheNode): boolean {
+        if (node == null) return false;
+        if (typeof node === "string") return false;
+        var style = node.style;
+        if (style != null) {
+            if (style.visibility === "hidden")
+                return false;
+            if (style.display === "none")
+                return false;
+        }
+        var attrs = node.attrs;
+        if (attrs != null) {
+            var ti = attrs.tabIndex;
+            if (ti !== undefined || focusableTag.test(node.tag)) {
+                if (+ti === -1)
+                    return false;
+                var el = node.element;
+                (<HTMLElement>el).focus();
+                emitOnFocusChange();
+                return true;
+            }
+        }
+        var children = node.children;
+        if (b.isArray(children)) {
+            for (var i = 0; i < (<IBobrilChild[]>children).length; i++) {
+                if (focus((<IBobrilChild[]>children)[i]))
+                    return true;
+            }
+            return false;
+        }
+        return focus(children);
     }
 
     b.focused = focused;

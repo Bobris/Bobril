@@ -15,23 +15,20 @@ var StickyHeaderApp;
         for (var _i = 2; _i < arguments.length; _i++) {
             args[_i - 2] = arguments[_i];
         }
-        return { tag: tag, attrs: { style: style }, children: args };
+        return { tag: tag, style: style, children: args };
     }
-    var OnChangeComponent = (function () {
-        function OnChangeComponent() {
-        }
-        OnChangeComponent.onChange = function (ctx, v) {
+    var OnChangeComponent = {
+        onChange: function (ctx, v) {
             ctx.data.onChange(v);
-        };
-        return OnChangeComponent;
-    })();
+        }
+    };
     function checkbox(value, onChange) {
         return { tag: "input", attrs: { type: "checkbox", value: value }, data: { onChange: onChange }, component: OnChangeComponent };
     }
     function smallbutton(onAction, content) {
         return {
             tag: "button",
-            attrs: { style: { width: "2em", height: "2em" } },
+            style: { width: "2em", height: "2em" },
             component: {
                 onClick: function () {
                     onAction();
@@ -69,9 +66,9 @@ var StickyHeaderApp;
     }
     function stickyUpdateDomFix(ctx, me, element) {
         var scrollableArea = element.parentElement;
-        while (!b.isScrollable(scrollableArea))
+        while (scrollableArea && !b.isScrollable(scrollableArea)[1])
             scrollableArea = scrollableArea.parentElement;
-        var isWindowScrolling = scrollableArea === document.body;
+        var isWindowScrolling = scrollableArea === document.documentElement || scrollableArea == null;
         var c = ctx;
         var tableElement = element;
         var origHeader = tableElement.firstChild;
@@ -109,13 +106,12 @@ var StickyHeaderApp;
     }
     var StickyHeaderFixedComp = {
         render: function (ctx, me) {
-            me.attrs = me.attrs || {};
-            me.attrs.style = me.attrs.style || {};
-            me.attrs.style.position = "fixed";
-            me.attrs.style.marginTop = "0px";
-            me.attrs.style.zIndex = "3";
-            me.attrs.style.left = "0";
-            me.attrs.style.top = "0";
+            me.style = me.style || {};
+            me.style.position = "fixed";
+            me.style.marginTop = "0px";
+            me.style.zIndex = "3";
+            me.style.left = "0";
+            me.style.top = "0";
         }
     };
     function cloneObj(o) {
@@ -186,13 +182,13 @@ var StickyHeaderApp;
     function stickyTableFix(borderCollapse, style, header, body) {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "table", attrs: { style: style }, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
+        return { tag: "table", style: style, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
     }
     function stickyUpdateDomAbs(ctx, me, element) {
         var scrollableArea = element.parentElement;
-        while (!b.isScrollable(scrollableArea))
+        while (scrollableArea && !b.isScrollable(scrollableArea)[1])
             scrollableArea = scrollableArea.parentElement;
-        var isWindowScrolling = scrollableArea === document.body;
+        var isWindowScrolling = scrollableArea === document.documentElement || scrollableArea == null;
         var c = ctx;
         var tableElement = element.firstChild;
         var origHeader = tableElement.firstChild;
@@ -210,7 +206,7 @@ var StickyHeaderApp;
             var newTop = (isWindowScrolling ? winScroll[1] : newTopOffset) - offset[1];
             absElementStyle.left = c.deltaCorr + "px";
             absElementStyle.top = newTop + "px";
-            var absHeader = absElement.firstChild.firstChild;
+            var absHeader = ctx.refs["header"].element.firstChild;
             if (origHeader.firstChild) {
                 var l1 = absHeader.firstChild.getBoundingClientRect().left;
                 var l2 = origHeader.firstChild.getBoundingClientRect().left;
@@ -260,13 +256,14 @@ var StickyHeaderApp;
         render: function (ctx, me) {
             var header = ctx.data.header;
             var headerClone = b.cloneNode(header);
-            var attrsClone = cloneObj(me.attrs);
-            attrsClone.style = cloneObj(attrsClone.style);
-            attrsClone.style.border = "none";
+            var styleClone = cloneObj(me.style);
+            styleClone.border = "none";
             me.children = [
                 {
                     tag: "table",
                     attrs: me.attrs,
+                    className: me.className,
+                    style: me.style,
                     children: [
                         header,
                         ctx.data.body
@@ -274,15 +271,20 @@ var StickyHeaderApp;
                 },
                 {
                     tag: "div",
-                    attrs: { style: { visibility: "hidden", position: "absolute" } },
+                    style: { visibility: "hidden", position: "absolute" },
                     children: {
                         tag: "table",
-                        attrs: attrsClone,
+                        ref: [ctx, "header"],
+                        className: me.className,
+                        attrs: me.attrs,
+                        style: styleClone,
                         children: headerClone
                     }
                 }
             ];
-            me.attrs = { style: { position: "relative" } };
+            me.attrs = undefined;
+            me.className = undefined;
+            me.style = { position: "relative" };
         },
         postInitDom: function (ctx, me, element) {
             b.addOnScroll(ctx.onScroll);
@@ -298,7 +300,7 @@ var StickyHeaderApp;
     function stickyTableAbs(borderCollapse, style, header, body) {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "div", attrs: { style: style }, data: { header: header, body: body }, component: StickyTableAbsComp };
+        return { tag: "div", style: style, data: { header: header, body: body }, component: StickyTableAbsComp };
     }
     function headerCell(content) {
         return hs("th", { backgroundColor: "#ffc", border: "1px solid #300" }, content);
@@ -336,7 +338,7 @@ var StickyHeaderApp;
         var stickyTable = implStrategyAbs ? stickyTableAbs : stickyTableFix;
         return [
             h("h1", "Sticky Header Bobril sample"),
-            h("p", "Frame: " + frame),
+            h("p", "Frame: " + frame + " Duration Last: " + b.lastFrameDuration()),
             h("label", checkbox(implStrategyAbs, function (v) {
                 implStrategyAbs = v;
                 b.invalidate();
@@ -352,7 +354,7 @@ var StickyHeaderApp;
             }),
             {
                 tag: "div",
-                attrs: { style: { height: "150px", width: "300px", overflow: "auto" } },
+                style: { height: "150px", width: "300px", overflow: "auto" },
                 component: ScrollableComp,
                 children: [
                     h("p", "Before table"),

@@ -1,8 +1,8 @@
 interface IBobrilStatic {
     // return IBobrilCacheNode for currently focused element
     focused? (): IBobrilCacheNode;
-    // set focus to bobril node in parameter usually should be called from postInitDom method
-    focus? (node: IBobrilNode): void;
+    // set focus to first focusable node in parameter usually should be called from postInitDom method, return true is such node found
+    focus? (node: IBobrilCacheNode): boolean;
 }
 
 interface IBobrilComponent {

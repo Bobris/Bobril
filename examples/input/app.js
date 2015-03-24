@@ -12,14 +12,16 @@ var InputApp;
         if (leftWidth === void 0) { leftWidth = "50%"; }
         return {
             tag: "div",
-            attrs: { style: { display: "table", width: "100%" } },
+            style: { display: "table", width: "100%" },
             children: [
-                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top", width: leftWidth } }, children: left },
-                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top" } }, children: right }
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top", width: leftWidth }, children: left },
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top" }, children: right }
             ]
         };
     }
-    var spacer = { tag: "div", attrs: { style: "height:1em" } };
+    function spacer() {
+        return { tag: "div", style: "height:1em" };
+    }
     // Model
     var frame = 0;
     var value = "Change this";
@@ -62,14 +64,11 @@ var InputApp;
         valuearea = v;
         b.invalidate();
     }
-    var OnChangeComponent = (function () {
-        function OnChangeComponent() {
-        }
-        OnChangeComponent.onChange = function (ctx, v) {
+    var OnChangeComponent = {
+        onChange: function (ctx, v) {
             ctx.data.onChange(v);
-        };
-        return OnChangeComponent;
-    })();
+        }
+    };
     function textInput(value, onChange) {
         return { tag: "input", attrs: { value: value }, data: { onChange: onChange }, component: OnChangeComponent };
     }
@@ -113,7 +112,8 @@ var InputApp;
         if (rows === void 0) { rows = 5; }
         return {
             tag: "textarea",
-            attrs: { value: value, rows: rows, style: { width: "100%" } },
+            style: { width: "100%" },
+            attrs: { value: value, rows: rows },
             data: { onChange: onChange },
             component: OnChangeComponent
         };
@@ -137,19 +137,19 @@ var InputApp;
                 ], [
                     h("div", "Combobox: ", option)
                 ]),
-                spacer,
+                spacer(),
                 layoutPair([
                     listbox(option2, setOption2, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
                 ], [
                     h("div", "Listbox: ", option2)
                 ]),
-                spacer,
+                spacer(),
                 layoutPair([
                     listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
                 ], [
                     h("div", "Multiselect: ", optionm.join(", "))
                 ]),
-                spacer,
+                spacer(),
                 textarea(valuearea, setValueArea),
                 h("pre", valuearea)
             ])

@@ -1,5 +1,4 @@
-/// <reference path="../src/bobril.d.ts"/>
-// ReSharper restore InconsistentNaming
+/// <reference path="bobril.d.ts"/>
 if (typeof DEBUG === "undefined")
     DEBUG = true;
 // IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
@@ -65,11 +64,14 @@ b = (function (window, document) {
     function createTextNode(content) {
         return document.createTextNode(content);
     }
+    function createElement(name) {
+        return document.createElement(name);
+    }
     var hasTextContent = "textContent" in createTextNode("");
+    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
     function isObject(value) {
         return typeof value === "object";
     }
-    var inNamespace = false;
     var inSvg = false;
     var updateCall = [];
     var updateInstance = [];
@@ -82,21 +84,162 @@ b = (function (window, document) {
         setValueCallback = callback;
         return prev;
     }
-    var setStyleCallback = function () {
+    function newHashObj() {
+        return Object.create(null);
+    }
+    var vendors = ["webkit", "Moz", "ms", "o"];
+    var testingDivStyle = document.createElement("div").style;
+    function testPropExistence(name) {
+        return typeof testingDivStyle[name] === "string";
+    }
+    var mapping = newHashObj();
+    var isUnitlessNumber = {
+        boxFlex: true,
+        boxFlexGroup: true,
+        columnCount: true,
+        flex: true,
+        flexGrow: true,
+        flexShrink: true,
+        fontWeight: true,
+        lineClamp: true,
+        lineHeight: true,
+        opacity: true,
+        order: true,
+        orphans: true,
+        widows: true,
+        zIndex: true,
+        zoom: true
     };
-    function setSetStyle(callback) {
-        var prev = setStyleCallback;
-        setStyleCallback = callback;
-        return prev;
+    function renamer(newName) {
+        return function (style, value, oldName) {
+            style[newName] = value;
+            style[oldName] = undefined;
+        };
+    }
+    ;
+    function renamerpx(newName) {
+        return function (style, value, oldName) {
+            if (typeof value === "number") {
+                style[newName] = value + "px";
+            }
+            else {
+                style[newName] = value;
+            }
+            style[oldName] = undefined;
+        };
+    }
+    function pxadder(style, value, name) {
+        if (typeof value === "number")
+            style[name] = value + "px";
+    }
+    function ieVersion() {
+        return document.documentMode;
+    }
+    var onIE8 = ieVersion() === 8;
+    if (onIE8) {
+        mapping.cssFloat = renamer("styleFloat");
+    }
+    function shimStyle(newValue) {
+        var k = Object.keys(newValue);
+        for (var i = 0, l = k.length; i < l; i++) {
+            var ki = k[i];
+            var mi = mapping[ki];
+            var vi = newValue[ki];
+            if (vi === undefined)
+                continue; // don't want to map undefined
+            if (mi === undefined) {
+                if (DEBUG) {
+                    if (ki === "float" && window.console && console.error)
+                        console.error("In style instead of 'float' you have to use 'cssFloat'");
+                    if (/-/.test(ki) && window.console && console.warn)
+                        console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
+                }
+                if (testPropExistence(ki)) {
+                    mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                }
+                else {
+                    var titleCaseKi = ki.replace(/^\w/, function (match) { return match.toUpperCase(); });
+                    for (var j = 0; j < vendors.length; j++) {
+                        if (testPropExistence(vendors[j] + titleCaseKi)) {
+                            mi = ((isUnitlessNumber[ki] === true) ? renamer : renamerpx)(vendors[j] + titleCaseKi);
+                            break;
+                        }
+                    }
+                    if (mi === undefined) {
+                        mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                        if (DEBUG && window.console && console.warn)
+                            console.warn("Style property " + ki + " is not supported in this browser");
+                    }
+                }
+                mapping[ki] = mi;
+            }
+            if (mi !== null)
+                mi(newValue, vi, ki);
+        }
+    }
+    function removeProperty(s, name) {
+        if (hasRemovePropertyInStyle)
+            s[name] = "";
+        else
+            s.removeAttribute(name);
+    }
+    function updateStyle(n, el, newStyle, oldStyle) {
+        var s = el.style;
+        if (isObject(newStyle)) {
+            shimStyle(newStyle);
+            var rule;
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    if (!(rule in newStyle))
+                        removeProperty(s, rule);
+                }
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined) {
+                        if (oldStyle[rule] !== v)
+                            s[rule] = v;
+                    }
+                    else {
+                        removeProperty(s, rule);
+                    }
+                }
+            }
+            else {
+                if (oldStyle)
+                    s.cssText = "";
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined)
+                        s[rule] = v;
+                }
+            }
+        }
+        else if (newStyle) {
+            s.cssText = newStyle;
+        }
+        else {
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    removeProperty(s, rule);
+                }
+            }
+            else if (oldStyle) {
+                s.cssText = "";
+            }
+        }
+    }
+    function setClassName(el, className) {
+        if (inSvg)
+            el.setAttribute("class", className);
+        else
+            el.className = className;
     }
     function updateElement(n, el, newAttrs, oldAttrs) {
-        if (!newAttrs)
-            return undefined;
         var attrName, newAttr, oldAttr, valueOldAttr, valueNewAttr;
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
             oldAttr = oldAttrs[attrName];
-            if (attrName === "value" && !inNamespace) {
+            if (attrName === "value" && !inSvg) {
                 valueOldAttr = oldAttr;
                 valueNewAttr = newAttr;
                 oldAttrs[attrName] = newAttr;
@@ -104,55 +247,25 @@ b = (function (window, document) {
             }
             if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
-                if (attrName === "style") {
-                    if (isObject(newAttr)) {
-                        setStyleCallback(newAttr);
-                        var rule;
-                        if (isObject(oldAttr)) {
-                            for (rule in oldAttr) {
-                                if (!(rule in newAttr))
-                                    el.style[rule] = "";
-                            }
-                            for (rule in newAttr) {
-                                var v = newAttr[rule];
-                                if (v !== undefined) {
-                                    if (oldAttr[rule] !== v)
-                                        el.style[rule] = v;
-                                }
-                                else {
-                                    el.style[rule] = "";
-                                }
-                            }
-                        }
-                        else {
-                            if (oldAttr)
-                                el.style.cssText = "";
-                            for (rule in newAttr) {
-                                el.style[rule] = newAttr[rule];
-                            }
-                        }
-                    }
-                    else {
-                        el.style.cssText = newAttr;
-                    }
-                }
-                else if (inNamespace) {
+                if (inSvg) {
                     if (attrName === "href")
                         el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
-                    else if (attrName === "className")
-                        el.setAttribute("class", newAttr);
                     else
                         el.setAttribute(attrName, newAttr);
                 }
-                else if (attrName === "value") {
-                    valueOldAttr = oldAttr;
-                    valueNewAttr = newAttr;
+                else if (onIE8 && attrName === "type" && el.nodeName === "input") {
                 }
                 else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
                 }
                 else
                     el.setAttribute(attrName, newAttr);
+            }
+        }
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
             }
         }
         if (valueNewAttr !== undefined) {
@@ -169,46 +282,131 @@ b = (function (window, document) {
             }
         }
     }
-    function createNode(n, parentNode) {
+    function findCfg(parent) {
+        var cfg;
+        while (parent) {
+            cfg = parent.cfg;
+            if (cfg !== undefined)
+                break;
+            if (parent.ctx) {
+                cfg = parent.ctx.cfg;
+                break;
+            }
+            parent = parent.parent;
+        }
+        return cfg;
+    }
+    function setRef(ref, value) {
+        if (ref == null)
+            return;
+        var ctx = ref[0];
+        var refs = ctx.refs;
+        if (!refs) {
+            refs = newHashObj();
+            ctx.refs = refs;
+        }
+        refs[ref[1]] = value;
+    }
+    function createNode(n, parentNode, createInto, createBefore) {
         var c = n;
-        var backupInNamespace = inNamespace;
+        c.parent = parentNode;
         var backupInSvg = inSvg;
         var component = c.component;
+        var el;
+        setRef(n.ref, n);
+        var createBeforeNode = b.isArray(createBefore) ? createBefore[0] : createBefore;
         if (component) {
-            c.ctx = { data: c.data || {} };
+            var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
+            c.ctx = ctx;
             if (component.init) {
-                component.init(c.ctx, n);
+                component.init(ctx, n, createInto, createBeforeNode);
             }
             if (component.render) {
-                component.render(c.ctx, n);
+                component.render(ctx, n);
             }
+            if (c.element)
+                return c;
         }
         if (n.tag === "") {
             c.element = createTextNode(c.children);
+            createInto.insertBefore(c.element, createBeforeNode);
             return c;
         }
         else if (n.tag === "/") {
+            var htmltext = n.children;
+            if (htmltext === "")
+                htmltext = " ";
+            if (createBeforeNode == null) {
+                var before = createInto.lastChild;
+                createInto.insertAdjacentHTML("beforeend", htmltext);
+                c.element = [];
+                if (before) {
+                    before = before.nextSibling;
+                }
+                else {
+                    before = createInto.firstChild;
+                }
+                while (before) {
+                    c.element.push(before);
+                    before = before.nextSibling;
+                }
+            }
+            else {
+                el = createBeforeNode;
+                var elprev = createBeforeNode.previousSibling;
+                var removeEl = false;
+                var parent = createInto;
+                if (!el.insertAdjacentHTML) {
+                    el = parent.insertBefore(createElement("i"), el);
+                    removeEl = true;
+                }
+                el.insertAdjacentHTML("beforebegin", htmltext);
+                if (elprev) {
+                    elprev = elprev.nextSibling;
+                }
+                else {
+                    elprev = parent.firstChild;
+                }
+                var newElements = [];
+                while (elprev !== el) {
+                    newElements.push(elprev);
+                    elprev = elprev.nextSibling;
+                }
+                n.element = newElements;
+                if (removeEl) {
+                    parent.removeChild(el);
+                }
+            }
             return c;
         }
         else if (inSvg || n.tag === "svg") {
-            c.element = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
-            inNamespace = true;
+            el = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
             inSvg = true;
         }
-        else {
-            c.element = document.createElement(n.tag);
+        else if (!el) {
+            el = createElement(n.tag);
         }
+        if (onIE8 && n.tag === "input" && "type" in n.attrs) {
+            // On IE8 input.type has to be written before writing adding to document
+            el.type = c.attrs.type;
+        }
+        createInto.insertBefore(el, createBeforeNode);
+        c.element = el;
         createChildren(c);
         if (component) {
             if (component.postRender) {
                 component.postRender(c.ctx, n);
             }
         }
-        c.attrs = updateElement(c, c.element, c.attrs, {});
-        inNamespace = backupInNamespace;
+        if (c.attrs)
+            c.attrs = updateElement(c, el, c.attrs, {});
+        if (c.style)
+            updateStyle(c, el, c.style, undefined);
+        var className = c.className;
+        if (className)
+            setClassName(el, className);
         inSvg = backupInSvg;
         pushInitCallback(c, false);
-        c.parent = parentNode;
         return c;
     }
     function normalizeNode(n) {
@@ -252,30 +450,13 @@ b = (function (window, document) {
                 l--;
                 continue;
             }
-            var j = ch[i] = createNode(item, c);
-            if (j.tag === "/") {
-                var before = element.lastChild;
-                c.element.insertAdjacentHTML("beforeend", j.children);
-                j.element = [];
-                if (before) {
-                    before = before.nextSibling;
-                }
-                else {
-                    before = element.firstChild;
-                }
-                while (before) {
-                    j.element.push(before);
-                    before = before.nextSibling;
-                }
-            }
-            else {
-                element.appendChild(j.element);
-            }
+            var j = ch[i] = createNode(item, c, element, null);
             i++;
         }
         c.children = ch;
     }
     function destroyNode(c) {
+        setRef(c.ref, null);
         var ch = c.children;
         if (isArray(ch)) {
             for (var i = 0, l = ch.length; i < l; i++) {
@@ -306,24 +487,43 @@ b = (function (window, document) {
                 p.removeChild(el);
         }
     }
-    var rootFactory;
-    var rootCacheChildren = [];
+    var roots = Object.create(null);
     function vdomPath(n) {
         var res = [];
         if (n == null)
             return res;
-        var root = document.body;
+        var rootIds = Object.keys(roots);
+        var rootElements = rootIds.map(function (i) { return roots[i].e || document.body; });
         var nodeStack = [];
-        while (n && n !== root) {
+        rootFound: while (n) {
+            for (var j = 0; j < rootElements.length; j++) {
+                if (n === rootElements[j])
+                    break rootFound;
+            }
             nodeStack.push(n);
             n = n.parentNode;
         }
-        if (!n)
+        if (!n || nodeStack.length === 0)
             return res;
-        var currentCacheArray = rootCacheChildren;
+        var currentCacheArray = null;
+        var currentNode = nodeStack.pop();
+        rootFound2: for (j = 0; j < rootElements.length; j++) {
+            if (n === rootElements[j]) {
+                var rc = roots[rootIds[j]].c;
+                if (typeof rc !== "string")
+                    for (var k = 0; k < rc.length; k++) {
+                        var rck = rc[k];
+                        if (rck.element === currentNode) {
+                            res.push(rck);
+                            currentCacheArray = rck.children;
+                            break rootFound2;
+                        }
+                    }
+            }
+        }
         while (nodeStack.length) {
-            var currentNode = nodeStack.pop();
-            if (currentCacheArray)
+            currentNode = nodeStack.pop();
+            if (currentCacheArray && currentCacheArray.length)
                 for (var i = 0, l = currentCacheArray.length; i < l; i++) {
                     var bn = currentCacheArray[i];
                     if (bn.element === currentNode) {
@@ -348,7 +548,6 @@ b = (function (window, document) {
     }
     function updateNode(n, c) {
         var component = n.component;
-        var backupInNamespace = inNamespace;
         var backupInSvg = inSvg;
         var bigChange = false;
         if (component && c.ctx != null) {
@@ -356,6 +555,7 @@ b = (function (window, document) {
                 bigChange = true;
             }
             else {
+                c.ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
                     if (!component.shouldChange(c.ctx, n, c))
                         return c;
@@ -363,42 +563,23 @@ b = (function (window, document) {
                 c.component = component;
                 if (component.render)
                     component.render(c.ctx, n, c);
+                c.cfg = n.cfg;
+            }
+        }
+        if (DEBUG) {
+            if (!((n.ref == null && c.ref == null) || ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+                if (window.console && console.warn)
+                    console.warn("ref changed in child in update");
             }
         }
         var el;
         if (bigChange || (component && c.ctx == null)) {
         }
         else if (n.tag === "/") {
-            el = c.element;
-            if (isArray(el))
-                el = el[0];
-            var elprev = el.previousSibling;
-            var removeEl = false;
-            var parent = el.parentNode;
-            if (!el.insertAdjacentHTML) {
-                el = parent.insertBefore(document.createElement("i"), el);
-                removeEl = true;
-            }
-            el.insertAdjacentHTML("beforebegin", n.children);
-            if (elprev) {
-                elprev = elprev.nextSibling;
-            }
-            else {
-                elprev = parent.firstChild;
-            }
-            var newElements = [];
-            while (elprev !== el) {
-                newElements.push(elprev);
-                elprev = elprev.nextSibling;
-            }
-            n.element = newElements;
-            if (removeEl) {
-                parent.removeChild(el);
-            }
-            removeNode(c);
-            return n;
+            if (c.tag === "/" && c.children === n.children)
+                return c;
         }
-        else if (n.tag === c.tag && (inSvg || !inNamespace)) {
+        else if (n.tag === c.tag) {
             if (n.tag === "") {
                 if (c.children !== n.children) {
                     c.children = n.children;
@@ -414,33 +595,34 @@ b = (function (window, document) {
             }
             else {
                 if (n.tag === "svg") {
-                    inNamespace = true;
                     inSvg = true;
                 }
-                if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildrenNode(n, c);
-                    if (component) {
-                        if (component.postRender) {
-                            component.postRender(c.ctx, n, c);
-                        }
+                updateChildrenNode(n, c);
+                if (component) {
+                    if (component.postRender) {
+                        component.postRender(c.ctx, n, c);
                     }
-                    if (c.attrs)
-                        c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
-                    c.data = n.data;
-                    inNamespace = backupInNamespace;
-                    inSvg = backupInSvg;
-                    pushInitCallback(c, true);
-                    return c;
                 }
+                el = c.element;
+                if (c.attrs || n.attrs)
+                    c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
+                updateStyle(c, el, n.style, c.style);
+                c.style = n.style;
+                var className = n.className;
+                if (className !== c.className) {
+                    setClassName(el, className || "");
+                    c.className = className;
+                }
+                c.data = n.data;
                 inSvg = backupInSvg;
-                inNamespace = backupInNamespace;
+                pushInitCallback(c, true);
+                return c;
             }
         }
-        var r = createNode(n, c.parent);
-        var pn = c.element.parentNode;
-        if (pn) {
-            pn.insertBefore(r.element, c.element);
-        }
+        el = c.element;
+        if (isArray(el))
+            el = el[0];
+        var r = createNode(n, c.parent, (el.parentNode), c.element);
         removeNode(c);
         return r;
     }
@@ -462,8 +644,7 @@ b = (function (window, document) {
         if (newChildren == null)
             newChildren = [];
         if (!isArray(newChildren)) {
-            var type = typeof newChildren;
-            if ((type === "string") && !isArray(cachedChildren)) {
+            if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
                 if (newChildren === cachedChildren)
                     return cachedChildren;
                 if (hasTextContent) {
@@ -479,7 +660,8 @@ b = (function (window, document) {
         if (cachedChildren == null)
             cachedChildren = [];
         if (!isArray(cachedChildren)) {
-            element.removeChild(element.firstChild);
+            if (element.firstChild)
+                element.removeChild(element.firstChild);
             cachedChildren = [];
         }
         newChildren = newChildren.slice(0);
@@ -550,11 +732,10 @@ b = (function (window, document) {
                 return cachedChildren;
             }
             while (newIndex < newEnd) {
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode));
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element));
                 cachedIndex++;
                 cachedEnd++;
                 cachedLength++;
-                element.insertBefore(cachedChildren[newIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
                 newIndex++;
             }
             return cachedChildren;
@@ -568,8 +749,8 @@ b = (function (window, document) {
             return cachedChildren;
         }
         // order of keyed nodes ware changed => reorder keyed nodes first
-        var cachedKeys = {};
-        var newKeys = {};
+        var cachedKeys = newHashObj();
+        var newKeys = newHashObj();
         var key;
         var node;
         var backupNewIndex = newIndex;
@@ -629,8 +810,7 @@ b = (function (window, document) {
             var akpos = cachedKeys[key];
             if (akpos === undefined) {
                 // New key
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode));
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, cachedChildren[cachedIndex].element));
                 delta++;
                 newIndex++;
                 cachedIndex++;
@@ -685,10 +865,9 @@ b = (function (window, document) {
         while (newIndex < newEnd) {
             key = newChildren[newIndex].key;
             if (key != null) {
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode));
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element));
                 cachedEnd++;
                 cachedLength++;
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
                 delta++;
                 cachedIndex++;
             }
@@ -757,10 +936,9 @@ b = (function (window, document) {
                 cachedIndex++;
             }
             else {
-                cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode));
+                cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode, element, newIndex === cachedLength ? null : cachedChildren[newIndex].element));
                 cachedEnd++;
                 cachedLength++;
-                element.insertBefore(cachedChildren[newIndex].element, newIndex + 1 === cachedLength ? null : cachedChildren[newIndex + 1].element);
                 newIndex++;
                 cachedIndex++;
             }
@@ -805,6 +983,8 @@ b = (function (window, document) {
     var scheduled = false;
     var uptime = 0;
     var frame = 0;
+    var lastFrameDuration = 0;
+    var renderFrameBegin = 0;
     var regEvents = {};
     var registryEvents = {};
     function addEvent(name, priority, callback) {
@@ -817,10 +997,13 @@ b = (function (window, document) {
         if (events)
             for (var i = 0; i < events.length; i++) {
                 if (events[i](ev, target, node))
-                    break;
+                    return true;
             }
+        return false;
     }
     function addListener(el, name) {
+        if (name[0] == "!")
+            return;
         function enhanceEvent(ev) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement || el;
@@ -858,7 +1041,7 @@ b = (function (window, document) {
         for (var i = 0; i < cache.length; i++) {
             var node = cache[i];
             if (node.ctx != null && node.ctx[ctxInvalidated] === frame) {
-                cache[i] = updateNode(assign({}, node), node);
+                cache[i] = updateNode(cloneNode(node), node);
             }
             else if (isArray(node.children)) {
                 selectedUpdate(node.children);
@@ -873,20 +1056,35 @@ b = (function (window, document) {
         return res;
     }
     function update(time) {
+        renderFrameBegin = now();
         initEvents();
         frame++;
         uptime = time;
         scheduled = false;
+        var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
-            var newChildren = rootFactory();
-            rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
+            fullRefresh = true;
         }
-        else {
-            selectedUpdate(rootCacheChildren);
+        var rootIds = Object.keys(roots);
+        for (var i = 0; i < rootIds.length; i++) {
+            var r = roots[rootIds[i]];
+            if (!r)
+                continue;
+            var rc = r.c;
+            if (fullRefresh) {
+                var newChildren = r.f();
+                r.e = r.e || document.body;
+                r.c = updateChildren(r.e, newChildren, rc, null);
+            }
+            else {
+                if (typeof rc !== "string")
+                    selectedUpdate(rc);
+            }
         }
         callPostCallbacks();
-        afterFrameCallback(rootCacheChildren);
+        afterFrameCallback(roots["0"].c);
+        lastFrameDuration = now() - renderFrameBegin;
     }
     function invalidate(ctx) {
         if (fullRecreateRequested)
@@ -902,34 +1100,92 @@ b = (function (window, document) {
         scheduled = true;
         requestAnimationFrame(update);
     }
-    function init(factory) {
-        if (rootCacheChildren.length) {
-            rootCacheChildren = updateChildren(document.body, [], rootCacheChildren, null);
+    var lastRootId = 0;
+    function addRoot(factory, element) {
+        lastRootId++;
+        var rootId = "" + lastRootId;
+        roots[rootId] = { f: factory, e: element, c: [] };
+        invalidate();
+        return rootId;
+    }
+    function removeRoot(id) {
+        var root = roots[id];
+        if (!root)
+            return;
+        if (root.c.length) {
+            root.c = updateChildren(root.e, [], root.c, null);
         }
-        rootFactory = factory;
+        delete roots[id];
+    }
+    function getRoots() {
+        return roots;
+    }
+    function init(factory, element) {
+        removeRoot("0");
+        roots["0"] = { f: factory, e: element, c: [] };
         invalidate();
     }
     function bubbleEvent(node, name, param) {
         while (node) {
             var c = node.component;
             if (c) {
+                var ctx = node.ctx;
                 var m = c[name];
                 if (m) {
-                    if (m.call(c, node.ctx, param))
+                    if (m.call(c, ctx, param))
                         return true;
+                }
+                m = c.shouldStopBubble;
+                if (m) {
+                    if (m.call(c, ctx, name, param))
+                        break;
                 }
             }
             node = node.parent;
         }
         return false;
     }
+    function broadcastEventToNode(node, name, param) {
+        if (!node)
+            return false;
+        var c = node.component;
+        if (c) {
+            var ctx = node.ctx;
+            if (c.shouldStopBroadcast(ctx, name, param))
+                return false;
+            var m = c[name];
+            if (m) {
+                if (m.call(c, ctx, param))
+                    return true;
+            }
+        }
+        return broadcastEvent(node, name, param);
+    }
+    function broadcastEvent(node, name, param) {
+        if (!node)
+            return false;
+        var ch = node.children;
+        if (isArray(ch)) {
+            for (var i = 0; i < ch.length; i++) {
+                if (broadcastEventToNode(ch[i], name, param))
+                    return true;
+            }
+        }
+        else {
+            return broadcastEventToNode(ch, name, param);
+        }
+    }
     function merge(f1, f2) {
         var _this = this;
         return function () {
-            var result = f1.apply(_this, arguments);
+            var params = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                params[_i - 0] = arguments[_i];
+            }
+            var result = f1.apply(_this, params);
             if (result)
                 return result;
-            return f2.apply(_this, arguments);
+            return f2.apply(_this, params);
         };
     }
     var emptyObject = {};
@@ -988,12 +1244,35 @@ b = (function (window, document) {
         else
             event.returnValue = false;
     }
+    function cloneNodeArray(a) {
+        a = a.slice(0);
+        for (var i = 0; i < a.length; i++) {
+            var n = a[i];
+            if (isArray(n)) {
+                a[i] = cloneNodeArray(n);
+            }
+            else if (isObject(n)) {
+                a[i] = cloneNode(n);
+            }
+        }
+        return a;
+    }
     function cloneNode(node) {
         var r = b.assign({}, node);
         if (r.attrs) {
             r.attrs = b.assign({}, r.attrs);
-            if (r.attrs.style)
-                r.attrs.style = b.assign({}, r.attrs.style);
+        }
+        if (isObject(r.style)) {
+            r.style = b.assign({}, r.style);
+        }
+        var ch = r.children;
+        if (ch) {
+            if (isArray(ch)) {
+                r.children = cloneNodeArray(ch);
+            }
+            else if (isObject(ch)) {
+                r.children = cloneNode(ch);
+            }
         }
         return r;
     }
@@ -1003,22 +1282,28 @@ b = (function (window, document) {
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
         setSetValue: setSetValue,
-        setSetStyle: setSetStyle,
+        setStyleShim: function (name, action) { return mapping[name] = action; },
         init: init,
+        addRoot: addRoot,
+        removeRoot: removeRoot,
+        getRoots: getRoots,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: function () { return uptime; },
+        lastFrameDuration: function () { return lastFrameDuration; },
         now: now,
         frame: function () { return frame; },
         assign: assign,
-        ieVersion: function () { return document.documentMode; },
+        ieVersion: ieVersion,
         invalidate: invalidate,
+        invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
-        vmlNode: function () { return inNamespace = true; },
         vdomPath: vdomPath,
         deref: getCacheNode,
         addEvent: addEvent,
+        emitEvent: emitEvent,
         bubble: bubbleEvent,
+        broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
         cloneNode: cloneNode

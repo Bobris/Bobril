@@ -1,7 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 
-module InputApp {
+module Router2App {
     function h(tag: string, ...args: any[]) {
         return { tag: tag, children: args };
     }
@@ -22,8 +22,8 @@ module InputApp {
         { name: "Mars", image: "http://mars.jpl.nasa.gov/images/PIA02653-br2.jpg" }
     ];
 
-    class About implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var About: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = [
                 h("h3", "About"),
@@ -34,22 +34,22 @@ module InputApp {
         }
     }
 
-    class Empty implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var Empty: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("p", "Welcome");
         }
     }
 
-    class NotFound implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var NotFound: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("p", "This page does not exist please continue by clicking links above");
         }
     }
 
-    class SelectPlanet implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var SelectPlanet: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = h("p", "Select planet to show on left");
         }
@@ -94,21 +94,20 @@ module InputApp {
                 node = b.assign({}, node);
                 b.postEnhance(node, {
                     render(ctx: any, me: IBobrilNode, oldMe: IBobrilCacheNode) {
-                        me.attrs = me.attrs || {};
-                        me.attrs.style = me.attrs.style || {};
+                        me.style = me.style || {};
                         if (!animCtx.live) {
-                            me.attrs.style.position = "absolute";
-                            me.attrs.style.top = "0";
-                            me.attrs.style.left = "0";
+                            me.style.position = "absolute";
+                            me.style.top = "0";
+                            me.style.left = "0";
                         }
                         if (isStableAnimState(animCtx.state)) {
                             return;
                         }
                         if (isHiddenAnimState(animCtx.state)) {
-                            me.attrs.style.visibility = "hidden";
+                            me.style.visibility = "hidden";
                             return;
                         }
-                        me.attrs.style.opacity = "" + animCtx.value;
+                        me.style.opacity = "" + animCtx.value;
                     }
                 });
                 return node;
@@ -196,25 +195,26 @@ module InputApp {
     };
 
     function relativeTransitionGroup(node: IBobrilNode): IBobrilNode {
-        return { tag: "div", attrs: { style: { position: "relative" } }, children: node, component: transitionGroupComp };
+        return { tag: "div", style: { position: "relative" }, children: node, component: transitionGroupComp };
     }
 
-    class PlanetList implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var PlanetList: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "table";
-            me.children = a(h("tr", [
+            me.children = h("tr", [
                 h("td", [
                     ctx.data.planets.map((planet: { name: string }) => {
                         return h("div", b.link(h("a", planet.name), "planet", { name: planet.name }));
                     })
                 ]),
                 h("td", relativeTransitionGroup(me.data.activeRouteHandler()))
-            ]), "style", "vertical-align:top");
+            ]);
+            (<IBobrilNode>me.children).style = { verticalAlign: "top" };
         }
     }
 
-    class PlanetImage implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var PlanetImage: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             var name = ctx.data.routeParams.name;
             var planet: { image: string } = null;
             for (var i = 0; i < planetData.length; i++) {
@@ -222,8 +222,8 @@ module InputApp {
             }
             if (planet) {
                 me.tag = "img";
+                me.style = { height: "auto", width: "20em" }; // < order of styles matter!
                 me.attrs = {
-                    style: { height: "auto", width: "20em" }, // < order of styles matter!
                     src: planet.image
                 };
             } else {
@@ -233,8 +233,8 @@ module InputApp {
         }
     }
 
-    class App implements IBobrilComponent {
-        static render(ctx: any, me: IBobrilNode) {
+    var App: IBobrilComponent = {
+        render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = [
                 h("h1", "Advanced Router sample"),
