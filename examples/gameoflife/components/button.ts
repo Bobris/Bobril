@@ -1,4 +1,7 @@
-﻿module GameOfLifeApp{
+﻿/// <reference path="../../../src/bobril.d.ts"/>
+/// <reference path="../../../src/bobril.mouse.d.ts"/>
+
+module GameOfLifeApp{
     export interface IButtonData{
         content: string;
         disabled?: boolean;
@@ -17,7 +20,7 @@
             me.children = ctx.data.content;
         }
 
-        static onClick(ctx: IButtonCtx, event: IMouseEvent): boolean{
+        static onClick(ctx: IButtonCtx, event: IBobrilComponent): boolean{
             ctx.data.onClick();
             return true;
         }

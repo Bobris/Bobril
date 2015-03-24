@@ -1,4 +1,7 @@
-﻿module GameOfLifeApp{
+﻿/// <reference path="../../../src/bobril.d.ts"/>
+/// <reference path="../../../src/bobril.vg.d.ts" />
+
+module GameOfLifeApp{
     export interface ICanvasData{
         lifeCels: Cell[];
         width: number;

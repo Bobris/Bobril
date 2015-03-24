@@ -1,5 +1,4 @@
 /// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="components/button.ts" />
 /// <reference path="components/canvas.ts" />
 /// <reference path="components/spinner.ts" />
@@ -29,11 +28,11 @@ var GameOfLifeApp;
         return [
             {
                 component: GameOfLifeApp.Header,
-                data: { level: GameOfLifeApp.HeaderLevel.H1, content: "Game of life" }
+                data: { level: 0 /* H1 */, content: "Game of life" }
             },
             {
                 component: GameOfLifeApp.GameController,
-                data: { runing: true, width: 700, height: 350, delay: 100, startLiveCell: startLiveCell },
+                data: { runing: true, width: 700, height: 350, delay: 100, startLiveCell: startLiveCell }
             }
         ];
     });

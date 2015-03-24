@@ -1,4 +1,6 @@
-﻿module GameOfLifeApp{
+﻿/// <reference path="cell.ts" />
+
+module GameOfLifeApp{
     export class World{
         lifeCells: Cell[];
 

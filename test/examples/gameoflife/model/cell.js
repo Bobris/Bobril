@@ -1,3 +1,4 @@
+/// <reference path="../../../jasmine.d.ts" />
 /// <reference path="../../../../examples/gameoflife/model/cell.ts" />
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
@@ -11,7 +12,6 @@ var GameOfLifeApp;
                 expect(cell.equelTo(new GameOfLifeApp.Cell(0, 0))).toBeTruthy();
             });
             it('Return false for cells wiht diferent values', function () {
-                var cell = new GameOfLifeApp.Cell(0, 0);
                 expect(cell.equelTo(new GameOfLifeApp.Cell(0, 1))).toBeFalsy();
                 expect(cell.equelTo(new GameOfLifeApp.Cell(1, 0))).toBeFalsy();
             });
