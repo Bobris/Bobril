@@ -2,21 +2,20 @@
 /// <reference path="../../../src/bobril.mouse.d.ts"/>
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
-    var Button = (function () {
-        function Button() {
-        }
-        Button.render = function (ctx, me) {
+    var ButtonComponent = {
+        render: function (ctx, me) {
             me.tag = 'button';
-            if (ctx.data.disabled)
-                me.attrs = { disabled: "disabled" };
+            me.attrs = { disabled: ctx.data.disabled };
             me.children = ctx.data.content;
-        };
-        Button.onClick = function (ctx, event) {
+        },
+        onClick: function (ctx, event) {
             ctx.data.onClick();
             return true;
-        };
-        return Button;
-    })();
+        }
+    };
+    function Button(data) {
+        return { component: ButtonComponent, data: data };
+    }
     GameOfLifeApp.Button = Button;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
 //# sourceMappingURL=button.js.map

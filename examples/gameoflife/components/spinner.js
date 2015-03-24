@@ -7,36 +7,27 @@ var GameOfLifeApp;
         Spinner.render = function (ctx, me) {
             me.tag = 'span';
             me.children = [
-                {
-                    component: GameOfLifeApp.Button,
-                    data: {
-                        content: '-',
-                        disabled: ctx.data.value == ctx.data.min,
-                        onClick: function () {
-                            ctx.data.value -= ctx.data.step;
-                            if (ctx.data.value < ctx.data.min)
-                                ctx.data.value = ctx.data.min;
-                            ctx.data.onChange(ctx.data.value);
-                        }
+                GameOfLifeApp.Button({
+                    content: '-',
+                    disabled: ctx.data.value == ctx.data.min,
+                    onClick: function () {
+                        ctx.data.value -= ctx.data.step;
+                        if (ctx.data.value < ctx.data.min)
+                            ctx.data.value = ctx.data.min;
+                        ctx.data.onChange(ctx.data.value);
                     }
-                },
-                {
-                    tag: 'span',
-                    children: ctx.data.value.toString()
-                },
-                {
-                    component: GameOfLifeApp.Button,
-                    data: {
-                        content: '+',
-                        disabled: ctx.data.value == ctx.data.max,
-                        onClick: function () {
-                            ctx.data.value += ctx.data.step;
-                            if (ctx.data.value > ctx.data.max)
-                                ctx.data.value = ctx.data.max;
-                            ctx.data.onChange(ctx.data.value);
-                        }
+                }),
+                ctx.data.value.toString(),
+                GameOfLifeApp.Button({
+                    content: '+',
+                    disabled: ctx.data.value == ctx.data.max,
+                    onClick: function () {
+                        ctx.data.value += ctx.data.step;
+                        if (ctx.data.value > ctx.data.max)
+                            ctx.data.value = ctx.data.max;
+                        ctx.data.onChange(ctx.data.value);
                     }
-                }
+                })
             ];
         };
         return Spinner;

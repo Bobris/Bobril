@@ -1,5 +1,6 @@
 ﻿/// <reference path="../../../src/bobril.d.ts"/>
 /// <reference path="../../../src/bobril.vg.d.ts" />
+/// <reference path="../model/cell.ts" />
 
 module GameOfLifeApp{
     export interface ICanvasData{
@@ -23,7 +24,7 @@ module GameOfLifeApp{
             me.children = [
                 {
                     component : b.vg,
-                    data : { width : ctx.data.width + 'px', height : ctx.data.height + 'px' },
+                    data : { width : ctx.data.width, height : ctx.data.height },
                     children : [
                         {
                             data : {

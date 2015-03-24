@@ -1,28 +1,30 @@
 ﻿/// <reference path="../../../src/bobril.d.ts"/>
 /// <reference path="../../../src/bobril.mouse.d.ts"/>
 
-module GameOfLifeApp{
-    export interface IButtonData{
+module GameOfLifeApp {
+    export interface IButtonData {
         content: string;
         disabled?: boolean;
-        onClick: Function;
+        onClick: ()=>void;
     }
 
-    export interface IButtonCtx{
+    interface IButtonCtx extends IBobrilCtx {
         data: IButtonData;
     }
 
-    export class Button implements IBobrilComponent{
-        static render(ctx: IButtonCtx, me: IBobrilNode){
+    var ButtonComponent: IBobrilComponent = {
+        render(ctx: IButtonCtx, me: IBobrilNode) {
             me.tag = 'button';
-            if(ctx.data.disabled)
-                me.attrs = { disabled : "disabled" };
+            me.attrs = { disabled: ctx.data.disabled };
             me.children = ctx.data.content;
-        }
-
-        static onClick(ctx: IButtonCtx, event: IBobrilComponent): boolean{
+        },
+        onClick(ctx: IButtonCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onClick();
             return true;
         }
+    }
+    
+    export function Button(data:IButtonData):IBobrilNode {
+        return { component: ButtonComponent, data: data };
     }
 }

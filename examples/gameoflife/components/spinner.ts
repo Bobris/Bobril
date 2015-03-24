@@ -17,36 +17,27 @@ module GameOfLifeApp{
         static render(ctx: ISpinnerCtx, me: IBobrilNode){
             me.tag = 'span';
             me.children = [
-                {
-                    component : Button,
-                    data : <IButtonData>{
-                        content : '-',
-                        disabled : ctx.data.value == ctx.data.min,
-                        onClick : () =>{
-                            ctx.data.value -= ctx.data.step;
-                            if(ctx.data.value < ctx.data.min)
-                                ctx.data.value = ctx.data.min;
-                            ctx.data.onChange(ctx.data.value);
-                        }
+                Button({
+                    content : '-',
+                    disabled : ctx.data.value == ctx.data.min,
+                    onClick : () =>{
+                        ctx.data.value -= ctx.data.step;
+                        if(ctx.data.value < ctx.data.min)
+                            ctx.data.value = ctx.data.min;
+                        ctx.data.onChange(ctx.data.value);
                     }
-                },
-                {
-                    tag : 'span',
-                    children : ctx.data.value.toString()
-                },
-                {
-                    component : Button,
-                    data : <IButtonData>{
-                        content : '+',
-                        disabled : ctx.data.value == ctx.data.max,
-                        onClick : () =>{
-                            ctx.data.value += ctx.data.step;
-                            if(ctx.data.value > ctx.data.max)
-                                ctx.data.value = ctx.data.max;
-                            ctx.data.onChange(ctx.data.value);
-                        }
+                }),
+                ctx.data.value.toString(),
+                Button({
+                    content : '+',
+                    disabled : ctx.data.value == ctx.data.max,
+                    onClick : () =>{
+                        ctx.data.value += ctx.data.step;
+                        if(ctx.data.value > ctx.data.max)
+                            ctx.data.value = ctx.data.max;
+                        ctx.data.onChange(ctx.data.value);
                     }
-                }
+                })
             ];
         }
     }
