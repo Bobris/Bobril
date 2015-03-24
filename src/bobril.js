@@ -296,12 +296,24 @@ b = (function (window, document) {
         }
         return cfg;
     }
+    function setRef(ref, value) {
+        if (ref == null)
+            return;
+        var ctx = ref[0];
+        var refs = ctx.refs;
+        if (!refs) {
+            refs = newHashObj();
+            ctx.refs = refs;
+        }
+        refs[ref[1]] = value;
+    }
     function createNode(n, parentNode, createInto, createBefore) {
         var c = n;
         c.parent = parentNode;
         var backupInSvg = inSvg;
         var component = c.component;
         var el;
+        setRef(n.ref, n);
         var createBeforeNode = b.isArray(createBefore) ? createBefore[0] : createBefore;
         if (component) {
             var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
@@ -444,6 +456,7 @@ b = (function (window, document) {
         c.children = ch;
     }
     function destroyNode(c) {
+        setRef(c.ref, null);
         var ch = c.children;
         if (isArray(ch)) {
             for (var i = 0, l = ch.length; i < l; i++) {
@@ -551,6 +564,12 @@ b = (function (window, document) {
                 if (component.render)
                     component.render(c.ctx, n, c);
                 c.cfg = n.cfg;
+            }
+        }
+        if (DEBUG) {
+            if (!((n.ref == null && c.ref == null) || ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+                if (window.console && console.warn)
+                    console.warn("ref changed in child in update");
             }
         }
         var el;

@@ -306,12 +306,24 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return cfg;
     }
 
+    function setRef(ref: [IBobrilCtx, string], value: IBobrilCacheNode) {
+        if (ref==null) return;
+        var ctx = ref[0];
+        var refs = ctx.refs;
+        if (!refs) {
+            refs = newHashObj();
+            ctx.refs = refs;
+        }
+        refs[ref[1]] = value;
+    }
+
     function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: Element, createBefore: Node|Node[]): IBobrilCacheNode {
         var c = <IBobrilCacheNode>n;
         c.parent = parentNode;
         var backupInSvg = inSvg;
         var component = c.component;
         var el: HTMLElement;
+        setRef(n.ref, n);
         var createBeforeNode: Node = b.isArray(createBefore) ? (<Node[]>createBefore)[0] : <Node>createBefore;
         if (component) {
             var ctx: IBobrilCtx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
@@ -445,6 +457,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function destroyNode(c: IBobrilCacheNode) {
+        setRef(c.ref, null);
         var ch = c.children;
         if (isArray(ch)) {
             for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
@@ -548,6 +561,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (component.render)
                     component.render(c.ctx, n, c);
                 c.cfg = n.cfg;
+            }
+        }
+        if (DEBUG) {
+            if (!((n.ref == null && c.ref == null) ||
+                ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+                if (window.console && console.warn) console.warn("ref changed in child in update");
             }
         }
         var el: any;

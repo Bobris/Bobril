@@ -204,7 +204,7 @@ module StickyHeaderApp {
             var newTop = (isWindowScrolling ? winScroll[1] : newTopOffset) - offset[1];
             absElementStyle.left = c.deltaCorr + "px";
             absElementStyle.top = newTop + "px";
-            var absHeader = <HTMLElement>absElement.firstChild.firstChild;
+            var absHeader = <HTMLElement>ctx.refs["header"].element.firstChild;
             if (origHeader.firstChild) {
                 var l1 = (<HTMLElement>absHeader.firstChild).getBoundingClientRect().left;
                 var l2 = (<HTMLElement>origHeader.firstChild).getBoundingClientRect().left;
@@ -266,6 +266,7 @@ module StickyHeaderApp {
                     style: { visibility: "hidden", position: "absolute" },
                     children: {
                         tag: "table",
+                        ref: [ctx, "header"],
                         className: me.className,
                         attrs: me.attrs,
                         style: styleClone,
@@ -337,7 +338,7 @@ module StickyHeaderApp {
         var stickyTable = implStrategyAbs ? stickyTableAbs : stickyTableFix;
         return [
             h("h1", "Sticky Header Bobril sample"),
-            h("p", "Frame: " + frame),
+            h("p", "Frame: " + frame + " Duration Last: " + b.lastFrameDuration()),
             h("label", checkbox(implStrategyAbs, v=> {
                 implStrategyAbs = v;
                 b.invalidate();
@@ -346,7 +347,7 @@ module StickyHeaderApp {
                 borderCollapse = v;
                 b.invalidate();
             }), "Collapse borders"),
-            " Border Spacing: ", pxinput(borderSpacing,(v) => {
+            " Border Spacing: ", pxinput(borderSpacing, (v) => {
                 borderSpacing = v;
                 b.invalidate();
             }),

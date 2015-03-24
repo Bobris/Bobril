@@ -206,7 +206,7 @@ var StickyHeaderApp;
             var newTop = (isWindowScrolling ? winScroll[1] : newTopOffset) - offset[1];
             absElementStyle.left = c.deltaCorr + "px";
             absElementStyle.top = newTop + "px";
-            var absHeader = absElement.firstChild.firstChild;
+            var absHeader = ctx.refs["header"].element.firstChild;
             if (origHeader.firstChild) {
                 var l1 = absHeader.firstChild.getBoundingClientRect().left;
                 var l2 = origHeader.firstChild.getBoundingClientRect().left;
@@ -274,6 +274,7 @@ var StickyHeaderApp;
                     style: { visibility: "hidden", position: "absolute" },
                     children: {
                         tag: "table",
+                        ref: [ctx, "header"],
                         className: me.className,
                         attrs: me.attrs,
                         style: styleClone,
@@ -337,7 +338,7 @@ var StickyHeaderApp;
         var stickyTable = implStrategyAbs ? stickyTableAbs : stickyTableFix;
         return [
             h("h1", "Sticky Header Bobril sample"),
-            h("p", "Frame: " + frame),
+            h("p", "Frame: " + frame + " Duration Last: " + b.lastFrameDuration()),
             h("label", checkbox(implStrategyAbs, function (v) {
                 implStrategyAbs = v;
                 b.invalidate();
