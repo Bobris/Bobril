@@ -1,4 +1,6 @@
-﻿module GameOfLifeApp {
+﻿/// <reference path="../../../src/bobril.d.ts"/>
+
+module GameOfLifeApp {
     export enum HeaderLevel{
         H1,
         H2,
@@ -29,11 +31,6 @@
         static render(ctx: IHeaderCtx, me: IBobrilNode) {
             me.tag = this.getTag(ctx.data.level);
             me.children = ctx.data.content;
-        }
-
-        static onClick(ctx: IButtonCtx, event: IMouseEvent): boolean {
-            ctx.data.onClick();
-            return true;
         }
     }
 } 

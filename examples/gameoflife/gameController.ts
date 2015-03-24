@@ -1,4 +1,7 @@
-﻿/// <reference path="model/world.ts" />
+﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="model/world.ts" />
+/// <reference path="components/gamecontrolpanel.ts" />
+/// <reference path="components/canvas.ts" />
 
 module GameOfLifeApp{
     export interface IGameOfLifeData{

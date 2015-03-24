@@ -12,6 +12,7 @@ module.exports = function(config) {
     files: [
       'src/bobril.js',
       'src/**/*.js',
+      'examples/gameoflife/model/*.js',      
       'test/**/*.js',
 	  { pattern: 'src/**/*.js.map', included: false },
       { pattern: 'src/**/*.ts', included: false },

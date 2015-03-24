@@ -1,3 +1,4 @@
+/// <reference path="../../../src/bobril.d.ts"/>
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     (function (HeaderLevel) {
@@ -22,10 +23,6 @@ var GameOfLifeApp;
         Header.render = function (ctx, me) {
             me.tag = this.getTag(ctx.data.level);
             me.children = ctx.data.content;
-        };
-        Header.onClick = function (ctx, event) {
-            ctx.data.onClick();
-            return true;
         };
         return Header;
     })();

@@ -1,5 +1,4 @@
 ﻿/// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="components/button.ts" />
 /// <reference path="components/canvas.ts" />
 /// <reference path="components/spinner.ts" />

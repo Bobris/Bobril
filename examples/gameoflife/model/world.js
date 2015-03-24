@@ -1,3 +1,4 @@
+/// <reference path="cell.ts" />
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     var World = (function () {
