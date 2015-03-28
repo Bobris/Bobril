@@ -143,7 +143,7 @@
         "circle": [3, svgCircle, vmlCircle],
         "pie": [6, svgPie, vmlPie]
     };
-    function svgChildComponentInit(ctx, me) {
+    function svgChildComponentRender(ctx, me) {
         me.tag = "path";
         var attrs = {};
         var data = me.data;
@@ -196,7 +196,7 @@
         me.attrs = attrs;
     }
     var svgChildComponent = {
-        render: svgChildComponentInit
+        render: svgChildComponentRender
     };
     function svgComponentInit(ctx, me) {
         me.tag = "svg";
@@ -299,18 +299,22 @@
         init: vmlChildComponentInit,
         render: vmlChildComponentRender
     };
-    function vmlComponentInit(ctx, me) {
+    function vmlComponentRender(ctx, me) {
         me.tag = "div";
         me.style = {
             position: "absolute",
             width: me.data.width,
-            height: me.data.height,
-            clip: "rect(0," + me.data.width + "," + me.data.height + ",0)"
+            height: me.data.height
         };
         recSetComponent(me.children, vmlChildComponent);
     }
+    function vmlPostDom(ctx, me, element) {
+        element.style.clip = "rect(0," + element.offsetWidth + "px," + element.offsetHeight + "px,0)";
+    }
     var vmlComponent = {
-        render: vmlComponentInit
+        render: vmlComponentRender,
+        postInitDom: vmlPostDom,
+        postUpdateDom: vmlPostDom
     };
     var implType = (window.SVGAngle || document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1") ? 1 : 2);
     if (implType === 2) {

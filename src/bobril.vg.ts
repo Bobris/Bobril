@@ -125,7 +125,7 @@
         "pie": [6, svgPie, vmlPie]
     };
 
-    function svgChildComponentInit(ctx: Object, me: IBobrilNode) {
+    function svgChildComponentRender(ctx: Object, me: IBobrilNode) {
         me.tag = "path";
         var attrs: any = {};
         var data = me.data;
@@ -172,7 +172,7 @@
     }
 
     var svgChildComponent: IBobrilComponent = {
-        render: svgChildComponentInit
+        render: svgChildComponentRender
     };
 
     function svgComponentInit(ctx: Object, me: IBobrilNode) {
@@ -280,19 +280,24 @@
         render: vmlChildComponentRender
     }
 
-    function vmlComponentInit(ctx: IBobrilCtx, me: IBobrilNode) {
+    function vmlComponentRender(ctx: IBobrilCtx, me: IBobrilNode) {
         me.tag = "div";
         me.style = {
             position: "absolute",
             width: me.data.width,
-            height: me.data.height,
-            clip: "rect(0," + me.data.width + "," + me.data.height + ",0)"
+            height: me.data.height
         };
         recSetComponent(me.children, vmlChildComponent);
     }
 
+    function vmlPostDom(ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement) {
+        element.style.clip = "rect(0," + element.offsetWidth + "px," + element.offsetHeight + "px,0)";
+    }
+
     var vmlComponent: IBobrilComponent = {
-        render: vmlComponentInit
+        render: vmlComponentRender,
+        postInitDom: vmlPostDom,
+        postUpdateDom: vmlPostDom
     };
 
     var implType = ((<any>window).SVGAngle || document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1") ? 1 : 2);
