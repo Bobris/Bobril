@@ -20,8 +20,8 @@ module TeamRolePoll {
         render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
             me.children = [
-                ctx.data.poll.questions.map((question: any, index: number) => {
-                    return h("div", b.link(h("a", question[ctx.data.poll.lang]), "question", { idx: '' + index }));
+                ctx.data.questions.map((question: any, index: number) => {
+                    return h("div", b.link(h("a", question[ctx.cfg.lang]), "question", { idx: '' + index }));
                 }),
                 h("div", me.data.activeRouteHandler())
             ];
@@ -130,7 +130,7 @@ module TeamRolePoll {
         render(ctx: any, me: IBobrilNode) {
             var idx = +ctx.data.routeParams.idx;
             var question = <any>polldata[idx];
-            var lang = ctx.data.poll.lang;
+            var lang = ctx.cfg.lang;
             me.tag = "div";
             me.children = [
                 h("h3", question[lang]),
@@ -184,7 +184,7 @@ module TeamRolePoll {
             me.tag = "div";
             var rolepoints = evaluteResult(ctx.data.poll.questions, ctx.data.poll.answers);
             var sum = rolepoints.reduce((prev, current) => (current.value) + prev, 0);
-            var lang = ctx.data.poll.lang;
+            var lang = ctx.cfg.lang;
             if (rolepoints.length == 0)
                 me.children = [h("p", localize('NoData', lang))];
             else
@@ -225,20 +225,25 @@ module TeamRolePoll {
         role: any;
         poll: any;
         answers: any;
+    }
 
-        lang: string;
+    var cfg = {
+        lang: 'cz'
     }
 
     function switchLanguage(lang: string) {
-        pollData.lang = lang;
+        cfg.lang = lang;
         b.invalidate();
     }
 
     var App: IBobrilComponent = {
+        init(ctx: any) {
+            ctx.cfg = cfg;
+        },
 
         render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
-            var lang = ctx.data.poll.lang;
+            var lang = ctx.cfg.lang;
             me.children = [
                 h("h1", localize('Title', lang)),
                 me.data.activeRouteHandler(),
@@ -267,16 +272,18 @@ module TeamRolePoll {
 
     var pollData = {
         questions: polldata,
-        lang: 'cz',
         role: roledata,
         answers: {}
     };
 
-    b.routes(b.route({ handler: App, data: { poll: pollData } }, [
-        b.route({ name: "questions", data: { poll: pollData }, handler: PollPage }),
-        b.route({ name: "question", url: "/question/:idx", data: { poll: pollData }, handler: QuestionPage, keyBuilder(p: Params) { return p["idx"]; } }),
+    b.routes(b.route({ handler: App, data: { poll: pollData }}, [
+        b.route({ name: "questions", data: { questions: pollData.questions }, handler: PollPage }),
+        b.route({
+            name: "question", url: "/question/:idx", data: { poll: pollData },
+            handler: QuestionPage, keyBuilder(p: Params) { return p["idx"]; }
+        }),
         b.route({ name: "result", data: { poll: pollData }, handler: ResultPage }),
-        b.routeDefault({ handler: PollPage, data: { poll: pollData } }),
+        b.routeDefault({ handler: PollPage, data: { questions: pollData.questions }}),
         b.routeNotFound({ name: "notFound", handler: NotFound })
     ]));
 }

@@ -552,7 +552,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (component.id !== c.component.id) {
                 bigChange = true;
             } else {
-                c.ctx.cfg = findCfg(c.parent);
+                if (c.parent != undefined)
+                    c.ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
                     if (!component.shouldChange(c.ctx, n, c))
                         return c;
