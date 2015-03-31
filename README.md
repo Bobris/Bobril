@@ -25,13 +25,15 @@ Features in core:
 - No additional dependencies
 - Virtual DOM diffing
 - Components remember state in VDom cache
+- Components does not need to be HTML Elements - where is component(0-1) to HTMLNode(0-n) mapping (New in 2.0)
 - Support for partial invalidates for even faster redraws
 - Normalization of Events
 - support for IE8+, Android 4.0+
 - batching of redrawing
 - any html element could be root
 - automatic passing of global configuration/context to children
-- under 12kb minified
+- automatic adding of "px" to length like inline style (New in 2.0)
+- under 14kb minified
 
 Features in extensions:
 - OnChange event and value attribute normalization
@@ -45,7 +47,7 @@ Features in extensions:
 - Asap (setImmediate) and Promise A+ implementation - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 - Scroll notification (crude solution to non-bubbling onScroll)
 
-All extensions + core gziped are under 13kb
+All extensions + core gziped are under 14kb
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:

@@ -24,20 +24,23 @@ describe("updateElement", () => {
     });
 
     it("update style from string to object", () => {
-        var r = b.createNode({ tag: "div", style: "font-size:5px" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", style: "font-size:5px" }, null, scope, null);
+        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
     it("update style from object to string", () => {
-        var r = b.createNode({ tag: "div", style: { fontSize: "5px" } }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", style: { fontSize: "5px" } }, null, scope, null);
+        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 
     it("update style by removing property", () => {
-        var r = b.createNode({ tag: "div", style: { fontSize: "10px", color: "black" } }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", style: { fontSize: "10px", color: "black" } }, null, scope, null);
+        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 });
@@ -83,33 +86,39 @@ describe("createNode", () => {
 
 describe("updateNode", () => {
     it("simple", () => {
-        var r = b.createNode({ tag: "div", children: "hello" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: "bye" }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "hello" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: "bye" }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>bye</div>");
     });
     it("change single child from text to span", () => {
-        var r = b.createNode({ tag: "div", children: "hello" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "hello" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div><span>ok</span></div>");
     });
     it("change single child from span to text", () => {
-        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: "ok" }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: "ok" }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>ok</div>");
     });
     it("append text after text", () => {
-        var r = b.createNode({ tag: "div", children: "A" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: ["A", "B"] }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "A" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: ["A", "B"] }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>AB</div>");
     });
     it("preppend text before text", () => {
-        var r = b.createNode({ tag: "div", children: "A" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: ["B", "A"] }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "A" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: ["B", "A"] }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>BA</div>");
     });
     it("change html", () => {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>d<i>e</i>f</div>");
     });
 
@@ -129,13 +138,14 @@ describe("updateNode", () => {
 
     function advancedTest(start: string, update: string, result: string) {
         var vdomStart = buildVdom(start);
-        var r = b.createNode(vdomStart, null, document.createElement("div"), null);
+        var scope = document.createElement("div");
+        var r = b.createNode(vdomStart, null, scope, null);
         var c = (<HTMLElement>r.element).childNodes;
         for (var i = 0; i < c.length; i++) {
             (<HTMLElement>c[i]).id = "" + i;
         }
         var vdomUpdate = buildVdom(update);
-        r = b.updateNode(vdomUpdate, r);
+        r = b.updateNode(vdomUpdate, r, scope, null);
         var a: Array<string> = [];
         for (i = 0; i < (<IBobrilCacheNode[]>r.children).length; i++) {
             var ch = (<IBobrilCacheNode[]>r.children)[i];

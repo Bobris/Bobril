@@ -8,7 +8,7 @@ declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any
 interface IBobrilRoot {
     f: () => IBobrilChildren;
     e: HTMLElement;
-    c: IBobrilCacheChildren;
+    c: IBobrilCacheNode[];
 }
 
 declare type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -30,11 +30,11 @@ interface IBobrilStatic {
     getRoots(): IBobrilRoots;
 
     // Low level method used just for testing
-    createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto:Element, createBefore:Node|Node[]): IBobrilCacheNode;
+    createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto:Element, createBefore:Node): IBobrilCacheNode;
     // Low level method used just for testing
-    updateNode(n: IBobrilNode, c: IBobrilCacheNode): IBobrilCacheNode;
+    updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto:Element, createBefore:Node): IBobrilCacheNode;
     // Low level method used just for testing
-    updateChildren(element: HTMLElement, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilNode): IBobrilCacheChildren;
+    updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilNode, createBefore:Node): IBobrilCacheNode[];
     // Low level method used just for testing
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
@@ -92,6 +92,7 @@ interface IBobrilComponent {
     // it does prevent calling render method twice on same node
     id?: string;
     // called before new node in vdom should be created, me members (tag, attrs, children) could be modified, ctx is initialized to { data: me.data||{}, me: me }
+    // WARNING don't use 3rd and 4th parameters they are internal and should be used only for vml in IE8, after IE8 will be not be supported these parameters will be removed!
     init? (ctx: IBobrilCtx, me: IBobrilCacheNode, createInto:Element, createBefore:Node): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
     // in case of init this is called after init method, oldMe is equal to undefined in that case
