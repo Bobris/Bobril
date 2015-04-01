@@ -82,6 +82,18 @@ describe("createNode", () => {
         };
         b.createNode({ component: comp1 }, null, document.createElement("div"), null);
     });
+    it("it skips virtual node",()=>{
+        var r = b.createNode({ tag: "div", children: { children: { tag:"span", children: "ok" } } }, null, document.createElement("div"), null);
+        expectInsensitive((<HTMLElement>r.element).outerHTML, "<div><span>ok</span></div>");
+    });
+    it("empty virtual node",()=>{
+        var r = b.createNode({ tag: "div", children: {} }, null, document.createElement("div"), null);
+        expectInsensitive((<HTMLElement>r.element).outerHTML, "<div></div>");
+    });
+    it("more empty virtual nodes",()=>{
+        var r = b.createNode({ tag: "div", children: [ { children:[] }, "ok", {} ] }, null, document.createElement("div"), null);
+        expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>ok</div>");
+    });
 });
 
 describe("updateNode", () => {
@@ -120,6 +132,12 @@ describe("updateNode", () => {
         var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null, scope, null);
         r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r, scope, null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>d<i>e</i>f</div>");
+    });
+    it("more empty virtual nodes",()=>{
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: [ { children:[] }, "ok", {} ] }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: [ { children:"o" }, "k", { tag:"span", children:"!" } ] }, r, scope, null);
+        expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>ok<span>!</span></div>");
     });
 
     function buildVdom(s: string): IBobrilNode {
