@@ -527,27 +527,39 @@ b = (function (window, document) {
         removeNodeRecursive(c);
     }
     var roots = Object.create(null);
-    function nodeContainsNode(c, n) {
+    function nodeContainsNode(c, n, resIndex, res) {
         var el = c.element;
+        var ch = c.children;
         if (isArray(el)) {
             for (var ii = 0; ii < el.length; ii++) {
-                if (el[ii] === n)
-                    return true;
+                if (el[ii] === n) {
+                    res.push(c);
+                    if (isArray(ch)) {
+                        return ch;
+                    }
+                    return null;
+                }
             }
         }
         else if (el == null) {
-            var ch = c.children;
             if (isArray(ch)) {
                 for (var i = 0; i < ch.length; i++) {
-                    if (nodeContainsNode(ch[i], n))
-                        return true;
+                    var result = nodeContainsNode(ch[i], n, resIndex, res);
+                    if (result !== undefined) {
+                        res.splice(resIndex, 0, c);
+                        return result;
+                    }
                 }
             }
         }
         else if (el === n) {
-            return true;
+            res.push(c);
+            if (isArray(ch)) {
+                return ch;
+            }
+            return null;
         }
-        return false;
+        return undefined;
     }
     function vdomPath(n) {
         var res = [];
@@ -571,15 +583,14 @@ b = (function (window, document) {
         rootFound2: for (j = 0; j < rootElements.length; j++) {
             if (n === rootElements[j]) {
                 var rc = roots[rootIds[j]].c;
-                if (typeof rc !== "string")
-                    for (var k = 0; k < rc.length; k++) {
-                        var rck = rc[k];
-                        if (nodeContainsNode(rck, currentNode)) {
-                            res.push(rck);
-                            currentCacheArray = rck.children;
-                            break rootFound2;
-                        }
+                for (var k = 0; k < rc.length; k++) {
+                    var rck = rc[k];
+                    var findResult = nodeContainsNode(rck, currentNode, res.length, res);
+                    if (findResult !== undefined) {
+                        currentCacheArray = findResult;
+                        break rootFound2;
                     }
+                }
             }
         }
         while (nodeStack.length) {
@@ -587,9 +598,9 @@ b = (function (window, document) {
             if (currentCacheArray && currentCacheArray.length)
                 for (var i = 0, l = currentCacheArray.length; i < l; i++) {
                     var bn = currentCacheArray[i];
-                    if (bn.element === currentNode) {
-                        res.push(bn);
-                        currentCacheArray = bn.children;
+                    var findResult = nodeContainsNode(bn, currentNode, res.length, res);
+                    if (findResult !== undefined) {
+                        currentCacheArray = findResult;
                         currentNode = null;
                         break;
                     }
@@ -616,24 +627,28 @@ b = (function (window, document) {
         c.data = n.data;
         pushInitCallback(c, true);
     }
-    function updateNode(n, c, createInto, createBefore) {
+    function updateNode(n, c, createInto, createBefore, deepness) {
         var component = n.component;
         var backupInSvg = inSvg;
         var bigChange = false;
-        if (component && c.ctx != null) {
+        var ctx = c.ctx;
+        if (component && ctx != null) {
+            if (ctx[ctxInvalidated] === frame) {
+                deepness = Math.max(deepness, ctx[ctxDeepness]);
+            }
             if (component.id !== c.component.id) {
                 bigChange = true;
             }
             else {
                 if (c.parent != undefined)
-                    c.ctx.cfg = findCfg(c.parent);
+                    ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(c.ctx, n, c))
+                    if (!component.shouldChange(ctx, n, c))
                         return c;
-                c.ctx.data = n.data || {};
+                ctx.data = n.data || {};
                 c.component = component;
                 if (component.render)
-                    component.render(c.ctx, n, c);
+                    component.render(ctx, n, c);
                 c.cfg = n.cfg;
             }
         }
@@ -646,7 +661,7 @@ b = (function (window, document) {
         var newChildren = n.children;
         var cachedChildren = c.children;
         var tag = n.tag;
-        if (bigChange || (component && c.ctx == null)) {
+        if (bigChange || (component && ctx == null)) {
         }
         else if (tag === "/") {
             if (c.tag === "/" && cachedChildren === newChildren) {
@@ -669,7 +684,13 @@ b = (function (window, document) {
                     }
                 }
                 else {
-                    c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore);
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(c.children, createInto, createBefore);
+                    }
+                    else {
+                        c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
+                    }
                 }
                 finishUpdateNode(n, c, component);
                 return c;
@@ -691,7 +712,13 @@ b = (function (window, document) {
                     }
                 }
                 else {
-                    cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null);
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(c.children, el, createBefore);
+                    }
+                    else {
+                        cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
+                    }
                 }
                 c.children = cachedChildren;
                 finishUpdateNode(n, c, component);
@@ -761,8 +788,8 @@ b = (function (window, document) {
         updateCall = [];
         updateInstance = [];
     }
-    function updateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element) {
-        cachedChildren[cachedIndex] = updateNode(newNode, cachedChildren[cachedIndex], element, findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore));
+    function updateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness) {
+        cachedChildren[cachedIndex] = updateNode(newNode, cachedChildren[cachedIndex], element, findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore), deepness);
     }
     function reorderInUpdateChildrenRec(c, element, before) {
         var el = c.element;
@@ -791,16 +818,16 @@ b = (function (window, document) {
             reorderInUpdateChildrenRec(cur, element, before);
         }
     }
-    function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element) {
+    function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness) {
         var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
         var cur = cachedChildren[cachedIndex];
         var what = findFirstNode(cur);
         if (what != null && what !== before) {
             reorderInUpdateChildrenRec(cur, element, before);
         }
-        cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before);
+        cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
     }
-    function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore) {
+    function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
         if (newChildren == null)
             newChildren = [];
         if (!isArray(newChildren)) {
@@ -839,7 +866,7 @@ b = (function (window, document) {
         var cachedIndex = 0;
         while (newIndex < newEnd && cachedIndex < cachedEnd) {
             if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
-                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 newIndex++;
                 cachedIndex++;
                 continue;
@@ -848,7 +875,7 @@ b = (function (window, document) {
                 if (newChildren[newEnd - 1].key === cachedChildren[cachedEnd - 1].key) {
                     newEnd--;
                     cachedEnd--;
-                    updateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element);
+                    updateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness);
                     if (newIndex < newEnd && cachedIndex < cachedEnd)
                         continue;
                 }
@@ -858,7 +885,7 @@ b = (function (window, document) {
                 if (newChildren[newIndex].key === cachedChildren[cachedEnd - 1].key) {
                     cachedChildren.splice(cachedIndex, 0, cachedChildren[cachedEnd - 1]);
                     cachedChildren.splice(cachedEnd, 1);
-                    reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element);
+                    reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                     newIndex++;
                     cachedIndex++;
                     continue;
@@ -868,7 +895,7 @@ b = (function (window, document) {
                     cachedChildren.splice(cachedIndex, 1);
                     cachedEnd--;
                     newEnd--;
-                    reorderAndUpdateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element);
+                    reorderAndUpdateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness);
                     continue;
                 }
             }
@@ -976,7 +1003,7 @@ b = (function (window, document) {
             }
             if (cachedIndex === akpos + delta) {
                 // Inplace update
-                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 newIndex++;
                 cachedIndex++;
             }
@@ -985,7 +1012,7 @@ b = (function (window, document) {
                 cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
                 delta++;
                 cachedChildren[akpos + delta] = null;
-                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element);
+                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 cachedIndex++;
                 cachedEnd++;
                 cachedLength++;
@@ -1041,7 +1068,7 @@ b = (function (window, document) {
                     newIndex++;
                     continue;
                 }
-                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element, deepness);
                 keyLess--;
                 newIndex++;
                 cachedIndex = newIndex;
@@ -1076,7 +1103,7 @@ b = (function (window, document) {
             if (cachedIndex < cachedEnd) {
                 cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex + 1, 1);
-                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element);
+                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element, deepness);
                 keyLess--;
                 newIndex++;
                 cachedIndex++;
@@ -1122,6 +1149,7 @@ b = (function (window, document) {
         }
     }
     var ctxInvalidated = "$invalidated";
+    var ctxDeepness = "$deepness";
     var fullRecreateRequested = false;
     var scheduled = false;
     var uptime = 0;
@@ -1181,13 +1209,18 @@ b = (function (window, document) {
         }
     }
     function selectedUpdate(cache, element, createBefore) {
-        for (var i = 0; i < cache.length; i++) {
+        var len = cache.length;
+        for (var i = 0; i < len; i++) {
             var node = cache[i];
             if (node.ctx != null && node.ctx[ctxInvalidated] === frame) {
-                cache[i] = updateNode(cloneNode(node), node, element, createBefore);
+                cache[i] = updateNode(cloneNode(node), node, element, createBefore, node.ctx[ctxDeepness]);
             }
             else if (isArray(node.children)) {
-                selectedUpdate(node.children, node.element || element, createBefore);
+                var backupInSvg = inSvg;
+                if (node.tag === "svg")
+                    inSvg = true;
+                selectedUpdate(node.children, node.element || element, findNextNode(cache, i, len, createBefore));
+                inSvg = backupInSvg;
             }
         }
     }
@@ -1197,6 +1230,28 @@ b = (function (window, document) {
         var res = afterFrameCallback;
         afterFrameCallback = callback;
         return res;
+    }
+    function findLastNode(children) {
+        for (var i = children.length - 1; i >= 0; i--) {
+            var c = children[i];
+            var el = c.element;
+            if (el != null) {
+                if (isArray(el)) {
+                    var l = el.length;
+                    if (l === 0)
+                        continue;
+                    return el[l - 1];
+                }
+                return el;
+            }
+            var ch = c.children;
+            if (!isArray(ch))
+                continue;
+            var res = findLastNode(ch);
+            if (res != null)
+                return res;
+        }
+        return null;
     }
     function update(time) {
         renderFrameBegin = now();
@@ -1215,24 +1270,36 @@ b = (function (window, document) {
             if (!r)
                 continue;
             var rc = r.c;
+            var insertBefore = findLastNode(rc);
+            if (insertBefore != null)
+                insertBefore = insertBefore.nextSibling;
             if (fullRefresh) {
                 var newChildren = r.f();
                 r.e = r.e || document.body;
-                r.c = updateChildren(r.e, newChildren, rc, null, null);
+                r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
             }
             else {
-                selectedUpdate(rc, r.e, null);
+                selectedUpdate(rc, r.e, insertBefore);
             }
         }
         callPostCallbacks();
         afterFrameCallback(roots["0"].c);
         lastFrameDuration = now() - renderFrameBegin;
     }
-    function invalidate(ctx) {
+    function invalidate(ctx, deepness) {
         if (fullRecreateRequested)
             return;
         if (ctx != null) {
-            ctx[ctxInvalidated] = frame + 1;
+            if (deepness == undefined)
+                deepness = 1e6;
+            if (ctx[ctxInvalidated] == frame + 1) {
+                ctx[ctxInvalidated] = frame + 1;
+                ctx[ctxDeepness] = deepness;
+            }
+            else {
+                if (deepness > ctx[ctxDeepness])
+                    ctx[ctxDeepness] = deepness;
+            }
         }
         else {
             fullRecreateRequested = true;
@@ -1255,7 +1322,7 @@ b = (function (window, document) {
         if (!root)
             return;
         if (root.c.length) {
-            root.c = updateChildren(root.e, [], root.c, null, null);
+            root.c = updateChildren(root.e, [], root.c, null, null, 1e9);
         }
         delete roots[id];
     }

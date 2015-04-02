@@ -26,14 +26,15 @@ Features in core:
 - Virtual DOM diffing
 - Components remember state in VDom cache
 - Components does not need to be HTML Elements - where is component(0-1) to HTMLNode(0-n) mapping (New in 2.0)
-- Support for partial invalidates for even faster redraws
+- Support for partial invalidates for even faster redraws (including recursion deepness limited new in 2.0)
 - Normalization of Events
 - support for IE8+, Android 4.0+
 - batching of redrawing
 - any html element could be root
 - automatic passing of global configuration/context to children
 - automatic adding of "px" to length like inline style (New in 2.0)
-- under 14kb minified
+- reference to children nodes ala React (New in 2.0)
+- under 15kb minified
 
 Features in extensions:
 - OnChange event and value attribute normalization
