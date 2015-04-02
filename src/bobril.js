@@ -1292,7 +1292,7 @@ b = (function (window, document) {
         if (ctx != null) {
             if (deepness == undefined)
                 deepness = 1e6;
-            if (ctx[ctxInvalidated] == frame + 1) {
+            if (ctx[ctxInvalidated] !== frame + 1) {
                 ctx[ctxInvalidated] = frame + 1;
                 ctx[ctxDeepness] = deepness;
             }

@@ -1283,7 +1283,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             return;
         if (ctx != null) {
             if (deepness == undefined) deepness = 1e6;
-            if ((<any>ctx)[ctxInvalidated] == frame + 1) {
+            if ((<any>ctx)[ctxInvalidated] !== frame + 1) {
                 (<any>ctx)[ctxInvalidated] = frame + 1;
                 (<any>ctx)[ctxDeepness] = deepness;
             } else {
