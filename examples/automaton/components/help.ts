@@ -3,12 +3,12 @@ module Automata.Components.Help {
         return [
             {
                 tag: 'div',
-                style: { 'font-weight': 'bold' },
+                style: { fontWeight: 'bold' },
                 children: caption
             },
             {
                 tag: 'div',
-                style: { 'margin-bottom': 10 },
+                style: { marginBottom: 10 },
                 children: text
             }
         ];
@@ -21,17 +21,17 @@ module Automata.Components.Help {
             me.style = {
                 width: 300,
                 height: 480,
-                'margin-left': 20,
-                float: 'left',
+                marginLeft: 20,
+                cssFloat: 'left',
                 position: 'relative'
             };
             me.children = [
                 {
                     tag: 'div',
                     style: {
-                        'font-size': '1.1em',
-                        'font-weight': 'bold',
-                        'margin-bottom': 10
+                        fontSize: '1.1em',
+                        fontWeight: 'bold',
+                        marginBottom: 10
                     },
                     children: 'Help'
                 },

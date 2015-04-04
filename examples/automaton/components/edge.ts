@@ -36,7 +36,7 @@ module Automata.Components.Edge {
             tag: 'path',
             className,
             style: {
-                'marker-end': 'url(#arrow)'
+                markerEnd: 'url(#arrow)'
             },
             attrs: { d }
         };

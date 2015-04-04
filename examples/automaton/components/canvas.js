@@ -12,7 +12,7 @@ var Automata;
                         width: 800,
                         height: 480,
                         border: '1px solid black',
-                        float: 'left'
+                        cssFloat: 'left'
                     };
                     me.children = ctx.data.content;
                 }

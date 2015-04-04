@@ -63,9 +63,9 @@ var Automata;
                     tag: 'path',
                     className: 'new-line',
                     attrs: {
-                        d: transition.isLoop() ? getLoop(rect, transition) : getStandard(rect, transition),
-                        style: 'marker-end: url(#arrow' + url + ');'
-                    }
+                        d: transition.isLoop() ? getLoop(rect, transition) : getStandard(rect, transition)
+                    },
+                    style: { markerEnd: 'url(#arrow' + url + ')' }
                 };
             }
             function getVertices(ctx, onMove, addTransition, stateSelected) {

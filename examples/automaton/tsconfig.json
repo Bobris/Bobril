@@ -10,7 +10,7 @@
     },
     "filesGlob": [
         "./**/*.ts",
-        "../../dist/*.d.ts",
+        "../../src/*.d.ts",
         "!./node_modules/**/*.ts"
     ],
     "files": [
@@ -30,17 +30,17 @@
         "./models/transition.ts",
         "./models/vector.ts",
         "./utils/string.ts",
-        "../../dist/bobril.d.ts",
-        "../../dist/bobril.focus.d.ts",
-        "../../dist/bobril.media.d.ts",
-        "../../dist/bobril.mouse.d.ts",
-        "../../dist/bobril.onchange.d.ts",
-        "../../dist/bobril.onkey.d.ts",
-        "../../dist/bobril.promise.d.ts",
-        "../../dist/bobril.router.d.ts",
-        "../../dist/bobril.scroll.d.ts",
-        "../../dist/bobril.swipe.d.ts",
-        "../../dist/bobril.vg.d.ts",
-        "../../dist/lib.touch.d.ts"
+        "../../src/bobril.d.ts",
+        "../../src/bobril.focus.d.ts",
+        "../../src/bobril.media.d.ts",
+        "../../src/bobril.mouse.d.ts",
+        "../../src/bobril.onchange.d.ts",
+        "../../src/bobril.onkey.d.ts",
+        "../../src/bobril.promise.d.ts",
+        "../../src/bobril.router.d.ts",
+        "../../src/bobril.scroll.d.ts",
+        "../../src/bobril.swipe.d.ts",
+        "../../src/bobril.vg.d.ts",
+        "../../src/lib.touch.d.ts"
     ]
 }

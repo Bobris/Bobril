@@ -38,7 +38,7 @@ var Automata;
                     tag: 'path',
                     className: className,
                     style: {
-                        'marker-end': 'url(#arrow)'
+                        markerEnd: 'url(#arrow)'
                     },
                     attrs: { d: d }
                 };
