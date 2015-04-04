@@ -1212,8 +1212,10 @@ b = (function (window, document) {
         var len = cache.length;
         for (var i = 0; i < len; i++) {
             var node = cache[i];
-            if (node.ctx != null && node.ctx[ctxInvalidated] === frame) {
-                cache[i] = updateNode(cloneNode(node), node, element, createBefore, node.ctx[ctxDeepness]);
+            var ctx = node.ctx;
+            if (ctx != null && ctx[ctxInvalidated] === frame) {
+                var cloned = { data: ctx.data, component: node.component };
+                cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness]);
             }
             else if (isArray(node.children)) {
                 var backupInSvg = inSvg;

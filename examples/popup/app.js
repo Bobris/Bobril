@@ -17,22 +17,22 @@ var PopupApp;
     function defaultButtonStyle(ctx) {
         var style = {
             display: "inline-block",
-            padding: "3px",
+            padding: 3,
             boxSizing: "border-box",
             background: "#fff",
             outline: "none",
             color: "#000",
             textAlign: "center",
-            borderRadius: "3px",
+            borderRadius: 3,
             borderColor: "#000",
             borderStyle: "solid",
-            borderWidth: "1px",
-            minWidth: "60px",
+            borderWidth: 1,
+            minWidth: 60,
             cursor: "pointer",
             userSelect: "none",
             position: "relative",
-            left: "0px",
-            top: "0px"
+            left: 0,
+            top: 0
         };
         if (ctx.disabled) {
             style.background = "#ccc";
@@ -40,24 +40,26 @@ var PopupApp;
             return style;
         }
         if (ctx.focused) {
-            style.borderWidth = "2px";
-            style.padding = "2px";
+            style.borderWidth = 2;
+            style.padding = 2;
         }
         if (ctx.hover) {
             style.background = "#e2e2f2";
         }
         if (ctx.down) {
-            style.left = "1px";
-            style.top = "1px";
+            style.left = 1;
+            style.top = 1;
         }
         return style;
     }
     var ButtonComp = {
         render: function (ctx, me) {
+            me.tag = "div";
             ctx.disabled = ctx.data.action === null;
             ctx.down = ctx.hover && ctx.mousedown || ctx.keydown;
             me.style = ctx.cfg.buttonStyle(ctx);
-            me.attrs.tabIndex = ctx.disabled ? -1 : 0;
+            me.attrs = { tabIndex: ctx.disabled ? -1 : 0 };
+            me.children = ctx.data.content;
         },
         onFocus: function (ctx) {
             if (ctx.disabled)
@@ -130,11 +132,7 @@ var PopupApp;
     // pass action=null to paint disabled button
     function button(content, action) {
         return {
-            tag: "div",
-            style: undefined,
-            attrs: {},
-            children: content,
-            data: { action: action },
+            data: { action: action, content: content },
             component: ButtonComp
         };
     }
@@ -411,7 +409,7 @@ var PopupApp;
                     }
                 }, {
                     content: "No",
-                    style: 1 /* Default */,
+                    style: 2 /* Cancel */,
                     action: function () {
                         v6resolver(false);
                         v6resolver = null;

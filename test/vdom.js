@@ -21,19 +21,19 @@ describe("updateElement", function () {
     it("update style from string to object", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", style: "font-size:5px" }, null, scope, null);
-        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null);
+        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("update style from object to string", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", style: { fontSize: "5px" } }, null, scope, null);
-        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r, scope, null);
+        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("update style by removing property", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", style: { fontSize: "10px", color: "black" } }, null, scope, null);
-        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null);
+        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 });
@@ -91,43 +91,43 @@ describe("updateNode", function () {
     it("simple", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", children: "hello" }, null, scope, null);
-        r = b.updateNode({ tag: "div", children: "bye" }, r, scope, null);
+        r = b.updateNode({ tag: "div", children: "bye" }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>bye</div>");
     });
     it("change single child from text to span", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", children: "hello" }, null, scope, null);
-        r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r, scope, null);
+        r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div><span>ok</span></div>");
     });
     it("change single child from span to text", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } }, null, scope, null);
-        r = b.updateNode({ tag: "div", children: "ok" }, r, scope, null);
+        r = b.updateNode({ tag: "div", children: "ok" }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>ok</div>");
     });
     it("append text after text", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", children: "A" }, null, scope, null);
-        r = b.updateNode({ tag: "div", children: ["A", "B"] }, r, scope, null);
+        r = b.updateNode({ tag: "div", children: ["A", "B"] }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>AB</div>");
     });
     it("preppend text before text", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", children: "A" }, null, scope, null);
-        r = b.updateNode({ tag: "div", children: ["B", "A"] }, r, scope, null);
+        r = b.updateNode({ tag: "div", children: ["B", "A"] }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>BA</div>");
     });
     it("change html", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null, scope, null);
-        r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r, scope, null);
+        r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>d<i>e</i>f</div>");
     });
     it("more empty virtual nodes", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", children: [{ children: [] }, "ok", {}] }, null, scope, null);
-        r = b.updateNode({ tag: "div", children: [{ children: "o" }, "k", { tag: "span", children: "!" }] }, r, scope, null);
+        r = b.updateNode({ tag: "div", children: [{ children: "o" }, "k", { tag: "span", children: "!" }] }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>ok<span>!</span></div>");
     });
     function buildVdom(s) {
@@ -153,7 +153,7 @@ describe("updateNode", function () {
             c[i].id = "" + i;
         }
         var vdomUpdate = buildVdom(update);
-        r = b.updateNode(vdomUpdate, r, scope, null);
+        r = b.updateNode(vdomUpdate, r, scope, null, 1e6);
         var a = [];
         for (i = 0; i < r.children.length; i++) {
             var ch = r.children[i];

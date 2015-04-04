@@ -633,7 +633,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var ctx = c.ctx;
         if (component && ctx != null) {
             if ((<any>ctx)[ctxInvalidated] === frame) {
-                deepness = Math.max(deepness,(<any>ctx)[ctxDeepness]);
+                deepness = Math.max(deepness,  (<any>ctx)[ctxDeepness]);
             }
             if (component.id !== c.component.id) {
                 bigChange = true;
@@ -1204,8 +1204,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var len = cache.length;
         for (var i = 0; i < len; i++) {
             var node = cache[i];
-            if (node.ctx != null && (<any>node.ctx)[ctxInvalidated] === frame) {
-                cache[i] = updateNode(cloneNode(node), node, element, createBefore, (<any>node.ctx)[ctxDeepness]);
+            var ctx = node.ctx;
+            if (ctx != null && (<any>ctx)[ctxInvalidated] === frame) {
+                var cloned:IBobrilNode = { data: ctx.data, component: node.component };
+                cache[i] = updateNode(cloned, node, element, createBefore, (<any>ctx)[ctxDeepness]);
             } else if (isArray(node.children)) {
                 var backupInSvg = inSvg;
                 if (node.tag === "svg") inSvg = true;

@@ -9,6 +9,8 @@ var TestComponent = (function () {
         this.actions += "i:" + me.data.name + ";";
     };
     TestComponent.prototype.render = function (ctx, me, oldMe) {
+        if (ctx.data.setme)
+            b.assign(me, ctx.data.setme);
         this.contexts[me.data.name] = ctx;
         if (oldMe)
             this.actions += "ru:" + me.data.name + ";";
@@ -64,7 +66,7 @@ describe("livecycle", function () {
         var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
-        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r, scope, null);
+        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:1;ru:1;U:1;pu:1;");
     });
@@ -73,7 +75,7 @@ describe("livecycle", function () {
         var scope = document.createElement("div");
         var r = b.createNode({ children: "a" }, null, scope, null);
         b.callPostCallbacks();
-        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r, scope, null);
+        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
     });
@@ -83,7 +85,7 @@ describe("livecycle", function () {
         var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
-        b.updateNode({ tag: "div", component: c, data: { name: "1", change: false } }, r, scope, null);
+        b.updateNode({ tag: "div", component: c, data: { name: "1", change: false } }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:1;");
     });
@@ -111,7 +113,7 @@ describe("livecycle", function () {
                 component: c,
                 data: { name: "2", change: true }
             }
-        }, r, scope, null);
+        }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:1;ru:1;sc:2;ru:2;U:2;U:1;pu:2;pu:1;");
     });
@@ -139,7 +141,7 @@ describe("livecycle", function () {
                 component: c,
                 data: { name: "4", change: true }
             }
-        }, r, scope, null);
+        }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:3;ru:3;i:3;ri:3;i:4;ri:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
     });
@@ -184,9 +186,8 @@ describe("livecycle", function () {
             component: c,
             data: { name: "1" },
             children: {
-                tag: "div",
                 component: c,
-                data: { name: "2", change: true }
+                data: { name: "2", change: true, setme: { tag: "div" } }
             }
         }];
         b.init(function () {

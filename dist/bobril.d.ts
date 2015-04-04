@@ -22,6 +22,7 @@ interface IBobrilStatic {
     init(factory: () => IBobrilChildren, element?: HTMLElement): void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
     // you can pass just some ctx of some component and only that instance and its children to deepness nesting will be rerendered
+    // that node must be pure component it means before render it can have only data and component members defined
     // for deepness equal to zero only that node without its children will be rerendered
     // if deepness is not specified infinite deepness is implied
     invalidate(ctx?: Object, deepness?: number): void;

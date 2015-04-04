@@ -3,6 +3,8 @@
 /// <reference path="../../src/bobril.scroll.d.ts"/>
 
 module StickyHeaderApp {
+    var fastInvalidate = true;
+
     function h(tag: string, ...args: any[]): IBobrilNode {
         return { tag: tag, children: args };
     }
@@ -79,7 +81,10 @@ module StickyHeaderApp {
             (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
         if (c.sticky !== (scrolledPastTop && notScrolledPastBottom)) {
             c.sticky = !c.sticky;
-            b.invalidate();
+            if (fastInvalidate)
+                b.invalidate(ctx, 1);
+            else
+                b.invalidate();
             return;
         }
         if (c.lastSticky) {
@@ -120,12 +125,20 @@ module StickyHeaderApp {
     var StickyTableFixComp: IBobrilComponent = {
         id: "StickyTableFix",
         init(ctx: any) {
-            ctx.onScroll = () => b.invalidate();
+            ctx.onScroll = () => {
+                if (fastInvalidate) {
+                    b.invalidate(ctx, 0);
+                } else {
+                    b.invalidate();
+                }
+            }
             ctx.sticky = false;
             ctx.deltaCorr = 0;
         },
         render(ctx: any, me: IBobrilNode) {
             var header: IBobrilNode = ctx.data.header;
+            me.tag = "table";
+            me.style = ctx.data.style;
             ctx.lastSticky = ctx.sticky;
             ctx.borderCollapse = ctx.data.borderCollapse;
             if (ctx.sticky) {
@@ -179,7 +192,7 @@ module StickyHeaderApp {
     function stickyTableFix(borderCollapse: boolean, style: any, header: IBobrilNode, body: any): IBobrilNode {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "table", style: style, data: { borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
+        return { data: { style: style, borderCollapse: borderCollapse, header: header, body: body }, component: StickyTableFixComp };
     }
 
     function stickyUpdateDomAbs(ctx: any, me: IBobrilNode, element: HTMLElement) {
@@ -200,7 +213,8 @@ module StickyHeaderApp {
         var absElement = <HTMLElement>element.childNodes[1];
         var absElementStyle = absElement.style;
         if (scrolledPastTop && notScrolledPastBottom) {
-            absElementStyle.visibility = "visible";
+            if (absElementStyle.visibility !== "visible")
+                absElementStyle.visibility = "visible";
             var newTop = (isWindowScrolling ? winScroll[1] : newTopOffset) - offset[1];
             absElementStyle.left = c.deltaCorr + "px";
             absElementStyle.top = newTop + "px";
@@ -231,15 +245,20 @@ module StickyHeaderApp {
                     }
                     var s = (<HTMLElement>absHeader.childNodes[i]).style;
                     var w2 = w + "px";
-                    s.minWidth = w2;
-                    s.maxWidth = w2;
+                    if (s.minWidth !== w2 || s.maxWidth !== w2)
+                    {
+                        s.minWidth = w2;
+                        s.maxWidth = w2;
+                    }
                     if (ieWeirdness) {
-                        s.boxSizing = "border-box";
+                        if (s.boxSizing !== "border-box")
+                            s.boxSizing = "border-box";
                     }
                 }
             }
         } else {
-            absElementStyle.visibility = "hidden";
+            if (absElementStyle.visibility !== "hidden")
+                absElementStyle.visibility = "hidden";
         }
     }
 
@@ -247,13 +266,21 @@ module StickyHeaderApp {
         id: "StickyTableAbs",
         init(ctx: any) {
             ctx.deltaCorr = 0;
-            ctx.onScroll = () => b.invalidate();
+            ctx.onScroll = () => {
+                if (fastInvalidate) {
+                    b.invalidate(ctx, 0);
+                } else {
+                    b.invalidate();
+                }
+            }
         },
         render(ctx: any, me: IBobrilNode) {
             var header: IBobrilNode = ctx.data.header;
             var headerClone = b.cloneNode(header);
-            var styleClone = cloneObj(me.style);
+            var styleClone = cloneObj(ctx.data.style);
             styleClone.border = "none";
+            me.tag = "div";
+            me.style = ctx.data.style;
             me.children = [
                 {
                     tag: "table", attrs: me.attrs, className: me.className, style: me.style, children: [
@@ -293,7 +320,7 @@ module StickyHeaderApp {
     function stickyTableAbs(borderCollapse: boolean, style: any, header: IBobrilNode, body: any): IBobrilNode {
         style = cloneObj(style);
         style.borderCollapse = (borderCollapse ? "collapse" : "separate");
-        return { tag: "div", style: style, data: { header: header, body: body }, component: StickyTableAbsComp };
+        return { data: { style: style, header: header, body: body }, component: StickyTableAbsComp };
     }
 
     function headerCell(content: string): IBobrilNode {
@@ -322,13 +349,10 @@ module StickyHeaderApp {
     };
 
     var cols = 20;
-    var frame = 0;
     var borderSpacing = 5;
     var borderCollapse = false;
     var implStrategyAbs = true;
     b.init(() => {
-        frame++;
-
         function rows() {
             return range(1, 100).map(i => {
                 return h("tr", range(1, cols).map(j => bodyCell("Cell " + j + "/" + i)));
@@ -338,15 +362,19 @@ module StickyHeaderApp {
         var stickyTable = implStrategyAbs ? stickyTableAbs : stickyTableFix;
         return [
             h("h1", "Sticky Header Bobril sample"),
-            h("p", "Frame: " + frame + " Duration Last: " + b.lastFrameDuration()),
-            h("label", checkbox(implStrategyAbs, v=> {
+            h("p", "Frame: " + b.frame() + " Duration Last: " + b.lastFrameDuration()),
+            hs("div", { paddingBottom: 10 }, h("label", checkbox(fastInvalidate, v=> {
+                fastInvalidate = v;
+                b.invalidate();
+            }), "Fast Invalidate")),
+            hs("div", { paddingBottom: 10 }, h("label", checkbox(implStrategyAbs, v=> {
                 implStrategyAbs = v;
                 b.invalidate();
-            }), "Absolute Positioning"),
-            h("label", checkbox(borderCollapse, v=> {
+            }), "Absolute Positioning")),
+            hs("div", { paddingBottom: 10 }, h("label", checkbox(borderCollapse, v=> {
                 borderCollapse = v;
                 b.invalidate();
-            }), "Collapse borders"),
+            }), "Collapse borders")),
             " Border Spacing: ", pxinput(borderSpacing, (v) => {
                 borderSpacing = v;
                 b.invalidate();
