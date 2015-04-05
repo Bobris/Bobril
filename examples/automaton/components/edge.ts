@@ -9,12 +9,12 @@ module Automata.Components.Edge {
         var fromMid: number = new Models.Vector(fromPoint, midPoint).getLength();
         var midTo: number = new Models.Vector(midPoint, toPoint).getLength();
         if (Math.abs(fromMid + midTo - fromTo) < 0.001) {
-            return StringExt.format('M{0}L{1}', fromPoint, toPoint);
+            return `M${fromPoint}L${toPoint}`;
         } else {
             var scale: number = fromTo / (fromMid + midTo) / 2;
             var c1: Models.Point = new Models.Point(midPoint.x, midPoint.y).addVector(vectFromTo, -fromMid * scale / fromTo);
             var c2: Models.Point = new Models.Point(midPoint.x, midPoint.y).addVector(vectFromTo, midTo * scale / fromTo);
-            return StringExt.format('M{0}Q{1},{2}Q{3},{4}', fromPoint, c1, midPoint, c2, toPoint);
+            return `M${fromPoint}Q${c1},${midPoint}Q${c2},${toPoint}`;
         }
     }
 
@@ -24,7 +24,7 @@ module Automata.Components.Edge {
         var perpendicuar: Models.Vector = new Models.Vector(fromPoint, midPoint).getPerpendicular();
         var c1: Models.Point = new Models.Point(midPoint.x, midPoint.y).addVector(perpendicuar, -0.4);
         var c2: Models.Point = new Models.Point(midPoint.x, midPoint.y).addVector(perpendicuar, 0.4);
-        return StringExt.format('M{0}Q{1},{2}Q{3},{0}', fromPoint, c1, midPoint, c2);
+        return `M${fromPoint}Q${c1},${midPoint}Q${c2},${fromPoint}`;
     }
 
     function getEdgePath(transition: Models.Transition): string {

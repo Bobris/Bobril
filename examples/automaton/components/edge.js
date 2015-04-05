@@ -13,13 +13,13 @@ var Automata;
                 var fromMid = new Automata.Models.Vector(fromPoint, midPoint).getLength();
                 var midTo = new Automata.Models.Vector(midPoint, toPoint).getLength();
                 if (Math.abs(fromMid + midTo - fromTo) < 0.001) {
-                    return StringExt.format('M{0}L{1}', fromPoint, toPoint);
+                    return "M" + fromPoint + "L" + toPoint;
                 }
                 else {
                     var scale = fromTo / (fromMid + midTo) / 2;
                     var c1 = new Automata.Models.Point(midPoint.x, midPoint.y).addVector(vectFromTo, -fromMid * scale / fromTo);
                     var c2 = new Automata.Models.Point(midPoint.x, midPoint.y).addVector(vectFromTo, midTo * scale / fromTo);
-                    return StringExt.format('M{0}Q{1},{2}Q{3},{4}', fromPoint, c1, midPoint, c2, toPoint);
+                    return "M" + fromPoint + "Q" + c1 + "," + midPoint + "Q" + c2 + "," + toPoint;
                 }
             }
             function getLoopPath(transition) {
@@ -28,7 +28,7 @@ var Automata;
                 var perpendicuar = new Automata.Models.Vector(fromPoint, midPoint).getPerpendicular();
                 var c1 = new Automata.Models.Point(midPoint.x, midPoint.y).addVector(perpendicuar, -0.4);
                 var c2 = new Automata.Models.Point(midPoint.x, midPoint.y).addVector(perpendicuar, 0.4);
-                return StringExt.format('M{0}Q{1},{2}Q{3},{0}', fromPoint, c1, midPoint, c2);
+                return "M" + fromPoint + "Q" + c1 + "," + midPoint + "Q" + c2 + "," + fromPoint;
             }
             function getEdgePath(transition) {
                 return transition.isLoop() ? getLoopPath(transition) : getStandardPath(transition);
