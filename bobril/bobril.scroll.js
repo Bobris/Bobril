@@ -39,7 +39,6 @@
     }
     var isHtml = /^(?:html)$/i;
     var isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
-    // inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js	
     function isScrollable(el) {
         var styles = (window.getComputedStyle ? window.getComputedStyle(el) : el.currentStyle);
         var res = [true, true];
@@ -51,7 +50,6 @@
         res[1] = res[1] && el.scrollHeight > el.clientHeight;
         return res;
     }
-    // returns standart X,Y order
     function getWindowScroll() {
         var top = window.pageYOffset;
         var left = window.pageXOffset;
@@ -69,4 +67,3 @@
     b.isScrollable = isScrollable;
     b.getWindowScroll = getWindowScroll;
 })(b, window);
-//# sourceMappingURL=bobril.scroll.js.map

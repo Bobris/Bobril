@@ -5,7 +5,7 @@
         "module": "commonjs",
         "declaration": false,
         "noImplicitAny": true,
-        "removeComments": true,
+        "removeComments": false,
         "noLib": false
     },
     "compileOnSave": false,

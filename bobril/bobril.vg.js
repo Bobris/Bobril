@@ -17,8 +17,7 @@
     function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
         var angleInRadians = angleInDegrees * Math.PI / 180.0;
         return {
-            x: centerX + (radius * Math.sin(angleInRadians)),
-            y: centerY - (radius * Math.cos(angleInRadians))
+            x: centerX + (radius * Math.sin(angleInRadians)), y: centerY - (radius * Math.cos(angleInRadians))
         };
     }
     function svgDescribeArc(x, y, radius, startAngle, endAngle, startWithLine) {
@@ -36,9 +35,7 @@
         else {
             if (radius === 0) {
                 return [
-                    startWithLine ? "L" : "M",
-                    x,
-                    y
+                    startWithLine ? "L" : "M", x, y
                 ].join(" ");
             }
         }
@@ -47,17 +44,7 @@
         var arcSweep = (absDeltaAngle <= 180) ? "0" : "1";
         var largeArg = (endAngle > startAngle) ? "0" : "1";
         var d = [
-            (startWithLine ? "L" : "M"),
-            start.x,
-            start.y,
-            "A",
-            radius,
-            radius,
-            0,
-            arcSweep,
-            largeArg,
-            end.x,
-            end.y
+            (startWithLine ? "L" : "M"), start.x, start.y, "A", radius, radius, 0, arcSweep, largeArg, end.x, end.y
         ].join(" ");
         if (close)
             d += "Z";
@@ -99,17 +86,13 @@
         else {
             if (radius === 0) {
                 return (startWithLine ? "l" : "m") + [
-                    vmlCoord(x),
-                    vmlCoord(y)
+                    vmlCoord(x), vmlCoord(y)
                 ].join(",");
             }
         }
         var radiusInStr = vmlCoord(radius);
         var d = (startWithLine ? "ae" : "al") + [
-            vmlCoord(x),
-            vmlCoord(y),
-            radiusInStr,
-            radiusInStr,
+            vmlCoord(x), vmlCoord(y), radiusInStr, radiusInStr,
             ((90 - startAngle) * 65536).toFixed(0),
             ((startAngle - endAngle) * 65536).toFixed(0)
         ].join(",");
@@ -143,7 +126,7 @@
         "circle": [3, svgCircle, vmlCircle],
         "pie": [6, svgPie, vmlPie]
     };
-    function svgChildComponentInit(ctx, me) {
+    function svgChildComponentRender(ctx, me) {
         me.tag = "path";
         var attrs = {};
         var data = me.data;
@@ -196,7 +179,7 @@
         me.attrs = attrs;
     }
     var svgChildComponent = {
-        render: svgChildComponentInit
+        render: svgChildComponentRender
     };
     function svgComponentInit(ctx, me) {
         me.tag = "svg";
@@ -299,18 +282,22 @@
         init: vmlChildComponentInit,
         render: vmlChildComponentRender
     };
-    function vmlComponentInit(ctx, me) {
+    function vmlComponentRender(ctx, me) {
         me.tag = "div";
         me.style = {
             position: "absolute",
             width: me.data.width,
-            height: me.data.height,
-            clip: "rect(0," + me.data.width + "," + me.data.height + ",0)"
+            height: me.data.height
         };
         recSetComponent(me.children, vmlChildComponent);
     }
+    function vmlPostDom(ctx, me, element) {
+        element.style.clip = "rect(0," + element.offsetWidth + "px," + element.offsetHeight + "px,0)";
+    }
     var vmlComponent = {
-        render: vmlComponentInit
+        render: vmlComponentRender,
+        postInitDom: vmlPostDom,
+        postUpdateDom: vmlPostDom
     };
     var implType = (window.SVGAngle || document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1") ? 1 : 2);
     if (implType === 2) {
@@ -323,7 +310,6 @@
         }
     }
     if (implType === 2) {
-        // In IE DocumentFragment is actually fully featured Document
         vmlDocument = document.createDocumentFragment();
         vmlDocument.namespaces.add("v", "urn:schemas-microsoft-com:vml");
         b.vg = vmlComponent;
@@ -335,4 +321,3 @@
         b.vg = {};
     }
 })(b, window, document);
-//# sourceMappingURL=bobril.vg.js.map

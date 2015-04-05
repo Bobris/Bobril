@@ -11,7 +11,6 @@
             }
         }
         var onreadystatechange = 'onreadystatechange';
-        // Modern browsers, fastest async
         if (window.MutationObserver) {
             var hiddenDiv = document.createElement("div");
             (new MutationObserver(executeCallbacks)).observe(hiddenDiv, { attributes: true });
@@ -69,7 +68,6 @@
             };
         }
     })();
-    // Polyfill for Function.prototype.bind
     function bind(fn, thisArg) {
         return function () {
             fn.apply(thisArg, arguments);
@@ -110,12 +108,6 @@
         this.v = newValue;
         finale.call(this);
     }
-    /**
-     * Take a potentially misbehaving resolver function and make sure
-     * onFulfilled and onRejected are only called once.
-     *
-     * Makes no guarantees about asynchrony.
-     */
     function doResolve(fn, onFulfilled, onRejected) {
         var done = false;
         try {
@@ -182,9 +174,7 @@
                     if (val && (typeof val === 'object' || typeof val === 'function')) {
                         var then = val.then;
                         if (typeof then === 'function') {
-                            then.call(val, function (val) {
-                                res(i, val);
-                            }, reject);
+                            then.call(val, function (val) { res(i, val); }, reject);
                             return;
                         }
                     }
@@ -221,4 +211,5 @@
     b.asap = asap;
     b.Promise = Promise;
 })(b, window, document);
-//# sourceMappingURL=bobril.promise.js.map
+if (!Promise)
+    Promise = b.Promise;

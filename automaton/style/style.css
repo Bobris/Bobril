@@ -1,0 +1,105 @@
+body {
+  background-color: #fafafa !important;
+}
+.canvas {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  outline: none;
+}
+
+.canvas .new-line {
+  fill: none;
+  stroke: blue;
+  stroke-width: 1;
+}
+.canvas .edge.selected .edge-invisible {
+  opacity: 0.15;
+}
+.canvas .edge .edge-line {
+  fill: none;
+  stroke: blue;
+  stroke-width: 1;
+}
+.canvas .edge .edge-invisible {
+  fill: none;
+  stroke: blue;
+  opacity: 0.001;
+  stroke-width: 10;
+}
+.canvas .edge .edge-invisible:hover + .edge-mid-point {
+  stroke: black;
+  stroke-width: 2;
+  fill: white;
+}
+.canvas .edge .edge-mid-point {
+  stroke: gray;
+  stroke-width: 1;
+  fill: none;
+}
+.canvas .edge .edge-mid-point:hover {
+  stroke: black;
+  stroke-width: 2;
+  fill: white;
+  cursor: move;
+}
+.canvas .edge .edge-text:hover {
+  cursor: move;
+  font-weight: bold;
+}
+.canvas .edge .edge-text:hover + .edge-text-line {
+  stroke: gray;
+  stroke-width: 1;
+  stroke-dasharray: 3,3;
+}
+.canvas .vertex.selected .vertex-circle-invisible {
+  opacity: 0.2;
+}
+.canvas .vertex .vertex-circle-invisible {
+  opacity: 0.001;
+  stroke: black;
+  stroke-width: 8;
+  fill: none;
+}
+.canvas .vertex:hover {
+  cursor: move;
+}
+.canvas .vertex:hover.cannot-move {
+  cursor: default;
+}
+.canvas .vertex:hover .vertex-circle {
+  stroke: red;
+  stroke-width: 3;
+}
+.canvas .vertex:hover .vertex-text {
+  fill: red;
+}
+.canvas .vertex:hover .vertex-circle-accept {
+  stroke: red;
+}
+.canvas .vertex .vertex-text {
+  font-weight: bold;
+  text-anchor: middle;
+}
+.canvas .vertex .vertex-circle {
+  stroke: black;
+  stroke-width: 2;
+}
+.canvas .vertex .vertex-circle-accept {
+  stroke: black;
+  stroke-width: 1;
+  fill: none;
+}
+.canvas .vertex .vertex-start-line {
+  stroke: blue;
+  stroke-width: 1;
+}
+.canvas #arrow {
+  stroke: black;
+  fill: black;
+}
+.canvas #arrow-new-line {
+  stroke: black;
+  fill: black;
+}

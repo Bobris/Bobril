@@ -28,8 +28,7 @@ var LibSizeApp;
         var texts = [];
         var count = libSizeData.parts.length;
         texts.push({
-            tag: "div",
-            style: {
+            tag: "div", style: {
                 position: "absolute",
                 textAlign: "center",
                 width: 500,
@@ -40,8 +39,7 @@ var LibSizeApp;
             children: "Bobril Minified Component Size"
         });
         texts.push({
-            tag: "div",
-            style: {
+            tag: "div", style: {
                 position: "absolute",
                 textAlign: "center",
                 width: 500,
@@ -65,15 +63,12 @@ var LibSizeApp;
             var legendy = screenHeight * 0.5 - legenddy * count * 0.5;
             path.push({
                 data: {
-                    path: ["pie", screenWidth * 0.4 + expand * Math.sin(exangle), screenHeight * 0.5 - expand * Math.cos(exangle), pieRadius, 0, angle, angle + myangle, "rect", legendx, legendy + i * legenddy, legendr, legendr],
-                    fill: "#" + hex2(red) + hex2(green) + hex2(blue),
-                    stroke: "#FFFFFF",
-                    strokeWidth: 1
+                    path: ["pie", screenWidth * 0.4 + expand * Math.sin(exangle), screenHeight * 0.5 - expand * Math.cos(exangle), pieRadius, 0, angle, angle + myangle,
+                        "rect", legendx, legendy + i * legenddy, legendr, legendr], fill: "#" + hex2(red) + hex2(green) + hex2(blue), stroke: "#FFFFFF", strokeWidth: 1
                 }
             });
             texts.push({
-                tag: "div",
-                style: {
+                tag: "div", style: {
                     position: "absolute",
                     top: Math.round(legendy + i * legenddy),
                     left: Math.round(legendx + legenddy)
@@ -81,8 +76,7 @@ var LibSizeApp;
                 children: libSizeData.parts[i].name
             });
             texts.push({
-                tag: "div",
-                style: {
+                tag: "div", style: {
                     position: "absolute",
                     textAlign: "right",
                     width: 60,
@@ -95,8 +89,7 @@ var LibSizeApp;
         }
         b.invalidate();
         return {
-            tag: "div",
-            style: { position: "relative", width: "100%", height: "100%" },
+            tag: "div", style: { position: "relative", width: "100%", height: "100%" },
             children: [
                 {
                     component: b.vg,
@@ -108,4 +101,3 @@ var LibSizeApp;
         };
     });
 })(LibSizeApp || (LibSizeApp = {}));
-//# sourceMappingURL=app.js.map

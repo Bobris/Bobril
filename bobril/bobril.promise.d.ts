@@ -20,3 +20,5 @@ interface IBobrilStatic {
     // Mostly Promise A+ compatible (only exception is that 'then' does not ignore non functions parameters)
     Promise?: PromiseImpl;
 }
+
+declare var Promise: PromiseImpl;

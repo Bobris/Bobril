@@ -17,22 +17,22 @@ var PopupApp;
     function defaultButtonStyle(ctx) {
         var style = {
             display: "inline-block",
-            padding: "3px",
+            padding: 3,
             boxSizing: "border-box",
             background: "#fff",
             outline: "none",
             color: "#000",
             textAlign: "center",
-            borderRadius: "3px",
+            borderRadius: 3,
             borderColor: "#000",
             borderStyle: "solid",
-            borderWidth: "1px",
-            minWidth: "60px",
+            borderWidth: 1,
+            minWidth: 60,
             cursor: "pointer",
             userSelect: "none",
             position: "relative",
-            left: "0px",
-            top: "0px"
+            left: 0,
+            top: 0
         };
         if (ctx.disabled) {
             style.background = "#ccc";
@@ -40,24 +40,26 @@ var PopupApp;
             return style;
         }
         if (ctx.focused) {
-            style.borderWidth = "2px";
-            style.padding = "2px";
+            style.borderWidth = 2;
+            style.padding = 2;
         }
         if (ctx.hover) {
             style.background = "#e2e2f2";
         }
         if (ctx.down) {
-            style.left = "1px";
-            style.top = "1px";
+            style.left = 1;
+            style.top = 1;
         }
         return style;
     }
     var ButtonComp = {
         render: function (ctx, me) {
+            me.tag = "div";
             ctx.disabled = ctx.data.action === null;
             ctx.down = ctx.hover && ctx.mousedown || ctx.keydown;
             me.style = ctx.cfg.buttonStyle(ctx);
-            me.attrs.tabIndex = ctx.disabled ? -1 : 0;
+            me.attrs = { tabIndex: ctx.disabled ? -1 : 0 };
+            me.children = ctx.data.content;
         },
         onFocus: function (ctx) {
             if (ctx.disabled)
@@ -127,14 +129,9 @@ var PopupApp;
             }
         }
     };
-    // pass action=null to paint disabled button
     function button(content, action) {
         return {
-            tag: "div",
-            style: undefined,
-            attrs: {},
-            children: content,
-            data: { action: action },
+            data: { action: action, content: content },
             component: ButtonComp
         };
     }
@@ -191,9 +188,9 @@ var PopupApp;
                 }
                 return true;
             }; })(action);
-            if ((bb.style & 1 /* Default */) != 0)
+            if ((bb.style & PopupButtonStyle.Default) != 0)
                 defaultAction = action;
-            if ((bb.style & 2 /* Cancel */) != 0)
+            if ((bb.style & PopupButtonStyle.Cancel) != 0)
                 cancelAction = action;
             buttonNodes.push(button(bb.content, action));
         }
@@ -276,8 +273,7 @@ var PopupApp;
                                     cursor: "pointer",
                                     userSelect: "none",
                                     fontWeight: "bold"
-                                }, h("td", "×")))
-                            ]),
+                                }, h("td", "×")))]),
                             h("tr", {
                                 tag: "td",
                                 attrs: { colSpan: 2 },
@@ -358,74 +354,75 @@ var PopupApp;
                             v1 = false;
                             b.invalidate();
                         }, 1000);
-                    }),
-                    " ",
+                    }), " ",
                     button(v1 ? "Enabled" : "Disabled", v1 ? undefined : null)
                 ]),
                 h("div", [v1 && "Clicked"]),
                 d({}, [button("Show popup", function () {
-                    v2 = true;
-                    b.invalidate();
-                }), v2 && popup("First popup", "300px", [{
-                    content: "Ok",
-                    style: 1 /* Default */,
-                    action: function () {
-                        v3 = true;
+                        v2 = true;
                         b.invalidate();
-                        return true;
-                    }
-                }, {
-                    content: "Cancel",
-                    style: 2 /* Cancel */,
-                    action: function () {
-                        if (v5) {
-                            v6 = true;
+                    }),
+                    v2 && popup("First popup", "300px", [{
+                            content: "Ok", style: PopupButtonStyle.Default, action: function () {
+                                v3 = true;
+                                b.invalidate();
+                                return true;
+                            }
+                        }, {
+                            content: "Cancel", style: PopupButtonStyle.Cancel, action: function () {
+                                if (v5) {
+                                    v6 = true;
+                                    b.invalidate();
+                                    return new b.Promise(function (resolve, reject) {
+                                        v6resolver = resolve;
+                                    });
+                                }
+                                return true;
+                            }
+                        }], function () {
+                        v2 = false;
+                        b.invalidate();
+                    }, [layoutPair(h("label", "First:"), input(s1, function (v) { return s1 = v; }), "40%"),
+                        layoutPair(h("label", "Second:"), input(s2, function (v) { return s2 = v; }), "40%"),
+                        h("div", h("label", [checkbox(v5, function (v) {
+                                v5 = v;
+                                b.invalidate();
+                            }), "Annoying cancel"])),
+                        button("Show nested popup", function () {
+                            v4 = true;
                             b.invalidate();
-                            return new b.Promise(function (resolve, reject) {
-                                v6resolver = resolve;
-                            });
-                        }
-                        return true;
-                    }
-                }], function () {
-                    v2 = false;
-                    b.invalidate();
-                }, [layoutPair(h("label", "First:"), input(s1, function (v) { return s1 = v; }), "40%"), layoutPair(h("label", "Second:"), input(s2, function (v) { return s2 = v; }), "40%"), h("div", h("label", [checkbox(v5, function (v) {
-                    v5 = v;
-                    b.invalidate();
-                }), "Annoying cancel"])), button("Show nested popup", function () {
-                    v4 = true;
-                    b.invalidate();
-                }), v4 && popup("Nested", "200px", [{ content: "Ok", style: 3 /* DefaultCancel */ }], function () {
-                    v4 = false;
-                    b.invalidate();
-                }, [
-                    h("p", "Hello from nested dialog. Cool, isn't it!")
-                ]), "", v6 && popup("Annoying", "150px", [{
-                    content: "Yes",
-                    style: 1 /* Default */,
-                    action: function () {
-                        v6resolver(true);
-                        v6resolver = null;
-                        return true;
-                    }
-                }, {
-                    content: "No",
-                    style: 1 /* Default */,
-                    action: function () {
-                        v6resolver(false);
-                        v6resolver = null;
-                        return true;
-                    }
-                }], function () {
-                    v6 = false;
-                    b.invalidate();
-                }, h("p", "Are you sure to lose all data?"))]), "", v3 && popup("Info", "150px", [{ content: "Ok", style: 3 /* DefaultCancel */ }], function () {
-                    v3 = false;
-                    b.invalidate();
-                }, h("p", "Selected Ok"))])
+                        }),
+                        v4 && popup("Nested", "200px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }], function () {
+                            v4 = false;
+                            b.invalidate();
+                        }, [
+                            h("p", "Hello from nested dialog. Cool, isn't it!")
+                        ]),
+                        "",
+                        v6 && popup("Annoying", "150px", [{
+                                content: "Yes", style: PopupButtonStyle.Default, action: function () {
+                                    v6resolver(true);
+                                    v6resolver = null;
+                                    return true;
+                                }
+                            }, {
+                                content: "No", style: PopupButtonStyle.Cancel, action: function () {
+                                    v6resolver(false);
+                                    v6resolver = null;
+                                    return true;
+                                }
+                            }], function () {
+                            v6 = false;
+                            b.invalidate();
+                        }, h("p", "Are you sure to lose all data?"))
+                    ]),
+                    "",
+                    v3 && popup("Info", "150px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }], function () {
+                        v3 = false;
+                        b.invalidate();
+                    }, h("p", "Selected Ok"))
+                ])
             ]
         };
     });
 })(PopupApp || (PopupApp = {}));
-//# sourceMappingURL=app.js.map

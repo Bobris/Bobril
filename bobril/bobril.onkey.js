@@ -7,7 +7,7 @@
             ctrl: ev.ctrlKey,
             alt: ev.altKey,
             meta: ev.metaKey || false,
-            which: ev.which || ev.keyCode
+            which: ev.which || ev.keyCode,
         };
     }
     var preventDefault = b.preventDefault;
@@ -48,4 +48,3 @@
     addEvent("keyup", 500, emitOnKeyUp);
     addEvent("keypress", 500, emitOnKeyPress);
 })(b);
-//# sourceMappingURL=bobril.onkey.js.map
