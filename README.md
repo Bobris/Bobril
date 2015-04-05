@@ -45,7 +45,7 @@ Features in extensions:
 - Media detection
 - Focus, Blur, FocusIn, FocusOut events
 - Transparently add vendor prefixes for inline styles
-- Asap (setImmediate) and Promise A+ implementation - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
+- Asap (setImmediate) and Promise A+ implementation/polyfill - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 - Scroll notification (crude solution to non-bubbling onScroll)
 
 All extensions + core gziped are under 14kb
@@ -58,7 +58,7 @@ Longer term extensions:
 - Prevent exit (Should be integrated with Router)
 - Ajax (should mostly copy Mithril implementation)
 
-Uses NodeJs, NPM, TypeScript 1.4, Karma, Jasmine, Coverage
+Uses NodeJs, NPM, TypeScript 1.5 Alpha, Karma, Jasmine, Coverage
 
 MIT Licensed
 
@@ -68,11 +68,11 @@ How to develop
 
 Use `npm up` to download all needed node modules.
 
-For helping writing TypeScript you can use Visual Studio (even free version is perfect). Compilation on save is disabled. So you have to work with gulp started in background. It also means Visual Studio is not required for work.
+For helping writing TypeScript you can use Atom.io with atom-typescript plugin. Compilation on save is disabled. So you have to work with gulp started in background.
 
 Start `gulp` for TS compilation, minification and generating statistic for LibSize example.
 
-`gulp compilets` force compilation of all TS files. All files are compiled independently with ES3 target, `<script>` module style and enabled source maps. It means you have to properly write all referenced definition files (something Visual Studio will not show you).
+`gulp compilets` force compilation of all TS files. It reads tsconfig.json files for information how to compile each subproject.
 
 `gulp pages` upload examples to GitHub pages.
 
