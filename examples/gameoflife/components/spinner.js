@@ -34,4 +34,3 @@ var GameOfLifeApp;
     })();
     GameOfLifeApp.Spinner = Spinner;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=spinner.js.map

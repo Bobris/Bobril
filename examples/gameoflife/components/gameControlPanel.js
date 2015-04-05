@@ -50,4 +50,3 @@ var GameOfLifeApp;
     })();
     GameOfLifeApp.GameControlPanel = GameControlPanel;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=gamecontrolpanel.js.map

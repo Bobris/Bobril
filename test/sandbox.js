@@ -13,4 +13,3 @@ describe("sandbox", function () {
         expect(root.innerHTML.toLowerCase()).toBe("<div></div>");
     });
 });
-//# sourceMappingURL=sandbox.js.map

@@ -28,28 +28,17 @@ var StickyHeaderApp;
     }
     function smallbutton(onAction, content) {
         return {
-            tag: "button",
-            style: { width: "2em", height: "2em" },
-            component: {
-                onClick: function () {
-                    onAction();
-                    return true;
-                }
-            },
-            children: content
+            tag: "button", style: { width: "2em", height: "2em" }, component: {
+                onClick: function () { onAction(); return true; }
+            }, children: content
         };
     }
     function pxinput(value, onChange) {
         return {
-            tag: "span",
-            children: [
-                smallbutton(function () {
-                    onChange(value - 1);
-                }, "-"),
+            tag: "span", children: [
+                smallbutton(function () { onChange(value - 1); }, "-"),
                 " " + value + "px ",
-                smallbutton(function () {
-                    onChange(value + 1);
-                }, "+")
+                smallbutton(function () { onChange(value + 1); }, "+")
             ]
         };
     }
@@ -79,8 +68,8 @@ var StickyHeaderApp;
         var scrollTop = winScroll[1] + newTopOffset;
         var scrollLeft = winScroll[0];
         var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
-        // twice header height for better UX
-        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) < (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
+        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) <
+            (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
         if (c.sticky !== (scrolledPastTop && notScrolledPastBottom)) {
             c.sticky = !c.sticky;
             if (fastInvalidate)
@@ -166,7 +155,6 @@ var StickyHeaderApp;
                 var w;
                 var origElc = origEl.childNodes[i];
                 if (ieWeirdness) {
-                    // w = origElc.offsetWidth; this does not work correctly in IE9
                     var clientRect = origElc.getBoundingClientRect();
                     w = clientRect.right - clientRect.left;
                 }
@@ -210,8 +198,8 @@ var StickyHeaderApp;
         var winScroll = b.getWindowScroll();
         var scrollTop = winScroll[1] + newTopOffset;
         var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
-        // twice header height for better UX
-        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) < (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
+        var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) <
+            (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
         var absElement = element.childNodes[1];
         var absElementStyle = absElement.style;
         if (scrolledPastTop && notScrolledPastBottom) {
@@ -234,7 +222,6 @@ var StickyHeaderApp;
                     var w;
                     var origElc = origHeader.childNodes[i];
                     if (ieWeirdness) {
-                        // w = origElc.offsetWidth; this does not work correctly in IE9
                         var clientRect = origElc.getBoundingClientRect();
                         w = clientRect.right - clientRect.left;
                     }
@@ -287,11 +274,7 @@ var StickyHeaderApp;
             me.style = ctx.data.style;
             me.children = [
                 {
-                    tag: "table",
-                    attrs: me.attrs,
-                    className: me.className,
-                    style: me.style,
-                    children: [
+                    tag: "table", attrs: me.attrs, className: me.className, style: me.style, children: [
                         header,
                         ctx.data.body
                     ]
@@ -376,8 +359,7 @@ var StickyHeaderApp;
                 borderCollapse = v;
                 b.invalidate();
             }), "Collapse borders")),
-            " Border Spacing: ",
-            pxinput(borderSpacing, function (v) {
+            " Border Spacing: ", pxinput(borderSpacing, function (v) {
                 borderSpacing = v;
                 b.invalidate();
             }),
@@ -398,4 +380,3 @@ var StickyHeaderApp;
         ];
     });
 })(StickyHeaderApp || (StickyHeaderApp = {}));
-//# sourceMappingURL=app.js.map

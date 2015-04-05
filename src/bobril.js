@@ -1,11 +1,9 @@
 /// <reference path="bobril.d.ts"/>
 if (typeof DEBUG === "undefined")
     DEBUG = true;
-// IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
 if (!Array.prototype.map) {
     Array.prototype.map = function (callback, thisArg) {
         var a, k;
-        // ReSharper disable once ConditionIsAlwaysConst
         if (DEBUG && this == null) {
             throw new TypeError("this==null");
         }
@@ -28,16 +26,13 @@ if (!Array.prototype.map) {
         return a;
     };
 }
-// Object create polyfill
 if (!Object.create) {
     Object.create = function (o) {
-        function f() {
-        }
+        function f() { }
         f.prototype = o;
         return new f();
     };
 }
-// Object keys polyfill
 if (!Object.keys) {
     Object.keys = (function (obj) {
         var keys = [];
@@ -49,7 +44,6 @@ if (!Object.keys) {
         return keys;
     });
 }
-// Array isArray polyfill
 if (!Array.isArray) {
     var objectToString = {}.toString;
     Array.isArray = (function (a) { return objectToString.call(a) === "[object Array]"; });
@@ -108,7 +102,7 @@ b = (function (window, document) {
         orphans: true,
         widows: true,
         zIndex: true,
-        zoom: true
+        zoom: true,
     };
     function renamer(newName) {
         return function (style, value, oldName) {
@@ -146,7 +140,7 @@ b = (function (window, document) {
             var mi = mapping[ki];
             var vi = newValue[ki];
             if (vi === undefined)
-                continue; // don't want to map undefined
+                continue;
             if (mi === undefined) {
                 if (DEBUG) {
                     if (ki === "float" && window.console && console.error)
@@ -417,7 +411,6 @@ b = (function (window, document) {
             el = createElement(tag);
         }
         if (onIE8 && tag === "input" && "type" in c.attrs) {
-            // On IE8 input.type has to be written before writing adding to document
             el.type = c.attrs.type;
         }
         createInto.insertBefore(el, createBefore);
@@ -653,7 +646,8 @@ b = (function (window, document) {
             }
         }
         if (DEBUG) {
-            if (!((n.ref == null && c.ref == null) || ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+            if (!((n.ref == null && c.ref == null) ||
+                ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
                 if (window.console && console.warn)
                     console.warn("ref changed in child in update");
             }
@@ -922,7 +916,6 @@ b = (function (window, document) {
             }
             return cachedChildren;
         }
-        // order of keyed nodes ware changed => reorder keyed nodes first
         var cachedKeys = newHashObj();
         var newKeys = newHashObj();
         var key;
@@ -983,7 +976,6 @@ b = (function (window, document) {
             }
             var akpos = cachedKeys[key];
             if (akpos === undefined) {
-                // New key
                 cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
                 delta++;
                 newIndex++;
@@ -993,7 +985,6 @@ b = (function (window, document) {
                 continue;
             }
             if (!(cachedKey in newKeys)) {
-                // Old key
                 removeNode(cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex, 1);
                 delta--;
@@ -1002,13 +993,11 @@ b = (function (window, document) {
                 continue;
             }
             if (cachedIndex === akpos + delta) {
-                // Inplace update
                 updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 newIndex++;
                 cachedIndex++;
             }
             else {
-                // Move
                 cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
                 delta++;
                 cachedChildren[akpos + delta] = null;
@@ -1046,12 +1035,9 @@ b = (function (window, document) {
             }
             newIndex++;
         }
-        // Without any keyless nodes we are done
         if (!keyLess)
             return cachedChildren;
-        // calculate common (old and new) keyless
         keyLess = (keyLess - Math.abs(deltaKeyless)) >> 1;
-        // reorder just nonkeyed nodes
         newIndex = backupNewIndex;
         cachedIndex = backupCachedIndex;
         while (newIndex < newEnd) {
@@ -1095,7 +1081,6 @@ b = (function (window, document) {
                 cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex + 1, 1);
                 reorderInUpdateChildren(cachedChildren, newIndex, cachedLength, createBefore, element);
-                // just moving keyed node it was already updated before
                 newIndex++;
                 cachedIndex = newIndex;
                 continue;
@@ -1126,10 +1111,8 @@ b = (function (window, document) {
     var hasNativeRaf = false;
     var nativeRaf = window.requestAnimationFrame;
     if (nativeRaf) {
-        nativeRaf(function (param) {
-            if (param === +param)
-                hasNativeRaf = true;
-        });
+        nativeRaf(function (param) { if (param === +param)
+            hasNativeRaf = true; });
     }
     var now = Date.now || (function () { return (new Date).getTime(); });
     var startTime = now();
@@ -1226,8 +1209,7 @@ b = (function (window, document) {
             }
         }
     }
-    var afterFrameCallback = function () {
-    };
+    var afterFrameCallback = function () { };
     function setAfterFrame(callback) {
         var res = afterFrameCallback;
         afterFrameCallback = callback;
@@ -1520,4 +1502,3 @@ b = (function (window, document) {
         cloneNode: cloneNode
     };
 })(window, document);
-//# sourceMappingURL=bobril.js.map

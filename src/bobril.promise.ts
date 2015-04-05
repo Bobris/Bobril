@@ -79,7 +79,7 @@
 
     // Polyfill for Function.prototype.bind
     function bind(fn: (args: any) => void, thisArg: any) {
-        return () => {
+        return function () {
             fn.apply(thisArg, arguments);
         }
     }
@@ -177,13 +177,13 @@
         });
     };
 
-    (<any>Promise).all = () => {
+    (<any>Promise).all = function () {
         var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
 
         return new (<any>Promise)((resolve: (value: any) => void, reject: (reason: any) => void) => {
             if (args.length === 0) {
                 resolve(args);
-                return; 
+                return;
             }
             var remaining = args.length;
             function res(i: number, val: any) {
@@ -232,3 +232,5 @@
     b.asap = asap;
     b.Promise = <any>Promise;
 })(b, window, document);
+
+if (!Promise) Promise = b.Promise;

@@ -48,13 +48,9 @@ describe("livecycle", function () {
     it("createNodeCallsInitInRightOrder", function () {
         var c = new TestComponent();
         b.createNode({
-            tag: "div",
-            component: c,
-            data: { name: "1" },
+            tag: "div", component: c, data: { name: "1" },
             children: {
-                tag: "div",
-                component: c,
-                data: { name: "2" }
+                tag: "div", component: c, data: { name: "2" }
             }
         }, null, document.createElement("div"), null);
         b.callPostCallbacks();
@@ -93,25 +89,17 @@ describe("livecycle", function () {
         var c = new TestComponent();
         var scope = document.createElement("div");
         var r = b.createNode({
-            tag: "div",
-            component: c,
-            data: { name: "1" },
+            tag: "div", component: c, data: { name: "1" },
             children: {
-                tag: "div",
-                component: c,
-                data: { name: "2" }
+                tag: "div", component: c, data: { name: "2" }
             }
         }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({
-            tag: "div",
-            component: c,
-            data: { name: "1", change: true },
+            tag: "div", component: c, data: { name: "1", change: true },
             children: {
-                tag: "div",
-                component: c,
-                data: { name: "2", change: true }
+                tag: "div", component: c, data: { name: "2", change: true }
             }
         }, r, scope, null, 1e6);
         b.callPostCallbacks();
@@ -121,25 +109,17 @@ describe("livecycle", function () {
         var c = new TestComponent();
         var scope = document.createElement("div");
         var r = b.createNode({
-            tag: "div",
-            component: c,
-            data: { name: "1" },
+            tag: "div", component: c, data: { name: "1" },
             children: {
-                tag: "div",
-                component: c,
-                data: { name: "2" }
+                tag: "div", component: c, data: { name: "2" }
             }
         }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({
-            tag: "h1",
-            component: c,
-            data: { name: "3", change: true },
+            tag: "h1", component: c, data: { name: "3", change: true },
             children: {
-                tag: "div",
-                component: c,
-                data: { name: "4", change: true }
+                tag: "div", component: c, data: { name: "4", change: true }
             }
         }, r, scope, null, 1e6);
         b.callPostCallbacks();
@@ -182,14 +162,10 @@ describe("livecycle", function () {
         var state = 0;
         var done = false;
         var vdom = [{
-            tag: "div",
-            component: c,
-            data: { name: "1" },
-            children: {
-                component: c,
-                data: { name: "2", change: true, setme: { tag: "div" } }
-            }
-        }];
+                tag: "div", component: c, data: { name: "1" }, children: {
+                    component: c, data: { name: "2", change: true, setme: { tag: "div" } }
+                }
+            }];
         b.init(function () {
             setTimeout(function () {
                 c.actions = "";
@@ -233,15 +209,12 @@ describe("livecycle", function () {
         expect(b.setAfterFrame(function (root) {
             expect(root[0].data.name).toBe("1");
             done = true;
-            b.setAfterFrame(function () {
-            });
+            b.setAfterFrame(function () { });
         })).not.toBeNull();
         b.init(function () {
             return [{
-                tag: "div",
-                component: c,
-                data: { name: "1" }
-            }];
+                    tag: "div", component: c, data: { name: "1" }
+                }];
         });
         waitsFor(function () { return done; });
     });
@@ -251,4 +224,3 @@ describe("livecycle", function () {
         b.frame();
     });
 });
-//# sourceMappingURL=livecycle.js.map

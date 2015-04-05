@@ -147,9 +147,7 @@ var GameOfLifeApp;
                     it('Cell with four neighbours will die', function () {
                         world = new GameOfLifeApp.World([
                             new GameOfLifeApp.Cell(-1, 1),
-                            new GameOfLifeApp.Cell(0, 0),
-                            new GameOfLifeApp.Cell(0, 1),
-                            new GameOfLifeApp.Cell(0, 2),
+                            new GameOfLifeApp.Cell(0, 0), new GameOfLifeApp.Cell(0, 1), new GameOfLifeApp.Cell(0, 2),
                             new GameOfLifeApp.Cell(1, 1)
                         ]);
                         world.tick();
@@ -157,15 +155,9 @@ var GameOfLifeApp;
                     });
                     it('Cell with eight neighbours will die', function () {
                         world = new GameOfLifeApp.World([
-                            new GameOfLifeApp.Cell(0, 0),
-                            new GameOfLifeApp.Cell(0, 1),
-                            new GameOfLifeApp.Cell(0, 2),
-                            new GameOfLifeApp.Cell(1, 0),
-                            new GameOfLifeApp.Cell(1, 1),
-                            new GameOfLifeApp.Cell(1, 2),
-                            new GameOfLifeApp.Cell(2, 0),
-                            new GameOfLifeApp.Cell(2, 1),
-                            new GameOfLifeApp.Cell(2, 2),
+                            new GameOfLifeApp.Cell(0, 0), new GameOfLifeApp.Cell(0, 1), new GameOfLifeApp.Cell(0, 2),
+                            new GameOfLifeApp.Cell(1, 0), new GameOfLifeApp.Cell(1, 1), new GameOfLifeApp.Cell(1, 2),
+                            new GameOfLifeApp.Cell(2, 0), new GameOfLifeApp.Cell(2, 1), new GameOfLifeApp.Cell(2, 2),
                         ]);
                         world.tick();
                         expect(world.lifeCells).not.toContain(new GameOfLifeApp.Cell(1, 1));
@@ -173,8 +165,7 @@ var GameOfLifeApp;
                 });
                 it('Any dead cell with exactly three live neighbours becomes a live cell', function () {
                     world = new GameOfLifeApp.World([
-                        new GameOfLifeApp.Cell(0, 0),
-                        new GameOfLifeApp.Cell(0, 2),
+                        new GameOfLifeApp.Cell(0, 0), new GameOfLifeApp.Cell(0, 2),
                         new GameOfLifeApp.Cell(2, 1)
                     ]);
                     world.tick();
@@ -184,4 +175,3 @@ var GameOfLifeApp;
         });
     });
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=world.js.map

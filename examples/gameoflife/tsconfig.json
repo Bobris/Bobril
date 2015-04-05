@@ -13,13 +13,14 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "./examples/gameoflife/model/cell.ts",
-        "./examples/gameoflife/model/world.ts",
-        "./helpers.ts",
-        "./jasmine.d.ts",
-        "./livecycle.ts",
-        "./promise.ts",
-        "./sandbox.ts",
-        "./vdom.ts"
+        "./app.ts",
+        "./components/button.ts",
+        "./components/canvas.ts",
+        "./components/gameControlPanel.ts",
+        "./components/header.ts",
+        "./components/spinner.ts",
+        "./gameController.ts",
+        "./model/cell.ts",
+        "./model/world.ts"
     ]
 }

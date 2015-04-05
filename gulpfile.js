@@ -2,7 +2,7 @@ var gulp = require('gulp');
 var gulpif = require('gulp-if');
 var fs = require('graceful-fs');
 var typeScriptCompile = require('./tscomp.js');
-var through2 = require('through2'); 
+var through2 = require('through2');
 
 var sources = ['src/**/*.js'];
 var testSources = ['test/**/*.js'];
@@ -64,7 +64,7 @@ gulp.task('buildexampleshtml', ['buildexamplesclean'], function() {
 	  if (name === "script") {
 	     if (attrs.src && attrs.src.substring(0,10)=="../../src/") {
 		     attrs.src="../bobril/"+attrs.src.substring(10);
-         }		 
+         }
 	  }
       return "<" + name + rebuild.createAttrStr(attrs) + ">";
     }
@@ -130,7 +130,7 @@ gulp.task('calc', ['uglify'], function () {
         while (str.length < len) str = str + ' ';
       }
       return str;
-    }	
+    }
 	function logInfo(name,tslines,jssize,minsize,gzipsize) {
 	    console.log(padString(12,name)+' '+padString(5,tslines,true)+' '+padString(6,jssize,true)+' '+padString(6,minsize,true)+' '+padString(6,gzipsize,true));
     }
@@ -156,17 +156,18 @@ gulp.task('calc', ['uglify'], function () {
 
 
 var alltsfilesToWatch = ['./src/**/*.ts','./examples/**/*.ts','./test/**/*.ts'];
-var alltsfilesToCompile = alltsfilesToWatch.concat(['!./src/**/*.d.ts','!./examples/**/*.d.ts','!./test/**/*.d.ts']);
+var alltsProjsToCompile = ['./src/**/tsconfig.json','./examples/**/tsconfig.json','./test/**/tsconfig.json'];
+alltsfilesToWatch = alltsfilesToWatch.concat(alltsProjsToCompile);
 
 gulp.task('ts', function () {
     gulp.watch(alltsfilesToWatch, ['compilets']);
 });
 
 gulp.task('compilets', function () {
-    return gulp.src(alltsfilesToCompile, { read:false })
+    return gulp.src(alltsProjsToCompile, { read:false })
 	      .pipe(through2.obj(function(file,enc,cb) {
-			  typeScriptCompile(file.path, false, true);
-			  setImmediate(cb);			  
+			  typeScriptCompile(file.path);
+			  setImmediate(cb);
 			  }));
 });
 

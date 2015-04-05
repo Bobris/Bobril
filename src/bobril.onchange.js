@@ -138,7 +138,6 @@
             }
         }
         else if (isCheckboxlike(target)) {
-            // Postpone change event so onCLick will be processed before it
             if (ev && ev.type === "change") {
                 setTimeout(function () {
                     emitOnChange(null, target, node);
@@ -182,9 +181,7 @@
         }
         return false;
     }
-    // click here must have lower priority (higher number) over mouse handlers
     var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 10, emitOnChange);
 })(b);
-//# sourceMappingURL=bobril.onchange.js.map

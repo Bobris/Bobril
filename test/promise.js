@@ -168,4 +168,3 @@ describe("Promise.race", function () {
         waitsFor(function () { return done; });
     });
 });
-//# sourceMappingURL=promise.js.map

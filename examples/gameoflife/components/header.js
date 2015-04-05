@@ -12,11 +12,11 @@ var GameOfLifeApp;
         }
         Header.getTag = function (level) {
             switch (level) {
-                case 0 /* H1 */:
+                case HeaderLevel.H1:
                     return "h1";
-                case 1 /* H2 */:
+                case HeaderLevel.H2:
                     return "h2";
-                case 2 /* H3 */:
+                case HeaderLevel.H3:
                     return "h3";
             }
         };
@@ -28,4 +28,3 @@ var GameOfLifeApp;
     })();
     GameOfLifeApp.Header = Header;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=header.js.map

@@ -282,16 +282,13 @@ describe("stopBubbling", function () {
         var outer = false;
         var inner = false;
         var n = b.createNode({
-            tag: "div",
-            component: {
+            tag: "div", component: {
                 onClick: function () {
                     outer = true;
                     return true;
                 }
-            },
-            children: {
-                tag: "span",
-                component: {
+            }, children: {
+                tag: "span", component: {
                     onClick: function () {
                         inner = true;
                         return false;
@@ -336,4 +333,3 @@ describe("stopBubbling", function () {
         expect(outer).toBeFalsy();
     });
 });
-//# sourceMappingURL=vdom.js.map

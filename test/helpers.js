@@ -16,4 +16,3 @@ describe("assign", function () {
         expect(result).toEqual({});
     });
 });
-//# sourceMappingURL=helpers.js.map

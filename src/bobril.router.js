@@ -63,8 +63,6 @@
     function extractParamNames(pattern) {
         return compilePattern(pattern).paramNames;
     }
-    // Extracts the portions of the given URL path that match the given pattern.
-    // Returns null if the pattern does not match the given path.
     function extractParams(pattern, path) {
         var object = compilePattern(pattern);
         var match = decodeUrl(path).match(object.matcher);
@@ -78,14 +76,11 @@
         }
         return params;
     }
-    // Returns a version of the given route path with params interpolated.
-    // Throws if there is a dynamic segment of the route path for which there is no param.
     function injectParams(pattern, params) {
         params = params || {};
         var splatIndex = 0;
         return pattern.replace(paramInjectMatcher, function (match, paramName) {
             paramName = paramName || "splat";
-            // If param is optional don't check for existence
             if (paramName.slice(-1) !== "?") {
                 if (params[paramName] == null)
                     throw new Error("Missing \"" + paramName + "\" parameter for path \"" + pattern + "\"");
@@ -279,4 +274,3 @@
     b.routeNotFound = routeNotFound;
     b.link = link;
 })(b, window);
-//# sourceMappingURL=bobril.router.js.map

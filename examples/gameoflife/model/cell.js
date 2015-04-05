@@ -12,4 +12,3 @@ var GameOfLifeApp;
     })();
     GameOfLifeApp.Cell = Cell;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=cell.js.map

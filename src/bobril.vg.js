@@ -17,8 +17,7 @@
     function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
         var angleInRadians = angleInDegrees * Math.PI / 180.0;
         return {
-            x: centerX + (radius * Math.sin(angleInRadians)),
-            y: centerY - (radius * Math.cos(angleInRadians))
+            x: centerX + (radius * Math.sin(angleInRadians)), y: centerY - (radius * Math.cos(angleInRadians))
         };
     }
     function svgDescribeArc(x, y, radius, startAngle, endAngle, startWithLine) {
@@ -36,9 +35,7 @@
         else {
             if (radius === 0) {
                 return [
-                    startWithLine ? "L" : "M",
-                    x,
-                    y
+                    startWithLine ? "L" : "M", x, y
                 ].join(" ");
             }
         }
@@ -47,17 +44,7 @@
         var arcSweep = (absDeltaAngle <= 180) ? "0" : "1";
         var largeArg = (endAngle > startAngle) ? "0" : "1";
         var d = [
-            (startWithLine ? "L" : "M"),
-            start.x,
-            start.y,
-            "A",
-            radius,
-            radius,
-            0,
-            arcSweep,
-            largeArg,
-            end.x,
-            end.y
+            (startWithLine ? "L" : "M"), start.x, start.y, "A", radius, radius, 0, arcSweep, largeArg, end.x, end.y
         ].join(" ");
         if (close)
             d += "Z";
@@ -99,17 +86,13 @@
         else {
             if (radius === 0) {
                 return (startWithLine ? "l" : "m") + [
-                    vmlCoord(x),
-                    vmlCoord(y)
+                    vmlCoord(x), vmlCoord(y)
                 ].join(",");
             }
         }
         var radiusInStr = vmlCoord(radius);
         var d = (startWithLine ? "ae" : "al") + [
-            vmlCoord(x),
-            vmlCoord(y),
-            radiusInStr,
-            radiusInStr,
+            vmlCoord(x), vmlCoord(y), radiusInStr, radiusInStr,
             ((90 - startAngle) * 65536).toFixed(0),
             ((startAngle - endAngle) * 65536).toFixed(0)
         ].join(",");
@@ -327,7 +310,6 @@
         }
     }
     if (implType === 2) {
-        // In IE DocumentFragment is actually fully featured Document
         vmlDocument = document.createDocumentFragment();
         vmlDocument.namespaces.add("v", "urn:schemas-microsoft-com:vml");
         b.vg = vmlComponent;
@@ -339,4 +321,3 @@
         b.vg = {};
     }
 })(b, window, document);
-//# sourceMappingURL=bobril.vg.js.map

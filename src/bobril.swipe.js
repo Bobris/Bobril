@@ -37,13 +37,13 @@
             var deltaX = Math.abs(ev.x - startX);
             var deltaY = Math.abs(ev.y - startY);
             if (deltaX < 75)
-                return false; // too small horizontal move
+                return false;
             if (deltaY / deltaX >= 0.3)
-                return false; // too much vertial for horizontal move
+                return false;
             if (totalX > deltaX * 1.5)
-                return false; // too much shaking hand
+                return false;
             if (totalY > deltaX * 0.7)
-                return false; // too much shaking hand
+                return false;
             var method = "onSwipe" + (ev.x > startX ? "Right" : "Left");
             var param = { x: ev.x, y: ev.y };
             b.ignoreClick(ev.x, ev.y);
@@ -56,4 +56,3 @@
     addEvent("!PointerMove", 70, handlePointerMove);
     addEvent("!PointerUp", 70, handlePointerUp);
 })(b);
-//# sourceMappingURL=bobril.swipe.js.map

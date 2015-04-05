@@ -44,4 +44,3 @@ var GameOfLifeApp;
     })();
     GameOfLifeApp.Canvas = Canvas;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=canvas.js.map

@@ -27,16 +27,13 @@ var MouseOwnerApp;
             return true;
         }
     };
-    function twice(obj) {
-        return [obj, b.cloneNode(obj)];
-    }
+    function twice(obj) { return [obj, b.cloneNode(obj)]; }
     b.init(function () {
         return twice({
             tag: "div",
             style: { height: 500, width: 500, border: "solid 1px", position: "relative", cssFloat: "left" },
             children: {
-                component: button,
-                data: {
+                component: button, data: {
                     style: { width: 120, height: 20, position: "absolute", border: "1px solid #000", left: 190, top: 240 },
                     children: "Click and drag out"
                 }
@@ -44,4 +41,3 @@ var MouseOwnerApp;
         });
     });
 })(MouseOwnerApp || (MouseOwnerApp = {}));
-//# sourceMappingURL=app.js.map

@@ -65,4 +65,3 @@ var GameOfLifeApp;
     })();
     GameOfLifeApp.World = World;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=world.js.map
