@@ -52,6 +52,7 @@ All extensions + core gziped are under 14kb
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:
+- Drag and Drop
 
 Longer term extensions:
 - New/Deleted Node animation (prototype in Router2 example)

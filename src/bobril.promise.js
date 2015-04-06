@@ -11,6 +11,7 @@
             }
         }
         var onreadystatechange = 'onreadystatechange';
+        // Modern browsers, fastest async
         if (window.MutationObserver) {
             var hiddenDiv = document.createElement("div");
             (new MutationObserver(executeCallbacks)).observe(hiddenDiv, { attributes: true });
@@ -68,6 +69,7 @@
             };
         }
     })();
+    // Polyfill for Function.prototype.bind
     function bind(fn, thisArg) {
         return function () {
             fn.apply(thisArg, arguments);
@@ -76,19 +78,19 @@
     var isArray = b.isArray;
     function handle(deferred) {
         var _this = this;
-        if (this.s === null) {
-            this.d.push(deferred);
+        if (this.s /*tate*/ === null) {
+            this.d /*eferreds*/.push(deferred);
             return;
         }
         asap(function () {
-            var cb = _this.s ? deferred[0] : deferred[1];
+            var cb = _this.s /*tate*/ ? deferred[0] : deferred[1];
             if (cb == null) {
-                (_this.s ? deferred[2] : deferred[3])(_this.v);
+                (_this.s /*tate*/ ? deferred[2] : deferred[3])(_this.v /*alue*/);
                 return;
             }
             var ret;
             try {
-                ret = cb(_this.v);
+                ret = cb(_this.v /*alue*/);
             }
             catch (e) {
                 deferred[3](e);
@@ -98,16 +100,22 @@
         });
     }
     function finale() {
-        for (var i = 0, len = this.d.length; i < len; i++) {
-            handle.call(this, this.d[i]);
+        for (var i = 0, len = this.d /*eferreds*/.length; i < len; i++) {
+            handle.call(this, this.d /*eferreds*/[i]);
         }
-        this.d = null;
+        this.d /*eferreds*/ = null;
     }
     function reject(newValue) {
-        this.s = false;
-        this.v = newValue;
+        this.s /*tate*/ = false;
+        this.v /*alue*/ = newValue;
         finale.call(this);
     }
+    /**
+     * Take a potentially misbehaving resolver function and make sure
+     * onFulfilled and onRejected are only called once.
+     *
+     * Makes no guarantees about asynchrony.
+     */
     function doResolve(fn, onFulfilled, onRejected) {
         var done = false;
         try {
@@ -141,8 +149,8 @@
                     return;
                 }
             }
-            this.s = true;
-            this.v = newValue;
+            this.s /*tate*/ = true;
+            this.v /*alue*/ = newValue;
             finale.call(this);
         }
         catch (e) {
@@ -150,9 +158,9 @@
         }
     }
     function Promise(fn) {
-        this.s = null;
-        this.v = null;
-        this.d = [];
+        this.s /*tate*/ = null;
+        this.v /*alue*/ = null;
+        this.d /*eferreds*/ = [];
         doResolve(fn, bind(resolve, this), bind(reject, this));
     }
     Promise.prototype.then = function (onFulfilled, onRejected) {

@@ -37,13 +37,13 @@
             var deltaX = Math.abs(ev.x - startX);
             var deltaY = Math.abs(ev.y - startY);
             if (deltaX < 75)
-                return false;
+                return false; // too small horizontal move
             if (deltaY / deltaX >= 0.3)
-                return false;
+                return false; // too much vertial for horizontal move
             if (totalX > deltaX * 1.5)
-                return false;
+                return false; // too much shaking hand
             if (totalY > deltaX * 0.7)
-                return false;
+                return false; // too much shaking hand
             var method = "onSwipe" + (ev.x > startX ? "Right" : "Left");
             var param = { x: ev.x, y: ev.y };
             b.ignoreClick(ev.x, ev.y);
