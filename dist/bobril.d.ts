@@ -139,7 +139,7 @@ interface IBobrilNode {
 
 interface IBobrilCacheNode extends IBobrilNode {
     element?: Node|Node[];
-    parent?: IBobrilNode;
+    parent?: IBobrilCacheNode;
     // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode
     ctx?: IBobrilCtx;
 }

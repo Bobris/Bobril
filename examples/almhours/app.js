@@ -211,17 +211,9 @@ var AlmHours;
     b.init(function () {
         return [
             h("h1", "ALM hours"),
-            textInput(startHour, setStartHour),
-            " : ",
-            textInput(startMinute, setStartMinute),
-            " – ",
-            textInput(finishHour, setfinishHour),
-            " : ",
-            textInput(finishMinute, setfinishMinute),
-            h("label", checkbox(checked, setChecked), "rounding after 5 minutes (default = 10)"),
+            textInput(startHour, setStartHour), " : ", textInput(startMinute, setStartMinute), " – ", textInput(finishHour, setfinishHour), " : ", textInput(finishMinute, setfinishMinute), h("label", checkbox(checked, setChecked), "rounding after 5 minutes (default = 10)"),
             h("p", "Start time is ", startHour, ":", startMinute, " and finish time is ", finishHour, ":", finishMinute),
             h("p", "worked hours: ", workedHours, h("br"), " value to Polarion : ", h("b", polarionHours))
         ];
     });
 })(AlmHours || (AlmHours = {}));
-//# sourceMappingURL=app.js.map

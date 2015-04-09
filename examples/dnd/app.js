@@ -29,7 +29,9 @@ var DndApp;
             me.children = ctx.data.lang.name;
         },
         onDragStart: function (ctx, dndCtx) {
+            dndCtx.setSource(ctx);
             dndCtx.addData("bobril/langprog", ctx.data.lang);
+            dndCtx.setOpEnabled(false, false, true);
             return true;
         }
     };

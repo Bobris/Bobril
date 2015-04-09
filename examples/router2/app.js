@@ -64,10 +64,10 @@ var Router2App;
         AnimState[AnimState["Garbage"] = 7] = "Garbage";
     })(AnimState || (AnimState = {}));
     function isHiddenAnimState(state) {
-        return state === 0 /* New */ || state === 1 /* WaitingForCreating */ || state === 6 /* Hidden */ || state === 7 /* Garbage */;
+        return state === AnimState.New || state === AnimState.WaitingForCreating || state === AnimState.Hidden || state === AnimState.Garbage;
     }
     function isStableAnimState(state) {
-        return state === 3 /* Showing */ || state === 4 /* WaitingForHiding */;
+        return state === AnimState.Showing || state === AnimState.WaitingForHiding;
     }
     var transitionGroupComp = {
         id: "TransitionGroup",
@@ -119,55 +119,55 @@ var Router2App;
                     }
                 }
                 if (j === list.length) {
-                    list.push({ node: null, animCtx: { state: 0 /* New */, live: true, lastChange: b.uptime() } });
+                    list.push({ node: null, animCtx: { state: AnimState.New, live: true, lastChange: b.uptime() } });
                     list[j].node = build(curNode, ctx, list[j].animCtx);
                 }
             }
             for (i = 0; i < list.length; i++) {
                 var a = list[i].animCtx;
-                if (a.state === 0 /* New */) {
+                if (a.state === AnimState.New) {
                     if (a.live) {
-                        a.state = 2 /* Creating */;
+                        a.state = AnimState.Creating;
                     }
                     else {
-                        a.state = 7 /* Garbage */;
+                        a.state = AnimState.Garbage;
                     }
                 }
-                else if (a.state === 1 /* WaitingForCreating */ && !a.live) {
-                    a.state = 7 /* Garbage */;
+                else if (a.state === AnimState.WaitingForCreating && !a.live) {
+                    a.state = AnimState.Garbage;
                 }
-                else if (a.state === 3 /* Showing */ && !a.live) {
-                    a.state = 5 /* Hiding */;
+                else if (a.state === AnimState.Showing && !a.live) {
+                    a.state = AnimState.Hiding;
                     a.lastChange = b.uptime();
                 }
-                else if (a.state === 2 /* Creating */) {
+                else if (a.state === AnimState.Creating) {
                     a.value = (b.uptime() - a.lastChange) / 3000;
                     if (a.live) {
                         if (a.value > 1) {
-                            a.state = 3 /* Showing */;
+                            a.state = AnimState.Showing;
                         }
                     }
                     else {
                         a.lastChange = b.uptime() - (1 - a.value) * 3000;
-                        a.state = 5 /* Hiding */;
+                        a.state = AnimState.Hiding;
                     }
                 }
-                else if (a.state === 4 /* WaitingForHiding */ && a.live) {
-                    a.state = 3 /* Showing */;
+                else if (a.state === AnimState.WaitingForHiding && a.live) {
+                    a.state = AnimState.Showing;
                 }
-                else if (a.state === 5 /* Hiding */) {
+                else if (a.state === AnimState.Hiding) {
                     a.value = 1 - (b.uptime() - a.lastChange) / 3000;
                     if (a.live) {
-                        a.state = 2 /* Creating */;
+                        a.state = AnimState.Creating;
                         a.lastChange = b.uptime() - a.value * 3000;
                     }
                     else {
                         if (a.value < 0) {
-                            a.state = 7 /* Garbage */;
+                            a.state = AnimState.Garbage;
                         }
                     }
                 }
-                if (a.state === 7 /* Garbage */) {
+                if (a.state === AnimState.Garbage) {
                     list.splice(i, 1);
                     i--;
                     continue;
@@ -235,9 +235,7 @@ var Router2App;
     };
     b.routes(b.route({ handler: App }, [
         b.route({ name: "planets", data: { planets: planetData }, handler: PlanetList }, [
-            b.route({ name: "planet", url: "/planet/:name", handler: PlanetImage, keyBuilder: function (p) {
-                return p["name"];
-            } }),
+            b.route({ name: "planet", url: "/planet/:name", handler: PlanetImage, keyBuilder: function (p) { return p["name"]; } }),
             b.routeDefault({ handler: SelectPlanet })
         ]),
         b.route({ name: "about", handler: About }),
@@ -245,4 +243,3 @@ var Router2App;
         b.routeNotFound({ name: "notFound", handler: NotFound })
     ]));
 })(Router2App || (Router2App = {}));
-//# sourceMappingURL=app.js.map

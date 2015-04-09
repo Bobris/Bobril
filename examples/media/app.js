@@ -20,4 +20,3 @@ var MediaApp;
         ];
     });
 })(MediaApp || (MediaApp = {}));
-//# sourceMappingURL=app.js.map

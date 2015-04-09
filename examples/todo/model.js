@@ -45,7 +45,9 @@ var TodoApp;
         Tasks.prototype.getFilteredItems = function (filter) {
             var _this = this;
             return this.items.filter(function (item, index, array) {
-                return filter === _this.filterAll || filter === _this.filterActive && !item.completed || filter === _this.filterCompleted && item.completed;
+                return filter === _this.filterAll ||
+                    filter === _this.filterActive && !item.completed ||
+                    filter === _this.filterCompleted && item.completed;
             });
         };
         Tasks.prototype.getItemsCount = function () {
@@ -76,9 +78,7 @@ var TodoApp;
             this.saveToStorage();
         };
         Tasks.prototype.removeTask = function (id) {
-            this.removeTasksByPredicate(function (item) {
-                return item.id === id;
-            });
+            this.removeTasksByPredicate(function (item) { return item.id === id; });
             this.saveToStorage();
         };
         Tasks.prototype.getNumberOfCompletedTasks = function () {
@@ -91,9 +91,7 @@ var TodoApp;
             return res;
         };
         Tasks.prototype.removeCompletedTasks = function () {
-            this.removeTasksByPredicate(function (item) {
-                return item.completed;
-            });
+            this.removeTasksByPredicate(function (item) { return item.completed; });
             this.saveToStorage();
         };
         Tasks.prototype.setTaskStatus = function (taskId, status) {
@@ -131,4 +129,3 @@ var TodoApp;
     })();
     TodoApp.Tasks = Tasks;
 })(TodoApp || (TodoApp = {}));
-//# sourceMappingURL=model.js.map

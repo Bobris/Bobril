@@ -50,9 +50,7 @@ var TeamRolePoll;
             if (ctx.data.isEven)
                 me.className = "even";
             me.children = [
-                ctx.data.answer,
-                ' [' + ctx.data.value + ']',
-                h("br"),
+                ctx.data.answer, ' [' + ctx.data.value + ']', h("br"),
                 rangeInput(ctx.data.value, ctx.data.onChange)
             ];
         }
@@ -119,17 +117,23 @@ var TeamRolePoll;
             me.tag = "div";
             me.children = [
                 h("h3", question[lang]),
-                h("ul", question.answers.map(function (ans, ansIdx) { return h("li", {
-                    component: Answer,
-                    data: {
-                        answer: ans[lang],
-                        value: getAnswerValue(ctx.data.poll.answers, idx, ansIdx),
-                        onChange: createHandler(ctx.data.poll.answers, idx, ansIdx),
-                        isEven: (ansIdx % 2 != 0)
-                    }
-                }); })),
-                idx > 0 ? b.link(h("a", " " + localize('Previous', lang) + " "), "question", { idx: '' + (idx - 1) }) : h("span"),
-                (idx + 1) < polldata.length ? b.link(h("a", " " + localize('Next', lang) + " "), "question", { idx: '' + (idx + 1) }) : b.link(h("a", localize('Result', lang)), "result")
+                h("ul", question.answers.map(function (ans, ansIdx) {
+                    return h("li", {
+                        component: Answer,
+                        data: {
+                            answer: ans[lang],
+                            value: getAnswerValue(ctx.data.poll.answers, idx, ansIdx),
+                            onChange: createHandler(ctx.data.poll.answers, idx, ansIdx),
+                            isEven: (ansIdx % 2 != 0)
+                        }
+                    });
+                })),
+                idx > 0
+                    ? b.link(h("a", " " + localize('Previous', lang) + " "), "question", { idx: '' + (idx - 1) })
+                    : h("span"),
+                (idx + 1) < polldata.length
+                    ? b.link(h("a", " " + localize('Next', lang) + " "), "question", { idx: '' + (idx + 1) })
+                    : b.link(h("a", localize('Result', lang)), "result")
             ];
         }
     };
@@ -148,7 +152,7 @@ var TeamRolePoll;
                 {
                     data: {
                         path: ["rect", 0, 0, 3 * value, 20],
-                        fill: "#00BB11"
+                        fill: "#00BB11",
                     }
                 }
             ]
@@ -164,7 +168,9 @@ var TeamRolePoll;
                 me.children = [h("p", localize('NoData', lang))];
             else
                 me.children = [
-                    h("table", rolepoints.map(function (r) { return h("tr", h("td", getRoleName(ctx.data.poll.role, lang, r.id)), h("td", Math.round(r.value * 100 / sum) + '%'), h("td", createBar(r.value))); }))
+                    h("table", rolepoints.map(function (r) {
+                        return h("tr", h("td", getRoleName(ctx.data.poll.role, lang, r.id)), h("td", Math.round(r.value * 100 / sum) + '%'), h("td", createBar(r.value)));
+                    }))
                 ];
         }
     };
@@ -224,17 +230,11 @@ var TeamRolePoll;
     b.routes(b.route({ handler: App, data: { poll: pollData } }, [
         b.route({ name: "questions", data: { questions: pollData.questions }, handler: PollPage }),
         b.route({
-            name: "question",
-            url: "/question/:idx",
-            data: { poll: pollData },
-            handler: QuestionPage,
-            keyBuilder: function (p) {
-                return p["idx"];
-            }
+            name: "question", url: "/question/:idx", data: { poll: pollData },
+            handler: QuestionPage, keyBuilder: function (p) { return p["idx"]; }
         }),
         b.route({ name: "result", data: { poll: pollData }, handler: ResultPage }),
         b.routeDefault({ handler: PollPage, data: { questions: pollData.questions } }),
         b.routeNotFound({ name: "notFound", handler: NotFound })
     ]));
 })(TeamRolePoll || (TeamRolePoll = {}));
-//# sourceMappingURL=app.js.map

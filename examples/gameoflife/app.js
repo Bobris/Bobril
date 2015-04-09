@@ -9,13 +9,9 @@
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     var startLiveCell = [
-        [-12, -6],
-        [-12, -5],
-        [-11, -6],
-        [-11, -5],
-        [-3, -6],
-        [-3, -5],
-        [-3, -4],
+        [-12, -6], [-12, -5],
+        [-11, -6], [-11, -5],
+        [-3, -6], [-3, -5], [-3, -4],
         [-2, -7],
         [-1, -8],
         [0, -8],
@@ -28,13 +24,12 @@ var GameOfLifeApp;
         return [
             {
                 component: GameOfLifeApp.Header,
-                data: { level: 0 /* H1 */, content: "Game of life" }
+                data: { level: GameOfLifeApp.HeaderLevel.H1, content: "Game of life" }
             },
             {
                 component: GameOfLifeApp.GameController,
-                data: { runing: true, width: 700, height: 350, delay: 100, startLiveCell: startLiveCell }
+                data: { runing: true, width: 700, height: 350, delay: 100, startLiveCell: startLiveCell },
             }
         ];
     });
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=app.js.map

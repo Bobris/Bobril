@@ -13,10 +13,7 @@ var RouterApp;
         id: "Page1",
         init: function (ctx, me) {
             ctx.ticks = 0;
-            ctx.timer = setInterval(function () {
-                ctx.ticks++;
-                b.invalidate();
-            }, 1000);
+            ctx.timer = setInterval(function () { ctx.ticks++; b.invalidate(); }, 1000);
         },
         render: function (ctx, me) {
             me.tag = "div";
@@ -48,4 +45,3 @@ var RouterApp;
         b.route({ name: "page2", handler: Page2 })
     ]));
 })(RouterApp || (RouterApp = {}));
-//# sourceMappingURL=app.js.map

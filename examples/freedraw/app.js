@@ -76,27 +76,15 @@ var FreeDrawApp;
     b.init(function () {
         return [
             {
-                tag: "div",
-                style: { touchAction: "none", width: "100%", height: "100%" },
-                component: FreeDrawComp
+                tag: "div", style: { touchAction: "none", width: "100%", height: "100%" }, component: FreeDrawComp
             },
             {
-                tag: "div",
-                style: {
-                    position: "fixed",
-                    left: "20px",
-                    top: "20px",
-                    minWidth: "10px",
-                    height: "50px",
-                    background: "#a0a0a0",
-                    opacity: 0.5,
-                    fontSize: "40px",
-                    padding: "4px",
+                tag: "div", style: {
+                    position: "fixed", left: "20px", top: "20px", minWidth: "10px", height: "50px",
+                    background: "#a0a0a0", opacity: 0.5, fontSize: "40px", padding: "4px",
                     pointerEvents: "none"
-                },
-                children: "FreeDraw"
+                }, children: "FreeDraw"
             }
         ];
     });
 })(FreeDrawApp || (FreeDrawApp = {}));
-//# sourceMappingURL=app.js.map
