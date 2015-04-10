@@ -11,13 +11,13 @@ module DndApp {
             tag: "div",
             style: { display: "table", width: "100%" },
             children: [
-                { tag: "div", style: { display: "table-cell", "vertical-align": "top", width: leftWidth }, children: left },
-                { tag: "div", style: { display: "table-cell", "vertical-align": "top" }, children: right }
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top", width: leftWidth }, children: left },
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top" }, children: right }
             ]
         };
     }
 
-    var spacer = { tag: "div", style: "height:1em" };
+    var spacer = { tag: "div", style: { height: "1em" } };
 
     interface IProgLang {
         name: string;
@@ -38,8 +38,8 @@ module DndApp {
     var ProgLangSourceComp: IBobrilComponent = {
         render(ctx: IProgLangSourceCtx, me: IBobrilNode) {
             me.tag = "div";
-            me.style = { position: "relative", width: 50, height: 40 };
-            me.children = ctx.data.lang.name;
+            me.style = { display: "inline-block", margin: 5, padding: 10, border: "1px solid #444" };
+            me.children = { tag: "div", style: { display: "inline-block", position: "relative", width: 50, height: 40 }, children: ctx.data.lang.name };
         },
         onDragStart(ctx: IProgLangSourceCtx, dndCtx: IDndStartCtx): boolean {
             dndCtx.setSource(ctx);
@@ -50,21 +50,64 @@ module DndApp {
     };
 
     function progSource(lang: IProgLang) {
-        return { component: ProgLangSourceComp, data: { lang: lang } };
+        return { component: ProgLangSourceComp, data: { lang } };
     }
 
-    function progTarget(): IBobrilNode {
-        return { children: "TODO" };
+    interface IProgLangTargetData {
+        test: (lang: IProgLang) => boolean;
+        content: IBobrilChildren;
+    }
+
+    interface IProgLangTargetCtx extends IBobrilCtx {
+        data: IProgLangTargetData;
+        droppedList: string[];
+    }
+
+    var ProgLangTargetComp: IBobrilComponent = {
+        init(ctx: IProgLangTargetCtx) {
+            ctx.droppedList = [];
+        },
+        render(ctx: IProgLangTargetCtx, me: IBobrilNode) {
+            me.tag = "div";
+            me.style = { display: "inline-block", margin: 5, padding: 20, border: "1px solid #444" };
+            me.children = {
+                tag: "div", style: { display: "inline-block", position: "relative", minWidth: 50, minHeight: 40 },
+                children: [ctx.data.content, { tag: "div", style: { position: "absolute", left: 0, bottom: -10 }, children: ctx.droppedList.join(", ") }]
+            };
+        },
+        onDragOver(ctx: IProgLangTargetCtx, dndCtx: IDndOverCtx): boolean {
+            if (dndCtx.hasData("bobril/langprog")) {
+                dndCtx.setTargetAndOperation(ctx, DndOp.Move);
+                return true;
+            }
+            return false;
+        },
+        onDrop(ctx: IProgLangTargetCtx, dndCtx: IDndCtx): boolean {
+            var lang = dndCtx.getData("bobril/langprog");
+            if (lang) {
+                if (ctx.data.test(lang)) {
+                    ctx.droppedList.push(lang.name);
+                    b.invalidate(ctx);
+                }
+                return true;
+            }
+        }
+    }
+
+    function progTarget(data: IProgLangTargetData): IBobrilNode {
+        return { component: ProgLangTargetComp, data };
     }
 
     b.init(() => {
-        return [
-            h("h1", "Drag and drop sample"),
-            layoutPair(
-                progLangs.map(l=> ({ tag: "div", style: { display: "inline-block", margin: 5, padding: 10, border: "1px solid #444" }, children: progSource(l) })),
-                progTarget()
-                ),
-            h("p", "Frame: " + b.frame() + " Last frame time:")
-        ];
+        return {
+            tag: "div", style: { maxWidth: 700, touchAction:"none" }, children: [
+                h("h1", "Drag and drop sample"),
+                layoutPair(
+                    progLangs.map(l=> progSource(l)),
+                    progTarget({ test: l=> true, content: [{ tag: "div", children: "Any language" }, progTarget({ test: l=> l.gc, content: "Has GC" }), " ", progTarget({ test: l=> l.jit, content: "Has JIT" })] })
+                    ),
+                h("p", "Frame: " + b.frame() + " Last frame duration:" + b.lastFrameDuration())
+            ]
+        };
     });
 }

@@ -24,6 +24,10 @@
         this.data = Object.create(null);
     };
 
+    DndCtx.prototype.setSource = function(ctx: IBobrilCtx): void {
+        this.sourceCtx = ctx;
+    }
+
     DndCtx.prototype.setTargetAndOperation = function(ctx: IBobrilCtx, operation: DndOp): void {
         this.targetCtx = ctx;
         this.operation = operation;
@@ -106,6 +110,7 @@
     }
 
     function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        console.log(node,ev.x,ev.y);
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
             dnd.x = ev.x;
@@ -123,14 +128,13 @@
                 dnd.x = ev.x;
                 dnd.y = ev.y;
                 dnd.pointerId = ev.id;
-                dnd.sourceCtx = node;
                 if (b.bubble(node, "onDragStart", dnd) && dnd.sourceCtx != null) {
                     pointer2Dnd[ev.id] = dnd;
                     dndmoved(node, dnd);
                     return true;
+                } else {
+                    delete pointer2Dnd[ev.id];
                 }
-            } else {
-                delete pointer2Dnd[ev.id];
             }
         }
         return false;
@@ -143,14 +147,16 @@
             dnd.y = ev.y;
             dndmoved(node, dnd);
             var t: IBobrilCtx = dnd.targetCtx;
-            if (target && b.bubble(t.me, "onDrop", dnd)) {
-                b.bubble(this.sourceCtx.me, "onDragEnd", this);
-                dndmoved(null, this);
+            if (t && b.bubble(t.me, "onDrop", dnd)) {
+                b.bubble(dnd.sourceCtx.me, "onDragEnd", this);
+                dndmoved(null, dnd);
                 delete pointer2Dnd[this.pointerid];
             } else {
                 dnd.cancelDnd();
             }
             return true;
+        } else if (dnd) {
+            delete pointer2Dnd[ev.id];
         }
         return false;
     }
@@ -159,13 +165,15 @@
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
             dnd.cancelDnd();
+        } else {
+            delete pointer2Dnd[ev.id];
         }
         return false;
     }
 
     var addEvent = b.addEvent;
-    addEvent("!PointerDown", 60, handlePointerDown);
-    addEvent("!PointerMove", 60, handlePointerMove);
-    addEvent("!PointerUp", 60, handlePointerUp);
-    addEvent("!PointerCancel", 60, handlePointerCancel);
+    addEvent("!PointerDown", 4, handlePointerDown);
+    addEvent("!PointerMove", 4, handlePointerMove);
+    addEvent("!PointerUp", 4, handlePointerUp);
+    addEvent("!PointerCancel", 4, handlePointerCancel);
 })(b);

@@ -153,6 +153,8 @@ const enum Consts {
             var preventDef = false;
             for (var i = 0; i < ev.changedTouches.length; i++) {
                 var t = ev.changedTouches[i];
+                target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
+                node = b.deref(target);
                 var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY };
                 if (b.emitEvent("!" + name, param, target, node))
                     preventDef = true;
@@ -167,6 +169,8 @@ const enum Consts {
 
     function buildHandlerMouse(name: string) {
         return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+            target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+            node = b.deref(target);
             if (hasPointerEventsNoneB(node)) {
                 var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
                 target = fixed[0];

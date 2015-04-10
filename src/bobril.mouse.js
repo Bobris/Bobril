@@ -129,6 +129,8 @@
             var preventDef = false;
             for (var i = 0; i < ev.changedTouches.length; i++) {
                 var t = ev.changedTouches[i];
+                target = document.elementFromPoint(t.clientX, t.clientY);
+                node = b.deref(target);
                 var param = { id: t.identifier + 2, type: 1 /* Touch */, x: t.clientX, y: t.clientY };
                 if (b.emitEvent("!" + name, param, target, node))
                     preventDef = true;
@@ -142,6 +144,8 @@
     }
     function buildHandlerMouse(name) {
         return function handlePointer(ev, target, node) {
+            target = document.elementFromPoint(ev.clientX, ev.clientY);
+            node = b.deref(target);
             if (hasPointerEventsNoneB(node)) {
                 var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
                 target = fixed[0];
