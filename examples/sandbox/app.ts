@@ -83,7 +83,7 @@ module SandboxApp {
                 tag: "input", attrs: { type: "text" }, component: PasteImageInput
             },
             {
-                tag: "div", attrs: { id: "pastehack", tabIndex: "0", contentEditable: true }, style: { position: "fixed", opacity: 0 }, children: "\u00a0", component: PasteImageContEditable
+                tag: "div", attrs: { id: "pastehack", tabindex: "0", contentEditable: true }, style: { position: "fixed", opacity: 0 }, children: "\u00a0", component: PasteImageContEditable
             },
             {
                 tag: "div", children: imagesrc != "" && {

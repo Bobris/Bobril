@@ -138,23 +138,20 @@ describe("livecycle", () => {
         expect(c.actions).toBe("sc:3;ru:3;i:3;ri:3;i:4;ri:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
     });
 
-    it("initCallsFactory", () => {
-        var done = false;
+    it("initCallsFactory", (done) => {
         var c = new TestComponent();
         b.init(() => {
             setTimeout(() => {
                 expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
-                done = true;
+                done();
             }, 0);
             return { tag: "div", component: c, data: { name: "1" } }
         });
-        waitsFor(() => done);
     });
 
-    it("invalidateInsideFactoryWorks", () => {
+    it("invalidateInsideFactoryWorks", (done) => {
         var c = new TestComponent();
         var state = 0;
-        var done = false;
         b.init(() => {
             state++;
             if (state === 1) {
@@ -163,18 +160,16 @@ describe("livecycle", () => {
             } else {
                 setTimeout(() => {
                     expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;d:1;");
-                    done = true;
+                    done();
                 }, 0);
                 return <any>[];
             }
         });
-        waitsFor(() => done);
     });
 
-    it("smallInvalidateUpdatesOnlyChild", () => {
+    it("smallInvalidateUpdatesOnlyChild", (done) => {
         var c = new TestComponent();
         var state = 0;
-        var done = false;
         var vdom = [{
             tag: "div", component: c, data: { name: "1" }, children:
             {
@@ -187,16 +182,14 @@ describe("livecycle", () => {
                 b.invalidate(c.contexts["2"]);
                 setTimeout(() => {
                     expect(c.actions).toBe("sc:2;ru:2;U:2;pu:2;");
-                    done = true;
+                    done();
                 }, 100);
             }, 0);
             return vdom;
         });
-        waitsFor(() => done);
     });
 
-    it("canFindDomInVdom"), () => {
-        var done = false;
+    it("canFindDomInVdom", (done) => {
         var uid = 0;
         function d(...params: any[]) {
             return { tag: "div", attrs: { id: "bobriltest" + (uid++) }, children: params };
@@ -209,20 +202,18 @@ describe("livecycle", () => {
                     var vnn = b.deref(nn);
                     expect(vnn.attrs.id).toBe(nn.id);
                 }
-                done = true;
+                done();
             }, 0);
             return [d(d(), d(), d(d(), d())), d(), d(d(d(d())))];
         });
-        waitsFor(() => done);
-    }
+    });
 
-    it("afterFrameCallback", () => {
+    it("afterFrameCallback", (done) => {
         var c = new TestComponent();
         var state = 0;
-        var done = false;
         expect(b.setAfterFrame((root) => {
             expect(root[0].data.name).toBe("1");
-            done = true;
+            done();
             b.setAfterFrame(() => { });
         })).not.toBeNull();
         b.init(() => {
@@ -230,7 +221,6 @@ describe("livecycle", () => {
                 tag: "div", component: c, data: { name: "1" }
             }];
         });
-        waitsFor(() => done);
     });
 
     it("uptimeAndNowCouldBeCalled", () => {

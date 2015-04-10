@@ -125,22 +125,19 @@ describe("livecycle", function () {
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:3;ru:3;i:3;ri:3;i:4;ri:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
     });
-    it("initCallsFactory", function () {
-        var done = false;
+    it("initCallsFactory", function (done) {
         var c = new TestComponent();
         b.init(function () {
             setTimeout(function () {
                 expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
-                done = true;
+                done();
             }, 0);
             return { tag: "div", component: c, data: { name: "1" } };
         });
-        waitsFor(function () { return done; });
     });
-    it("invalidateInsideFactoryWorks", function () {
+    it("invalidateInsideFactoryWorks", function (done) {
         var c = new TestComponent();
         var state = 0;
-        var done = false;
         b.init(function () {
             state++;
             if (state === 1) {
@@ -150,17 +147,15 @@ describe("livecycle", function () {
             else {
                 setTimeout(function () {
                     expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;d:1;");
-                    done = true;
+                    done();
                 }, 0);
                 return [];
             }
         });
-        waitsFor(function () { return done; });
     });
-    it("smallInvalidateUpdatesOnlyChild", function () {
+    it("smallInvalidateUpdatesOnlyChild", function (done) {
         var c = new TestComponent();
         var state = 0;
-        var done = false;
         var vdom = [{
                 tag: "div", component: c, data: { name: "1" }, children: {
                     component: c, data: { name: "2", change: true, setme: { tag: "div" } }
@@ -172,15 +167,13 @@ describe("livecycle", function () {
                 b.invalidate(c.contexts["2"]);
                 setTimeout(function () {
                     expect(c.actions).toBe("sc:2;ru:2;U:2;pu:2;");
-                    done = true;
+                    done();
                 }, 100);
             }, 0);
             return vdom;
         });
-        waitsFor(function () { return done; });
     });
-    it("canFindDomInVdom"), function () {
-        var done = false;
+    it("canFindDomInVdom", function (done) {
         var uid = 0;
         function d() {
             var params = [];
@@ -196,19 +189,17 @@ describe("livecycle", function () {
                     var vnn = b.deref(nn);
                     expect(vnn.attrs.id).toBe(nn.id);
                 }
-                done = true;
+                done();
             }, 0);
             return [d(d(), d(), d(d(), d())), d(), d(d(d(d())))];
         });
-        waitsFor(function () { return done; });
-    };
-    it("afterFrameCallback", function () {
+    });
+    it("afterFrameCallback", function (done) {
         var c = new TestComponent();
         var state = 0;
-        var done = false;
         expect(b.setAfterFrame(function (root) {
             expect(root[0].data.name).toBe("1");
-            done = true;
+            done();
             b.setAfterFrame(function () { });
         })).not.toBeNull();
         b.init(function () {
@@ -216,7 +207,6 @@ describe("livecycle", function () {
                     tag: "div", component: c, data: { name: "1" }
                 }];
         });
-        waitsFor(function () { return done; });
     });
     it("uptimeAndNowCouldBeCalled", function () {
         b.uptime();

@@ -89,7 +89,7 @@ interface IBobrilAttributes {
     id?: string;
     href?: string;
     value?: boolean|string|string[];
-    tabIndex?: number;
+    tabindex?: number;
     [name: string]: any;
 }
 

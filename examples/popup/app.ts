@@ -67,7 +67,7 @@ module PopupApp {
             ctx.disabled = ctx.data.action === null;
             ctx.down = ctx.hover && ctx.mousedown || ctx.keydown;
             me.style = ctx.cfg.buttonStyle(ctx);
-            me.attrs = { tabIndex: ctx.disabled ? -1 : 0 };
+            me.attrs = { tabindex: ctx.disabled ? -1 : 0 };
             me.children = ctx.data.content;
         },
         onFocus(ctx: any): boolean {

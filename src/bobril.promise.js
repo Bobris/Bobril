@@ -218,6 +218,6 @@
     }); };
     b.asap = asap;
     b.Promise = Promise;
+    if (!window.Promise)
+        window.Promise = Promise;
 })(b, window, document);
-if (!Promise)
-    Promise = b.Promise;

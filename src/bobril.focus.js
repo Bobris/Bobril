@@ -84,7 +84,7 @@
         }
         var attrs = node.attrs;
         if (attrs != null) {
-            var ti = attrs.tabIndex;
+            var ti = attrs.tabindex || attrs.tabIndex; // < tabIndex is here because of backward compatibility
             if (ti !== undefined || focusableTag.test(node.tag)) {
                 if (+ti === -1)
                     return false;
