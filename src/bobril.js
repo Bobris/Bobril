@@ -1345,7 +1345,7 @@ b = (function (window, document) {
                 var m = c[name];
                 if (m) {
                     if (m.call(c, ctx, param))
-                        return true;
+                        return ctx;
                 }
                 m = c.shouldStopBubble;
                 if (m) {
@@ -1355,37 +1355,50 @@ b = (function (window, document) {
             }
             node = node.parent;
         }
-        return false;
+        return null;
     }
     function broadcastEventToNode(node, name, param) {
         if (!node)
-            return false;
+            return null;
         var c = node.component;
         if (c) {
             var ctx = node.ctx;
-            if (c.shouldStopBroadcast(ctx, name, param))
-                return false;
             var m = c[name];
             if (m) {
                 if (m.call(c, ctx, param))
-                    return true;
+                    return ctx;
+            }
+            m = c.shouldStopBroadcast;
+            if (m) {
+                if (m.call(c, ctx, name, param))
+                    return null;
             }
         }
-        return broadcastEvent(node, name, param);
-    }
-    function broadcastEvent(node, name, param) {
-        if (!node)
-            return false;
         var ch = node.children;
         if (isArray(ch)) {
             for (var i = 0; i < ch.length; i++) {
-                if (broadcastEventToNode(ch[i], name, param))
-                    return true;
+                var res = broadcastEventToNode(ch[i], name, param);
+                if (res != null)
+                    return res;
             }
         }
         else {
             return broadcastEventToNode(ch, name, param);
         }
+    }
+    function broadcastEvent(name, param) {
+        var k = Object.keys(roots);
+        for (var i = 0; i < k.length; i++) {
+            var ch = roots[k[i]].c;
+            if (ch != null) {
+                for (var j = 0; j < ch.length; j++) {
+                    var res = broadcastEventToNode(ch[j], name, param);
+                    if (res != null)
+                        return res;
+                }
+            }
+        }
+        return null;
     }
     function merge(f1, f2) {
         var _this = this;
@@ -1511,6 +1524,7 @@ b = (function (window, document) {
         invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
         vdomPath: vdomPath,
+        getDomNode: findFirstNode,
         deref: getCacheNode,
         addEvent: addEvent,
         emitEvent: emitEvent,

@@ -25,13 +25,18 @@ var DndApp;
     var ProgLangSourceComp = {
         render: function (ctx, me) {
             me.tag = "div";
-            me.style = { display: "inline-block", margin: 5, padding: 10, border: "1px solid #444" };
+            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            if (ctx.data.dnd) {
+                var dnd = ctx.data.dnd;
+                me.style.left = dnd.deltaX;
+                me.style.top = dnd.deltaY;
+            }
             me.children = { tag: "div", style: { display: "inline-block", position: "relative", width: 50, height: 40 }, children: ctx.data.lang.name };
         },
         onDragStart: function (ctx, dndCtx) {
-            dndCtx.setSource(ctx);
             dndCtx.addData("bobril/langprog", ctx.data.lang);
             dndCtx.setOpEnabled(false, false, true);
+            dndCtx.setDragNodeView(function (dnd) { return ({ component: ProgLangSourceComp, data: { lang: ctx.data.lang, dnd: dnd } }); });
             return true;
         }
     };
@@ -52,7 +57,7 @@ var DndApp;
         },
         onDragOver: function (ctx, dndCtx) {
             if (dndCtx.hasData("bobril/langprog")) {
-                dndCtx.setTargetAndOperation(ctx, 3 /* Move */);
+                dndCtx.setOperation(3 /* Move */);
                 return true;
             }
             return false;

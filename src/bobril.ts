@@ -633,7 +633,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var ctx = c.ctx;
         if (component && ctx != null) {
             if ((<any>ctx)[ctxInvalidated] === frame) {
-                deepness = Math.max(deepness,  (<any>ctx)[ctxDeepness]);
+                deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
             }
             if (component.id !== c.component.id) {
                 bigChange = true;
@@ -1206,7 +1206,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var node = cache[i];
             var ctx = node.ctx;
             if (ctx != null && (<any>ctx)[ctxInvalidated] === frame) {
-                var cloned:IBobrilNode = { data: ctx.data, component: node.component };
+                var cloned: IBobrilNode = { data: ctx.data, component: node.component };
                 cache[i] = updateNode(cloned, node, element, createBefore, (<any>ctx)[ctxDeepness]);
             } else if (isArray(node.children)) {
                 var backupInSvg = inSvg;
@@ -1330,7 +1330,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         invalidate();
     }
 
-    function bubbleEvent(node: IBobrilCacheNode, name: string, param: any): boolean {
+    function bubbleEvent(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx {
         while (node) {
             var c = node.component;
             if (c) {
@@ -1338,7 +1338,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 var m = (<any>c)[name];
                 if (m) {
                     if (m.call(c, ctx, param))
-                        return true;
+                        return ctx;
                 }
                 m = (<any>c).shouldStopBubble;
                 if (m) {
@@ -1348,38 +1348,51 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
             node = node.parent;
         }
-        return false;
+        return null;
     }
 
-    function broadcastEventToNode(node: IBobrilCacheNode, name: string, param: any): boolean {
+    function broadcastEventToNode(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx {
         if (!node)
-            return false;
+            return null;
         var c = node.component;
         if (c) {
             var ctx = node.ctx;
-            if (c.shouldStopBroadcast(ctx, name, param))
-                return false;
             var m = (<any>c)[name];
             if (m) {
                 if (m.call(c, ctx, param))
-                    return true;
+                    return ctx;
+            }
+            m = c.shouldStopBroadcast;
+            if (m) {
+                if (m.call(c, ctx, name, param))
+                    return null;
             }
         }
-        return broadcastEvent(node, name, param);
-    }
-
-    function broadcastEvent(node: IBobrilCacheNode, name: string, param: any): boolean {
-        if (!node)
-            return false;
         var ch = node.children;
         if (isArray(ch)) {
             for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-                if (broadcastEventToNode((<IBobrilCacheNode[]>ch)[i], name, param))
-                    return true;
+                var res = broadcastEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
+                if (res != null)
+                    return res;
             }
         } else {
             return broadcastEventToNode(ch, name, param);
         }
+    }
+
+    function broadcastEvent(name: string, param: any): IBobrilCtx {
+        var k = Object.keys(roots);
+        for (var i = 0; i < k.length; i++) {
+            var ch = roots[k[i]].c;
+            if (ch != null) {
+                for (var j = 0; j < ch.length; j++) {
+                    var res = broadcastEventToNode(ch[j], name, param);
+                    if (res != null)
+                        return res;
+                }
+            }
+        }
+        return null;
     }
 
     function merge(f1: Function, f2: Function): Function {
@@ -1499,6 +1512,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         invalidated: () => scheduled,
         preventDefault: preventDefault,
         vdomPath: vdomPath,
+        getDomNode: findFirstNode,
         deref: getCacheNode,
         addEvent: addEvent,
         emitEvent: emitEvent,

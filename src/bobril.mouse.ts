@@ -47,8 +47,20 @@ const enum Consts {
 
     var preventDefault = b.preventDefault;
 
-    function hasPointerEventsNoneB(node: IBobrilNode): boolean {
-        return node && node.style && node.style.pointerEvents === "none";
+    function hasPointerEventsNoneB(node: IBobrilCacheNode): boolean {
+        while (node) {
+            var s = node.style;
+            if (s) {
+                var e = s.pointerEvents;
+                if (e!==undefined) {
+                    if (e === "none")
+                        return true;
+                    return false;
+                }
+            }
+            node = node.parent;
+        }
+        return false;
     }
 
     function hasPointerEventsNone(target: Node): boolean {
@@ -172,7 +184,7 @@ const enum Consts {
             target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
             node = b.deref(target);
             if (hasPointerEventsNoneB(node)) {
-                var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+                var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
                 target = fixed[0];
                 node = fixed[1];
             }
@@ -210,8 +222,8 @@ const enum Consts {
     for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
         ((name: string) => {
             var onname = "on" + name;
-            addEvent("!" + name, 50,(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
-                return invokeMouseOwner(onname, ev) || b.bubble(node, onname, ev);
+            addEvent("!" + name, 50, (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+                return invokeMouseOwner(onname, ev) || (b.bubble(node, onname, ev) != null);
             });
         })(pointersEventNames[j]);
     }
@@ -313,7 +325,7 @@ const enum Consts {
                 if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
+                    var handled = invokeMouseOwner(onClickText, param) || (b.bubble(node, onClickText, param) != null);
                     toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay, handled ? 1 : 0]);
                     return handled;
                 }

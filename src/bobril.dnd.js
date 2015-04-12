@@ -3,50 +3,101 @@
 /// <reference path="bobril.dnd.d.ts"/>
 (function (b) {
     var lastDndId = 0;
-    var DndCtx = function () {
+    var dnds = [];
+    var rootId = null;
+    var DndCtx = function (pointerId) {
         this.id = ++lastDndId;
-        this.pointerid = -1;
+        this.pointerid = pointerId;
         this.linkEnabled = true;
         this.copyEnabled = true;
         this.moveEnabled = true;
         this.operation = 0 /* None */;
-        this.sourceCtx = null;
         this.targetCtx = null;
-        this.targetPath = [];
+        this.dragView = null;
         this.x = 0;
         this.y = 0;
+        this.deltaX = 0;
+        this.deltaY = 0;
         this.shift = false;
         this.ctrl = false;
         this.alt = false;
         this.meta = false;
         this.data = Object.create(null);
+        if (pointerId >= 0)
+            pointer2Dnd[pointerId] = this;
+        dnds.push(this);
+        if (rootId == null) {
+            rootId = b.addRoot(dndRootFactory);
+        }
     };
-    DndCtx.prototype.setSource = function (ctx) {
-        this.sourceCtx = ctx;
+    var DndComp = {
+        render: function (ctx, me) {
+            var dnd = ctx.data;
+            me.tag = "div";
+            me.style = { position: "absolute", left: dnd.x, top: dnd.y };
+            me.children = dnd.dragView(dnd);
+        }
     };
-    DndCtx.prototype.setTargetAndOperation = function (ctx, operation) {
-        this.targetCtx = ctx;
+    var DndRootComp = {
+        render: function (ctx, me) {
+            var res = [];
+            for (var i = 0; i < dnds.length; i++) {
+                var dnd = dnds[i];
+                if (dnd.dragView != null) {
+                    res.push({ key: "" + dnd.id, data: dnd, component: DndComp });
+                }
+            }
+            me.tag = "div";
+            me.style = { position: "fixed", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
+            me.children = res;
+        },
+        onDrag: function (ctx) {
+            b.invalidate(ctx);
+            return false;
+        }
+    };
+    function dndRootFactory() {
+        return { component: DndRootComp };
+    }
+    var dndProto = DndCtx.prototype;
+    dndProto.setOperation = function (operation) {
         this.operation = operation;
     };
-    DndCtx.prototype.addData = function (type, data) {
+    dndProto.setDragNodeView = function (view) {
+        this.dragView = view;
+    };
+    dndProto.addData = function (type, data) {
         this.data[type] = data;
         return true;
     };
-    DndCtx.prototype.hasData = function (type) {
+    dndProto.hasData = function (type) {
         return this.data[type] !== undefined;
     };
-    DndCtx.prototype.getData = function (type) {
+    dndProto.getData = function (type) {
         return this.data[type];
     };
-    DndCtx.prototype.setOpEnabled = function (link, copy, move) {
+    dndProto.setOpEnabled = function (link, copy, move) {
         this.linkEnabled = link;
         this.copyEnabled = copy;
         this.moveEnabled = move;
     };
-    DndCtx.prototype.cancelDnd = function () {
+    dndProto.cancelDnd = function () {
         dndmoved(null, this);
-        b.bubble(this.sourceCtx.me, "onDragEnd", this);
+        b.broadcast("onDragEnd", this);
+        this.destroy();
+    };
+    dndProto.destroy = function () {
         delete pointer2Dnd[this.pointerid];
+        for (var i = 0; i < dnds.length; i++) {
+            if (dnds[i] === this) {
+                dnds.splice(i, 1);
+                break;
+            }
+        }
+        if (dnds.length === 0) {
+            b.removeRoot(rootId);
+            rootId = null;
+        }
     };
     var pointer2Dnd = Object.create(null);
     function handlePointerDown(ev, target, node) {
@@ -54,49 +105,17 @@
         if (dnd && dnd.totalX == null) {
             dnd.cancelDnd();
         }
-        pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, sourceNode: node };
+        pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
         return false;
     }
     function dndmoved(node, dnd) {
-        dnd.targetCtx = null;
-        if (node == null || !b.bubble(node, "onDragOver", dnd) || dnd.targetCtx == null) {
+        dnd.targetCtx = b.bubble(node, "onDragOver", dnd);
+        if (dnd.targetCtx == null) {
             dnd.operation = 0 /* None */;
         }
-        b.bubble(dnd.sourceCtx.me, "onDrag", dnd);
-        var prevPath = dnd.targetPath;
-        var toPath = [];
-        var t = dnd.targetCtx;
-        var tnode = t ? t.me : null;
-        while (tnode) {
-            t = tnode.ctx;
-            if (t)
-                toPath.push(t);
-            tnode = tnode.parent;
-        }
-        var common = 0;
-        while (common < prevPath.length && common < toPath.length && prevPath[common] === toPath[common])
-            common++;
-        var i = prevPath.length;
-        var n;
-        var c;
-        while (i > common) {
-            i--;
-            n = prevPath[i];
-            c = n.me.component;
-            if (c.onDragLeave)
-                c.onDragLeave(n, dnd);
-        }
-        while (i < toPath.length) {
-            n = toPath[i];
-            c = n.me.component;
-            if (c.onDragEnter)
-                c.onDragEnter(n, dnd);
-            i++;
-        }
-        dnd.targetPath = toPath;
+        b.broadcast("onDrag", dnd);
     }
     function handlePointerMove(ev, target, node) {
-        console.log(node, ev.x, ev.y);
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
             dnd.x = ev.x;
@@ -111,17 +130,29 @@
             dnd.lastY = ev.y;
             if (dnd.totalX + dnd.totalY > 20) {
                 node = dnd.sourceNode;
-                dnd = new DndCtx();
+                var startX = dnd.startX;
+                var startY = dnd.startY;
+                dnd = new DndCtx(ev.id);
                 dnd.x = ev.x;
                 dnd.y = ev.y;
-                dnd.pointerId = ev.id;
-                if (b.bubble(node, "onDragStart", dnd) && dnd.sourceCtx != null) {
-                    pointer2Dnd[ev.id] = dnd;
+                var sourceCtx = b.bubble(node, "onDragStart", dnd);
+                if (sourceCtx) {
+                    var htmlNode = b.getDomNode(sourceCtx.me);
+                    if (htmlNode == null) {
+                        dnd.destroy();
+                        return false;
+                    }
+                    var boundFn = htmlNode.getBoundingClientRect;
+                    if (boundFn) {
+                        var rect = boundFn.call(htmlNode);
+                        dnd.deltaX = rect.left - startX;
+                        dnd.deltaY = rect.top - startY;
+                    }
                     dndmoved(node, dnd);
                     return true;
                 }
                 else {
-                    delete pointer2Dnd[ev.id];
+                    dnd.destroy();
                 }
             }
         }
@@ -135,9 +166,9 @@
             dndmoved(node, dnd);
             var t = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
-                b.bubble(dnd.sourceCtx.me, "onDragEnd", this);
+                b.broadcast("onDragEnd", this);
                 dndmoved(null, dnd);
-                delete pointer2Dnd[this.pointerid];
+                dnd.destroy();
             }
             else {
                 dnd.cancelDnd();

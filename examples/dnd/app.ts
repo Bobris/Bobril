@@ -29,6 +29,7 @@ module DndApp {
 
     interface IProgLangSourceData {
         lang: IProgLang;
+        dnd?: IDndCtx;
     }
 
     interface IProgLangSourceCtx extends IBobrilCtx {
@@ -38,13 +39,18 @@ module DndApp {
     var ProgLangSourceComp: IBobrilComponent = {
         render(ctx: IProgLangSourceCtx, me: IBobrilNode) {
             me.tag = "div";
-            me.style = { display: "inline-block", margin: 5, padding: 10, border: "1px solid #444" };
+            me.style = { display: "inline-block", position: "relative", left:0, top:0, cursor:"move", margin: 5, padding: 10, userSelect:"none", border: "1px solid #444", background: "#eee" };
+            if (ctx.data.dnd) {
+                var dnd = ctx.data.dnd;
+                me.style.left = dnd.deltaX;
+                me.style.top = dnd.deltaY;
+            }
             me.children = { tag: "div", style: { display: "inline-block", position: "relative", width: 50, height: 40 }, children: ctx.data.lang.name };
         },
         onDragStart(ctx: IProgLangSourceCtx, dndCtx: IDndStartCtx): boolean {
-            dndCtx.setSource(ctx);
             dndCtx.addData("bobril/langprog", ctx.data.lang);
             dndCtx.setOpEnabled(false, false, true);
+            dndCtx.setDragNodeView(dnd=>({ component:ProgLangSourceComp, data: { lang:ctx.data.lang, dnd } }));
             return true;
         }
     };
@@ -77,7 +83,7 @@ module DndApp {
         },
         onDragOver(ctx: IProgLangTargetCtx, dndCtx: IDndOverCtx): boolean {
             if (dndCtx.hasData("bobril/langprog")) {
-                dndCtx.setTargetAndOperation(ctx, DndOp.Move);
+                dndCtx.setOperation(DndOp.Move);
                 return true;
             }
             return false;
