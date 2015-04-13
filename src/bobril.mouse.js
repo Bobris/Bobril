@@ -288,11 +288,12 @@
             mouseEnterAndLeave(ev);
             firstPointerDown = -1;
             if (ev.type == 1 /* Touch */ && !tapCanceled) {
-                if (now() - firstPointerDownTime < 750 /* TabShouldBeShorterThanMs */) {
+                if (now() - firstPointerDownTime < 750 /* TapShouldBeShorterThanMs */) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param = { x: ev.x, y: ev.y };
                     var handled = invokeMouseOwner(onClickText, param) || (b.bubble(node, onClickText, param) != null);
-                    toBust.push([ev.x, ev.y, now() + 500 /* MaxBustDelay */, handled ? 1 : 0]);
+                    var delay = (b.ieVersion()) ? 800 /*MaxBustDelayForIE*/ : 500; /*MaxBustDelay*/
+                    toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                     return handled;
                 }
             }
@@ -360,7 +361,8 @@
     b.pointersDownCount = function () { return Object.keys(pointersDown).length; };
     b.firstPointerDownId = function () { return firstPointerDown; };
     b.ignoreClick = function (x, y) {
-        toBust.push([x, y, now() + 500 /* MaxBustDelay */, 1]);
+        var delay = (b.ieVersion()) ? 800 /*MaxBustDelayForIE*/ : 500; /*MaxBustDelay*/
+        toBust.push([x, y, now() + delay, 1]);
     };
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;
