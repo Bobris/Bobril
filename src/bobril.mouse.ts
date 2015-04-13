@@ -4,8 +4,9 @@
 
 const enum Consts {
     MoveOverIsNotTap = 13,
-    TabShouldBeShorterThanMs = 750,
+    TapShouldBeShorterThanMs = 750,
     MaxBustDelay = 500,
+    MaxBustDelayForIE = 800,
     BustDistance = 50
 }
 
@@ -322,11 +323,12 @@ const enum Consts {
             mouseEnterAndLeave(ev);
             firstPointerDown = -1;
             if (ev.type == BobrilPointerType.Touch && !tapCanceled) {
-                if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
+                if (now() - firstPointerDownTime < Consts.TapShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
                     var handled = invokeMouseOwner(onClickText, param) || (b.bubble(node, onClickText, param) != null);
-                    toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay, handled ? 1 : 0]);
+                    var delay = (b.ieVersion()) ? Consts.MaxBustDelayForIE : Consts.MaxBustDelay;
+                    toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                     return handled;
                 }
             }
@@ -400,7 +402,8 @@ const enum Consts {
     b.pointersDownCount = () => Object.keys(pointersDown).length;
     b.firstPointerDownId = () => firstPointerDown;
     b.ignoreClick = (x: number, y: number) => {
-        toBust.push([x, y, now() + Consts.MaxBustDelay, 1]);
+        var delay = (b.ieVersion()) ? Consts.MaxBustDelayForIE : Consts.MaxBustDelay;
+        toBust.push([x, y, now() + delay, 1]);
     };
 
     b.registerMouseOwner = registerMouseOwner;
