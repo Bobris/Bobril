@@ -32,7 +32,19 @@
     }
     var preventDefault = b.preventDefault;
     function hasPointerEventsNoneB(node) {
-        return node && node.style && node.style.pointerEvents === "none";
+        while (node) {
+            var s = node.style;
+            if (s) {
+                var e = s.pointerEvents;
+                if (e !== undefined) {
+                    if (e === "none")
+                        return true;
+                    return false;
+                }
+            }
+            node = node.parent;
+        }
+        return false;
     }
     function hasPointerEventsNone(target) {
         var bNode = b.deref(target);
@@ -81,6 +93,7 @@
     var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
     var i;
     if (b.ieVersion() && b.ieVersion() < 11) {
+        // emulate pointer-events: none in older ie
         var mouseEvents = [
             "click", "dblclick", "drag", "dragend",
             "dragenter", "dragleave", "dragover", "dragstart",
@@ -92,10 +105,10 @@
     }
     function type2Bobril(t) {
         if (t == "mouse")
-            return 0;
+            return 0 /* Mouse */;
         if (t == "pen")
-            return 2;
-        return 1;
+            return 2 /* Pen */;
+        return 1 /* Touch */;
     }
     function pointerEventsNoneFix(x, y, target, node) {
         var hiddenEls = [];
@@ -128,7 +141,9 @@
             var preventDef = false;
             for (var i = 0; i < ev.changedTouches.length; i++) {
                 var t = ev.changedTouches[i];
-                var param = { id: t.identifier + 2, type: 1, x: t.clientX, y: t.clientY };
+                target = document.elementFromPoint(t.clientX, t.clientY);
+                node = b.deref(target);
+                var param = { id: t.identifier + 2, type: 1 /* Touch */, x: t.clientX, y: t.clientY };
                 if (b.emitEvent("!" + name, param, target, node))
                     preventDef = true;
             }
@@ -141,12 +156,14 @@
     }
     function buildHandlerMouse(name) {
         return function handlePointer(ev, target, node) {
+            target = document.elementFromPoint(ev.clientX, ev.clientY);
+            node = b.deref(target);
             if (hasPointerEventsNoneB(node)) {
-                var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+                var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param = { id: 1, type: 0, x: ev.clientX, y: ev.clientY };
+            var param = { id: 1, type: 0 /* Mouse */, x: ev.clientX, y: ev.clientY };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -155,33 +172,33 @@
         };
     }
     if (window.onpointerdown !== undefined) {
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
             var name = pointersEventNames[i];
             addEvent5(name.toLowerCase(), buildHandlerPointer(name));
         }
     }
     else if (window.onmspointerdown !== undefined) {
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
             var name = pointersEventNames[i];
             addEvent5("MS" + name, buildHandlerPointer(name));
         }
     }
     else {
         if (window.ontouchstart !== undefined) {
-            addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0]));
-            addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1]));
-            addEvent5("touchend", buildHandlerTouch(pointersEventNames[2]));
-            addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3]));
+            addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0] /*"PointerDown"*/));
+            addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1] /*"PointerMove"*/));
+            addEvent5("touchend", buildHandlerTouch(pointersEventNames[2] /*"PointerUp"*/));
+            addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3] /*"PointerCancel"*/));
         }
-        addEvent5("mousedown", buildHandlerMouse(pointersEventNames[0]));
-        addEvent5("mousemove", buildHandlerMouse(pointersEventNames[1]));
-        addEvent5("mouseup", buildHandlerMouse(pointersEventNames[2]));
+        addEvent5("mousedown", buildHandlerMouse(pointersEventNames[0] /*"PointerDown"*/));
+        addEvent5("mousemove", buildHandlerMouse(pointersEventNames[1] /*"PointerMove"*/));
+        addEvent5("mouseup", buildHandlerMouse(pointersEventNames[2] /*"PointerUp"*/));
     }
-    for (var j = 0; j < 4; j++) {
+    for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
         (function (name) {
             var onname = "on" + name;
             addEvent("!" + name, 50, function (ev, target, node) {
-                return invokeMouseOwner(onname, ev) || b.bubble(node, onname, ev);
+                return invokeMouseOwner(onname, ev) || (b.bubble(node, onname, ev) != null);
             });
         })(pointersEventNames[j]);
     }
@@ -257,7 +274,7 @@
     function bustingPointerMove(ev, target, node) {
         if (firstPointerDown === ev.id) {
             mouseEnterAndLeave(ev);
-            if (!diffLess(firstPointerDownX, ev.x, 13) || !diffLess(firstPointerDownY, ev.y, 13))
+            if (!diffLess(firstPointerDownX, ev.x, 13 /* MoveOverIsNotTap */) || !diffLess(firstPointerDownY, ev.y, 13 /* MoveOverIsNotTap */))
                 tapCanceled = true;
         }
         else if (noPointersDown()) {
@@ -270,12 +287,13 @@
         if (firstPointerDown == ev.id) {
             mouseEnterAndLeave(ev);
             firstPointerDown = -1;
-            if (ev.type == 1 && !tapCanceled) {
-                if (now() - firstPointerDownTime < 750) {
+            if (ev.type == 1 /* Touch */ && !tapCanceled) {
+                if (now() - firstPointerDownTime < 750 /* TapShouldBeShorterThanMs */) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param = { x: ev.x, y: ev.y };
-                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
-                    toBust.push([ev.x, ev.y, now() + 500, handled ? 1 : 0]);
+                    var handled = invokeMouseOwner(onClickText, param) || (b.bubble(node, onClickText, param) != null);
+                    var delay = (b.ieVersion()) ? 800 /* MaxBustDelayForIE */ : 500 /* MaxBustDelay */;
+                    toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                     return handled;
                 }
             }
@@ -298,7 +316,7 @@
                 i--;
                 continue;
             }
-            if (diffLess(j[0], ev.clientX, 50) && diffLess(j[1], ev.clientY, 50)) {
+            if (diffLess(j[0], ev.clientX, 50 /* BustDistance */) && diffLess(j[1], ev.clientY, 50 /* BustDistance */)) {
                 toBust.splice(i, 1);
                 if (j[3])
                     preventDefault(ev);
@@ -309,7 +327,7 @@
     }
     var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
     var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
         addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
     }
     function createHandlerMouse(handlerName) {
@@ -337,12 +355,14 @@
             return false;
         };
     }
+    // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
     b.pointersDownCount = function () { return Object.keys(pointersDown).length; };
     b.firstPointerDownId = function () { return firstPointerDown; };
     b.ignoreClick = function (x, y) {
-        toBust.push([x, y, now() + 500, 1]);
+        var delay = (b.ieVersion()) ? 800 /* MaxBustDelayForIE */ : 500 /* MaxBustDelay */;
+        toBust.push([x, y, now() + delay, 1]);
     };
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;

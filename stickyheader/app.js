@@ -68,6 +68,7 @@ var StickyHeaderApp;
         var scrollTop = winScroll[1] + newTopOffset;
         var scrollLeft = winScroll[0];
         var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
+        // twice header height for better UX
         var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) <
             (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
         if (c.sticky !== (scrolledPastTop && notScrolledPastBottom)) {
@@ -155,6 +156,7 @@ var StickyHeaderApp;
                 var w;
                 var origElc = origEl.childNodes[i];
                 if (ieWeirdness) {
+                    // w = origElc.offsetWidth; this does not work correctly in IE9
                     var clientRect = origElc.getBoundingClientRect();
                     w = clientRect.right - clientRect.left;
                 }
@@ -198,6 +200,7 @@ var StickyHeaderApp;
         var winScroll = b.getWindowScroll();
         var scrollTop = winScroll[1] + newTopOffset;
         var scrolledPastTop = (isWindowScrolling ? scrollTop : newTopOffset) > offset[1];
+        // twice header height for better UX
         var notScrolledPastBottom = (isWindowScrolling ? scrollTop : 0) <
             (offset[1] + getHeight(tableElement) - 2 * getHeight(origHeader) - newTopOffset);
         var absElement = element.childNodes[1];
@@ -222,6 +225,7 @@ var StickyHeaderApp;
                     var w;
                     var origElc = origHeader.childNodes[i];
                     if (ieWeirdness) {
+                        // w = origElc.offsetWidth; this does not work correctly in IE9
                         var clientRect = origElc.getBoundingClientRect();
                         w = clientRect.right - clientRect.left;
                     }

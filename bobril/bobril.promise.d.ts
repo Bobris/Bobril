@@ -21,4 +21,6 @@ interface IBobrilStatic {
     Promise?: PromiseImpl;
 }
 
-declare var Promise: PromiseImpl;
+interface Window {
+	Promise: PromiseImpl;
+}

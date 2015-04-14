@@ -4,8 +4,9 @@
 
 const enum Consts {
     MoveOverIsNotTap = 13,
-    TabShouldBeShorterThanMs = 750,
+    TapShouldBeShorterThanMs = 750,
     MaxBustDelay = 500,
+    MaxBustDelayForIE = 800,
     BustDistance = 50
 }
 
@@ -47,8 +48,20 @@ const enum Consts {
 
     var preventDefault = b.preventDefault;
 
-    function hasPointerEventsNoneB(node: IBobrilNode): boolean {
-        return node && node.style && node.style.pointerEvents === "none";
+    function hasPointerEventsNoneB(node: IBobrilCacheNode): boolean {
+        while (node) {
+            var s = node.style;
+            if (s) {
+                var e = s.pointerEvents;
+                if (e!==undefined) {
+                    if (e === "none")
+                        return true;
+                    return false;
+                }
+            }
+            node = node.parent;
+        }
+        return false;
     }
 
     function hasPointerEventsNone(target: Node): boolean {
@@ -153,6 +166,8 @@ const enum Consts {
             var preventDef = false;
             for (var i = 0; i < ev.changedTouches.length; i++) {
                 var t = ev.changedTouches[i];
+                target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
+                node = b.deref(target);
                 var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY };
                 if (b.emitEvent("!" + name, param, target, node))
                     preventDef = true;
@@ -167,8 +182,10 @@ const enum Consts {
 
     function buildHandlerMouse(name: string) {
         return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+            target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+            node = b.deref(target);
             if (hasPointerEventsNoneB(node)) {
-                var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+                var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
                 target = fixed[0];
                 node = fixed[1];
             }
@@ -206,8 +223,8 @@ const enum Consts {
     for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
         ((name: string) => {
             var onname = "on" + name;
-            addEvent("!" + name, 50,(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
-                return invokeMouseOwner(onname, ev) || b.bubble(node, onname, ev);
+            addEvent("!" + name, 50, (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+                return invokeMouseOwner(onname, ev) || (b.bubble(node, onname, ev) != null);
             });
         })(pointersEventNames[j]);
     }
@@ -306,11 +323,12 @@ const enum Consts {
             mouseEnterAndLeave(ev);
             firstPointerDown = -1;
             if (ev.type == BobrilPointerType.Touch && !tapCanceled) {
-                if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
+                if (now() - firstPointerDownTime < Consts.TapShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
-                    toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay, handled ? 1 : 0]);
+                    var handled = invokeMouseOwner(onClickText, param) || (b.bubble(node, onClickText, param) != null);
+                    var delay = (b.ieVersion()) ? Consts.MaxBustDelayForIE : Consts.MaxBustDelay;
+                    toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                     return handled;
                 }
             }
@@ -384,7 +402,8 @@ const enum Consts {
     b.pointersDownCount = () => Object.keys(pointersDown).length;
     b.firstPointerDownId = () => firstPointerDown;
     b.ignoreClick = (x: number, y: number) => {
-        toBust.push([x, y, now() + Consts.MaxBustDelay, 1]);
+        var delay = (b.ieVersion()) ? Consts.MaxBustDelayForIE : Consts.MaxBustDelay;
+        toBust.push([x, y, now() + delay, 1]);
     };
 
     b.registerMouseOwner = registerMouseOwner;

@@ -40,7 +40,7 @@ var Automata;
                 var scr = transition.screenPoint;
                 var trTo = transition.to ? transition.to.point : new Automata.Models.Point(scr.x - rect.left, scr.y - rect.top);
                 transition.midPoint = null;
-                return StringExt.format('M{0}L{1}', transition.from.point, trTo);
+                return "M" + transition.from.point + "L" + trTo;
             }
             function getLoop(rect, transition) {
                 var from = transition.from.point;
@@ -52,7 +52,7 @@ var Automata;
                 var c1 = new Automata.Models.Point(point.x, point.y).addVector(perpendicuar, -0.4);
                 var c2 = new Automata.Models.Point(point.x, point.y).addVector(perpendicuar, 0.4);
                 transition.midPoint = point;
-                return StringExt.format('M{0}Q{1},{2}Q{3},{0}', from, c1, point, c2);
+                return "M" + from + "Q" + c1 + "," + point + "Q" + c2 + "," + from;
             }
             function getNewEdge(rect, transition) {
                 if (!transition || !transition.from) {

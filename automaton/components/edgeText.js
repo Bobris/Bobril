@@ -16,7 +16,7 @@ var Automata;
                                 x: transition.midPoint.x + transition.textPosition.x,
                                 y: transition.midPoint.y + transition.textPosition.y
                             },
-                            children: StringExt.format('{0} → {1}', transition.from.name, transition.to.name)
+                            children: transition.from.name + " \u2192 " + transition.to.name
                         },
                         {
                             tag: 'path',
@@ -65,7 +65,7 @@ var Automata;
                         y = midPoint.y;
                     }
                     var textLine = element.childNodes[1];
-                    textLine.setAttribute('d', StringExt.format('M{0}L{1},{2}', midPoint, x, y));
+                    textLine.setAttribute('d', "M" + midPoint + "L" + x + "," + y);
                 }
             };
             function Get(data) {

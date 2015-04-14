@@ -29,7 +29,6 @@
         "./models/state.ts",
         "./models/transition.ts",
         "./models/vector.ts",
-        "./utils/string.ts",
         "../../src/bobril.d.ts",
         "../../src/bobril.focus.d.ts",
         "../../src/bobril.media.d.ts",

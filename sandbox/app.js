@@ -66,7 +66,7 @@ var SandboxApp;
                     }
                     imagesrc = url;
                     b.invalidate();
-                }
+                } // for
             });
         }
     };
@@ -76,22 +76,14 @@ var SandboxApp;
             { tag: "h1", children: "Paste Image Sample" },
             { tag: "p", children: "Try to paste image into edit box using Ctrl+V (tested Chrome,Firefox,IE11)" },
             {
-                tag: "input",
-                attrs: { type: "text" },
-                component: PasteImageInput
+                tag: "input", attrs: { type: "text" }, component: PasteImageInput
             },
             {
-                tag: "div",
-                attrs: { id: "pastehack", tabIndex: "0", contentEditable: true },
-                style: { position: "fixed", opacity: 0 },
-                children: "\u00a0",
-                component: PasteImageContEditable
+                tag: "div", attrs: { id: "pastehack", tabindex: "0", contentEditable: true }, style: { position: "fixed", opacity: 0 }, children: "\u00a0", component: PasteImageContEditable
             },
             {
-                tag: "div",
-                children: imagesrc != "" && {
-                    tag: "img",
-                    attrs: {
+                tag: "div", children: imagesrc != "" && {
+                    tag: "img", attrs: {
                         src: imagesrc
                     },
                     style: { width: "200px", height: "auto" }
@@ -100,4 +92,3 @@ var SandboxApp;
         ];
     });
 })(SandboxApp || (SandboxApp = {}));
-//# sourceMappingURL=app.js.map

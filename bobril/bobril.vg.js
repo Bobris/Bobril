@@ -310,6 +310,7 @@
         }
     }
     if (implType === 2) {
+        // In IE DocumentFragment is actually fully featured Document
         vmlDocument = document.createDocumentFragment();
         vmlDocument.namespaces.add("v", "urn:schemas-microsoft-com:vml");
         b.vg = vmlComponent;

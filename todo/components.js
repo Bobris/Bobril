@@ -151,25 +151,12 @@ var TodoApp;
                         name: task.name,
                         completed: task.completed,
                         justEditing: task.id === ctx.editingTaskId,
-                        cancelNewValue: function () {
-                            ctx.editingTaskId = -1;
-                        },
-                        saveNewValue: function (taskId, value) {
-                            tasks.setTaskName(taskId, value);
-                            ctx.editingTaskId = -1;
-                        },
-                        markTaskAsCompleted: function (taskId) {
-                            tasks.markTaskAsCompleted(taskId);
-                        },
-                        markTaskAsActive: function (taskId) {
-                            tasks.markTaskAsActive(taskId);
-                        },
-                        setEditingMode: function (taskId) {
-                            ctx.editingTaskId = taskId;
-                        },
-                        removeTask: function (taskId) {
-                            tasks.removeTask(taskId);
-                        }
+                        cancelNewValue: function () { ctx.editingTaskId = -1; },
+                        saveNewValue: function (taskId, value) { tasks.setTaskName(taskId, value); ctx.editingTaskId = -1; },
+                        markTaskAsCompleted: function (taskId) { tasks.markTaskAsCompleted(taskId); },
+                        markTaskAsActive: function (taskId) { tasks.markTaskAsActive(taskId); },
+                        setEditingMode: function (taskId) { ctx.editingTaskId = taskId; },
+                        removeTask: function (taskId) { tasks.removeTask(taskId); }
                     }
                 });
             }
@@ -320,7 +307,9 @@ var TodoApp;
         },
         createItemsLeftInfo: function (ctx) {
             var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
-            var text = itemsLeftCount === 1 ? itemsLeftCount + " item left" : itemsLeftCount + " items left";
+            var text = itemsLeftCount === 1
+                ? itemsLeftCount + " item left"
+                : itemsLeftCount + " items left";
             return {
                 tag: "div",
                 className: "items-left-info",
@@ -376,4 +365,3 @@ var TodoApp;
     })();
     TodoApp.KeyDownUpHandler = KeyDownUpHandler;
 })(TodoApp || (TodoApp = {}));
-//# sourceMappingURL=components.js.map

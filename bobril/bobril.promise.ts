@@ -231,6 +231,5 @@
 
     b.asap = asap;
     b.Promise = <any>Promise;
+    if (!window.Promise) window.Promise = <any>Promise;
 })(b, window, document);
-
-if (!Promise) Promise = b.Promise;

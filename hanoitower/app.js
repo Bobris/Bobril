@@ -140,17 +140,18 @@ var HanoiApp;
                 ctx.time += ctx.data.speed;
             }
             me.tag = "div";
-            me.children = [
-                {
-                    component: b.vg,
-                    data: { width: ctx.tower.width + "px", height: ctx.tower.height + "px" },
-                    children: [
-                        ctx.tower.toVg(),
-                        ctx.tower.stands.map(function (s) { return s.toVg(); }),
-                        ctx.tower.plates.map(function (p) { return p.toVg(); })
-                    ]
-                }
-            ];
+            me.children =
+                [
+                    {
+                        component: b.vg,
+                        data: { width: ctx.tower.width + "px", height: ctx.tower.height + "px" },
+                        children: [
+                            ctx.tower.toVg(),
+                            ctx.tower.stands.map(function (s) { return s.toVg(); }),
+                            ctx.tower.plates.map(function (p) { return p.toVg(); })
+                        ]
+                    }
+                ];
         };
         return TowerControler;
     })();
@@ -159,27 +160,20 @@ var HanoiApp;
         return [
             h("h1", "Hanoi Tower"),
             {
-                tag: "div",
-                attrs: { tabindex: "0" },
-                style: { width: boardX + "px", height: boardY + "px", outline: "0" },
+                tag: "div", attrs: { tabindex: "0" }, style: { width: boardX + "px", height: boardY + "px", outline: "0" },
                 component: TowerControler,
                 data: { width: boardX, height: boardY, plates: 10, color: "#00AA11", speed: 50 }
             },
             {
-                tag: "div",
-                attrs: { tabindex: "0" },
-                style: { width: boardX / 2 + "px", height: boardY / 2 + "px", outline: "0", "float": "left" },
+                tag: "div", attrs: { tabindex: "0" }, style: { width: boardX / 2 + "px", height: boardY / 2 + "px", outline: "0", "float": "left" },
                 component: TowerControler,
                 data: { width: boardX / 2, height: boardY / 2, plates: 8, color: "#992222", speed: 200 }
             },
             {
-                tag: "div",
-                attrs: { tabindex: "0" },
-                style: { width: boardX / 2 + "px", height: boardY / 2 + "px", outline: "0", "margin-left": boardX / 2 + "px" },
+                tag: "div", attrs: { tabindex: "0" }, style: { width: boardX / 2 + "px", height: boardY / 2 + "px", outline: "0", "margin-left": boardX / 2 + "px" },
                 component: TowerControler,
                 data: { width: boardX / 2, height: boardY / 2, plates: 7, color: "#1111AA", speed: 400 }
             }
         ];
     });
 })(HanoiApp || (HanoiApp = {}));
-//# sourceMappingURL=app.js.map
