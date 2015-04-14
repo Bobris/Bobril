@@ -34,24 +34,42 @@ module DndApp {
 
     interface IProgLangSourceCtx extends IBobrilCtx {
         data: IProgLangSourceData;
+        draggingId: number;
     }
 
     var ProgLangSourceComp: IBobrilComponent = {
+        init(ctx: IProgLangSourceCtx) {
+            ctx.draggingId = 0;
+        },
         render(ctx: IProgLangSourceCtx, me: IBobrilNode) {
             me.tag = "div";
-            me.style = { display: "inline-block", position: "relative", left:0, top:0, cursor:"move", margin: 5, padding: 10, userSelect:"none", border: "1px solid #444", background: "#eee" };
+            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            if (ctx.draggingId > 0) {
+                me.style.background = "#444";
+                me.children = String.fromCharCode(0xa0);
+                return;
+            }
             if (ctx.data.dnd) {
                 var dnd = ctx.data.dnd;
                 me.style.left = dnd.deltaX;
                 me.style.top = dnd.deltaY;
             }
-            me.children = { tag: "div", style: { display: "inline-block", position: "relative", width: 50, height: 40 }, children: ctx.data.lang.name };
+            me.children = ctx.data.lang.name;
         },
         onDragStart(ctx: IProgLangSourceCtx, dndCtx: IDndStartCtx): boolean {
+            // Do not allow to drag this item again if it is already dragged
+            if (ctx.draggingId > 0) return false;
+            ctx.draggingId = dndCtx.id;
             dndCtx.addData("bobril/langprog", ctx.data.lang);
             dndCtx.setOpEnabled(false, false, true);
-            dndCtx.setDragNodeView(dnd=>({ component:ProgLangSourceComp, data: { lang:ctx.data.lang, dnd } }));
+            dndCtx.setDragNodeView(dnd=> ({ component: ProgLangSourceComp, data: { lang: ctx.data.lang, dnd } }));
+            b.invalidate(ctx);
             return true;
+        },
+        onDragEnd(ctx: IProgLangSourceCtx, dndCtx: IDndCtx): boolean {
+            ctx.draggingId = 0;
+            b.invalidate(ctx);
+            return false;
         }
     };
 
@@ -66,24 +84,58 @@ module DndApp {
 
     interface IProgLangTargetCtx extends IBobrilCtx {
         data: IProgLangTargetData;
-        droppedList: string[];
+        successDrop: number;
+        failureDrop: number;
     }
 
     var ProgLangTargetComp: IBobrilComponent = {
         init(ctx: IProgLangTargetCtx) {
-            ctx.droppedList = [];
+            ctx.successDrop = 0;
+            ctx.failureDrop = 0;
         },
         render(ctx: IProgLangTargetCtx, me: IBobrilNode) {
             me.tag = "div";
-            me.style = { display: "inline-block", margin: 5, padding: 20, border: "1px solid #444" };
+            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, margin: 5, padding: 20, border: "1px solid #444" };
+            var now = b.now();
+            if (ctx.successDrop + 1000 > now) {
+                // Jojo animation
+                me.style.top = Math.sin((now - ctx.successDrop) / 1000 * Math.PI * 4) * 5;
+                b.invalidate(ctx);
+            }
+            if (ctx.failureDrop + 1000 > now) {
+                // Nonononono animation
+                me.style.left = Math.sin((now - ctx.failureDrop) / 1000 * Math.PI * 12) * 5;
+                b.invalidate(ctx);
+            }
+            var dnds = b.getDnds();
+            var isPossibleTarget = false;
+            var isPositivePossibleTarget = false;
+            for (let i = 0; i < dnds.length; i++) {
+                var dnd = dnds[i];
+                if (dnd.hasData("bobril/langprog")) {
+                    isPossibleTarget = true;
+                    var lang = dnd.getData("bobril/langprog");
+                    if (lang) {
+                        if (ctx.data.test(lang))
+                            isPositivePossibleTarget = true;
+                    }
+                }
+            }
+            if (isPossibleTarget) {
+                if (isPositivePossibleTarget) {
+                    me.style.background = "#4f8";
+                } else {
+                    me.style.background = "#ff8";
+                }
+            }
             me.children = {
-                tag: "div", style: { display: "inline-block", position: "relative", minWidth: 50, minHeight: 40 },
-                children: [ctx.data.content, { tag: "div", style: { position: "absolute", left: 0, bottom: -10 }, children: ctx.droppedList.join(", ") }]
+                tag: "div", style: { display: "inline-block", top:-me.style.top, position: "relative", minWidth: 50, minHeight: 40 },
+                children: ctx.data.content
             };
         },
         onDragOver(ctx: IProgLangTargetCtx, dndCtx: IDndOverCtx): boolean {
             if (dndCtx.hasData("bobril/langprog")) {
-                dndCtx.setOperation(DndOp.Move);
+                dndCtx.setOperation(DndOp.Copy);
                 return true;
             }
             return false;
@@ -92,11 +144,21 @@ module DndApp {
             var lang = dndCtx.getData("bobril/langprog");
             if (lang) {
                 if (ctx.data.test(lang)) {
-                    ctx.droppedList.push(lang.name);
-                    b.invalidate(ctx);
+                    ctx.successDrop = b.now();
+                } else {
+                    ctx.failureDrop = b.now();
                 }
+                b.invalidate(ctx);
                 return true;
             }
+        },
+        onDrag(ctx: IProgLangTargetCtx, dndCtx: IDndCtx): boolean {
+            b.invalidate(ctx);
+            return false;
+        },
+        onDragEnd(ctx: IProgLangTargetCtx, dndCtx: IDndCtx): boolean {
+            b.invalidate(ctx);
+            return false;
         }
     }
 
@@ -106,7 +168,7 @@ module DndApp {
 
     b.init(() => {
         return {
-            tag: "div", style: { maxWidth: 700, touchAction:"none" }, children: [
+            tag: "div", style: { maxWidth: 700, touchAction: "none" }, children: [
                 h("h1", "Drag and drop sample"),
                 layoutPair(
                     progLangs.map(l=> progSource(l)),

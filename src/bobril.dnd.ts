@@ -1,4 +1,4 @@
-﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.mouse.d.ts"/>
 /// <reference path="bobril.dnd.d.ts"/>
 
@@ -210,4 +210,6 @@
     addEvent("!PointerMove", 4, handlePointerMove);
     addEvent("!PointerUp", 4, handlePointerUp);
     addEvent("!PointerCancel", 4, handlePointerCancel);
+
+    b.getDnds = () => dnds;
 })(b);

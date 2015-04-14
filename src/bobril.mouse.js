@@ -292,7 +292,7 @@
                     b.emitEvent("!PointerCancel", ev, target, node);
                     var param = { x: ev.x, y: ev.y };
                     var handled = invokeMouseOwner(onClickText, param) || (b.bubble(node, onClickText, param) != null);
-                    var delay = (b.ieVersion()) ? 800 /*MaxBustDelayForIE*/ : 500; /*MaxBustDelay*/
+                    var delay = (b.ieVersion()) ? 800 /* MaxBustDelayForIE */ : 500 /* MaxBustDelay */;
                     toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                     return handled;
                 }
@@ -361,7 +361,7 @@
     b.pointersDownCount = function () { return Object.keys(pointersDown).length; };
     b.firstPointerDownId = function () { return firstPointerDown; };
     b.ignoreClick = function (x, y) {
-        var delay = (b.ieVersion()) ? 800 /*MaxBustDelayForIE*/ : 500; /*MaxBustDelay*/
+        var delay = (b.ieVersion()) ? 800 /* MaxBustDelayForIE */ : 500 /* MaxBustDelay */;
         toBust.push([x, y, now() + delay, 1]);
     };
     b.registerMouseOwner = registerMouseOwner;

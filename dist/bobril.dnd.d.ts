@@ -13,6 +13,7 @@ interface IDndCtx {
     copyEnabled: boolean;
     moveEnabled: boolean;
     operation: DndOp;
+    // actual mouse/touch pointer position
     x: number;
     y: number;
     // delta of left top position of dragged object when drag started, usually negative
@@ -25,6 +26,7 @@ interface IDndCtx {
 }
 
 interface IDndStartCtx {
+    id: number;
     addData(type: string, data: any): boolean;
     setOpEnabled(link: boolean, copy: boolean, move: boolean): void;
     setDragNodeView(view: (dnd:IDndCtx) => IBobrilNode): void;
@@ -47,4 +49,8 @@ interface IBobrilComponent {
     onDragOver?(ctx: Object, dndCtx: IDndOverCtx): boolean;
     // User want to drop draged object here - do it - onDragOver before had to set you target
     onDrop?(ctx: Object, dndCtx: IDndCtx): boolean;
+}
+
+interface IBobrilStatic {
+    getDnds?(): IDndCtx[];
 }

@@ -23,21 +23,39 @@ var DndApp;
     var spacer = { tag: "div", style: { height: "1em" } };
     var progLangs = [{ name: "C++", gc: false, jit: false }, { name: "C#", gc: true, jit: true }, { name: "Go", gc: true, jit: false }, { name: "asm.js", gc: false, jit: true }];
     var ProgLangSourceComp = {
+        init: function (ctx) {
+            ctx.draggingId = 0;
+        },
         render: function (ctx, me) {
             me.tag = "div";
-            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            if (ctx.draggingId > 0) {
+                me.style.background = "#444";
+                me.children = String.fromCharCode(0xa0);
+                return;
+            }
             if (ctx.data.dnd) {
                 var dnd = ctx.data.dnd;
                 me.style.left = dnd.deltaX;
                 me.style.top = dnd.deltaY;
             }
-            me.children = { tag: "div", style: { display: "inline-block", position: "relative", width: 50, height: 40 }, children: ctx.data.lang.name };
+            me.children = ctx.data.lang.name;
         },
         onDragStart: function (ctx, dndCtx) {
+            // Do not allow to drag this item again if it is already dragged
+            if (ctx.draggingId > 0)
+                return false;
+            ctx.draggingId = dndCtx.id;
             dndCtx.addData("bobril/langprog", ctx.data.lang);
             dndCtx.setOpEnabled(false, false, true);
             dndCtx.setDragNodeView(function (dnd) { return ({ component: ProgLangSourceComp, data: { lang: ctx.data.lang, dnd: dnd } }); });
+            b.invalidate(ctx);
             return true;
+        },
+        onDragEnd: function (ctx, dndCtx) {
+            ctx.draggingId = 0;
+            b.invalidate(ctx);
+            return false;
         }
     };
     function progSource(lang) {
@@ -45,19 +63,53 @@ var DndApp;
     }
     var ProgLangTargetComp = {
         init: function (ctx) {
-            ctx.droppedList = [];
+            ctx.successDrop = 0;
+            ctx.failureDrop = 0;
         },
         render: function (ctx, me) {
             me.tag = "div";
-            me.style = { display: "inline-block", margin: 5, padding: 20, border: "1px solid #444" };
+            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, margin: 5, padding: 20, border: "1px solid #444" };
+            var now = b.now();
+            if (ctx.successDrop + 1000 > now) {
+                // Jojo animation
+                me.style.top = Math.sin((now - ctx.successDrop) / 1000 * Math.PI * 4) * 5;
+                b.invalidate(ctx);
+            }
+            if (ctx.failureDrop + 1000 > now) {
+                // Nonononono animation
+                me.style.left = Math.sin((now - ctx.failureDrop) / 1000 * Math.PI * 12) * 5;
+                b.invalidate(ctx);
+            }
+            var dnds = b.getDnds();
+            var isPossibleTarget = false;
+            var isPositivePossibleTarget = false;
+            for (var i = 0; i < dnds.length; i++) {
+                var dnd = dnds[i];
+                if (dnd.hasData("bobril/langprog")) {
+                    isPossibleTarget = true;
+                    var lang = dnd.getData("bobril/langprog");
+                    if (lang) {
+                        if (ctx.data.test(lang))
+                            isPositivePossibleTarget = true;
+                    }
+                }
+            }
+            if (isPossibleTarget) {
+                if (isPositivePossibleTarget) {
+                    me.style.background = "#4f8";
+                }
+                else {
+                    me.style.background = "#ff8";
+                }
+            }
             me.children = {
-                tag: "div", style: { display: "inline-block", position: "relative", minWidth: 50, minHeight: 40 },
-                children: [ctx.data.content, { tag: "div", style: { position: "absolute", left: 0, bottom: -10 }, children: ctx.droppedList.join(", ") }]
+                tag: "div", style: { display: "inline-block", top: -me.style.top, position: "relative", minWidth: 50, minHeight: 40 },
+                children: ctx.data.content
             };
         },
         onDragOver: function (ctx, dndCtx) {
             if (dndCtx.hasData("bobril/langprog")) {
-                dndCtx.setOperation(3 /* Move */);
+                dndCtx.setOperation(2 /* Copy */);
                 return true;
             }
             return false;
@@ -66,11 +118,22 @@ var DndApp;
             var lang = dndCtx.getData("bobril/langprog");
             if (lang) {
                 if (ctx.data.test(lang)) {
-                    ctx.droppedList.push(lang.name);
-                    b.invalidate(ctx);
+                    ctx.successDrop = b.now();
                 }
+                else {
+                    ctx.failureDrop = b.now();
+                }
+                b.invalidate(ctx);
                 return true;
             }
+        },
+        onDrag: function (ctx, dndCtx) {
+            b.invalidate(ctx);
+            return false;
+        },
+        onDragEnd: function (ctx, dndCtx) {
+            b.invalidate(ctx);
+            return false;
         }
     };
     function progTarget(data) {

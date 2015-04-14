@@ -195,4 +195,5 @@
     addEvent("!PointerMove", 4, handlePointerMove);
     addEvent("!PointerUp", 4, handlePointerUp);
     addEvent("!PointerCancel", 4, handlePointerCancel);
+    b.getDnds = function () { return dnds; };
 })(b);
