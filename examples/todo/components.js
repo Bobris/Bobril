@@ -1,4 +1,4 @@
-﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.swipe.d.ts"/>
@@ -7,337 +7,361 @@
 /// <reference path="model.ts"/>
 var TodoApp;
 (function (TodoApp) {
-    var App = (function () {
-        function App() {
-        }
-        App.onNewTaskNameChange = function (ctx, value) {
-            ctx.currentNewTaskName = value;
-            b.invalidate();
-        };
-
-        App.init = function (ctx, me, oldMe) {
-            var _this = this;
-            if (!oldMe) {
-                ctx.currentNewTaskName = "";
-            }
-            ctx.data.tasks.setFilter(ctx.data.filter);
-            me.tag = 'div';
-            me.attrs = { 'class': 'main' };
+    TodoApp.App = {
+        render: function (ctx, me, oldMe) {
+            ctx.filter = ctx.data.filter;
+            me.tag = "div";
+            me.className = "main";
             me.children = [
-                { component: Heading },
                 {
-                    component: TaskCreate, data: {
-                        tasks: ctx.data.tasks,
-                        currentNewTaskName: ctx.currentNewTaskName,
-                        onCurrentNewTaskNameChange: function (value) {
-                            return _this.onNewTaskNameChange(ctx, value);
+                    component: Heading
+                },
+                {
+                    component: TaskCreate,
+                    data: {
+                        isWholeListCompleted: ctx.data.tasks.getItemsCount() > 0 && ctx.data.tasks.isWholeListCompleted(),
+                        addNewTask: function (name) {
+                            ctx.data.tasks.addTask(name);
+                        },
+                        markAllTasksAsCompleted: function () {
+                            ctx.data.tasks.markAllTasksAsCompleted();
+                        },
+                        markAllTasksAsActive: function () {
+                            ctx.data.tasks.markAllTasksAsActive();
                         }
                     }
                 },
                 {
-                    component: TaskList, data: {
-                        tasks: ctx.data.tasks
+                    component: TaskList,
+                    data: {
+                        tasks: ctx.data.tasks,
+                        filter: ctx.filter
                     }
                 },
-                { component: Footer, data: ctx.data }
+                {
+                    component: Footer,
+                    data: {
+                        tasksCount: ctx.data.tasks.getItemsCount(),
+                        completedTasksCount: ctx.data.tasks.getNumberOfCompletedTasks(),
+                        removeCompletedTasks: function () {
+                            ctx.data.tasks.removeCompletedTasks();
+                        }
+                    }
+                }
             ];
-        };
-        return App;
-    })();
-    TodoApp.App = App;
-
-    var Heading = (function () {
-        function Heading() {
         }
-        Heading.init = function (ctx, me, oldMe) {
-            me.tag = 'h3';
-            me.children = 'todos';
-        };
-        return Heading;
-    })();
-
-    var TaskCreate = (function () {
-        function TaskCreate() {
+    };
+    var Heading = {
+        init: function (ctx, me) {
+            me.tag = "h3";
+            me.children = "todos";
         }
-        TaskCreate.init = function (ctx, me, oldMe) {
-            me.tag = 'div';
-            me.attrs = { className: 'input-wrapper' }, me.children = [
+    };
+    var TaskCreate = {
+        render: function (ctx, me) {
+            ctx.newTaskName = ctx.newTaskName || "";
+            me.tag = "div";
+            me.className = "input-wrapper";
+            me.children = [
                 this.createInputElement(ctx),
                 this.createSetAllCheckboxElement(ctx)
             ];
-        };
-
-        TaskCreate.createInputElement = function (ctx) {
+        },
+        createInputElement: function (ctx) {
             return {
-                tag: 'input',
+                tag: "input",
+                className: "task-name",
                 attrs: {
-                    placeholder: 'What needs to be done?',
-                    className: 'task-name',
-                    value: ctx.data.currentNewTaskName
+                    placeholder: "What needs to be done?",
+                    value: ctx.newTaskName
                 },
-                data: ctx.data,
                 component: {
                     onKeyUp: function (ctx, event) {
-                        if (event.which == 13) {
-                            ctx.data.onCurrentNewTaskNameChange(ctx.data.currentNewTaskName.trim());
-                            if (ctx.data.currentNewTaskName) {
-                                ctx.data.tasks.addTask(ctx.data.currentNewTaskName);
+                        var handler = new KeyDownUpHandler();
+                        return handler.handleEcsEnter(event, function () {
+                            // cancel the task adding controls (i.e. clear the input)
+                            ctx.newTaskName = "";
+                            b.invalidate();
+                            return true;
+                        }, function () {
+                            ctx.newTaskName = ctx.newTaskName.trim();
+                            if (ctx.newTaskName) {
+                                ctx.data.addNewTask(ctx.newTaskName);
                                 b.invalidate();
-                                ctx.data.onCurrentNewTaskNameChange('');
+                                ctx.newTaskName = "";
                             }
                             return true;
-                        } else if (event.which == 27) {
-                            // cancel the task adding controls
-                            ctx.data.onCurrentNewTaskNameChange('');
-                            return true;
-                        }
-                        return false;
+                        });
                     },
                     onChange: function (ctx, value) {
-                        ctx.data.onCurrentNewTaskNameChange(value);
+                        ctx.newTaskName = value;
                     },
                     postInitDom: function (ctx, me, element) {
                         element.focus();
                     }
-                }
-            };
-        };
-
-        TaskCreate.createSetAllCheckboxElement = function (ctx) {
-            return {
-                tag: 'input',
-                attrs: {
-                    type: 'checkbox',
-                    className: 'set-all-tasks',
-                    value: ctx.data.tasks.getItemsCount() > 0 && ctx.data.tasks.isWholeListCompleted()
                 },
-                data: ctx.data.tasks,
+                data: ctx.data
+            };
+        },
+        createSetAllCheckboxElement: function (ctx) {
+            return {
+                tag: "input",
+                className: "set-all-tasks",
+                attrs: {
+                    type: "checkbox",
+                    value: ctx.data.isWholeListCompleted
+                },
                 component: {
                     onChange: function (ctx, value) {
                         if (value) {
                             ctx.data.markAllTasksAsCompleted();
-                        } else {
+                        }
+                        else {
                             ctx.data.markAllTasksAsActive();
                         }
                         b.invalidate();
                     }
+                },
+                data: {
+                    markAllTasksAsCompleted: ctx.data.markAllTasksAsCompleted,
+                    markAllTasksAsActive: ctx.data.markAllTasksAsActive
                 }
             };
-        };
-        return TaskCreate;
-    })();
-
-    var TaskList = (function () {
-        function TaskList() {
         }
-        TaskList.init = function (ctx, me) {
-            me.tag = 'ul';
-            me.attrs = {
-                className: 'todo-list'
-            }, me.children = this.createTaskElements(ctx);
-        };
-
-        TaskList.createTaskElements = function (ctx) {
+    };
+    var TaskList = {
+        init: function (ctx, me) {
+            ctx.editingTaskId = -1;
+        },
+        render: function (ctx, me) {
+            me.tag = "ul";
+            me.className = "todo-list";
+            me.children = this.createTaskElements(ctx);
+        },
+        createTaskElements: function (ctx) {
             var res = [];
-            var tasks = ctx.data.tasks.getFilteredItems();
-            for (var i = 0; i < tasks.length; i++) {
-                var taskName = tasks[i].name;
-                var taskId = tasks[i].id;
-                var classes = 'task';
-                if (tasks[i].completed)
-                    classes += ' completed';
-                var labelClasses = '';
-                if (tasks[i].isInEditMode) {
-                    labelClasses = 'hidden';
-                } else {
-                    classes += ' readonly';
-                }
-
+            var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
+            var tasks = ctx.data.tasks;
+            for (var i = 0; i < taskItems.length; i++) {
+                var task = taskItems[i];
                 res.push({
-                    tag: 'li',
-                    attrs: {
-                        className: classes
-                    },
-                    children: [
-                        this.createCheckboxElement(ctx, taskId),
-                        { tag: 'label', children: taskName, attrs: { className: labelClasses } },
-                        this.createDeleteButtonElement(ctx, taskId),
-                        this.createEditingInputElement(ctx, taskId, taskName)
-                    ],
-                    component: {
-                        onDoubleClick: function (ctx) {
-                            ctx.data.tasks.setTaskEditMode(ctx.data.taskId, true);
-                            b.invalidate();
-                            return false;
-                        }
-                    },
+                    component: TodoApp.TaskItem,
                     data: {
-                        tasks: ctx.data.tasks,
-                        taskId: taskId
+                        id: task.id,
+                        name: task.name,
+                        completed: task.completed,
+                        justEditing: task.id === ctx.editingTaskId,
+                        cancelNewValue: function () { ctx.editingTaskId = -1; },
+                        saveNewValue: function (taskId, value) { tasks.setTaskName(taskId, value); ctx.editingTaskId = -1; },
+                        markTaskAsCompleted: function (taskId) { tasks.markTaskAsCompleted(taskId); },
+                        markTaskAsActive: function (taskId) { tasks.markTaskAsActive(taskId); },
+                        setEditingMode: function (taskId) { ctx.editingTaskId = taskId; },
+                        removeTask: function (taskId) { tasks.removeTask(taskId); }
                     }
                 });
             }
             return res;
-        };
-
-        TaskList.createCheckboxElement = function (ctx, taskId) {
-            var attributes = { 'type': 'checkbox', 'class': 'mark-as-completed' };
-            if (model.tasks.isTaskCompleted(taskId)) {
-                attributes['checked'] = 'checked';
+        }
+    };
+    TodoApp.TaskItem = {
+        render: function (ctx, me) {
+            var liClasses = "task";
+            var labelClasses = "";
+            if (ctx.data.completed) {
+                liClasses += " completed";
             }
-            if (model.tasks.isInEditMode(taskId)) {
-                attributes['class'] += ' hidden';
+            if (ctx.data.justEditing) {
+                labelClasses = "hidden";
             }
-            return {
-                tag: 'input',
-                attrs: attributes,
-                component: {
-                    onChange: function (ctx, value) {
-                        if (value) {
-                            model.tasks.markTaskAsCompleted(ctx.data.taskId);
-                        } else {
-                            model.tasks.markTaskAsActive(ctx.data.taskId);
+            else {
+                liClasses += " readonly";
+            }
+            me.tag = "li";
+            me.className = liClasses;
+            me.children = [
+                ctx.data.justEditing || {
+                    component: TodoApp.Checkbox,
+                    data: {
+                        taskId: ctx.data.id,
+                        isChecked: ctx.data.completed,
+                        performCheck: function (taskId) {
+                            ctx.data.markTaskAsCompleted(taskId);
+                            b.invalidate();
+                        },
+                        performUncheck: function (taskId) {
+                            ctx.data.markTaskAsActive(taskId);
+                            b.invalidate();
                         }
-                        b.invalidate();
                     }
+                },
+                { tag: "label", children: ctx.data.name, className: labelClasses },
+                {
+                    component: TodoApp.DeleteButton,
+                    data: {
+                        taskId: ctx.data.id,
+                        invisible: ctx.data.justEditing,
+                        performDelete: function (taskId) {
+                            ctx.data.removeTask(taskId);
+                            b.invalidate();
+                        }
+                    }
+                },
+                ctx.data.justEditing && {
+                    component: TodoApp.EditingInput,
+                    data: {
+                        taskId: ctx.data.id,
+                        oldValue: ctx.data.name,
+                        saveNewValue: function (taskId, value) {
+                            ctx.data.saveNewValue(taskId, value);
+                            b.invalidate();
+                        },
+                        cancelNewValue: function () {
+                            ctx.data.cancelNewValue();
+                            b.invalidate();
+                        }
+                    }
+                },
+                { tag: "div", className: "cleaner" }
+            ];
+        },
+        onDoubleClick: function (ctx) {
+            ctx.data.setEditingMode(ctx.data.id);
+            b.invalidate();
+            return true;
+        }
+    };
+    TodoApp.Checkbox = {
+        render: function (ctx, me) {
+            me.tag = "input";
+            me.className = "mark-as-completed";
+            me.attrs = { type: "checkbox", value: ctx.data.isChecked };
+            me.data = ctx.data;
+        },
+        onChange: function (ctx, value) {
+            if (value) {
+                ctx.data.performCheck(ctx.data.taskId);
+            }
+            else {
+                ctx.data.performUncheck(ctx.data.taskId);
+            }
+        }
+    };
+    TodoApp.DeleteButton = {
+        render: function (ctx, me) {
+            me.tag = "a";
+            me.children = "delete";
+            me.className = "delete-button";
+        },
+        onClick: function (ctx) {
+            ctx.data.performDelete(ctx.data.taskId);
+            return true;
+        }
+    };
+    TodoApp.EditingInput = {
+        render: function (ctx, me) {
+            ctx.newValue = ctx.newValue || "";
+            me.tag = "input";
+            me.className = "task-edit";
+            me.attrs = { type: "text", value: ctx.data.oldValue };
+            me.component = {
+                onKeyUp: function (ctx, event) {
+                    var handler = new KeyDownUpHandler();
+                    return handler.handleEcsEnter(event, function () {
+                        ctx.data.cancelNewValue();
+                        ctx.newValue = "";
+                        b.invalidate();
+                        return true;
+                    }, function () {
+                        ctx.newValue = ctx.newValue.trim();
+                        if (ctx.newValue) {
+                            ctx.data.saveNewValue(ctx.data.taskId, ctx.newValue);
+                            ctx.newValue = "";
+                            b.invalidate();
+                        }
+                        return true;
+                    });
+                },
+                onChange: function (ctx, value) {
+                    ctx.newValue = value;
                 },
                 data: ctx.data
             };
-        };
-
-        TaskList.createDeleteButtonElement = function (ctx, taskId) {
-            var attributes = { 'class': 'delete-button' };
-            if (model.tasks.isInEditMode(taskId)) {
-                attributes['class'] += ' hidden';
-            }
-            return {
-                tag: 'a',
-                children: 'delete',
-                attrs: attributes,
-                component: {
-                    onClick: function (ctx, event) {
-                        model.tasks.removeTask(ctx.data.taskId);
-                        b.invalidate();
-                        return true;
-                    }
-                },
-                data: {
-                    'taskId': taskId
-                }
-            };
-        };
-
-        TaskList.createEditingInputElement = function (ctx, taskId, taskName) {
-            var isInEditMode = model.tasks.isInEditMode(taskId);
-            var attributes = { 'type': 'text', 'class': 'task-edit', 'value': taskName };
-            if (!isInEditMode) {
-                attributes['class'] += ' hidden';
-            }
-            return [
-                {
-                    tag: 'input',
-                    attrs: attributes,
-                    data: ctx.data,
-                    component: {
-                        onKeyUp: function (ctx, event) {
-                            if (event.which == 13) {
-                                model.currentEditTaskName = model.currentEditTaskName.trim();
-                                if (model.currentEditTaskName) {
-                                    model.tasks.setTaskName(taskId, model.currentEditTaskName);
-                                    model.currentEditTaskName = '';
-                                    model.tasks.setTaskEditMode(taskId, false);
-                                    b.invalidate();
-                                }
-                            } else if (event.which == 27) {
-                                model.tasks.setTaskEditMode(taskId, false);
-                                b.invalidate();
-                            }
-                        },
-                        onChange: function (ctx, value) {
-                            model.currentEditTaskName = value;
-                        }
-                    }
-                },
-                {
-                    tag: 'div',
-                    attrs: { 'class': 'cleaner' }
-                }];
-        };
-        return TaskList;
-    })();
-
-    var Footer = (function () {
-        function Footer() {
         }
-        Footer.init = function (ctx, me, oldMe) {
-            var model = oldMe ? oldMe.data : me.data;
-            model.tasks.setFilter(me.data.filter);
-
-            var itemsLeftInfo = this.createItemsLeftInfo(model);
-            var filterButtons = this.createFilterButtons(model);
-            var clearAllButton = this.createClearCompleted(model);
-
-            var attributes = { 'class': 'footer' };
-            if (model.tasks.getItemsCount() < 1) {
-                attributes['class'] += ' hidden';
-            }
-
-            me.tag = 'div';
-            me.attrs = attributes;
+    };
+    var Footer = {
+        render: function (ctx, me) {
+            var itemsLeftInfo = this.createItemsLeftInfo(ctx);
+            var filterButtons = this.createFilterButtons();
+            var clearAllButton = this.createClearCompleted(ctx);
+            me.tag = "div";
+            me.className = "footer";
             me.children = [
                 itemsLeftInfo,
                 filterButtons,
                 clearAllButton,
                 {
-                    tag: 'div',
-                    attrs: { 'class': 'cleaner' }
+                    tag: "div",
+                    className: "cleaner"
                 }
             ];
-        };
-
-        Footer.createItemsLeftInfo = function (model) {
-            var itemsLeftCount = model.tasks.getItemsCount() - model.tasks.getNumberOfCompletedTasks();
-            var text = itemsLeftCount === 1 ? itemsLeftCount + ' item left' : itemsLeftCount + ' items left';
+        },
+        createItemsLeftInfo: function (ctx) {
+            var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
+            var text = itemsLeftCount === 1
+                ? itemsLeftCount + " item left"
+                : itemsLeftCount + " items left";
             return {
-                tag: 'div',
-                attrs: { 'class': 'items-left-info' },
+                tag: "div",
+                className: "items-left-info",
                 children: text
             };
-        };
-
-        Footer.createFilterButtons = function (model) {
+        },
+        createFilterButtons: function () {
             return {
-                tag: 'div',
-                attrs: { 'class': 'filter' },
+                tag: "div",
+                className: "filter",
                 children: [
-                    b.link({ tag: 'a', children: 'All' }, 'all'),
-                    b.link({ tag: 'a', children: 'Active' }, 'active'),
-                    b.link({ tag: 'a', children: 'Completed' }, 'completed')
+                    b.link({ tag: "a", children: "All" }, "all"),
+                    b.link({ tag: "a", children: "Active" }, "active"),
+                    b.link({ tag: "a", children: "Completed" }, "completed")
                 ]
             };
-        };
-
-        Footer.createClearCompleted = function (model) {
-            var numberOfCompletedTasks = model.tasks.getNumberOfCompletedTasks();
-            var text = 'Clear completed (' + model.tasks.getNumberOfCompletedTasks() + ')';
-            var attributes = { 'class': 'clear-completed-button' };
+        },
+        createClearCompleted: function (ctx) {
+            var numberOfCompletedTasks = ctx.data.completedTasksCount;
+            var text = "Clear completed (" + numberOfCompletedTasks + ")";
+            var className = "clear-completed-button";
             if (numberOfCompletedTasks < 1) {
-                attributes['class'] += ' hidden';
+                className += " hidden";
             }
             return {
-                tag: 'div',
-                attrs: attributes,
+                tag: "div",
+                className: className,
                 children: text,
                 component: {
-                    onClick: function (ctx, event) {
-                        model.tasks.removeCompletedTasks();
+                    onClick: function (ctx) {
+                        ctx.data.removeCompletedTasks();
                         b.invalidate();
-                        return false;
+                        return true;
                     }
-                }
+                },
+                data: ctx.data
             };
+        }
+    };
+    var KeyDownUpHandler = (function () {
+        function KeyDownUpHandler() {
+        }
+        KeyDownUpHandler.prototype.handleEcsEnter = function (event, escapeHandler, enterHandler) {
+            if (event.which === 27) {
+                return escapeHandler();
+            }
+            else if (event.which === 13) {
+                return enterHandler();
+            }
+            return false;
         };
-        return Footer;
+        return KeyDownUpHandler;
     })();
+    TodoApp.KeyDownUpHandler = KeyDownUpHandler;
 })(TodoApp || (TodoApp = {}));
-//# sourceMappingURL=components.js.map

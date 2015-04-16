@@ -1,14 +1,10 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-
-// ReSharper restore InconsistentNaming
-if (typeof DEBUG === 'undefined')
+/// <reference path="bobril.d.ts"/>
+if (typeof DEBUG === "undefined")
     DEBUG = true;
-
 // IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
 if (!Array.prototype.map) {
     Array.prototype.map = function (callback, thisArg) {
         var a, k;
-
         // ReSharper disable once ConditionIsAlwaysConst
         if (DEBUG && this == null) {
             throw new TypeError("this==null");
@@ -32,28 +28,17 @@ if (!Array.prototype.map) {
         return a;
     };
 }
-
 // Object create polyfill
 if (!Object.create) {
     Object.create = function (o) {
-        function f() {
-        }
+        function f() { }
         f.prototype = o;
         return new f();
     };
 }
-
-b = (function (window, document) {
-    function assert(shoudBeTrue, messageIfFalse) {
-        if (DEBUG && !shoudBeTrue)
-            throw Error(messageIfFalse || "assertion failed");
-    }
-
-    var objectToString = {}.toString;
-    var isArray = Array.isArray || (function (a) {
-        return objectToString.call(a) === "[object Array]";
-    });
-    var objectKeys = Object.keys || (function (obj) {
+// Object keys polyfill
+if (!Object.keys) {
+    Object.keys = (function (obj) {
         var keys = [];
         for (var i in obj) {
             if (obj.hasOwnProperty(i)) {
@@ -62,18 +47,30 @@ b = (function (window, document) {
         }
         return keys;
     });
-
+}
+// Array isArray polyfill
+if (!Array.isArray) {
+    var objectToString = {}.toString;
+    Array.isArray = (function (a) { return objectToString.call(a) === "[object Array]"; });
+}
+b = (function (window, document) {
+    function assert(shoudBeTrue, messageIfFalse) {
+        if (DEBUG && !shoudBeTrue)
+            throw Error(messageIfFalse || "assertion failed");
+    }
+    var isArray = Array.isArray;
+    var objectKeys = Object.keys;
     function createTextNode(content) {
         return document.createTextNode(content);
     }
-
+    function createElement(name) {
+        return document.createElement(name);
+    }
     var hasTextContent = "textContent" in createTextNode("");
-
+    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
     function isObject(value) {
         return typeof value === "object";
     }
-
-    var inNamespace = false;
     var inSvg = false;
     var updateCall = [];
     var updateInstance = [];
@@ -81,21 +78,167 @@ b = (function (window, document) {
         if (newValue !== oldValue)
             el["value"] = newValue;
     };
-
     function setSetValue(callback) {
         var prev = setValueCallback;
         setValueCallback = callback;
         return prev;
     }
-
+    function newHashObj() {
+        return Object.create(null);
+    }
+    var vendors = ["webkit", "Moz", "ms", "o"];
+    var testingDivStyle = document.createElement("div").style;
+    function testPropExistence(name) {
+        return typeof testingDivStyle[name] === "string";
+    }
+    var mapping = newHashObj();
+    var isUnitlessNumber = {
+        boxFlex: true,
+        boxFlexGroup: true,
+        columnCount: true,
+        flex: true,
+        flexGrow: true,
+        flexShrink: true,
+        fontWeight: true,
+        lineClamp: true,
+        lineHeight: true,
+        opacity: true,
+        order: true,
+        orphans: true,
+        widows: true,
+        zIndex: true,
+        zoom: true,
+    };
+    function renamer(newName) {
+        return function (style, value, oldName) {
+            style[newName] = value;
+            style[oldName] = undefined;
+        };
+    }
+    ;
+    function renamerpx(newName) {
+        return function (style, value, oldName) {
+            if (typeof value === "number") {
+                style[newName] = value + "px";
+            }
+            else {
+                style[newName] = value;
+            }
+            style[oldName] = undefined;
+        };
+    }
+    function pxadder(style, value, name) {
+        if (typeof value === "number")
+            style[name] = value + "px";
+    }
+    function ieVersion() {
+        return document.documentMode;
+    }
+    var onIE8 = ieVersion() === 8;
+    if (onIE8) {
+        mapping.cssFloat = renamer("styleFloat");
+    }
+    function shimStyle(newValue) {
+        var k = Object.keys(newValue);
+        for (var i = 0, l = k.length; i < l; i++) {
+            var ki = k[i];
+            var mi = mapping[ki];
+            var vi = newValue[ki];
+            if (vi === undefined)
+                continue; // don't want to map undefined
+            if (mi === undefined) {
+                if (DEBUG) {
+                    if (ki === "float" && window.console && console.error)
+                        console.error("In style instead of 'float' you have to use 'cssFloat'");
+                    if (/-/.test(ki) && window.console && console.warn)
+                        console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
+                }
+                if (testPropExistence(ki)) {
+                    mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                }
+                else {
+                    var titleCaseKi = ki.replace(/^\w/, function (match) { return match.toUpperCase(); });
+                    for (var j = 0; j < vendors.length; j++) {
+                        if (testPropExistence(vendors[j] + titleCaseKi)) {
+                            mi = ((isUnitlessNumber[ki] === true) ? renamer : renamerpx)(vendors[j] + titleCaseKi);
+                            break;
+                        }
+                    }
+                    if (mi === undefined) {
+                        mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                        if (DEBUG && window.console && console.warn)
+                            console.warn("Style property " + ki + " is not supported in this browser");
+                    }
+                }
+                mapping[ki] = mi;
+            }
+            if (mi !== null)
+                mi(newValue, vi, ki);
+        }
+    }
+    function removeProperty(s, name) {
+        if (hasRemovePropertyInStyle)
+            s[name] = "";
+        else
+            s.removeAttribute(name);
+    }
+    function updateStyle(n, el, newStyle, oldStyle) {
+        var s = el.style;
+        if (isObject(newStyle)) {
+            shimStyle(newStyle);
+            var rule;
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    if (!(rule in newStyle))
+                        removeProperty(s, rule);
+                }
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined) {
+                        if (oldStyle[rule] !== v)
+                            s[rule] = v;
+                    }
+                    else {
+                        removeProperty(s, rule);
+                    }
+                }
+            }
+            else {
+                if (oldStyle)
+                    s.cssText = "";
+                for (rule in newStyle) {
+                    var v = newStyle[rule];
+                    if (v !== undefined)
+                        s[rule] = v;
+                }
+            }
+        }
+        else if (newStyle) {
+            s.cssText = newStyle;
+        }
+        else {
+            if (isObject(oldStyle)) {
+                for (rule in oldStyle) {
+                    removeProperty(s, rule);
+                }
+            }
+            else if (oldStyle) {
+                s.cssText = "";
+            }
+        }
+    }
+    function setClassName(el, className) {
+        if (inSvg)
+            el.setAttribute("class", className);
+        else
+            el.className = className;
+    }
     function updateElement(n, el, newAttrs, oldAttrs) {
-        if (!newAttrs)
-            return undefined;
         var attrName, newAttr, oldAttr, valueOldAttr, valueNewAttr;
         for (attrName in newAttrs) {
             newAttr = newAttrs[attrName];
             oldAttr = oldAttrs[attrName];
-            if (attrName === "value" && !inNamespace) {
+            if (attrName === "value" && !inSvg) {
                 valueOldAttr = oldAttr;
                 valueNewAttr = newAttr;
                 oldAttrs[attrName] = newAttr;
@@ -103,43 +246,25 @@ b = (function (window, document) {
             }
             if (oldAttr !== newAttr) {
                 oldAttrs[attrName] = newAttr;
-                if (attrName === "style") {
-                    if (isObject(newAttr)) {
-                        var rule;
-                        if (isObject(oldAttr)) {
-                            for (rule in newAttr) {
-                                var v = newAttr[rule];
-                                if (oldAttr[rule] !== v)
-                                    el.style[rule] = v;
-                            }
-                            for (rule in oldAttr) {
-                                if (!(rule in newAttr))
-                                    el.style[rule] = "";
-                            }
-                        } else {
-                            if (oldAttr)
-                                el.style.cssText = "";
-                            for (rule in newAttr) {
-                                el.style[rule] = newAttr[rule];
-                            }
-                        }
-                    } else {
-                        el.style.cssText = newAttr;
-                    }
-                } else if (inNamespace) {
+                if (inSvg) {
                     if (attrName === "href")
                         el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
-                    else if (attrName === "className")
-                        el.setAttribute("class", newAttr);
                     else
                         el.setAttribute(attrName, newAttr);
-                } else if (attrName === "value") {
-                    valueOldAttr = oldAttr;
-                    valueNewAttr = newAttr;
-                } else if (attrName in el && !(attrName === "list" || attrName === "form")) {
+                }
+                else if (onIE8 && attrName === "type" && el.nodeName === "input") {
+                }
+                else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
-                } else
+                }
+                else
                     el.setAttribute(attrName, newAttr);
+            }
+        }
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
             }
         }
         if (valueNewAttr !== undefined) {
@@ -147,74 +272,198 @@ b = (function (window, document) {
         }
         return oldAttrs;
     }
-
-    function createNode(n, parentNode) {
-        var c = n;
-        var backupInNamespace = inNamespace;
+    function pushInitCallback(c, aupdate) {
+        var cc = c.component;
+        if (cc) {
+            if (cc[aupdate ? "postUpdateDom" : "postInitDom"]) {
+                updateCall.push(aupdate);
+                updateInstance.push(c);
+            }
+        }
+    }
+    function findCfg(parent) {
+        var cfg;
+        while (parent) {
+            cfg = parent.cfg;
+            if (cfg !== undefined)
+                break;
+            if (parent.ctx) {
+                cfg = parent.ctx.cfg;
+                break;
+            }
+            parent = parent.parent;
+        }
+        return cfg;
+    }
+    function setRef(ref, value) {
+        if (ref == null)
+            return;
+        var ctx = ref[0];
+        var refs = ctx.refs;
+        if (!refs) {
+            refs = newHashObj();
+            ctx.refs = refs;
+        }
+        refs[ref[1]] = value;
+    }
+    function createNode(n, parentNode, createInto, createBefore) {
+        var c = {
+            tag: n.tag,
+            key: n.key,
+            ref: n.ref,
+            className: n.className,
+            style: n.style,
+            attrs: n.attrs,
+            children: n.children,
+            component: n.component,
+            data: n.data,
+            cfg: n.cfg,
+            parent: parentNode,
+            element: undefined,
+            ctx: undefined
+        };
         var backupInSvg = inSvg;
         var component = c.component;
+        var el;
+        setRef(c.ref, c);
         if (component) {
-            c.ctx = { data: c.data || {} };
+            var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
+            c.ctx = ctx;
             if (component.init) {
-                component.init(c.ctx, n);
+                component.init(ctx, c, createInto, createBefore);
             }
             if (component.render) {
-                component.render(c.ctx, n);
+                component.render(ctx, c);
             }
+            if (c.element)
+                return c;
         }
-        if (n.tag === "") {
-            c.element = createTextNode(c.children);
+        var tag = c.tag;
+        var children = c.children;
+        if (tag === undefined) {
+            if (typeof children === "string") {
+                el = createTextNode(children);
+                c.element = el;
+                createInto.insertBefore(el, createBefore);
+            }
+            else {
+                createChildren(c, createInto, createBefore);
+            }
+            if (component) {
+                if (component.postRender) {
+                    component.postRender(c.ctx, c);
+                }
+            }
             return c;
-        } else if (n.tag === "/") {
+        }
+        else if (tag === "/") {
+            var htmltext = children;
+            if (htmltext === "") {
+            }
+            else if (createBefore == null) {
+                var before = createInto.lastChild;
+                createInto.insertAdjacentHTML("beforeend", htmltext);
+                c.element = [];
+                if (before) {
+                    before = before.nextSibling;
+                }
+                else {
+                    before = createInto.firstChild;
+                }
+                while (before) {
+                    c.element.push(before);
+                    before = before.nextSibling;
+                }
+            }
+            else {
+                el = createBefore;
+                var elprev = createBefore.previousSibling;
+                var removeEl = false;
+                var parent = createInto;
+                if (!el.insertAdjacentHTML) {
+                    el = parent.insertBefore(createElement("i"), el);
+                    removeEl = true;
+                }
+                el.insertAdjacentHTML("beforebegin", htmltext);
+                if (elprev) {
+                    elprev = elprev.nextSibling;
+                }
+                else {
+                    elprev = parent.firstChild;
+                }
+                var newElements = [];
+                while (elprev !== el) {
+                    newElements.push(elprev);
+                    elprev = elprev.nextSibling;
+                }
+                n.element = newElements;
+                if (removeEl) {
+                    parent.removeChild(el);
+                }
+            }
+            if (component) {
+                if (component.postRender) {
+                    component.postRender(c.ctx, c);
+                }
+            }
             return c;
-        } else if (inSvg || n.tag === "svg") {
-            c.element = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
-            inNamespace = true;
+        }
+        else if (inSvg || tag === "svg") {
+            el = document.createElementNS("http://www.w3.org/2000/svg", tag);
             inSvg = true;
-        } else {
-            c.element = document.createElement(n.tag);
         }
-        createChildren(c);
+        else if (!el) {
+            el = createElement(tag);
+        }
+        if (onIE8 && tag === "input" && "type" in c.attrs) {
+            // On IE8 input.type has to be written before writing adding to document
+            el.type = c.attrs.type;
+        }
+        createInto.insertBefore(el, createBefore);
+        c.element = el;
+        createChildren(c, el, null);
         if (component) {
-            if (component.postInit) {
-                component.postInit(c.ctx, n);
+            if (component.postRender) {
+                component.postRender(c.ctx, c);
             }
         }
-        c.attrs = updateElement(c, c.element, c.attrs, {});
-        inNamespace = backupInNamespace;
+        if (c.attrs)
+            c.attrs = updateElement(c, el, c.attrs, {});
+        if (c.style)
+            updateStyle(c, el, c.style, undefined);
+        var className = c.className;
+        if (className)
+            setClassName(el, className);
         inSvg = backupInSvg;
         pushInitCallback(c, false);
-        c.parent = parentNode;
         return c;
     }
-
     function normalizeNode(n) {
         var t = typeof n;
         if (t === "string") {
-            return { tag: "", children: n };
+            return { children: n };
         }
         if (t === "boolean")
             return null;
         return n;
     }
-
-    function createChildren(c) {
+    function createChildren(c, createInto, createBefore) {
         var ch = c.children;
-        var element = c.element;
         if (!ch)
             return;
         if (!isArray(ch)) {
-            var type = typeof ch;
-            if (type === "string") {
+            if (typeof ch === "string") {
                 if (hasTextContent) {
-                    element.textContent = ch;
-                } else {
-                    element.innerText = ch;
+                    createInto.textContent = ch;
+                }
+                else {
+                    createInto.innerText = ch;
                 }
                 return;
             }
             ch = [ch];
         }
+        ch = ch.slice(0);
         var i = 0, l = ch.length;
         while (i < l) {
             var item = ch[i];
@@ -229,29 +478,13 @@ b = (function (window, document) {
                 l--;
                 continue;
             }
-            var j = ch[i] = createNode(item, c);
-            if (j.tag === "/") {
-                var before = element.lastChild;
-                c.element.insertAdjacentHTML("beforeend", j.children);
-                j.element = [];
-                if (before) {
-                    before = before.nextSibling;
-                } else {
-                    before = element.firstChild;
-                }
-                while (before) {
-                    j.element.push(before);
-                    before = before.nextSibling;
-                }
-            } else {
-                element.appendChild(j.element);
-            }
+            var j = ch[i] = createNode(item, c, createInto, createBefore);
             i++;
         }
         c.children = ch;
     }
-
     function destroyNode(c) {
+        setRef(c.ref, null);
         var ch = c.children;
         if (isArray(ch)) {
             for (var i = 0, l = ch.length; i < l; i++) {
@@ -264,11 +497,8 @@ b = (function (window, document) {
                 component.destroy(c.ctx, c, c.element);
         }
     }
-
-    function removeNode(c) {
-        destroyNode(c);
+    function removeNodeRecursive(c) {
         var el = c.element;
-        c.parent = null;
         if (isArray(el)) {
             var pa = el[0].parentNode;
             if (pa) {
@@ -276,187 +506,345 @@ b = (function (window, document) {
                     pa.removeChild(el[i]);
                 }
             }
-        } else {
+        }
+        else if (el != null) {
             var p = el.parentNode;
             if (p)
                 p.removeChild(el);
         }
-    }
-
-    function pushInitCallback(c, aupdate) {
-        var cc = c.component;
-        if (cc) {
-            if (cc.postInitDom) {
-                updateCall.push(aupdate);
-                updateInstance.push(c);
+        else {
+            var ch = c.children;
+            if (isArray(ch)) {
+                for (var i = 0, l = ch.length; i < l; i++) {
+                    removeNodeRecursive(ch[i]);
+                }
             }
         }
     }
-
-    var rootFactory;
-    var rootCacheChildren = [];
-
-    function getCacheNode(n) {
-        if (n == null)
+    function removeNode(c) {
+        destroyNode(c);
+        removeNodeRecursive(c);
+    }
+    var roots = Object.create(null);
+    function nodeContainsNode(c, n, resIndex, res) {
+        var el = c.element;
+        var ch = c.children;
+        if (isArray(el)) {
+            for (var ii = 0; ii < el.length; ii++) {
+                if (el[ii] === n) {
+                    res.push(c);
+                    if (isArray(ch)) {
+                        return ch;
+                    }
+                    return null;
+                }
+            }
+        }
+        else if (el == null) {
+            if (isArray(ch)) {
+                for (var i = 0; i < ch.length; i++) {
+                    var result = nodeContainsNode(ch[i], n, resIndex, res);
+                    if (result !== undefined) {
+                        res.splice(resIndex, 0, c);
+                        return result;
+                    }
+                }
+            }
+        }
+        else if (el === n) {
+            res.push(c);
+            if (isArray(ch)) {
+                return ch;
+            }
             return null;
-        var root = document.body;
+        }
+        return undefined;
+    }
+    function vdomPath(n) {
+        var res = [];
+        if (n == null)
+            return res;
+        var rootIds = Object.keys(roots);
+        var rootElements = rootIds.map(function (i) { return roots[i].e || document.body; });
         var nodeStack = [];
-        while (n && n !== root) {
+        rootFound: while (n) {
+            for (var j = 0; j < rootElements.length; j++) {
+                if (n === rootElements[j])
+                    break rootFound;
+            }
             nodeStack.push(n);
             n = n.parentNode;
         }
-        if (!n)
-            return null;
-        var currentCacheArray = rootCacheChildren;
-        while (nodeStack.length) {
-            var currentNode = nodeStack.pop();
-            for (var i = 0, l = currentCacheArray.length; i < l; i++) {
-                if (currentCacheArray[i].element === currentNode) {
-                    if (nodeStack.length === 0)
-                        return currentCacheArray[i];
-                    currentCacheArray = currentCacheArray[i].children;
-                    currentNode = null;
-                    break;
-                }
-            }
-            if (currentNode)
-                return null;
-        }
-        return null;
-    }
-
-    function updateNode(n, c) {
-        var component = n.component;
-        var backupInNamespace = inNamespace;
-        var backupInSvg = inSvg;
-        if (component) {
-            if (component.shouldChange)
-                if (!component.shouldChange(c.ctx, n, c))
-                    return c;
-            c.ctx.data = n.data || {};
-            c.component = component;
-            if (component.render)
-                component.render(c.ctx, n, c);
-        }
-        var el;
-        if (n.tag === "/") {
-            el = c.element;
-            if (isArray(el))
-                el = el[0];
-            var elprev = el.previousSibling;
-            var removeEl = false;
-            var parent = el.parentNode;
-            if (!el.insertAdjacentHTML) {
-                el = parent.insertBefore(document.createElement("i"), el);
-                removeEl = true;
-            }
-            el.insertAdjacentHTML("beforebegin", n.children);
-            if (elprev) {
-                elprev = elprev.nextSibling;
-            } else {
-                elprev = parent.firstChild;
-            }
-            var newElements = [];
-            while (elprev !== el) {
-                newElements.push(elprev);
-                elprev = elprev.nextSibling;
-            }
-            n.element = newElements;
-            if (removeEl) {
-                parent.removeChild(el);
-            }
-            removeNode(c);
-            return n;
-        }
-        if (n.tag === c.tag && (inSvg || !inNamespace)) {
-            if (n.tag === "") {
-                if (c.children !== n.children) {
-                    c.children = n.children;
-                    el = c.element;
-                    if (hasTextContent) {
-                        el.textContent = c.children;
-                    } else {
-                        el.nodeValue = c.children;
+        if (!n || nodeStack.length === 0)
+            return res;
+        var currentCacheArray = null;
+        var currentNode = nodeStack.pop();
+        rootFound2: for (j = 0; j < rootElements.length; j++) {
+            if (n === rootElements[j]) {
+                var rc = roots[rootIds[j]].c;
+                for (var k = 0; k < rc.length; k++) {
+                    var rck = rc[k];
+                    var findResult = nodeContainsNode(rck, currentNode, res.length, res);
+                    if (findResult !== undefined) {
+                        currentCacheArray = findResult;
+                        break rootFound2;
                     }
                 }
+            }
+        }
+        while (nodeStack.length) {
+            currentNode = nodeStack.pop();
+            if (currentCacheArray && currentCacheArray.length)
+                for (var i = 0, l = currentCacheArray.length; i < l; i++) {
+                    var bn = currentCacheArray[i];
+                    var findResult = nodeContainsNode(bn, currentNode, res.length, res);
+                    if (findResult !== undefined) {
+                        currentCacheArray = findResult;
+                        currentNode = null;
+                        break;
+                    }
+                }
+            if (currentNode) {
+                res.push(null);
+                break;
+            }
+        }
+        return res;
+    }
+    function getCacheNode(n) {
+        var s = vdomPath(n);
+        if (s.length == 0)
+            return null;
+        return s[s.length - 1];
+    }
+    function finishUpdateNode(n, c, component) {
+        if (component) {
+            if (component.postRender) {
+                component.postRender(c.ctx, n, c);
+            }
+        }
+        c.data = n.data;
+        pushInitCallback(c, true);
+    }
+    function updateNode(n, c, createInto, createBefore, deepness) {
+        var component = n.component;
+        var backupInSvg = inSvg;
+        var bigChange = false;
+        var ctx = c.ctx;
+        if (component && ctx != null) {
+            if (ctx[ctxInvalidated] === frame) {
+                deepness = Math.max(deepness, ctx[ctxDeepness]);
+            }
+            if (component.id !== c.component.id) {
+                bigChange = true;
+            }
+            else {
+                if (c.parent != undefined)
+                    ctx.cfg = findCfg(c.parent);
+                if (component.shouldChange)
+                    if (!component.shouldChange(ctx, n, c))
+                        return c;
+                ctx.data = n.data || {};
+                c.component = component;
+                if (component.render)
+                    component.render(ctx, n, c);
+                c.cfg = n.cfg;
+            }
+        }
+        if (DEBUG) {
+            if (!((n.ref == null && c.ref == null) ||
+                ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+                if (window.console && console.warn)
+                    console.warn("ref changed in child in update");
+            }
+        }
+        var newChildren = n.children;
+        var cachedChildren = c.children;
+        var tag = n.tag;
+        if (bigChange || (component && ctx == null)) {
+        }
+        else if (tag === "/") {
+            if (c.tag === "/" && cachedChildren === newChildren) {
+                finishUpdateNode(n, c, component);
                 return c;
-            } else {
-                if (n.tag === "svg") {
-                    inNamespace = true;
+            }
+        }
+        else if (tag === c.tag) {
+            if (tag === undefined) {
+                if (typeof newChildren === "string" && typeof cachedChildren === "string") {
+                    if (newChildren !== cachedChildren) {
+                        var el = c.element;
+                        if (hasTextContent) {
+                            el.textContent = newChildren;
+                        }
+                        else {
+                            el.innerText = newChildren;
+                        }
+                        c.children = newChildren;
+                    }
+                }
+                else {
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(c.children, createInto, createBefore);
+                    }
+                    else {
+                        c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
+                    }
+                }
+                finishUpdateNode(n, c, component);
+                return c;
+            }
+            else {
+                if (tag === "svg") {
                     inSvg = true;
                 }
-                if (!n.attrs && !c.attrs || n.attrs && c.attrs && objectKeys(n.attrs).join() === objectKeys(c.attrs).join() && n.attrs.id === c.attrs.id) {
-                    updateChildrenNode(n, c);
-                    if (component) {
-                        if (component.postInit) {
-                            component.postInit(c.ctx, n, c);
+                var el = c.element;
+                if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
+                    if (newChildren !== cachedChildren) {
+                        if (hasTextContent) {
+                            el.textContent = newChildren;
                         }
+                        else {
+                            el.innerText = newChildren;
+                        }
+                        cachedChildren = newChildren;
                     }
-                    if (c.attrs)
-                        c.attrs = updateElement(c, c.element, n.attrs, c.attrs);
-                    inNamespace = backupInNamespace;
-                    inSvg = backupInSvg;
-                    pushInitCallback(c, true);
-                    return c;
+                }
+                else {
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(c.children, el, createBefore);
+                    }
+                    else {
+                        cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
+                    }
+                }
+                c.children = cachedChildren;
+                finishUpdateNode(n, c, component);
+                if (c.attrs || n.attrs)
+                    c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
+                updateStyle(c, el, n.style, c.style);
+                c.style = n.style;
+                var className = n.className;
+                if (className !== c.className) {
+                    setClassName(el, className || "");
+                    c.className = className;
                 }
                 inSvg = backupInSvg;
-                inNamespace = backupInNamespace;
+                return c;
             }
         }
-        var r = createNode(n, c.parent);
-        var pn = c.element.parentNode;
-        if (pn) {
-            pn.insertBefore(r.element, c.element);
-        }
+        var parEl = c.element;
+        if (isArray(parEl))
+            parEl = parEl[0];
+        if (parEl == null)
+            parEl = createInto;
+        else
+            parEl = parEl.parentNode;
+        var r = createNode(n, c.parent, parEl, findFirstNode(c));
         removeNode(c);
         return r;
     }
-
+    function findFirstNode(c) {
+        var el = c.element;
+        if (el != null) {
+            if (isArray(el))
+                return el[0];
+            return el;
+        }
+        var ch = c.children;
+        if (!isArray(ch))
+            return null;
+        for (var i = 0; i < ch.length; i++) {
+            el = findFirstNode(ch[i]);
+            if (el)
+                return el;
+        }
+        return null;
+    }
+    function findNextNode(a, i, len, def) {
+        while (++i < len) {
+            var ai = a[i];
+            if (ai == null)
+                continue;
+            var n = findFirstNode(ai);
+            if (n != null)
+                return n;
+        }
+        return def;
+    }
     function callPostCallbacks() {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
-            var n;
-            n = updateInstance[i];
+            var n = updateInstance[i];
             if (updateCall[i]) {
                 n.component.postUpdateDom(n.ctx, n, n.element);
-            } else {
+            }
+            else {
                 n.component.postInitDom(n.ctx, n, n.element);
             }
         }
         updateCall = [];
         updateInstance = [];
     }
-
-    function updateChildrenNode(n, c) {
-        c.children = updateChildren(c.element, n.children, c.children, c);
+    function updateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness) {
+        cachedChildren[cachedIndex] = updateNode(newNode, cachedChildren[cachedIndex], element, findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore), deepness);
     }
-
-    function updateChildren(element, newChildren, cachedChildren, parentNode) {
+    function reorderInUpdateChildrenRec(c, element, before) {
+        var el = c.element;
+        if (el != null) {
+            if (isArray(el)) {
+                for (var i = 0; i < el.length; i++) {
+                    element.insertBefore(el[i], before);
+                }
+            }
+            else
+                element.insertBefore(el, before);
+            return;
+        }
+        var ch = c.children;
+        if (!isArray(ch))
+            return null;
+        for (var i = 0; i < ch.length; i++) {
+            reorderInUpdateChildrenRec(ch[i], element, before);
+        }
+    }
+    function reorderInUpdateChildren(cachedChildren, cachedIndex, cachedLength, createBefore, element) {
+        var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
+        var cur = cachedChildren[cachedIndex];
+        var what = findFirstNode(cur);
+        if (what != null && what !== before) {
+            reorderInUpdateChildrenRec(cur, element, before);
+        }
+    }
+    function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness) {
+        var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
+        var cur = cachedChildren[cachedIndex];
+        var what = findFirstNode(cur);
+        if (what != null && what !== before) {
+            reorderInUpdateChildrenRec(cur, element, before);
+        }
+        cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
+    }
+    function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
         if (newChildren == null)
             newChildren = [];
         if (!isArray(newChildren)) {
-            var type = typeof newChildren;
-            if ((type === "string") && !isArray(cachedChildren)) {
-                if (newChildren === cachedChildren)
-                    return cachedChildren;
-                if (hasTextContent) {
-                    element.textContent = newChildren;
-                } else {
-                    element.innerText = newChildren;
-                }
-                return newChildren;
-            }
             newChildren = [newChildren];
         }
         if (cachedChildren == null)
             cachedChildren = [];
         if (!isArray(cachedChildren)) {
-            element.removeChild(element.firstChild);
+            if (element.firstChild)
+                element.removeChild(element.firstChild);
             cachedChildren = [];
         }
+        newChildren = newChildren.slice(0);
         var newLength = newChildren.length;
         var cachedLength = cachedChildren.length;
-        for (var newIndex = 0; newIndex < newLength;) {
+        var newIndex;
+        for (newIndex = 0; newIndex < newLength;) {
             var item = newChildren[newIndex];
             if (isArray(item)) {
                 newChildren.splice.apply(newChildren, [newIndex, 1].concat(item));
@@ -466,6 +854,7 @@ b = (function (window, document) {
             item = normalizeNode(item);
             if (item == null) {
                 newChildren.splice(newIndex, 1);
+                newLength--;
                 continue;
             }
             newChildren[newIndex] = item;
@@ -474,10 +863,10 @@ b = (function (window, document) {
         var newEnd = newLength;
         var cachedEnd = cachedLength;
         newIndex = 0;
-        cachedIndex = 0;
+        var cachedIndex = 0;
         while (newIndex < newEnd && cachedIndex < cachedEnd) {
             if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
-                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 newIndex++;
                 cachedIndex++;
                 continue;
@@ -486,7 +875,7 @@ b = (function (window, document) {
                 if (newChildren[newEnd - 1].key === cachedChildren[cachedEnd - 1].key) {
                     newEnd--;
                     cachedEnd--;
-                    cachedChildren[cachedEnd] = updateNode(newChildren[newEnd], cachedChildren[cachedEnd]);
+                    updateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness);
                     if (newIndex < newEnd && cachedIndex < cachedEnd)
                         continue;
                 }
@@ -494,21 +883,19 @@ b = (function (window, document) {
             }
             if (newIndex < newEnd && cachedIndex < cachedEnd) {
                 if (newChildren[newIndex].key === cachedChildren[cachedEnd - 1].key) {
-                    element.insertBefore(cachedChildren[cachedEnd - 1].element, cachedChildren[cachedIndex].element);
                     cachedChildren.splice(cachedIndex, 0, cachedChildren[cachedEnd - 1]);
                     cachedChildren.splice(cachedEnd, 1);
-                    cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                    reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                     newIndex++;
                     cachedIndex++;
                     continue;
                 }
                 if (newChildren[newEnd - 1].key === cachedChildren[cachedIndex].key) {
-                    element.insertBefore(cachedChildren[cachedIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
                     cachedChildren.splice(cachedEnd, 0, cachedChildren[cachedIndex]);
                     cachedChildren.splice(cachedIndex, 1);
                     cachedEnd--;
                     newEnd--;
-                    cachedChildren[cachedEnd] = updateNode(newChildren[newEnd], cachedChildren[cachedEnd]);
+                    reorderAndUpdateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness);
                     continue;
                 }
             }
@@ -518,18 +905,18 @@ b = (function (window, document) {
             if (newIndex === newEnd) {
                 return cachedChildren;
             }
-
+            // Only work left is to add new nodes
             while (newIndex < newEnd) {
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode));
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
                 cachedIndex++;
                 cachedEnd++;
                 cachedLength++;
-                element.insertBefore(cachedChildren[newIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
                 newIndex++;
             }
             return cachedChildren;
         }
         if (newIndex === newEnd) {
+            // Only work left is to remove old nodes
             while (cachedIndex < cachedEnd) {
                 cachedEnd--;
                 removeNode(cachedChildren[cachedEnd]);
@@ -537,11 +924,9 @@ b = (function (window, document) {
             }
             return cachedChildren;
         }
-
         // order of keyed nodes ware changed => reorder keyed nodes first
-        var cachedIndex;
-        var cachedKeys = {};
-        var newKeys = {};
+        var cachedKeys = newHashObj();
+        var newKeys = newHashObj();
         var key;
         var node;
         var backupNewIndex = newIndex;
@@ -553,7 +938,8 @@ b = (function (window, document) {
             if (key != null) {
                 assert(!(key in cachedKeys));
                 cachedKeys[key] = cachedIndex;
-            } else
+            }
+            else
                 deltaKeyless--;
         }
         var keyLess = -deltaKeyless - deltaKeyless;
@@ -563,7 +949,8 @@ b = (function (window, document) {
             if (key != null) {
                 assert(!(key in newKeys));
                 newKeys[key] = newIndex;
-            } else
+            }
+            else
                 deltaKeyless++;
         }
         keyLess += deltaKeyless;
@@ -599,8 +986,7 @@ b = (function (window, document) {
             var akpos = cachedKeys[key];
             if (akpos === undefined) {
                 // New key
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode));
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
                 delta++;
                 newIndex++;
                 cachedIndex++;
@@ -619,23 +1005,23 @@ b = (function (window, document) {
             }
             if (cachedIndex === akpos + delta) {
                 // Inplace update
-                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 newIndex++;
                 cachedIndex++;
-            } else {
+            }
+            else {
                 // Move
                 cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
                 delta++;
                 cachedChildren[akpos + delta] = null;
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
-                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 cachedIndex++;
                 cachedEnd++;
                 cachedLength++;
                 newIndex++;
             }
         }
-
+        // remove old keyed cached nodes
         while (cachedIndex < cachedEnd) {
             if (cachedChildren[cachedIndex] === null) {
                 cachedChildren.splice(cachedIndex, 1);
@@ -652,27 +1038,23 @@ b = (function (window, document) {
             }
             cachedIndex++;
         }
-
+        // add new keyed nodes
         while (newIndex < newEnd) {
             key = newChildren[newIndex].key;
             if (key != null) {
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode));
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
                 cachedEnd++;
                 cachedLength++;
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
                 delta++;
                 cachedIndex++;
             }
             newIndex++;
         }
-
         // Without any keyless nodes we are done
         if (!keyLess)
             return cachedChildren;
-
         // calculate common (old and new) keyless
         keyLess = (keyLess - Math.abs(deltaKeyless)) >> 1;
-
         // reorder just nonkeyed nodes
         newIndex = backupNewIndex;
         cachedIndex = backupCachedIndex;
@@ -690,7 +1072,7 @@ b = (function (window, document) {
                     newIndex++;
                     continue;
                 }
-                cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element, deepness);
                 keyLess--;
                 newIndex++;
                 cachedIndex = newIndex;
@@ -716,24 +1098,24 @@ b = (function (window, document) {
                 assert(key === cachedChildren[cachedIndex].key);
                 cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex + 1, 1);
-                element.insertBefore(cachedChildren[newIndex].element, cachedChildren[newIndex + 1].element);
+                reorderInUpdateChildren(cachedChildren, newIndex, cachedLength, createBefore, element);
+                // just moving keyed node it was already updated before
                 newIndex++;
                 cachedIndex = newIndex;
                 continue;
             }
             if (cachedIndex < cachedEnd) {
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[newIndex].element);
                 cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex + 1, 1);
-                cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element, deepness);
                 keyLess--;
                 newIndex++;
                 cachedIndex++;
-            } else {
-                cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode));
+            }
+            else {
+                cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore)));
                 cachedEnd++;
                 cachedLength++;
-                element.insertBefore(cachedChildren[newIndex].element, newIndex + 1 === cachedLength ? null : cachedChildren[newIndex + 1].element);
                 newIndex++;
                 cachedIndex++;
             }
@@ -745,26 +1127,20 @@ b = (function (window, document) {
         }
         return cachedChildren;
     }
-
     var hasNativeRaf = false;
     var nativeRaf = window.requestAnimationFrame;
     if (nativeRaf) {
-        nativeRaf(function (param) {
-            if (param === +param)
-                hasNativeRaf = true;
-        });
+        nativeRaf(function (param) { if (param === +param)
+            hasNativeRaf = true; });
     }
-
-    var now = Date.now || (function () {
-        return (new Date).getTime();
-    });
+    var now = Date.now || (function () { return (new Date).getTime(); });
     var startTime = now();
     var lastTickTime = 0;
-
     function requestAnimationFrame(callback) {
         if (hasNativeRaf) {
             nativeRaf(callback);
-        } else {
+        }
+        else {
             var delay = 50 / 3 + lastTickTime - now();
             if (delay < 0)
                 delay = 0;
@@ -774,36 +1150,33 @@ b = (function (window, document) {
             }, delay);
         }
     }
-
+    var ctxInvalidated = "$invalidated";
+    var ctxDeepness = "$deepness";
+    var fullRecreateRequested = false;
     var scheduled = false;
-    function scheduleUpdate() {
-        if (scheduled)
-            return;
-        scheduled = true;
-        requestAnimationFrame(update);
-    }
-
-    var regEvents;
-    var registryEvents;
-    regEvents = {};
-    registryEvents = {};
-
+    var uptime = 0;
+    var frame = 0;
+    var lastFrameDuration = 0;
+    var renderFrameBegin = 0;
+    var regEvents = {};
+    var registryEvents = {};
     function addEvent(name, priority, callback) {
         var list = registryEvents[name] || [];
         list.push({ priority: priority, callback: callback });
         registryEvents[name] = list;
     }
-
     function emitEvent(name, ev, target, node) {
         var events = regEvents[name];
         if (events)
             for (var i = 0; i < events.length; i++) {
                 if (events[i](ev, target, node))
-                    break;
+                    return true;
             }
+        return false;
     }
-
     function addListener(el, name) {
+        if (name[0] == "!")
+            return;
         function enhanceEvent(ev) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement || el;
@@ -814,11 +1187,11 @@ b = (function (window, document) {
             el = window;
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
-        } else {
+        }
+        else {
             el.attachEvent("on" + name, enhanceEvent);
         }
     }
-
     var eventsCaptured = false;
     function initEvents() {
         if (eventsCaptured)
@@ -828,12 +1201,8 @@ b = (function (window, document) {
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
             var arr = registryEvents[eventName];
-            arr = arr.sort(function (a, b) {
-                return a.priority - b.priority;
-            });
-            regEvents[eventName] = arr.map(function (v) {
-                return v.callback;
-            });
+            arr = arr.sort(function (a, b) { return a.priority - b.priority; });
+            regEvents[eventName] = arr.map(function (v) { return v.callback; });
         }
         registryEvents = null;
         var body = document.body;
@@ -841,67 +1210,229 @@ b = (function (window, document) {
             addListener(body, eventNames[i]);
         }
     }
-
-    function init(factory) {
-        if (rootCacheChildren.length) {
-            rootCacheChildren = updateChildren(document.body, [], rootCacheChildren, null);
+    function selectedUpdate(cache, element, createBefore) {
+        var len = cache.length;
+        for (var i = 0; i < len; i++) {
+            var node = cache[i];
+            var ctx = node.ctx;
+            if (ctx != null && ctx[ctxInvalidated] === frame) {
+                var cloned = { data: ctx.data, component: node.component };
+                cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness]);
+            }
+            else if (isArray(node.children)) {
+                var backupInSvg = inSvg;
+                if (node.tag === "svg")
+                    inSvg = true;
+                selectedUpdate(node.children, node.element || element, findNextNode(cache, i, len, createBefore));
+                inSvg = backupInSvg;
+            }
         }
-        rootFactory = factory;
-        scheduleUpdate();
     }
-
-    var uptime = 0;
-
+    var afterFrameCallback = function () { };
+    function setAfterFrame(callback) {
+        var res = afterFrameCallback;
+        afterFrameCallback = callback;
+        return res;
+    }
+    function findLastNode(children) {
+        for (var i = children.length - 1; i >= 0; i--) {
+            var c = children[i];
+            var el = c.element;
+            if (el != null) {
+                if (isArray(el)) {
+                    var l = el.length;
+                    if (l === 0)
+                        continue;
+                    return el[l - 1];
+                }
+                return el;
+            }
+            var ch = c.children;
+            if (!isArray(ch))
+                continue;
+            var res = findLastNode(ch);
+            if (res != null)
+                return res;
+        }
+        return null;
+    }
     function update(time) {
+        renderFrameBegin = now();
         initEvents();
+        frame++;
         uptime = time;
         scheduled = false;
-        var newChildren = rootFactory();
-        rootCacheChildren = updateChildren(document.body, newChildren, rootCacheChildren, null);
+        var fullRefresh = false;
+        if (fullRecreateRequested) {
+            fullRecreateRequested = false;
+            fullRefresh = true;
+        }
+        var rootIds = Object.keys(roots);
+        for (var i = 0; i < rootIds.length; i++) {
+            var r = roots[rootIds[i]];
+            if (!r)
+                continue;
+            var rc = r.c;
+            var insertBefore = findLastNode(rc);
+            if (insertBefore != null)
+                insertBefore = insertBefore.nextSibling;
+            if (fullRefresh) {
+                var newChildren = r.f();
+                r.e = r.e || document.body;
+                r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
+            }
+            else {
+                selectedUpdate(rc, r.e, insertBefore);
+            }
+        }
         callPostCallbacks();
+        afterFrameCallback(roots["0"].c);
+        lastFrameDuration = now() - renderFrameBegin;
     }
-
+    function invalidate(ctx, deepness) {
+        if (fullRecreateRequested)
+            return;
+        if (ctx != null) {
+            if (deepness == undefined)
+                deepness = 1e6;
+            if (ctx[ctxInvalidated] !== frame + 1) {
+                ctx[ctxInvalidated] = frame + 1;
+                ctx[ctxDeepness] = deepness;
+            }
+            else {
+                if (deepness > ctx[ctxDeepness])
+                    ctx[ctxDeepness] = deepness;
+            }
+        }
+        else {
+            fullRecreateRequested = true;
+        }
+        if (scheduled)
+            return;
+        scheduled = true;
+        requestAnimationFrame(update);
+    }
+    var lastRootId = 0;
+    function addRoot(factory, element) {
+        lastRootId++;
+        var rootId = "" + lastRootId;
+        roots[rootId] = { f: factory, e: element, c: [] };
+        invalidate();
+        return rootId;
+    }
+    function removeRoot(id) {
+        var root = roots[id];
+        if (!root)
+            return;
+        if (root.c.length) {
+            root.c = updateChildren(root.e, [], root.c, null, null, 1e9);
+        }
+        delete roots[id];
+    }
+    function getRoots() {
+        return roots;
+    }
+    function init(factory, element) {
+        removeRoot("0");
+        roots["0"] = { f: factory, e: element, c: [] };
+        invalidate();
+    }
     function bubbleEvent(node, name, param) {
         while (node) {
             var c = node.component;
             if (c) {
+                var ctx = node.ctx;
                 var m = c[name];
                 if (m) {
-                    if (m.call(c, node.ctx, param))
-                        return true;
+                    if (m.call(c, ctx, param))
+                        return ctx;
+                }
+                m = c.shouldStopBubble;
+                if (m) {
+                    if (m.call(c, ctx, name, param))
+                        break;
                 }
             }
             node = node.parent;
         }
-        return false;
+        return null;
     }
-
+    function broadcastEventToNode(node, name, param) {
+        if (!node)
+            return null;
+        var c = node.component;
+        if (c) {
+            var ctx = node.ctx;
+            var m = c[name];
+            if (m) {
+                if (m.call(c, ctx, param))
+                    return ctx;
+            }
+            m = c.shouldStopBroadcast;
+            if (m) {
+                if (m.call(c, ctx, name, param))
+                    return null;
+            }
+        }
+        var ch = node.children;
+        if (isArray(ch)) {
+            for (var i = 0; i < ch.length; i++) {
+                var res = broadcastEventToNode(ch[i], name, param);
+                if (res != null)
+                    return res;
+            }
+        }
+        else {
+            return broadcastEventToNode(ch, name, param);
+        }
+    }
+    function broadcastEvent(name, param) {
+        var k = Object.keys(roots);
+        for (var i = 0; i < k.length; i++) {
+            var ch = roots[k[i]].c;
+            if (ch != null) {
+                for (var j = 0; j < ch.length; j++) {
+                    var res = broadcastEventToNode(ch[j], name, param);
+                    if (res != null)
+                        return res;
+                }
+            }
+        }
+        return null;
+    }
     function merge(f1, f2) {
         var _this = this;
         return function () {
-            var result = f1.apply(_this, arguments);
+            var params = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                params[_i - 0] = arguments[_i];
+            }
+            var result = f1.apply(_this, params);
             if (result)
                 return result;
-            return f2.apply(_this, arguments);
+            return f2.apply(_this, params);
         };
     }
-
+    var emptyObject = {};
     function mergeComponents(c1, c2) {
         var res = Object.create(c1);
         for (var i in c2) {
-            if (c2.hasOwnProperty(i)) {
+            if (!(i in emptyObject)) {
                 var m = c2[i];
                 var origM = c1[i];
-                if (typeof (m) == "function" && origM) {
+                if (i === "id") {
+                    res[i] = ((origM != null) ? origM : "") + "/" + m;
+                }
+                else if (typeof m === "function" && origM != null && typeof origM === "function") {
                     res[i] = merge(origM, m);
-                } else {
+                }
+                else {
                     res[i] = m;
                 }
             }
         }
         return res;
     }
-
     function preEnhance(node, methods) {
         var comp = node.component;
         if (!comp) {
@@ -911,7 +1442,6 @@ b = (function (window, document) {
         node.component = mergeComponents(methods, comp);
         return node;
     }
-
     function postEnhance(node, methods) {
         var comp = node.component;
         if (!comp) {
@@ -921,8 +1451,9 @@ b = (function (window, document) {
         node.component = mergeComponents(comp, methods);
         return node;
     }
-
     function assign(target, source) {
+        if (target == null)
+            target = {};
         if (source != null)
             for (var propname in source) {
                 if (!source.hasOwnProperty(propname))
@@ -931,7 +1462,6 @@ b = (function (window, document) {
             }
         return target;
     }
-
     function preventDefault(event) {
         var pd = event.preventDefault;
         if (pd)
@@ -939,30 +1469,69 @@ b = (function (window, document) {
         else
             event.returnValue = false;
     }
-
+    function cloneNodeArray(a) {
+        a = a.slice(0);
+        for (var i = 0; i < a.length; i++) {
+            var n = a[i];
+            if (isArray(n)) {
+                a[i] = cloneNodeArray(n);
+            }
+            else if (isObject(n)) {
+                a[i] = cloneNode(n);
+            }
+        }
+        return a;
+    }
+    function cloneNode(node) {
+        var r = b.assign({}, node);
+        if (r.attrs) {
+            r.attrs = b.assign({}, r.attrs);
+        }
+        if (isObject(r.style)) {
+            r.style = b.assign({}, r.style);
+        }
+        var ch = r.children;
+        if (ch) {
+            if (isArray(ch)) {
+                r.children = cloneNodeArray(ch);
+            }
+            else if (isObject(ch)) {
+                r.children = cloneNode(ch);
+            }
+        }
+        return r;
+    }
     return {
         createNode: createNode,
         updateNode: updateNode,
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
         setSetValue: setSetValue,
+        setStyleShim: function (name, action) { return mapping[name] = action; },
         init: init,
+        addRoot: addRoot,
+        removeRoot: removeRoot,
+        getRoots: getRoots,
+        setAfterFrame: setAfterFrame,
         isArray: isArray,
-        uptime: function () {
-            return uptime;
-        },
+        uptime: function () { return uptime; },
+        lastFrameDuration: function () { return lastFrameDuration; },
         now: now,
+        frame: function () { return frame; },
         assign: assign,
-        invalidate: scheduleUpdate,
+        ieVersion: ieVersion,
+        invalidate: invalidate,
+        invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
-        vmlNode: function () {
-            return inNamespace = true;
-        },
+        vdomPath: vdomPath,
+        getDomNode: findFirstNode,
         deref: getCacheNode,
         addEvent: addEvent,
+        emitEvent: emitEvent,
         bubble: bubbleEvent,
+        broadcast: broadcastEvent,
         preEnhance: preEnhance,
-        postEnhance: postEnhance
+        postEnhance: postEnhance,
+        cloneNode: cloneNode
     };
 })(window, document);
-//# sourceMappingURL=bobril.js.map

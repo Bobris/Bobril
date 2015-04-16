@@ -1,20 +1,19 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.vg.d.ts"/>
 var VgApp;
 (function (VgApp) {
     function h(tag) {
         var args = [];
-        for (var _i = 0; _i < (arguments.length - 1); _i++) {
-            args[_i] = arguments[_i + 1];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
         }
         return { tag: tag, children: args };
     }
-
     b.init(function () {
         b.invalidate();
         var angle = Math.sin(b.uptime() * 0.0002) * 180 + 180;
         var angle2 = Math.sin(b.uptime() * 0.0003) * 180 + 180;
-        var path = [
-            "pie", 200, 200, 195, 180, 0, angle,
+        var path = ["pie", 200, 200, 195, 180, 0, angle,
             "pie", 200, 200, 175, 160, 0, angle2,
             "pie", 200, 200, 155, 140, angle, angle2,
             "pie", 200, 200, 135, 0, angle, angle2];
@@ -24,8 +23,7 @@ var VgApp;
         var deltay = Math.cos(b.uptime() * 0.003) * 40;
         var posx = 500 - deltax;
         var posy = 100 - deltay;
-        var sline = [
-            "M", 500 + deltax, 100 + deltay, "L", posx, posy, "C",
+        var sline = ["M", 500 + deltax, 100 + deltay, "L", posx, posy, "C",
             posx, posy + 20, posx - 10, posy + 10, posx - 10, posy + 30, "L", posx + 10, posy + 30, "C",
             posx + 10, posy + 10, posx, posy + 20, posx, posy];
         return [
@@ -84,4 +82,3 @@ var VgApp;
         ];
     });
 })(VgApp || (VgApp = {}));
-//# sourceMappingURL=app.js.map

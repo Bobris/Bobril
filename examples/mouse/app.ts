@@ -2,51 +2,89 @@
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 
 module MouseApp {
+    function d(style: any, content: IBobrilChildren): IBobrilNode {
+        return {
+            tag: "div",
+            style: style,
+            children: content
+        };
+    }
+
+    function h(name: string, content: IBobrilChildren): IBobrilNode {
+        return { tag: name, children: content };
+    }
+
+    function style(style: any, content: IBobrilNode): IBobrilNode {
+        content.style = style;
+        return content;
+    }
+
+    function comp(component: IBobrilComponent, content: IBobrilNode): IBobrilNode {
+        if (content.component) {
+            b.postEnhance(content, component);
+        } else {
+            content.component = component;
+        }
+        return content;
+    }
+
+    function layoutPair(left: any, right: any, leftWidth = "50%"): IBobrilNode {
+        return d({ display: "table", width: "100%" }, [
+            d({ display: "table-cell", verticalAlign: "top", width: leftWidth }, left),
+            d({ display: "table-cell", verticalAlign: "top" }, right)
+        ]);
+    }
+
+    function checkbox(value: boolean, onChange: (value: boolean) => void): IBobrilNode {
+        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: (ctx: any, v: boolean) => onChange(v) } };
+    }
+
     interface ITrackClickData {
         onAdd: (e: IEvent) => void;
+        stopPropagation: boolean;
     }
 
     interface ITrackClickCtx {
         data: ITrackClickData;
     }
 
-    class TrackClick implements IBobrilComponent {
-        static postInitDom(ctx: ITrackClickCtx, me: IBobrilNode, element: HTMLElement): void {
+    var TrackClick: IBobrilComponent = {
+        postInitDom(ctx: ITrackClickCtx, me: IBobrilNode, element: HTMLElement): void {
             element.focus();
-        }
+        },
 
-        static onClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onClick(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
-            return false;
-        }
+            return ctx.data.stopPropagation;
+        },
 
-        static onDoubleClick(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onDoubleClick(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
-            return false;
-        }
+            return ctx.data.stopPropagation;
+        },
 
-        static onMouseDown(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onMouseDown(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
-            return false;
-        }
+            return ctx.data.stopPropagation;
+        },
 
-        static onMouseUp(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onMouseUp(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
-            return false;
-        }
+            return ctx.data.stopPropagation;
+        },
 
-        static onSwipeLeft(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onSwipeLeft(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
-            return false;
-        }
+            return ctx.data.stopPropagation;
+        },
 
-        static onSwipeRight(ctx: ITrackClickCtx, event: IMouseEvent): boolean {
+        onSwipeRight(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
-            return false;
+            return ctx.data.stopPropagation;
         }
     }
 
-    function e(ev: IEvent):any {
+    function e(ev: IEvent): any {
         return {
             tag: "div",
             children: ev.toString()
@@ -58,43 +96,80 @@ module MouseApp {
     }
 
     class EventWrapper implements IEvent {
-        constructor(private ev: IMouseEvent, private eventName: string) { }
+        constructor(private ev: IBobrilMouseEvent, private eventName: string) { }
 
         toString(): string {
-            return this.eventName +" ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
         }
     }
 
+    class TextEvent implements IEvent {
+        constructor(private eventName: string) { }
+
+        toString(): string {
+            return this.eventName;
+        }
+    }
 
     var events: IEvent[] = [];
 
     function addEvent(ev: IEvent) {
         events.push(ev);
-        if (events.length > 30)
+        if (events.length > 20)
             events.shift();
         b.invalidate();
     }
 
+    var v1 = false, v2 = false;
+
     b.init(() => {
         return [
-            {
-                tag: "button",
-                attrs: { style: { fontSize: "3em", marginBottom: "10px" } },
-                children: "Click button",
-                component: TrackClick,
-                data: {
-                    onAdd: addEvent
-                }
-            },
+            layoutPair(
+                [{
+                    tag: "button",
+                    style: { fontSize: "2em", marginBottom: "10px" },
+                    children: "Click button",
+                    component: TrackClick,
+                    data: {
+                        onAdd: addEvent,
+                        stopPropagation: true
+                    }
+                }, {
+                        tag: "button",
+                        style: { fontSize: "2em", marginBottom: "10px" },
+                        children: "Does not stop prop",
+                        component: TrackClick,
+                        data: {
+                            onAdd: addEvent,
+                            stopPropagation: false
+                        }
+                    }], [
+                    d({ height: "2em" },
+                        h("label", [checkbox(v1,(v) => { v1 = v; addEvent(new TextEvent("slow onChange")); }), "Slow click checkbox"])
+                        ),
+                    d({ height: "2em" },
+                        comp({
+                            onClick: () => {
+                                v2 = !v2;
+                                b.invalidate();
+                                addEvent(new TextEvent("fast onClick"));
+                                return true;
+                            }
+                        }, h("label", [checkbox(v2,(v) => {
+                                v2 = v;
+                                addEvent(new TextEvent("fast onChange"));
+                            }), "Fast click checkbox"]))
+                        )
+                ]),
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "120px" } },
+                style: { border: "1px solid", minHeight: "120px", touchAction: "pan-y pinch-zoom" },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }]
-                            .concat(events.map((ev: IEvent) => e(ev)))
+                children: [{ tag: "div", children: "Click here or swipe!", style: { fontSize: "2em" } }]
+                    .concat(events.map((ev: IEvent) => e(ev)))
             }
         ];
     });

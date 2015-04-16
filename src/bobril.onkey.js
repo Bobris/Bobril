@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onkey.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.onkey.d.ts"/>
 (function (b) {
     function buildParam(ev) {
         return {
@@ -7,12 +7,10 @@
             ctrl: ev.ctrlKey,
             alt: ev.altKey,
             meta: ev.metaKey || false,
-            which: ev.which || ev.keyCode
+            which: ev.which || ev.keyCode,
         };
     }
-
     var preventDefault = b.preventDefault;
-
     function emitOnKeyDown(ev, target, node) {
         if (!node)
             return false;
@@ -50,4 +48,3 @@
     addEvent("keyup", 500, emitOnKeyUp);
     addEvent("keypress", 500, emitOnKeyPress);
 })(b);
-//# sourceMappingURL=bobril.onkey.js.map

@@ -2,15 +2,11 @@
 module TodoApp {
 
     export class Task {
-        constructor(public id: number, public name: string, public completed: boolean, public isInEditMode: boolean = false) {
+        constructor(public id: number, public name: string, public completed: boolean) {
         }
 
         public setStatus(completed: boolean): void {
             this.completed = completed;
-        }
-
-        public setEditMode(isEdit: boolean): void {
-            this.isInEditMode = isEdit;
         }
 
         public setName(name: string): void {
@@ -21,18 +17,16 @@ module TodoApp {
     export class Tasks {
         private counter: number;
         private items: Task[];
-        private filter: string;
-        private storageItemsKey: string = 'todoApp.taskListItems';
-        private storageCounterKey: string = 'todoApp.taskListCounter';
+        private storageItemsKey: string = "todoApp.taskListItems";
+        private storageCounterKey: string = "todoApp.taskListCounter";
 
-        private filterAll: string = 'all';
-        private filterActive: string = 'active';
-        private filterCompleted: string = 'completed';
+        private filterAll: string = "all";
+        private filterActive: string = "active";
+        private filterCompleted: string = "completed";
 
         constructor() {
             this.items = [];
             this.counter = 0;
-            this.filter = 'all';
         }
 
         public saveToStorage(): void {
@@ -45,25 +39,21 @@ module TodoApp {
             if (storageItems) {
                 for (var i = 0; i < storageItems.length; i++) {
                     var item = storageItems[i];
-                    this.items.push(new Task(item.id, item.name, item.completed, item.isInEditMode));
+                    this.items.push(new Task(item.id, item.name, item.completed));
                 }
             }
             var counter = JSON.parse(localStorage.getItem(this.storageCounterKey));
-            if (typeof(counter) === 'number') {
+            if (typeof(counter) === "number") {
                 this.counter = counter;
             }
         }
 
-        public setFilter(filterValue: string): void {
-            this.filter = filterValue;
-        }
-
-        public getFilteredItems(): Array<Task> {
+        public getFilteredItems(filter: string): Array<Task> {
             return this.items.filter((item, index, array) => { 
-                return this.filter === this.filterAll ||
-                    this.filter === this.filterActive && !item.completed ||
-                    this.filter === this.filterCompleted && item.completed;
-            })
+                return filter === this.filterAll ||
+                    filter === this.filterActive && !item.completed ||
+                    filter === this.filterCompleted && item.completed;
+            });
         }
 
         public getItemsCount(): number {
@@ -72,7 +62,7 @@ module TodoApp {
 
         public addTask(name: string): void
         {
-            this.items.push(new Task(this.counter++, name, false));
+            this.items.push(new Task(++this.counter, name, false));
             this.saveToStorage();
         }
 
@@ -84,7 +74,6 @@ module TodoApp {
         public markAllTasksAsCompleted(): void {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsCompleted(this.items[i].id);
-                this.setTaskEditMode(this.items[i].id, false);
             }
             this.saveToStorage();
         }
@@ -97,7 +86,6 @@ module TodoApp {
         public markAllTasksAsActive(): void {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsActive(this.items[i].id);
-                this.setTaskEditMode(this.items[i].id, false);
             }
             this.saveToStorage();
         }
@@ -127,10 +115,6 @@ module TodoApp {
             this.saveToStorage();
         }
 
-        public setTaskEditMode(taskId: number, inEditMode: boolean): void {
-            this.findTaskById(taskId).setEditMode(inEditMode);
-        }
-
         public setTaskName(taskId: number, name: string): void {
             this.findTaskById(taskId).setName(name);
             this.saveToStorage();
@@ -144,10 +128,6 @@ module TodoApp {
 
         public isTaskCompleted(taskId: number): boolean {
             return this.findTaskById(taskId).completed;
-        }
-
-        public isInEditMode(taskId: number): boolean {
-            return this.findTaskById(taskId).isInEditMode;
         }
 
         private findTaskById(taskId: number): Task {

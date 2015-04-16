@@ -1,0 +1,44 @@
+{
+    "version": "1.4.1",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "declaration": false,
+        "noImplicitAny": true,
+        "removeComments": false,
+        "noLib": false
+    },
+    "compileOnSave": false,
+    "filesGlob": [
+        "./**/*.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "./bobril.d.ts",
+        "./bobril.dnd.d.ts",
+        "./bobril.dnd.ts",
+        "./bobril.focus.d.ts",
+        "./bobril.focus.ts",
+        "./bobril.media.d.ts",
+        "./bobril.media.ts",
+        "./bobril.mouse.d.ts",
+        "./bobril.mouse.ts",
+        "./bobril.onchange.d.ts",
+        "./bobril.onchange.ts",
+        "./bobril.onkey.d.ts",
+        "./bobril.onkey.ts",
+        "./bobril.promise.d.ts",
+        "./bobril.promise.ts",
+        "./bobril.router.d.ts",
+        "./bobril.router.ts",
+        "./bobril.scroll.d.ts",
+        "./bobril.scroll.ts",
+        "./bobril.styleshim.ts",
+        "./bobril.swipe.d.ts",
+        "./bobril.swipe.ts",
+        "./bobril.ts",
+        "./bobril.vg.d.ts",
+        "./bobril.vg.ts",
+        "./lib.touch.d.ts"
+    ]
+}

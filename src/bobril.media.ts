@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.media.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.media.d.ts"/>
 
 ((b: IBobrilStatic, window: Window) => {
     var media: IBobrilMedia = null;
@@ -34,7 +34,7 @@
             var h = viewport.clientHeight;
             var o: any = (<any>window).orientation;
             var p = h >= w;
-            if (o == null) o = p ? 0 : 90;
+            if (o == null) o = (p ? 0 : 90);
             var device = 0;
             while (w > breaks[+!p][device]) device++;
             media = {

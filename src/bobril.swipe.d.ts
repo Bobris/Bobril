@@ -1,15 +1,6 @@
-﻿interface ICoords {
-    x: number;
-    y: number;
-}
-
-declare enum Swipe {
-    Invalid = 0,
-    Left = 1,
-    Right = 2
-}
+﻿/// <reference path="bobril.mouse.d.ts" />
 
 interface IBobrilComponent {
-    onSwipeLeft? (ctx: Object, event: IMouseEvent): boolean;
-    onSwipeRight? (ctx: Object, event: IMouseEvent): boolean;
-} 
+    onSwipeLeft? (ctx: Object, event: IBobrilMouseEvent): boolean;
+    onSwipeRight? (ctx: Object, event: IBobrilMouseEvent): boolean;
+}

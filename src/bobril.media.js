@@ -1,10 +1,10 @@
-/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.media.d.ts"/>
+/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.media.d.ts"/>
 (function (b, window) {
     var media = null;
     var breaks = [
-        [414, 800, 900],
-        [736, 1280, 1440]
+        [400, 800, 900],
+        [640, 1280, 1440] //landscape widths
     ];
     function emitOnMediaChange() {
         media = null;
@@ -29,7 +29,7 @@
             var o = window.orientation;
             var p = h >= w;
             if (o == null)
-                o = p ? 0 : 90;
+                o = (p ? 0 : 90);
             var device = 0;
             while (w > breaks[+!p][device])
                 device++;
@@ -46,4 +46,3 @@
     b.getMedia = getMedia;
     b.accDeviceBreaks = accDeviceBreaks;
 })(b, window);
-//# sourceMappingURL=bobril.media.js.map

@@ -1,4 +1,4 @@
-﻿/// <reference path="jasmine.d.ts"/>
+/// <reference path="jasmine.d.ts"/>
 describe("sandbox", function () {
     var root;
     beforeEach(function () {
@@ -13,4 +13,3 @@ describe("sandbox", function () {
         expect(root.innerHTML.toLowerCase()).toBe("<div></div>");
     });
 });
-//# sourceMappingURL=sandbox.js.map

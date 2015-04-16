@@ -1,0 +1,26 @@
+{
+    "version": "1.4.1",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "declaration": false,
+        "noImplicitAny": true,
+        "removeComments": false,
+        "noLib": false
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "./app.ts",
+        "./components/button.ts",
+        "./components/canvas.ts",
+        "./components/gameControlPanel.ts",
+        "./components/header.ts",
+        "./components/spinner.ts",
+        "./gameController.ts",
+        "./model/cell.ts",
+        "./model/world.ts"
+    ]
+}

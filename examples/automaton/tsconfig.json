@@ -1,0 +1,45 @@
+{
+    "version": "1.4.1",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "declaration": false,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "../../src/*.d.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "./app.ts",
+        "./components/canvas.ts",
+        "./components/edge.ts",
+        "./components/edgeText.ts",
+        "./components/graph.ts",
+        "./components/help.ts",
+        "./components/midPoint.ts",
+        "./components/vertex.ts",
+        "./models/automaton.ts",
+        "./models/dragMode.ts",
+        "./models/newTransition.ts",
+        "./models/point.ts",
+        "./models/state.ts",
+        "./models/transition.ts",
+        "./models/vector.ts",
+        "../../src/bobril.d.ts",
+        "../../src/bobril.focus.d.ts",
+        "../../src/bobril.media.d.ts",
+        "../../src/bobril.mouse.d.ts",
+        "../../src/bobril.onchange.d.ts",
+        "../../src/bobril.onkey.d.ts",
+        "../../src/bobril.promise.d.ts",
+        "../../src/bobril.router.d.ts",
+        "../../src/bobril.scroll.d.ts",
+        "../../src/bobril.swipe.d.ts",
+        "../../src/bobril.vg.d.ts",
+        "../../src/lib.touch.d.ts"
+    ]
+}

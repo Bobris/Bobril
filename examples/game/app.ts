@@ -1,4 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.vg.d.ts"/>
+/// <reference path="../../src/bobril.onkey.d.ts"/>
 
 module GameApp {
     function h(tag: string, ...args: any[]) {
@@ -119,10 +121,12 @@ module GameApp {
         time: number;
     }
 
-    class GameControler {
-        static init(ctx: IGameCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            if (!oldMe)
-                ctx.time = b.uptime();
+    var GameControler: IBobrilComponent = {
+        init(ctx: IGameCtx, me: IBobrilNode): void {
+            ctx.time = b.uptime();
+        },
+
+        render(ctx: IGameCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             var a = b.uptime();
             while (a > ctx.time) {
                 player.tick();
@@ -136,13 +140,13 @@ module GameApp {
                 }
                 ctx.time += 20;
             }
-        }
+        },
 
-        static postInitDom(ctx: IGameCtx, me: IBobrilNode, element: HTMLElement): void {
+        postInitDom(ctx: IGameCtx, me: IBobrilNode, element: HTMLElement): void {
             element.focus();
-        }
+        },
 
-        static onKeyDown(ctx: IGameCtx, event: IKeyDownUpEvent): boolean {
+        onKeyDown(ctx: IGameCtx, event: IKeyDownUpEvent): boolean {
             if (event.which == 37) {
                 player.left = true;
                 return true;
@@ -157,9 +161,9 @@ module GameApp {
                 return true;
             }
             return false;
-        }
+        },
 
-        static onKeyUp(ctx: IGameCtx, event: IKeyDownUpEvent): boolean {
+        onKeyUp(ctx: IGameCtx, event: IKeyDownUpEvent): boolean {
             if (event.which == 37) {
                 player.left = false;
                 return true;
@@ -183,7 +187,7 @@ module GameApp {
         return [
             h("h1", "Game"),
             {
-                tag: "div", attrs: { tabindex: "0", style: { width: boardX + "px", height: boardY + "px", outline: "0" } }, component: GameControler, children:
+                tag: "div", attrs: { tabindex: "0" }, style: { width: boardX + "px", height: boardY + "px", outline: "0" }, component: GameControler, children:
                 [
                     {
                         component: b.vg,

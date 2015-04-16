@@ -4,18 +4,20 @@ module InputApp {
         return { tag: tag, children: args };
     }
 
-    function layoutPair(left: any, right: any, leftWidth= "50%"): IBobrilNode {
+    function layoutPair(left: any, right: any, leftWidth = "50%"): IBobrilNode {
         return {
             tag: "div",
-            attrs: { style: { display: "table", width: "100%" } },
+            style: { display: "table", width: "100%" },
             children: [
-                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top", width: leftWidth } }, children: left },
-                { tag: "div", attrs: { style: { display: "table-cell", "vertical-align": "top" } }, children: right }
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top", width: leftWidth }, children: left },
+                { tag: "div", style: { display: "table-cell", verticalAlign: "top" }, children: right }
             ]
         };
     }
 
-    var spacer = { tag: "div", attrs: { style: "height:1em" } };
+    function spacer() {
+        return { tag: "div", style: "height:1em" };
+    }
 
     // Model
     var frame = 0;
@@ -60,7 +62,7 @@ module InputApp {
         b.invalidate();
     }
 
-    var optionm:string[] = [];
+    var optionm: string[] = [];
 
     function setOptionm(v: string[]) {
         optionm = v;
@@ -83,8 +85,8 @@ module InputApp {
         data: IOnChangeData;
     }
 
-    class OnChangeComponent implements IBobrilComponent {
-        static onChange(ctx: IOnChangeCtx, v: any): void {
+    var OnChangeComponent: IBobrilComponent = {
+        onChange(ctx: IOnChangeCtx, v: any): void {
             ctx.data.onChange(v);
         }
     }
@@ -138,7 +140,8 @@ module InputApp {
     function textarea(value: string, onChange: (value: string) => void, rows = 5) {
         return {
             tag: "textarea",
-            attrs: { value: value, rows: rows, style: { width: "100%" } },
+            style: { width: "100%" },
+            attrs: { value: value, rows: rows },
             data: { onChange: onChange },
             component: OnChangeComponent
         }
@@ -152,33 +155,33 @@ module InputApp {
                 textInput(value, setValue),
                 h("p", "Entered: ", value),
                 h("label", checkbox(checked, setChecked), "Checkbox"),
-                h("p", "Checked: ", checked ? "Yes" : "No"),
+                h("p", "Checked: ", checked ? <any>"Yes" : "No"),
                 h("label", radiobox("g1", radio1, setRadio1), "Radio 1"),
                 h("label", radiobox("g1", radio2, setRadio2), "Radio 2"),
-                h("p", "Radio1: ", radio1 ? "Yes" : "No", " Radio2: ", radio2 ? "Yes" : "No"),
+                h("p", "Radio1: ", radio1 ? <any>"Yes" : "No", " Radio2: ", radio2 ? <any>"Yes" : "No"),
                 h("p", "Frame: " + frame)
             ], [
-                layoutPair([
-                    combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
-                ], [
-                    h("div", "Combobox: ", option)
-                ]),
-                spacer,
-                layoutPair([
-                    listbox(option2, setOption2, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
-                ], [
-                    h("div", "Listbox: ", option2)
-                ]),
-                spacer,
-                layoutPair([
-                    listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
-                ], [
-                    h("div", "Multiselect: ", optionm.join(", "))
-                ]),
-                spacer,
-                textarea(valuearea, setValueArea),
-                h("pre", valuearea)
-            ])
+                    layoutPair([
+                        combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                    ], [
+                            h("div", "Combobox: ", option)
+                        ]),
+                    spacer(),
+                    layoutPair([
+                        listbox(option2, setOption2, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                    ], [
+                            h("div", "Listbox: ", option2)
+                        ]),
+                    spacer(),
+                    layoutPair([
+                        listboxmulti(optionm, setOptionm, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
+                    ], [
+                            h("div", "Multiselect: ", optionm.join(", "))
+                        ]),
+                    spacer(),
+                    textarea(valuearea, setValueArea),
+                    h("pre", valuearea)
+                ])
         ];
     });
 }

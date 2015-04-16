@@ -1,5 +1,5 @@
-﻿/// <reference path="../src/bobril.d.ts"/>
-/// <reference path="../src/bobril.onchange.d.ts"/>
+﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.onchange.d.ts"/>
 
 ((b: IBobrilStatic) => {
     var bvalue = "b$value";
@@ -20,7 +20,7 @@
     }
 
     function stringArrayContains(a: string[], v: string): boolean {
-        for (var j = 0, l = a.length; j < l; j++) {
+        for (var j = 0; j < a.length; j++) {
             if (a[j] === v) return true;
         }
         return false;
@@ -37,7 +37,7 @@
     var prevSetValueCallback = b.setSetValue((el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => {
         var tagName = el.tagName;
         var isSelect = tagName === "SELECT";
-        var isInput = tagName === "INPUT" || tagName==="TEXTAREA";
+        var isInput = tagName === "INPUT" || tagName === "TEXTAREA";
         if (!isInput && !isSelect) {
             prevSetValueCallback(el, node, newValue, oldValue);
             return;
@@ -52,7 +52,7 @@
             var options = (<HTMLSelectElement>el).options;
             var currentMulti = selectedArray(options);
             if (!stringArrayEqual(newValue, currentMulti)) {
-                if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue) || !stringArrayEqual(newValue,(<any>node.ctx)[bvalue])) {
+                if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue) || !stringArrayEqual(newValue, (<any>node.ctx)[bvalue])) {
                     for (var j = 0; j < options.length; j++) {
                         options[j].selected = stringArrayContains(newValue, options[j].value);
                     }
@@ -108,8 +108,13 @@
     });
 
     function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
-        if (!node)
+        if (target && target.nodeName === "OPTION") {
+            target = document.activeElement;
+            node = b.deref(target);
+        }
+        if (!node) {
             return false;
+        }
         var c = node.component;
         if (!c)
             return false;
@@ -121,11 +126,18 @@
         var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
         if (isMultiSelect) {
             var vs = selectedArray((<HTMLSelectElement>target).options);
-            if (!stringArrayEqual((<any>ctx)[bvalue],vs)) {
+            if (!stringArrayEqual((<any>ctx)[bvalue], vs)) {
                 (<any>ctx)[bvalue] = vs;
                 c.onChange(ctx, vs);
             }
         } else if (isCheckboxlike(<HTMLInputElement>target)) {
+            // Postpone change event so onCLick will be processed before it
+            if (ev && ev.type === "change") {
+                setTimeout(() => {
+                    emitOnChange(null, target, node);
+                }, 10);
+                return false;
+            }
             if ((<HTMLInputElement>target).type === "radio") {
                 var radios = document.getElementsByName((<HTMLInputElement>target).name);
                 for (var j = 0; j < radios.length; j++) {
@@ -159,7 +171,8 @@
         return false;
     }
 
-    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click"];
+    // click here must have lower priority (higher number) over mouse handlers
+    var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 100, emitOnChange);
+        b.addEvent(events[i], 10, emitOnChange);
 })(b);

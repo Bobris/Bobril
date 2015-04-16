@@ -1,0 +1,25 @@
+{
+    "version": "1.4.1",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "declaration": false,
+        "noImplicitAny": true,
+        "removeComments": false,
+        "noLib": false
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "./examples/gameoflife/model/cell.ts",
+        "./examples/gameoflife/model/world.ts",
+        "./helpers.ts",
+        "./jasmine.d.ts",
+        "./livecycle.ts",
+        "./promise.ts",
+        "./sandbox.ts",
+        "./vdom.ts"
+    ]
+}

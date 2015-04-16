@@ -3,19 +3,23 @@
 
 class TestComponent implements IBobrilComponent {
     actions: string = "";
+    contexts: { [name: string]: Object } = {};
 
     init(ctx: Object, me: IBobrilNode): void {
         this.actions += "i:" + me.data.name + ";";
     }
 
-    render(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
+    render(ctx: any, me: IBobrilNode, oldMe?: IBobrilNode): void {
+        if (ctx.data.setme)
+            b.assign(me, ctx.data.setme);
+        this.contexts[me.data.name] = ctx;
         if (oldMe)
             this.actions += "ru:" + me.data.name + ";";
         else
             this.actions += "ri:" + me.data.name + ";";
     }
 
-    postInit(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
+    postRender(ctx: Object, me: IBobrilNode, oldMe?: IBobrilNode): void {
         if (oldMe)
             this.actions += "U:" + me.data.name + ";";
         else
@@ -43,7 +47,7 @@ class TestComponent implements IBobrilComponent {
 describe("livecycle", () => {
     it("createNodeCallsInitAndPostInit", () => {
         var c = new TestComponent();
-        b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
+        b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
     });
@@ -55,39 +59,52 @@ describe("livecycle", () => {
             children: {
                 tag: "div", component: c, data: { name: "2" }
             }
-        }, null);
+        }, null, document.createElement("div"), null);
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;ri:1;i:2;ri:2;I:2;I:1;pi:2;pi:1;");
     });
 
     it("updateNodeCallsShouldUpdateAndPostUpdate", () => {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
-        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r);
+        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:1;ru:1;U:1;pu:1;");
     });
 
+    it("updateStringToComponetShouldWork", () => {
+        var c = new TestComponent();
+        var scope = document.createElement("div");
+        var r = b.createNode({ children: "a" }, null, scope, null);
+        b.callPostCallbacks();
+        b.updateNode({ tag: "div", component: c, data: { name: "1", change: true } }, r, scope, null, 1e6);
+        b.callPostCallbacks();
+        expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
+    });
+
     it("shouldUpdateReturningFalseDoesNotPostUpdate", () => {
         var c = new TestComponent();
-        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", component: c, data: { name: "1" } }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
-        b.updateNode({ tag: "div", component: c, data: { name: "1", change: false } }, r);
+        b.updateNode({ tag: "div", component: c, data: { name: "1", change: false } }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:1;");
     });
 
     it("updateNodeCallsUpdateInRightOrder", () => {
         var c = new TestComponent();
+        var scope = document.createElement("div");
         var r = b.createNode({
             tag: "div", component: c, data: { name: "1" },
             children: {
                 tag: "div", component: c, data: { name: "2" }
             }
-        }, null);
+        }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({
@@ -95,19 +112,20 @@ describe("livecycle", () => {
             children: {
                 tag: "div", component: c, data: { name: "2", change: true }
             }
-        }, r);
+        }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:1;ru:1;sc:2;ru:2;U:2;U:1;pu:2;pu:1;");
     });
 
     it("destroyCalledInCaseOfBigChange", () => {
         var c = new TestComponent();
+        var scope = document.createElement("div");
         var r = b.createNode({
             tag: "div", component: c, data: { name: "1" },
             children: {
                 tag: "div", component: c, data: { name: "2" }
             }
-        }, null);
+        }, null, scope, null);
         b.callPostCallbacks();
         c.actions = "";
         b.updateNode({
@@ -115,28 +133,25 @@ describe("livecycle", () => {
             children: {
                 tag: "div", component: c, data: { name: "4", change: true }
             }
-        }, r);
+        }, r, scope, null, 1e6);
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:3;ru:3;i:3;ri:3;i:4;ri:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");
     });
 
-    it("initCallsFactory", () => {
-        var done = false;
+    it("initCallsFactory", (done) => {
         var c = new TestComponent();
         b.init(() => {
             setTimeout(() => {
                 expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;");
-                done=true;
+                done();
             }, 0);
             return { tag: "div", component: c, data: { name: "1" } }
         });
-        waitsFor(() => done);
     });
 
-    it("invalidateInsideFactoryWorks", () => {
+    it("invalidateInsideFactoryWorks", (done) => {
         var c = new TestComponent();
         var state = 0;
-        var done = false;
         b.init(() => {
             state++;
             if (state === 1) {
@@ -145,19 +160,39 @@ describe("livecycle", () => {
             } else {
                 setTimeout(() => {
                     expect(c.actions).toBe("i:1;ri:1;I:1;pi:1;d:1;");
-                    done = true;
+                    done();
                 }, 0);
-                return [];
+                return <any>[];
             }
         });
-        waitsFor(() => done);
     });
 
-    it("canFindDomInVdom"), () => {
-        var done = false;
+    it("smallInvalidateUpdatesOnlyChild", (done) => {
+        var c = new TestComponent();
+        var state = 0;
+        var vdom = [{
+            tag: "div", component: c, data: { name: "1" }, children:
+            {
+                component: c, data: { name: "2", change: true, setme: { tag: "div" } }
+            }
+        }];
+        b.init(() => {
+            setTimeout(() => {
+                c.actions = "";
+                b.invalidate(c.contexts["2"]);
+                setTimeout(() => {
+                    expect(c.actions).toBe("sc:2;ru:2;U:2;pu:2;");
+                    done();
+                }, 100);
+            }, 0);
+            return vdom;
+        });
+    });
+
+    it("canFindDomInVdom", (done) => {
         var uid = 0;
         function d(...params: any[]) {
-            return { tag: "div", attrs: { id: "bobriltest"+(uid++) }, children: params };
+            return { tag: "div", attrs: { id: "bobriltest" + (uid++) }, children: params };
         }
 
         b.init(() => {
@@ -167,15 +202,30 @@ describe("livecycle", () => {
                     var vnn = b.deref(nn);
                     expect(vnn.attrs.id).toBe(nn.id);
                 }
-                done = true;
+                done();
             }, 0);
-            return [d(d(),d(),d(d(),d())),d(),d(d(d(d())))];
-        });    
-        waitsFor(() => done);
-    }
+            return [d(d(), d(), d(d(), d())), d(), d(d(d(d())))];
+        });
+    });
+
+    it("afterFrameCallback", (done) => {
+        var c = new TestComponent();
+        var state = 0;
+        expect(b.setAfterFrame((root) => {
+            expect(root[0].data.name).toBe("1");
+            done();
+            b.setAfterFrame(() => { });
+        })).not.toBeNull();
+        b.init(() => {
+            return [{
+                tag: "div", component: c, data: { name: "1" }
+            }];
+        });
+    });
 
     it("uptimeAndNowCouldBeCalled", () => {
         b.uptime();
         b.now();
+        b.frame();
     });
 });

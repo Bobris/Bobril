@@ -12,17 +12,30 @@
 		setTimeout(function() {
 		var i,j,ddd;
 		var root=document.getElementById("root");
+		function perf() { return performance.now(); }
 		for(j=1000;j<=10000;j+=1000) {
-			var t0 = +new Date();
+			var t0 = perf();
 			var ch=[];
 			for(i=0;i<j;i++) ch.push({tag:"span", key: i, children: ""+i});
-			var t1 = +new Date();
-			var rootnode=b.createNode({tag:"div", children:ch},null);
-			var t2 = +new Date();
-			root.appendChild(rootnode.element);
+			var t1 = perf();
+			var rootnode=b.createNode({tag:"div", children:ch},null,root,null);
+			var t2 = perf();
             var h1=root.offsetHeight;
 			root.removeChild(rootnode.element);
-			var t3 = +new Date();
+			var t3 = perf();
+			rootnode={};
+			rootnode.element = document.createElement("div");
+			root.appendChild(rootnode.element);
+			var dd=rootnode.element;
+			for(i=0;i<j;i++) {
+			   ddd=document.createElement("span");
+			   dd.appendChild(ddd);
+			   ddd.textContent = ch[i].children;
+			}
+			var t4 = perf();
+            var h2 =root.offsetHeight;
+			root.removeChild(rootnode.element);
+			var t5 = perf();
 			rootnode={};
 			rootnode.element = document.createElement("div");
 			var dd=rootnode.element;
@@ -31,11 +44,11 @@
 			   ddd.textContent = ch[i].children;
 			   dd.appendChild(ddd);
 			}
-			var t4 = +new Date();
 			root.appendChild(rootnode.element);
-            var h2=root.offsetHeight;
+			var t6 = perf();
+            var h3=root.offsetHeight;
 			root.removeChild(rootnode.element);
-			var t5 = +new Date();
+			var t7 = perf();
 			var str="<div>";
 			for(i=0;i<j;i++) {
 			 str+="<";
@@ -47,13 +60,13 @@
 			 str+=">";
 			}
 			str+="</div>";
-			var t6 = +new Date();
 			root.insertAdjacentHTML("beforeend",str);
-            var h3=root.offsetHeight;
+			var t8 = perf();
+            var h4=root.offsetHeight;
 			root.removeChild(root.firstChild);
-			var t7 = +new Date();
+			var t9 = perf();
 			var results = document.getElementById("results");
-			results.innerHTML+="<div>"+j+": init:"+(t1-t0)+" bobril:"+(t2-t1)+" todom:"+(t3-t2)+" createElement:"+(t4-t3)+" todom:"+(t5-t4)+" innerHTML:"+(t6-t5)+" todom:"+(t7-t6)+" H1:"+h1+" H2:"+h2+" H3:"+h2+"</div>"; 
+			results.innerHTML+="<div>"+j+": CreateVDom:"+(t1-t0).toFixed(1)+" Bobril:"+(t2-t1).toFixed(1)+"#"+(t3-t2).toFixed(1)+" createElement:"+(t4-t3).toFixed(1)+"#"+(t5-t4).toFixed(1)+" offscreen createElement:"+(t6-t5).toFixed(1)+"#"+(t7-t6).toFixed(1)+" innerHTML:"+(t8-t7).toFixed(1)+"#"+(t9-t8).toFixed(1)+" H:"+h1+"="+h2+"="+h3+"="+h4+"</div>";
 		}
 		},0);
 	</script>

@@ -8,136 +8,151 @@
 
 module TodoApp {
 
-    export interface IDeleteButtonCtx {
-        data: any;
-    }
-
-    export interface ICheckboxCtx {
-        data: any;
-    }
-
-    export interface IListItemCtx {
-        data: any;
-    }
-
-    export interface IAppCtx {
-        data: ITaskListModel;
-        currentNewTaskName: string;
-    }
-
     export interface ITaskListModel {
         tasks: Tasks;
+        // have to be here because there is no way to pass view-model separately
         filter: string;
     }
 
-    export class App implements IBobrilComponent {
-        static onNewTaskNameChange(ctx: IAppCtx, value: string) {
-            ctx.currentNewTaskName = value;
-            b.invalidate();
-        }
+    export interface IAppCtx {
+        // model
+        data: ITaskListModel;
+        // view-model
+        filter: string;
+    }
 
-        static init(ctx: IAppCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            if (!oldMe) {
-                ctx.currentNewTaskName = "";
-            }
-            ctx.data.tasks.setFilter(ctx.data.filter);
-            me.tag = 'div';
-            me.attrs = { 'class': 'main' };
+    export var App: IBobrilComponent = {
+        render(ctx: IAppCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+            ctx.filter = ctx.data.filter;
+            me.tag = "div";
+            me.className = "main";
             me.children = [
-                { component: Heading },
-                {
-                    component: TaskCreate, data: {
-                    tasks: ctx.data.tasks,
-                    currentNewTaskName: ctx.currentNewTaskName,
-                    onCurrentNewTaskNameChange: (value: string) => this.onNewTaskNameChange(ctx, value)
-                }
+                { 
+                    component: Heading 
                 },
                 {
-                    component: TaskList, data: {
-                    tasks: ctx.data.tasks
-                }
+                    component: TaskCreate, 
+                    data: {
+                        isWholeListCompleted: ctx.data.tasks.getItemsCount() > 0 && ctx.data.tasks.isWholeListCompleted(),
+                        addNewTask(name: string) {
+                            ctx.data.tasks.addTask(name);
+                        },
+                        markAllTasksAsCompleted() {
+                            ctx.data.tasks.markAllTasksAsCompleted();
+                        },
+                        markAllTasksAsActive() {
+                            ctx.data.tasks.markAllTasksAsActive();
+                        }
+                    }
                 },
-                { component: Footer, data: ctx.data }
+                {
+                    component: TaskList, 
+                    data: {
+                        tasks: ctx.data.tasks,
+                        filter: ctx.filter
+                    }
+                },
+                { 
+                    component: Footer,
+                    data: {
+                        tasksCount: ctx.data.tasks.getItemsCount(),
+                        completedTasksCount: ctx.data.tasks.getNumberOfCompletedTasks(),
+                        removeCompletedTasks() {
+                            ctx.data.tasks.removeCompletedTasks();
+                        }
+                    }
+                }
             ];
         }
     }
 
-    class Heading implements IBobrilComponent {
-        static init(ctx: ITaskListCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            me.tag = 'h3';
-            me.children = 'todos';
+    var Heading: IBobrilComponent = {
+        init(ctx: Object, me: IBobrilNode): void {
+            me.tag = "h3";
+            me.children = "todos";
         }
     }
 
     interface ITaskCreateData {
-        tasks: Tasks;
-        currentNewTaskName: string;
-        onCurrentNewTaskNameChange: (value: string) => void;
+        isWholeListCompleted: boolean;
+        addNewTask: (name: string) => void;
+        markAllTasksAsCompleted: () => void;
+        markAllTasksAsActive: () => void;
     }
 
     interface ITaskCreateCtx {
         data: ITaskCreateData;
+        newTaskName: string;
     }
 
-    class TaskCreate implements IBobrilComponent {
-        static init(ctx: ITaskCreateCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            me.tag = 'div';
-            me.attrs = { className: 'input-wrapper' },
+    interface ISetAllCheckboxCtx {
+        data: {
+            markAllTasksAsCompleted: () => void;
+            markAllTasksAsActive: () => void;
+        }
+    }
+
+    var TaskCreate: IBobrilComponent = {
+        render(ctx: ITaskCreateCtx, me: IBobrilNode): void {
+            ctx.newTaskName = ctx.newTaskName || "";
+            me.tag = "div";
+            me.className = "input-wrapper";
             me.children = [
                 this.createInputElement(ctx),
                 this.createSetAllCheckboxElement(ctx)
             ];
-        }
+        },
 
-        static createInputElement(ctx: ITaskCreateCtx): IBobrilNode {
+        createInputElement(ctx: ITaskCreateCtx): IBobrilNode {
             return {
-                tag: 'input',
+                tag: "input",
+                className: "task-name",
                 attrs: {
-                    placeholder: 'What needs to be done?',
-                    className: 'task-name',
-                    value: ctx.data.currentNewTaskName
+                    placeholder: "What needs to be done?",
+                    value: ctx.newTaskName
                 },
-                data: ctx.data,
                 component: {
-                    onKeyUp: (ctx: ITaskCreateCtx, event: IKeyDownUpEvent): boolean => {
-                        if (event.which == 13) { // enter
-                            ctx.data.onCurrentNewTaskNameChange(ctx.data.currentNewTaskName.trim());
-                            if (ctx.data.currentNewTaskName) {
-                                ctx.data.tasks.addTask(ctx.data.currentNewTaskName);
+                    onKeyUp(ctx: ITaskCreateCtx, event: IKeyDownUpEvent): boolean {
+                        var handler = new KeyDownUpHandler();
+                        return handler.handleEcsEnter(
+                            event,
+                            () => {
+                                // cancel the task adding controls (i.e. clear the input)
+                                ctx.newTaskName = "";
                                 b.invalidate();
-                                ctx.data.onCurrentNewTaskNameChange('');
-                            }
-                            return true;
-                        } else if (event.which == 27) { // escape
-                            // cancel the task adding controls
-                            ctx.data.onCurrentNewTaskNameChange('');
-                            return true;
-                        }
-                        return false;
+                                return true;
+                            },
+                            () => {
+                                ctx.newTaskName = ctx.newTaskName.trim();
+                                if (ctx.newTaskName) {
+                                    ctx.data.addNewTask(ctx.newTaskName);
+                                    b.invalidate();
+                                    ctx.newTaskName = "";
+                                }
+                                return true;
+                            });
                     },
-
-                    onChange: (ctx: ITaskCreateCtx, value: string) => {
-                        ctx.data.onCurrentNewTaskNameChange(value);
+                    onChange(ctx: ITaskCreateCtx, value: string) {
+                        ctx.newTaskName = value;
                     },
-
-                    postInitDom: (ctx: Object, me: IBobrilNode, element: HTMLElement) => {
+                    postInitDom(ctx: Object, me: IBobrilNode, element: HTMLElement) {
                         element.focus();
                     }
-                }
-            };
-        }
-
-        static createSetAllCheckboxElement(ctx: ITaskCreateCtx): IBobrilNode {
-            return {
-                tag: 'input',
-                attrs: {
-                    type: 'checkbox',
-                    className: 'set-all-tasks',
-                    value: ctx.data.tasks.getItemsCount() > 0 && ctx.data.tasks.isWholeListCompleted()
                 },
-                data: ctx.data.tasks,
+                data: ctx.data
+            };
+        },
+
+        createSetAllCheckboxElement(ctx: ITaskCreateCtx): IBobrilNode {
+            return {
+                tag: "input",
+                className: "set-all-tasks",
+                attrs: {
+                    type: "checkbox",
+                    value: ctx.data.isWholeListCompleted
+                },
                 component: {
-                    onChange: (ctx: { data: Tasks }, value: string) => {
+                    onChange(ctx: ISetAllCheckboxCtx, value: string) {
                         if (value) {
                             ctx.data.markAllTasksAsCompleted();
                         } else {
@@ -145,10 +160,13 @@ module TodoApp {
                         }
                         b.invalidate();
                     }
+                },
+                data: {
+                    markAllTasksAsCompleted: ctx.data.markAllTasksAsCompleted,
+                    markAllTasksAsActive: ctx.data.markAllTasksAsActive
                 }
             };
         }
-
     }
 
     interface ITaskListData {
@@ -158,214 +176,315 @@ module TodoApp {
 
     interface ITaskListCtx {
         data: ITaskListData;
+        editingTaskId: number;
     }
 
-    class TaskList implements IBobrilComponent {
-        static init(ctx: ITaskListCtx, me: IBobrilNode): void {
-            me.tag = 'ul';
-            me.attrs = {
-                className: 'todo-list'
-            },
+    var TaskList: IBobrilComponent = {
+        init(ctx: ITaskListCtx, me: IBobrilNode): void {
+            ctx.editingTaskId = -1;
+        },
+        render(ctx: ITaskListCtx, me: IBobrilNode): void {
+            me.tag = "ul";
+            me.className = "todo-list";
             me.children = this.createTaskElements(ctx);
-        }
+        },
 
-        static createTaskElements(ctx: ITaskListCtx): Array<IBobrilNode> {
+        createTaskElements(ctx: ITaskListCtx): Array<IBobrilNode> {
             var res: Array<IBobrilNode> = [];
-            var tasks = ctx.data.tasks.getFilteredItems();
-            for (var i = 0; i < tasks.length; i++) {
-                var taskName = tasks[i].name;
-                var taskId = tasks[i].id;
-                var classes = 'task';
-                if (tasks[i].completed) classes += ' completed';
-                var labelClasses: string = '';
-                if (tasks[i].isInEditMode) {
-                    labelClasses = 'hidden';
-                } else {
-                    classes += ' readonly';
-                }
+            var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
+            var tasks = ctx.data.tasks;
 
+            for (var i = 0; i < taskItems.length; i++) {
+                var task = taskItems[i];
                 res.push({
-                    tag: 'li',
-                    attrs: {
-                        className: classes
-                    },
-                    children: [
-                        this.createCheckboxElement(ctx, taskId),
-                        { tag: 'label', children: taskName, attrs: { className: labelClasses } },
-                        this.createDeleteButtonElement(ctx, taskId),
-                        this.createEditingInputElement(ctx, taskId, taskName)
-                    ],
-                    component: {
-                        onDoubleClick: (ctx: { data: { tasks: Tasks; taskId:number }}): boolean => {
-                            ctx.data.tasks.setTaskEditMode(ctx.data.taskId, true);
-                            b.invalidate();
-                            return false;
-                        }
-                    },
+                    component: TaskItem,
                     data: {
-                        tasks: ctx.data.tasks,
-                        taskId: taskId
+                        id: task.id,
+                        name: task.name,
+                        completed: task.completed,
+                        justEditing: task.id === ctx.editingTaskId,
+                        cancelNewValue() { ctx.editingTaskId = -1; },
+                        saveNewValue(taskId: number, value: string) { tasks.setTaskName(taskId, value); ctx.editingTaskId = -1; },
+                        markTaskAsCompleted(taskId: number) { tasks.markTaskAsCompleted(taskId); },
+                        markTaskAsActive(taskId: number) { tasks.markTaskAsActive(taskId); },
+                        setEditingMode(taskId: number) { ctx.editingTaskId = taskId; },
+                        removeTask(taskId: number) { tasks.removeTask(taskId); }
                     }
                 });
             }
+
             return res;
-        }
-
-        static createCheckboxElement(ctx: ITaskListCtx, taskId: number): IBobrilNode {
-            var attributes: any = { 'type': 'checkbox', 'class': 'mark-as-completed' };
-            if (model.tasks.isTaskCompleted(taskId)) {
-                attributes['checked'] = 'checked';
-            }
-            if (model.tasks.isInEditMode(taskId)) {
-                attributes['class'] += ' hidden';
-            }
-            return {
-                tag: 'input',
-                attrs: attributes,
-                component: {
-                    onChange: (ctx: ICheckboxCtx, value: string) => {
-                        if (value) {
-                            model.tasks.markTaskAsCompleted(ctx.data.taskId);
-                        } else {
-                            model.tasks.markTaskAsActive(ctx.data.taskId);
-                        }
-                        b.invalidate();
-                    }
-                },
-                data: ctx.data
-            };
-        }
-
-        static createDeleteButtonElement(ctx: ITaskListCtx, taskId: number): IBobrilNode {
-            var attributes: any = { 'class': 'delete-button' };
-            if (model.tasks.isInEditMode(taskId)) {
-                attributes['class'] += ' hidden';
-            }
-            return {
-                tag: 'a',
-                children: 'delete',
-                attrs: attributes,
-                component: {
-                    onClick: (ctx: IDeleteButtonCtx, event: IMouseEvent): boolean => {
-                        model.tasks.removeTask(ctx.data.taskId);
-                        b.invalidate();
-                        return true;
-                    }
-                },
-                data: {
-                    'taskId': taskId
-                }
-            };
-        }
-
-        static createEditingInputElement(ctx: ITaskListCtx, taskId: number, taskName: string): IBobrilNode {
-            var isInEditMode = model.tasks.isInEditMode(taskId);
-            var attributes: any = { 'type': 'text', 'class': 'task-edit', 'value': taskName };
-            if (!isInEditMode) {
-                attributes['class'] += ' hidden';
-            }
-            return [
-                {
-                    tag: 'input',
-                    attrs: attributes,
-                    data: ctx.data,
-                    component: {
-                        onKeyUp: (ctx: Object, event: IKeyDownUpEvent) => {
-                            if (event.which == 13) { // enter
-                                model.currentEditTaskName = model.currentEditTaskName.trim();
-                                if (model.currentEditTaskName) {
-                                    model.tasks.setTaskName(taskId, model.currentEditTaskName);
-                                    model.currentEditTaskName = '';
-                                    model.tasks.setTaskEditMode(taskId, false);
-                                    b.invalidate();
-                                }
-                            } else if (event.which == 27) { // escape
-                                model.tasks.setTaskEditMode(taskId, false);
-                                b.invalidate();
-                            }
-                        },
-                        onChange: (ctx: ITaskListCtx, value: string) => {
-                            model.currentEditTaskName = value;
-                        }
-                    }
-                },
-                {
-                    tag: 'div',
-                    attrs: { 'class': 'cleaner' }
-                }];
         }
     }
 
-    class Footer implements IBobrilComponent {
-        static init(ctx: ITaskListCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
-            var model = oldMe ? oldMe.data : me.data;
-            model.tasks.setFilter(me.data.filter);
+    export interface ITaskItemData {
+        id: number;
+        name: string;
+        completed: boolean;
+        justEditing: boolean;
+        cancelNewValue: () => void;
+        saveNewValue: (taskId: number, value: string) => void;
+        markTaskAsCompleted: (taskId: number) => void;
+        markTaskAsActive: (taskId: number) => void;
+        setEditingMode: (taskId: number) => void;
+        removeTask: (taskId: number) => void;
+    }
 
-            var itemsLeftInfo = this.createItemsLeftInfo(model);
-            var filterButtons = this.createFilterButtons(model);
-            var clearAllButton = this.createClearCompleted(model);
+    export interface ITaskItemCtx {
+        data: ITaskItemData;
+    }
 
-            var attributes: IBobrilAttributes = { 'class': 'footer' };
-            if (model.tasks.getItemsCount() < 1) {
-                attributes['class'] += ' hidden';
+    export var TaskItem: IBobrilComponent = {
+        render(ctx: ITaskItemCtx, me: IBobrilNode): void {
+            var liClasses = "task";
+            var labelClasses: string = "";
+            if (ctx.data.completed) {
+                liClasses += " completed";
             }
+            if (ctx.data.justEditing) {
+                labelClasses = "hidden";
+            } else {
+                liClasses += " readonly";
+            }
+            me.tag = "li";
+            me.className = liClasses;
+            me.children = [
+                ctx.data.justEditing || {
+                    component: Checkbox,
+                    data: {
+                        taskId: ctx.data.id,
+                        isChecked: ctx.data.completed,
+                        performCheck(taskId: number) {
+                            ctx.data.markTaskAsCompleted(taskId);
+                            b.invalidate();
+                        },
+                        performUncheck(taskId: number) {
+                            ctx.data.markTaskAsActive(taskId);
+                            b.invalidate();
+                        }
+                    }
+                },
+                { tag: "label", children: ctx.data.name, className: labelClasses },
+                {
+                    component: DeleteButton,
+                    data: {
+                        taskId: ctx.data.id,
+                        invisible: ctx.data.justEditing,
+                        performDelete(taskId: number) {
+                            ctx.data.removeTask(taskId);
+                            b.invalidate();
+                        }
+                    }
+                },
+                ctx.data.justEditing && { 
+                    component: EditingInput, 
+                    data: {
+                        taskId: ctx.data.id,
+                        oldValue: ctx.data.name,
+                        saveNewValue(taskId: number, value: string) {
+                            ctx.data.saveNewValue(taskId, value);
+                            b.invalidate();
+                        },
+                        cancelNewValue() {
+                            ctx.data.cancelNewValue();
+                            b.invalidate();
+                        }
+                    }
+                },
+                { tag: "div", className: "cleaner" }
+            ];
+        },
 
-            me.tag = 'div';
-            me.attrs = attributes;
+        onDoubleClick(ctx: ITaskItemCtx): boolean {
+            ctx.data.setEditingMode(ctx.data.id);
+            b.invalidate();
+            return true;
+        }
+    }
+
+    export interface ICheckboxData {
+        taskId: number;
+        isChecked: boolean;
+        performCheck: (taskId: number) => void;
+        performUncheck: (taskId: number) => void;
+    }
+
+    export interface ICheckboxCtx {
+        data: ICheckboxData;
+    }
+
+    export var Checkbox: IBobrilComponent = {
+        render(ctx: ICheckboxCtx, me: IBobrilNode): void {
+            me.tag = "input";
+            me.className = "mark-as-completed";
+            me.attrs = { type: "checkbox", value: ctx.data.isChecked };
+            me.data = ctx.data;
+        },
+
+        onChange(ctx: ICheckboxCtx, value: string) {
+            if (value) {
+                ctx.data.performCheck(ctx.data.taskId);
+            } else {
+                ctx.data.performUncheck(ctx.data.taskId);
+            }
+        }
+    }
+
+    export interface IDeleteButtonData {
+        taskId: number;
+        performDelete: (taskId: number) => void;
+    }
+
+    export interface IDeleteButtonCtx {
+        data: IDeleteButtonData;
+    }
+
+    export var DeleteButton: IBobrilComponent = {
+        render(ctx: IDeleteButtonCtx, me: IBobrilNode): void {
+            me.tag = "a";
+            me.children = "delete";
+            me.className = "delete-button";
+        },
+
+        onClick(ctx: IDeleteButtonCtx) {
+            ctx.data.performDelete(ctx.data.taskId);
+            return true;
+        }
+    }
+
+    export interface IEditingInputData {
+        taskId: number;
+        oldValue: string;
+        saveNewValue: (taskId: number, value: string) => void;
+        cancelNewValue: () => void;
+    }
+
+    export interface IEditingInputCtx {
+        data: IEditingInputData;
+        newValue: string;
+    }
+
+    export var EditingInput: IBobrilComponent = {
+        render(ctx: IEditingInputCtx, me: IBobrilNode): void {
+            ctx.newValue = ctx.newValue || "";
+            me.tag = "input";
+            me.className = "task-edit";
+            me.attrs = { type: "text", value: ctx.data.oldValue };
+            me.component = {
+                onKeyUp(ctx: IEditingInputCtx, event: IKeyDownUpEvent): boolean {
+                    var handler = new KeyDownUpHandler();
+                    return handler.handleEcsEnter(
+                        event,
+                        () => {
+                            ctx.data.cancelNewValue();
+                            ctx.newValue = "";
+                            b.invalidate();
+                            return true;
+                        }, 
+                        () => {
+                            ctx.newValue = ctx.newValue.trim();
+                            if (ctx.newValue) {
+                                ctx.data.saveNewValue(ctx.data.taskId, ctx.newValue);
+                                ctx.newValue = "";
+                                b.invalidate();
+                            }
+                            return true;
+                        });
+                },
+                onChange(ctx: IEditingInputCtx, value: string) {
+                    ctx.newValue = value;
+                },
+                data: ctx.data
+            }
+        }
+    }
+
+
+    interface IFooterData {
+        tasksCount: number;
+        completedTasksCount: number;
+        removeCompletedTasks: () => void;
+    }
+
+
+    interface IFooterCtx {
+        data: IFooterData;
+    }
+
+    var Footer: IBobrilComponent = {
+        render(ctx: IFooterCtx, me: IBobrilNode): void {
+            var itemsLeftInfo = this.createItemsLeftInfo(ctx);
+            var filterButtons = this.createFilterButtons();
+            var clearAllButton = this.createClearCompleted(ctx);
+
+            me.tag = "div";
+            me.className = "footer";
             me.children = [
                 itemsLeftInfo,
                 filterButtons,
                 clearAllButton,
                 {
-                    tag: 'div',
-                    attrs: { 'class': 'cleaner' }
+                    tag: "div",
+                    className: "cleaner"
                 }
             ];
-        }
+        },
 
-        static createItemsLeftInfo(model: ITaskListModel): IBobrilNode {
-            var itemsLeftCount = model.tasks.getItemsCount() - model.tasks.getNumberOfCompletedTasks();
+        createItemsLeftInfo(ctx: IFooterCtx): IBobrilNode {
+            var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
             var text = itemsLeftCount === 1
-                ? itemsLeftCount + ' item left'
-                : itemsLeftCount + ' items left';
+                ? itemsLeftCount + " item left"
+                : itemsLeftCount + " items left";
             return {
-                tag: 'div',
-                attrs: { 'class': 'items-left-info' },
+                tag: "div",
+                className: "items-left-info",
                 children: text
             };
-        }
+        },
 
-        static createFilterButtons(model: ITaskListModel): IBobrilNode {
+        createFilterButtons(): IBobrilNode {
             return {
-                tag: 'div',
-                attrs: { 'class': 'filter' },
+                tag: "div",
+                className: "filter",
                 children: [
-                    b.link({ tag: 'a', children: 'All' }, 'all'),
-                    b.link({ tag: 'a', children: 'Active' }, 'active'),
-                    b.link({ tag: 'a', children: 'Completed' }, 'completed')
+                    b.link({ tag: "a", children: "All" }, "all"),
+                    b.link({ tag: "a", children: "Active" }, "active"),
+                    b.link({ tag: "a", children: "Completed" }, "completed")
                 ]
             };
-        }
+        },
 
-        static createClearCompleted(model: ITaskListModel): IBobrilNode {
-            var numberOfCompletedTasks = model.tasks.getNumberOfCompletedTasks()
-            var text = 'Clear completed (' + model.tasks.getNumberOfCompletedTasks() + ')';
-            var attributes: any = { 'class': 'clear-completed-button' };
+        createClearCompleted(ctx: IFooterCtx): IBobrilNode {
+            var numberOfCompletedTasks = ctx.data.completedTasksCount;
+            var text = "Clear completed (" + numberOfCompletedTasks + ")";
+            var className = "clear-completed-button";
             if (numberOfCompletedTasks < 1) {
-                attributes['class'] += ' hidden';
+                className += " hidden";
             }
             return {
-                tag: 'div',
-                attrs: attributes,
+                tag: "div",
+                className: className,
                 children: text,
                 component: {
-                    onClick: (ctx: Object, event: IMouseEvent): boolean => {
-                        model.tasks.removeCompletedTasks();
+                    onClick(ctx: IFooterCtx): boolean {
+                        ctx.data.removeCompletedTasks();
                         b.invalidate();
-                        return false;
+                        return true;
                     }
-                }
+                },
+                data: ctx.data
             };
+        }
+    }
+
+    export class KeyDownUpHandler {
+        public handleEcsEnter(event: IKeyDownUpEvent, escapeHandler: () => boolean, enterHandler: () => boolean): boolean {
+            if (event.which === 27) { // escape
+                return escapeHandler();
+            } else if (event.which === 13) { // enter
+                return enterHandler();
+            }
+            return false;
         }
     }
 }

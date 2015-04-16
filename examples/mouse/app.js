@@ -2,52 +2,74 @@
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 var MouseApp;
 (function (MouseApp) {
-    var TrackClick = (function () {
-        function TrackClick() {
+    function d(style, content) {
+        return {
+            tag: "div",
+            style: style,
+            children: content
+        };
+    }
+    function h(name, content) {
+        return { tag: name, children: content };
+    }
+    function style(style, content) {
+        content.style = style;
+        return content;
+    }
+    function comp(component, content) {
+        if (content.component) {
+            b.postEnhance(content, component);
         }
-        TrackClick.postInitDom = function (ctx, me, element) {
+        else {
+            content.component = component;
+        }
+        return content;
+    }
+    function layoutPair(left, right, leftWidth) {
+        if (leftWidth === void 0) { leftWidth = "50%"; }
+        return d({ display: "table", width: "100%" }, [
+            d({ display: "table-cell", verticalAlign: "top", width: leftWidth }, left),
+            d({ display: "table-cell", verticalAlign: "top" }, right)
+        ]);
+    }
+    function checkbox(value, onChange) {
+        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: function (ctx, v) { return onChange(v); } } };
+    }
+    var TrackClick = {
+        postInitDom: function (ctx, me, element) {
             element.focus();
-        };
-
-        TrackClick.onClick = function (ctx, event) {
+        },
+        onClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Click"));
-            return false;
-        };
-
-        TrackClick.onDoubleClick = function (ctx, event) {
+            return ctx.data.stopPropagation;
+        },
+        onDoubleClick: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
-            return false;
-        };
-
-        TrackClick.onMouseDown = function (ctx, event) {
+            return ctx.data.stopPropagation;
+        },
+        onMouseDown: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
-            return false;
-        };
-
-        TrackClick.onMouseUp = function (ctx, event) {
+            return ctx.data.stopPropagation;
+        },
+        onMouseUp: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Up"));
-            return false;
-        };
-
-        TrackClick.onSwipeLeft = function (ctx, event) {
+            return ctx.data.stopPropagation;
+        },
+        onSwipeLeft: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe Left"));
-            return false;
-        };
-
-        TrackClick.onSwipeRight = function (ctx, event) {
+            return ctx.data.stopPropagation;
+        },
+        onSwipeRight: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
-            return false;
-        };
-        return TrackClick;
-    })();
-
+            return ctx.data.stopPropagation;
+        }
+    };
     function e(ev) {
         return {
             tag: "div",
             children: ev.toString()
         };
     }
-
     var EventWrapper = (function () {
         function EventWrapper(ev, eventName) {
             this.ev = ev;
@@ -58,39 +80,67 @@ var MouseApp;
         };
         return EventWrapper;
     })();
-
+    var TextEvent = (function () {
+        function TextEvent(eventName) {
+            this.eventName = eventName;
+        }
+        TextEvent.prototype.toString = function () {
+            return this.eventName;
+        };
+        return TextEvent;
+    })();
     var events = [];
-
     function addEvent(ev) {
         events.push(ev);
-        if (events.length > 30)
+        if (events.length > 20)
             events.shift();
         b.invalidate();
     }
-
+    var v1 = false, v2 = false;
     b.init(function () {
         return [
-            {
-                tag: "button",
-                attrs: { style: { fontSize: "3em", marginBottom: "10px" } },
-                children: "Click button",
-                component: TrackClick,
-                data: {
-                    onAdd: addEvent
-                }
-            },
+            layoutPair([{
+                    tag: "button",
+                    style: { fontSize: "2em", marginBottom: "10px" },
+                    children: "Click button",
+                    component: TrackClick,
+                    data: {
+                        onAdd: addEvent,
+                        stopPropagation: true
+                    }
+                }, {
+                    tag: "button",
+                    style: { fontSize: "2em", marginBottom: "10px" },
+                    children: "Does not stop prop",
+                    component: TrackClick,
+                    data: {
+                        onAdd: addEvent,
+                        stopPropagation: false
+                    }
+                }], [
+                d({ height: "2em" }, h("label", [checkbox(v1, function (v) { v1 = v; addEvent(new TextEvent("slow onChange")); }), "Slow click checkbox"])),
+                d({ height: "2em" }, comp({
+                    onClick: function () {
+                        v2 = !v2;
+                        b.invalidate();
+                        addEvent(new TextEvent("fast onClick"));
+                        return true;
+                    }
+                }, h("label", [checkbox(v2, function (v) {
+                        v2 = v;
+                        addEvent(new TextEvent("fast onChange"));
+                    }), "Fast click checkbox"])))
+            ]),
             {
                 tag: "div",
-                attrs: { style: { border: "1px solid", minHeight: "120px" } },
+                style: { border: "1px solid", minHeight: "120px", touchAction: "pan-y pinch-zoom" },
                 component: TrackClick,
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here or swipe!", attrs: { style: { fontSize: "2em" } } }].concat(events.map(function (ev) {
-                    return e(ev);
-                }))
+                children: [{ tag: "div", children: "Click here or swipe!", style: { fontSize: "2em" } }]
+                    .concat(events.map(function (ev) { return e(ev); }))
             }
         ];
     });
 })(MouseApp || (MouseApp = {}));
-//# sourceMappingURL=app.js.map
