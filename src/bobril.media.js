@@ -3,8 +3,8 @@
 (function (b, window) {
     var media = null;
     var breaks = [
-        [400, 800, 900],
-        [640, 1280, 1440] //landscape widths
+        [414, 800, 900],
+        [736, 1280, 1440] //landscape widths
     ];
     function emitOnMediaChange() {
         media = null;
