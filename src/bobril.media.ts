@@ -4,10 +4,10 @@
 ((b: IBobrilStatic, window: Window) => {
     var media: IBobrilMedia = null;
     var breaks = [
-                    [400, 800, 900], //portrait widths
-                    [640, 1280, 1440] //landscape widths
+                    [414, 800, 900], //portrait widths
+                    [736, 1280, 1440] //landscape widths
                  ];
-
+                 
     function emitOnMediaChange() {
         media = null;
         b.invalidate();
