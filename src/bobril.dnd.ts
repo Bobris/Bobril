@@ -1,21 +1,25 @@
 /// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.media.d.ts"/>
 /// <reference path="bobril.mouse.d.ts"/>
 /// <reference path="bobril.dnd.d.ts"/>
 
 ((b: IBobrilStatic) => {
     var lastDndId = 0;
     var dnds: IDndCtx[] = [];
+    var systemdnd: IDndCtx = null;
     var rootId: string = null;
 
     var DndCtx = function(pointerId: number) {
         this.id = ++lastDndId;
         this.pointerid = pointerId;
-        this.linkEnabled = true;
-        this.copyEnabled = true;
-        this.moveEnabled = true;
+        this.enanbledOperations = DndEnabledOps.MoveCopyLink;
         this.operation = DndOp.None;
+        this.local = true;
+        this.ended = false;
         this.targetCtx = null;
         this.dragView = null;
+        this.startX = 0;
+        this.startY = 0;
         this.x = 0;
         this.y = 0;
         this.deltaX = 0;
@@ -47,7 +51,7 @@
             var res: IBobrilNode[] = [];
             for (var i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
-                if ((<any>dnd).dragView != null) {
+                if ((<any>dnd).dragView != null && (dnd.x != 0 || dnd.y != 0)) {
                     res.push({ key: "" + dnd.id, data: dnd, component: DndComp });
                 }
             }
@@ -87,14 +91,13 @@
         return this.data[type];
     }
 
-    dndProto.setOpEnabled = function(link: boolean, copy: boolean, move: boolean): void {
-        this.linkEnabled = link;
-        this.copyEnabled = copy;
-        this.moveEnabled = move;
+    dndProto.setEnabledOps = function(ops: DndEnabledOps): void {
+        this.enabledOperations = ops;
     }
 
     dndProto.cancelDnd = function(): void {
         dndmoved(null, this);
+        this.ended = true;
         b.broadcast("onDragEnd", this);
         this.destroy();
     }
@@ -106,6 +109,9 @@
                 dnds.splice(i, 1);
                 break;
             }
+        }
+        if (systemdnd === this) {
+            systemdnd = null;
         }
         if (dnds.length === 0) {
             b.removeRoot(rootId);
@@ -149,6 +155,8 @@
                 var startX = dnd.startX;
                 var startY = dnd.startY;
                 dnd = new (<any>DndCtx)(ev.id);
+                dnd.startX = startX;
+                dnd.startY = startY;
                 dnd.x = ev.x;
                 dnd.y = ev.y;
                 var sourceCtx = b.bubble(node, "onDragStart", dnd);
@@ -182,7 +190,8 @@
             dndmoved(node, dnd);
             var t: IBobrilCtx = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
-                b.broadcast("onDragEnd", this);
+                dnd.ended = true;
+                b.broadcast("onDragEnd", dnd);
                 dndmoved(null, dnd);
                 dnd.destroy();
             } else {
@@ -205,11 +214,185 @@
         return false;
     }
 
+    function updateFromNative(dnd: IDndCtx, ev: DragEvent) {
+        dnd.shift = ev.shiftKey;
+        dnd.ctrl = ev.ctrlKey;
+        dnd.alt = ev.altKey;
+        dnd.meta = ev.metaKey;
+    }
+
+    function dataTransferNativeKey(k: string): boolean {
+        return k == "Text" || k == "Url" || k == "Files";
+    }
+
+    var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
+    function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var dnd: IDndCtx = systemdnd;
+        if (dnd != null) {
+            (<any>dnd).destroy();
+        }
+        var activePointerIds = Object.keys(pointer2Dnd);
+        var startX = ev.clientX, startY = ev.clientY, poid = -1;
+        for (var i = 0; i < activePointerIds.length; i++) {
+            dnd = pointer2Dnd[activePointerIds[i]];
+            if ((<any>dnd).totalX != null) {
+                poid = +activePointerIds[i];
+                startX = dnd.startX;
+                startY = dnd.startY;
+                delete pointer2Dnd[poid];
+                break;
+            }
+        }
+        dnd = new (<any>DndCtx)(poid);
+        systemdnd = dnd;
+        dnd.x = ev.clientX;
+        dnd.y = ev.clientY;
+        dnd.startX = startX;
+        dnd.startY = startY;
+        var sourceCtx = b.bubble(node, "onDragStart", dnd);
+        if (sourceCtx) {
+            var htmlNode = b.getDomNode(sourceCtx.me);
+            if (htmlNode == null) {
+                (<any>dnd).destroy();
+                return false;
+            }
+            var boundFn = (<Element>htmlNode).getBoundingClientRect;
+            if (boundFn) {
+                var rect = boundFn.call(htmlNode);
+                dnd.deltaX = rect.left - startX;
+                dnd.deltaY = rect.top - startY;
+            }
+            var eff = effectAllowedTable[dnd.enabledOperations];
+            ev.dataTransfer.effectAllowed = eff;
+            var div = document.createElement("div");
+            div.style.pointerEvents = "none";
+            (<any>ev.dataTransfer).setDragImage(div, 0, 0);
+            var datas = (<any>dnd).data;
+            var dataKeys = Object.keys(datas);
+            for (var i = 0; i < dataKeys.length; i++) {
+                try {
+                    var k = dataKeys[i];
+                    var d = datas[k];
+                    ev.dataTransfer.setData(k, dataTransferNativeKey(k) ? d : JSON.stringify(d));
+                }
+                catch (e) {
+                    console.log("Cannot set dnd data to " + dataKeys[i]);
+                }
+            }
+            updateFromNative(dnd, ev);
+            dndmoved(node, dnd);
+        } else {
+            (<any>dnd).destroy();
+        }
+        return false;
+    }
+
+    function handleDragOver(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var dnd = systemdnd;
+        if (dnd == null) {
+            dnd = new (<any>DndCtx)(-1);
+            systemdnd = dnd;
+            dnd.x = ev.clientX;
+            dnd.y = ev.clientY;
+            dnd.startX = dnd.x;
+            dnd.startY = dnd.y;
+            dnd.local = false;
+            var dt = ev.dataTransfer;
+            var eff = 0;
+            for (; eff < 7; eff++) {
+                if (effectAllowedTable[eff] === dt.effectAllowed) break;
+            }
+            dnd.enabledOperations = eff;
+            for (var i = 0; i < dt.types.length; i++) {
+                (<any>dnd).data[dt.types[i]] = null;
+            }
+        }
+        updateFromNative(dnd, ev);
+        dnd.x = ev.clientX;
+        dnd.y = ev.clientY;
+        node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+        dndmoved(node, dnd);
+        ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][dnd.operation];
+        if (dnd.operation != DndOp.None) {
+            b.preventDefault(ev);
+            return true;
+        }
+        return false;
+    }
+
+    function handleDrag(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var x = ev.clientX;
+        var y = ev.clientY;
+        var m = b.getMedia();
+        if (systemdnd != null && (x === 0 && y === 0 || x < 0 || y < 0 || x >= m.width || y >= m.height)) {
+            systemdnd.x = 0;
+            systemdnd.y = 0;
+            systemdnd.operation = DndOp.None;
+            b.broadcast("onDrag", systemdnd);
+        }
+        return false;
+    }
+
+    function handleDragEnd(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+        if (systemdnd != null) {
+            systemdnd.ended = true;
+            b.broadcast("onDragEnd", systemdnd);
+            (<any>systemdnd).cancelDnd();
+        }
+        return false;
+    }
+
+    function handleDrop(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+        var dnd = systemdnd;
+        if (dnd == null)
+            return false;
+        dnd.x = ev.clientX;
+        dnd.y = ev.clientY;
+        if (!dnd.local) {
+            var dataKeys = Object.keys((<any>dnd).data);
+            var dt = ev.dataTransfer;
+            for (let i = 0; i < dataKeys.length; i++) {
+                var k = dataKeys[i];
+                var d = dt.getData(k);
+                if (!dataTransferNativeKey(k)) {
+                    d = JSON.parse(d);
+                }
+                (<any>dnd).data[k] = d;
+            }
+        }
+        dndmoved(node, dnd);
+        updateFromNative(dnd, ev);
+        var t: IBobrilCtx = (<any>dnd).targetCtx;
+        if (t && b.bubble(t.me, "onDrop", dnd)) {
+            ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][dnd.operation];
+            dnd.ended = true;
+            b.broadcast("onDragEnd", dnd);
+            (<any>dnd).destroy();
+            b.preventDefault(ev);
+        } else {
+            (<any>dnd).cancelDnd();
+        }
+        return true;
+    }
+
+    function justPreventDefault(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+        b.preventDefault(ev);
+        return true;
+    }
+
     var addEvent = b.addEvent;
     addEvent("!PointerDown", 4, handlePointerDown);
     addEvent("!PointerMove", 4, handlePointerMove);
     addEvent("!PointerUp", 4, handlePointerUp);
     addEvent("!PointerCancel", 4, handlePointerCancel);
+
+    addEvent("dragstart", 5, handleDragStart);
+    addEvent("dragover", 5, handleDragOver);
+    addEvent("dragend", 5, handleDragEnd);
+    addEvent("drag", 5, handleDrag);
+    addEvent("drop", 5, handleDrop);
+    addEvent("dragenter", 5, justPreventDefault);
+    addEvent("dragleave", 5, justPreventDefault);
 
     b.getDnds = () => dnds;
 })(b);

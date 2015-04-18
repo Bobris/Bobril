@@ -5,14 +5,28 @@ declare const enum DndOp {
     Move = 3
 }
 
+declare const enum DndEnabledOps {
+    None = 0,
+    Link = 1,
+    Copy = 2,
+    LinkCopy = 3,
+    Move = 4,
+    MoveLink = 5,
+    MoveCopy = 6,
+    MoveCopyLink = 7
+}
+
 interface IDndCtx {
     id: number;
     hasData(type: string): boolean;
     getData(type: string): any;
-    linkEnabled: boolean;
-    copyEnabled: boolean;
-    moveEnabled: boolean;
+    enabledOperations: DndEnabledOps;
     operation: DndOp;
+    local: boolean;
+    ended: boolean;
+    // drag started at this pointer position
+    startX: number;
+    startY: number;
     // actual mouse/touch pointer position
     x: number;
     y: number;
@@ -28,7 +42,7 @@ interface IDndCtx {
 interface IDndStartCtx {
     id: number;
     addData(type: string, data: any): boolean;
-    setOpEnabled(link: boolean, copy: boolean, move: boolean): void;
+    setEnabledOps(ops: DndEnabledOps): void;
     setDragNodeView(view: (dnd:IDndCtx) => IBobrilNode): void;
 }
 

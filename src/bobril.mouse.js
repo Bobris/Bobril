@@ -355,6 +355,15 @@
             return false;
         };
     }
+    function nodeOnPoint(x, y) {
+        var target = document.elementFromPoint(x, y);
+        var node = b.deref(target);
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(x, y, target, node);
+            node = fixed[1];
+        }
+        return node;
+    }
     // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
@@ -368,4 +377,5 @@
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
+    b.nodeOnPoint = nodeOnPoint;
 })(b, window, document);

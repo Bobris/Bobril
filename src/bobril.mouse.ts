@@ -395,6 +395,16 @@ const enum Consts {
         };
     }
 
+    function nodeOnPoint(x:number, y:number): IBobrilCacheNode {
+        var target = <HTMLElement>document.elementFromPoint(x, y);
+        var node = b.deref(target);
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(x, y, target, node);
+            node = fixed[1];
+        }
+        return node;
+    }
+
     // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
@@ -410,4 +420,5 @@ const enum Consts {
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
+    b.nodeOnPoint = nodeOnPoint;
 })(b, window, document);

@@ -51,8 +51,12 @@ module DndApp {
             }
             if (ctx.data.dnd) {
                 var dnd = ctx.data.dnd;
+                me.style.margin = 0;
                 me.style.left = dnd.deltaX;
                 me.style.top = dnd.deltaY;
+                me.style.opacity = 0.5;
+            } else {
+                me.attrs = { draggable: "true" };
             }
             me.children = ctx.data.lang.name;
         },
@@ -61,7 +65,7 @@ module DndApp {
             if (ctx.draggingId > 0) return false;
             ctx.draggingId = dndCtx.id;
             dndCtx.addData("bobril/langprog", ctx.data.lang);
-            dndCtx.setOpEnabled(false, false, true);
+            dndCtx.setEnabledOps(DndEnabledOps.Move);
             dndCtx.setDragNodeView(dnd=> ({ component: ProgLangSourceComp, data: { lang: ctx.data.lang, dnd } }));
             b.invalidate(ctx);
             return true;
@@ -112,6 +116,7 @@ module DndApp {
             var isPositivePossibleTarget = false;
             for (let i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
+                if (dnd.ended) continue;
                 if (dnd.hasData("bobril/langprog")) {
                     isPossibleTarget = true;
                     var lang = dnd.getData("bobril/langprog");
@@ -129,13 +134,13 @@ module DndApp {
                 }
             }
             me.children = {
-                tag: "div", style: { display: "inline-block", top:-me.style.top, position: "relative", minWidth: 50, minHeight: 40 },
+                tag: "div", style: { display: "inline-block", top: -me.style.top, position: "relative", minWidth: 50, minHeight: 40 },
                 children: ctx.data.content
             };
         },
         onDragOver(ctx: IProgLangTargetCtx, dndCtx: IDndOverCtx): boolean {
             if (dndCtx.hasData("bobril/langprog")) {
-                dndCtx.setOperation(DndOp.Copy);
+                dndCtx.setOperation(DndOp.Move);
                 return true;
             }
             return false;
