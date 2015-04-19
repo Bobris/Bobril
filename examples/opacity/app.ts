@@ -32,7 +32,7 @@ module OpacityApp {
         var bg = "rgba(0,255,0," + ((opacity === "") ? 1 : opacity.toFixed(3)) + ")";
         return [
             { tag: "h1", children: "Bobril sample for opacity" },
-            { tag: "p", style: { userSelect: "none" }, children: "This text should not be selectable" },
+            { tag: "p", style: { userSelect: "none" }, attrs: { UNSELECTABLE:"on" }, children: "This text should not be selectable" },
             radiobox("a", animtype, 0,(v) => animtype = v, "Solid"), spacer,
             radiobox("a", animtype, 1,(v) => animtype = v, "Half"), spacer,
             radiobox("a", animtype, 2,(v) => animtype = v, "Transparent"), spacer,
