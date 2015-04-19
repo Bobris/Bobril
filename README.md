@@ -34,12 +34,12 @@ Features in core:
 - automatic passing of global configuration/context to children
 - automatic adding of "px" to length like inline style (New in 2.0)
 - reference to children nodes ala React (New in 2.0)
-- under 15kb minified
+- under 15kb minified (6kb gzip)
 
 Features in extensions:
 - OnChange event and value attribute normalization
 - Key events
-- Mouse, Touch and Swipe Events (includes polyfill pointerEvents:none)
+- Mouse, Touch and Swipe Events (includes polyfill pointerEvents:none and userSelect:none)
 - Vector graphic in spirit of React-Art just very limited in features, but under 4kb with SVG and VML backends
 - Router inspired by https://github.com/rackt/react-router/
 - Media detection
@@ -47,12 +47,12 @@ Features in extensions:
 - Transparently add vendor prefixes for inline styles
 - Asap (setImmediate) and Promise A+ implementation/polyfill - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 - Scroll notification (crude solution to non-bubbling onScroll)
+- Drag and Drop - uses browser one except on IE8-9, multi touch, allows animating drag, state of the art as usual
 
-All extensions + core gziped are under 14kb
+All extensions + core are 41kb minified (16kb gzip)
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:
-- Drag and Drop
 
 Longer term extensions:
 - New/Deleted Node animation (prototype in Router2 example)
