@@ -34,7 +34,7 @@ var OpacityApp;
         return [
             { tag: "h1", children: "Bobril sample for opacity" },
             // unselectable attribute is for IE8/IE9
-            { tag: "p", style: { userSelect: "none" }, attrs: { unselectable: "on" }, children: "This text should not be selectable" },
+            { tag: "p", style: { userSelect: "none" }, children: "This text should not be selectable" },
             radiobox("a", animtype, 0, function (v) { return animtype = v; }, "Solid"), spacer,
             radiobox("a", animtype, 1, function (v) { return animtype = v; }, "Half"), spacer,
             radiobox("a", animtype, 2, function (v) { return animtype = v; }, "Transparent"), spacer,
