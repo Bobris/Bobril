@@ -36,8 +36,16 @@ var DndApp;
             }
             if (ctx.data.dnd) {
                 var dnd = ctx.data.dnd;
+                me.style.outline = "1px solid #f00";
+                me.style.margin = 0;
                 me.style.left = dnd.deltaX;
                 me.style.top = dnd.deltaY;
+                me.style.opacity = 0.5;
+                me.children = ctx.data.lang.name.toUpperCase();
+                return;
+            }
+            else {
+                me.attrs = { draggable: "true" };
             }
             me.children = ctx.data.lang.name;
         },
@@ -47,7 +55,7 @@ var DndApp;
                 return false;
             ctx.draggingId = dndCtx.id;
             dndCtx.addData("bobril/langprog", ctx.data.lang);
-            dndCtx.setOpEnabled(false, false, true);
+            dndCtx.setEnabledOps(4 /* Move */);
             dndCtx.setDragNodeView(function (dnd) { return ({ component: ProgLangSourceComp, data: { lang: ctx.data.lang, dnd: dnd } }); });
             b.invalidate(ctx);
             return true;
@@ -85,6 +93,8 @@ var DndApp;
             var isPositivePossibleTarget = false;
             for (var i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
+                if (dnd.ended)
+                    continue;
                 if (dnd.hasData("bobril/langprog")) {
                     isPossibleTarget = true;
                     var lang = dnd.getData("bobril/langprog");
@@ -109,7 +119,7 @@ var DndApp;
         },
         onDragOver: function (ctx, dndCtx) {
             if (dndCtx.hasData("bobril/langprog")) {
-                dndCtx.setOperation(2 /* Copy */);
+                dndCtx.setOperation(3 /* Move */);
                 return true;
             }
             return false;

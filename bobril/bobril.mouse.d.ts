@@ -42,4 +42,5 @@ interface IBobrilStatic {
     isMouseOwnerEvent?(): boolean;
     registerMouseOwner?(ctx: any): void;
     releaseMouseOwner?(): void;
+    nodeOnPoint?(x:number, y:number): IBobrilCacheNode;
 }

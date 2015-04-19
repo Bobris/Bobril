@@ -115,6 +115,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         columnCount: true,
         flex: true,
         flexGrow: true,
+        flexNegative: true,
+        flexPositive: true,
         flexShrink: true,
         fontWeight: true,
         lineClamp: true,
@@ -122,6 +124,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         opacity: true,
         order: true,
         orphans: true,
+        strokeDashoffset: true,
         widows: true,
         zIndex: true,
         zoom: true,
@@ -674,7 +677,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                         if (hasTextContent) {
                             el.textContent = newChildren;
                         } else {
-                            (<HTMLElement>el).innerText = newChildren;
+                            (<HTMLElement>el).nodeValue = newChildren;
                         }
                         c.children = newChildren;
                     }

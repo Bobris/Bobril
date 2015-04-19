@@ -395,6 +395,36 @@ const enum Consts {
         };
     }
 
+    function nodeOnPoint(x:number, y:number): IBobrilCacheNode {
+        var target = <HTMLElement>document.elementFromPoint(x, y);
+        var node = b.deref(target);
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(x, y, target, node);
+            node = fixed[1];
+        }
+        return node;
+    }
+
+    function handleSelectStart(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+        while (node) {
+            var s = node.style;
+            if (s) {
+                var us = s.userSelect;
+                if (us === "none") {
+                    preventDefault(ev);
+                    return true;
+                }
+                if (us) {
+                    break;
+                }
+            }
+            node = node.parent;
+        }
+        return false;
+    }
+
+    addEvent5("selectstart", handleSelectStart);
+
     // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
@@ -410,4 +440,5 @@ const enum Consts {
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
+    b.nodeOnPoint = nodeOnPoint;
 })(b, window, document);

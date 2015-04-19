@@ -355,6 +355,33 @@
             return false;
         };
     }
+    function nodeOnPoint(x, y) {
+        var target = document.elementFromPoint(x, y);
+        var node = b.deref(target);
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(x, y, target, node);
+            node = fixed[1];
+        }
+        return node;
+    }
+    function handleSelectStart(ev, target, node) {
+        while (node) {
+            var s = node.style;
+            if (s) {
+                var us = s.userSelect;
+                if (us === "none") {
+                    preventDefault(ev);
+                    return true;
+                }
+                if (us) {
+                    break;
+                }
+            }
+            node = node.parent;
+        }
+        return false;
+    }
+    addEvent5("selectstart", handleSelectStart);
     // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
@@ -368,4 +395,5 @@
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
+    b.nodeOnPoint = nodeOnPoint;
 })(b, window, document);

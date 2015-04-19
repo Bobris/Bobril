@@ -98,6 +98,8 @@ b = (function (window, document) {
         columnCount: true,
         flex: true,
         flexGrow: true,
+        flexNegative: true,
+        flexPositive: true,
         flexShrink: true,
         fontWeight: true,
         lineClamp: true,
@@ -105,6 +107,7 @@ b = (function (window, document) {
         opacity: true,
         order: true,
         orphans: true,
+        strokeDashoffset: true,
         widows: true,
         zIndex: true,
         zoom: true,
@@ -678,7 +681,7 @@ b = (function (window, document) {
                             el.textContent = newChildren;
                         }
                         else {
-                            el.innerText = newChildren;
+                            el.nodeValue = newChildren;
                         }
                         c.children = newChildren;
                     }
