@@ -7,6 +7,7 @@
     var dnds = [];
     var systemdnd = null;
     var rootId = null;
+    var preventDefault = b.preventDefault;
     var DndCtx = function (pointerId) {
         this.id = ++lastDndId;
         this.pointerid = pointerId;
@@ -53,6 +54,8 @@
             }
             me.tag = "div";
             me.style = { position: "fixed", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
+            if (b.ieVersion() < 10)
+                me.attrs = { unselectable: "on" };
             me.children = res;
         },
         onDrag: function (ctx) {
@@ -134,7 +137,7 @@
             dnd.totalY += Math.abs(ev.y - dnd.lastY);
             dnd.lastX = ev.x;
             dnd.lastY = ev.y;
-            if (dnd.totalX + dnd.totalY > 20) {
+            if (dnd.totalX + dnd.totalY > 10) {
                 node = dnd.sourceNode;
                 var startX = dnd.startX;
                 var startY = dnd.startY;
@@ -204,9 +207,10 @@
         dnd.ctrl = ev.ctrlKey;
         dnd.alt = ev.altKey;
         dnd.meta = ev.metaKey;
-    }
-    function dataTransferNativeKey(k) {
-        return k == "Text" || k == "Url" || k == "Files";
+        dnd.x = ev.clientX;
+        dnd.y = ev.clientY;
+        var node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+        dndmoved(node, dnd);
     }
     var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
     function handleDragStart(ev, target, node) {
@@ -246,29 +250,56 @@
                 dnd.deltaY = rect.top - startY;
             }
             var eff = effectAllowedTable[dnd.enabledOperations];
-            ev.dataTransfer.effectAllowed = eff;
-            var div = document.createElement("div");
-            div.style.pointerEvents = "none";
-            ev.dataTransfer.setDragImage(div, 0, 0);
+            var dt = ev.dataTransfer;
+            dt.effectAllowed = eff;
+            if (dt.setDragImage) {
+                var div = document.createElement("div");
+                div.style.pointerEvents = "none";
+                dt.setDragImage(div, 0, 0);
+            }
+            else {
+                // For IE10 and IE11 hack to hide default drag element
+                var style = htmlNode.style;
+                var opacityBackup = style.opacity;
+                var widthBackup = style.width;
+                var heightBackup = style.height;
+                var paddingBackup = style.padding;
+                style.opacity = "0";
+                style.width = "0";
+                style.height = "0";
+                style.padding = "0";
+                window.setTimeout(function () {
+                    style.opacity = opacityBackup;
+                    style.width = widthBackup;
+                    style.height = heightBackup;
+                    style.padding = paddingBackup;
+                }, 0);
+            }
             var datas = dnd.data;
             var dataKeys = Object.keys(datas);
             for (var i = 0; i < dataKeys.length; i++) {
                 try {
                     var k = dataKeys[i];
                     var d = datas[k];
-                    ev.dataTransfer.setData(k, dataTransferNativeKey(k) ? d : JSON.stringify(d));
+                    if (typeof d !== "string")
+                        d = JSON.stringify(d);
+                    ev.dataTransfer.setData(k, d);
                 }
                 catch (e) {
-                    console.log("Cannot set dnd data to " + dataKeys[i]);
+                    if (DEBUG)
+                        if (window.console)
+                            console.log("Cannot set dnd data to " + dataKeys[i]);
                 }
             }
             updateFromNative(dnd, ev);
-            dndmoved(node, dnd);
         }
         else {
             dnd.destroy();
         }
         return false;
+    }
+    function setDropEffect(ev, op) {
+        ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][op];
     }
     function handleDragOver(ev, target, node) {
         var dnd = systemdnd;
@@ -287,18 +318,20 @@
                     break;
             }
             dnd.enabledOperations = eff;
-            for (var i = 0; i < dt.types.length; i++) {
-                dnd.data[dt.types[i]] = null;
+            if (dt.types) {
+                for (var i = 0; i < dt.types.length; i++) {
+                    dnd.data[dt.types[i]] = null;
+                }
+            }
+            else {
+                if (dt.getData("Text") !== undefined)
+                    dnd.data["Text"] = null;
             }
         }
         updateFromNative(dnd, ev);
-        dnd.x = ev.clientX;
-        dnd.y = ev.clientY;
-        node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
-        dndmoved(node, dnd);
-        ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][dnd.operation];
+        setDropEffect(ev, dnd.operation);
         if (dnd.operation != 0 /* None */) {
-            b.preventDefault(ev);
+            preventDefault(ev);
             return true;
         }
         return false;
@@ -335,21 +368,20 @@
             for (var i = 0; i < dataKeys.length; i++) {
                 var k = dataKeys[i];
                 var d = dt.getData(k);
-                if (!dataTransferNativeKey(k)) {
+                if (typeof d !== "string") {
                     d = JSON.parse(d);
                 }
                 dnd.data[k] = d;
             }
         }
-        dndmoved(node, dnd);
         updateFromNative(dnd, ev);
         var t = dnd.targetCtx;
         if (t && b.bubble(t.me, "onDrop", dnd)) {
-            ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][dnd.operation];
+            setDropEffect(ev, dnd.operation);
             dnd.ended = true;
             b.broadcast("onDragEnd", dnd);
             dnd.destroy();
-            b.preventDefault(ev);
+            preventDefault(ev);
         }
         else {
             dnd.cancelDnd();
@@ -357,7 +389,7 @@
         return true;
     }
     function justPreventDefault(ev, target, node) {
-        b.preventDefault(ev);
+        preventDefault(ev);
         return true;
     }
     var addEvent = b.addEvent;

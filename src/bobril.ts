@@ -677,7 +677,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                         if (hasTextContent) {
                             el.textContent = newChildren;
                         } else {
-                            (<HTMLElement>el).innerText = newChildren;
+                            (<HTMLElement>el).nodeValue = newChildren;
                         }
                         c.children = newChildren;
                     }

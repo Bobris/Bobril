@@ -36,10 +36,13 @@ var DndApp;
             }
             if (ctx.data.dnd) {
                 var dnd = ctx.data.dnd;
+                me.style.outline = "1px solid #f00";
                 me.style.margin = 0;
                 me.style.left = dnd.deltaX;
                 me.style.top = dnd.deltaY;
                 me.style.opacity = 0.5;
+                me.children = ctx.data.lang.name.toUpperCase();
+                return;
             }
             else {
                 me.attrs = { draggable: "true" };

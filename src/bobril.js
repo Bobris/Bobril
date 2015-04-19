@@ -681,7 +681,7 @@ b = (function (window, document) {
                             el.textContent = newChildren;
                         }
                         else {
-                            el.innerText = newChildren;
+                            el.nodeValue = newChildren;
                         }
                         c.children = newChildren;
                     }
