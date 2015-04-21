@@ -76,6 +76,9 @@ var VgApp;
                     },
                     {
                         data: { path: ["circle", 530, 350, 20], stroke: "#000000" }
+                    },
+                    {
+                        data: { path: ["M", 420, 390, "L", 680, 390], stroke: "#000000", strokeWidth: 10, dasharray: [10, 20] }
                     }
                 ]
             }
