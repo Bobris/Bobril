@@ -77,6 +77,9 @@
         this.data[type] = data;
         return true;
     };
+    dndProto.listData = function () {
+        return Object.keys(this.data);
+    };
     dndProto.hasData = function (type) {
         return this.data[type] !== undefined;
     };

@@ -85,6 +85,10 @@
         return true;
     }
 
+    dndProto.listData = function(): string[] {
+        return Object.keys(this.data);
+    }
+
     dndProto.hasData = function(type: string): boolean {
         return this.data[type] !== undefined;
     }
