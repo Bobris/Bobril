@@ -154,7 +154,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function ieVersion() {
-        return document.documentMode;
+        return (<any>document).documentMode;
     }
 
     var onIE8 = ieVersion() === 8;
@@ -196,7 +196,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
-    function removeProperty(s: MSStyleCSSProperties, name: string) {
+    function removeProperty(s: any, name: string) {
         if (hasRemovePropertyInStyle)
             (<any>s)[name] = "";
         else
@@ -1179,7 +1179,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
         } else {
-            (<MSEventAttachmentTarget><any>el).attachEvent("on" + name, enhanceEvent);
+            (<any>el).attachEvent("on" + name, enhanceEvent);
         }
     }
 

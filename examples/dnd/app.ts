@@ -289,6 +289,7 @@ module DndApp {
             return false;
         },
         onDragEnd(ctx: IAnyTargetCtx, dndCtx: IDndCtx): boolean {
+            (<any>ctx).wasEnd=true;
             b.invalidate(ctx);
             return false;
         }

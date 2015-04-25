@@ -198,7 +198,6 @@
             if (t && b.bubble(t.me, "onDrop", dnd)) {
                 dnd.ended = true;
                 b.broadcast("onDragEnd", dnd);
-                dndmoved(null, dnd);
                 dnd.destroy();
             } else {
                 dnd.cancelDnd();
@@ -332,13 +331,21 @@
             dnd.local = false;
             var dt = ev.dataTransfer;
             var eff = 0;
+            try {
+                var effectAllowed = dt.effectAllowed;
+            }
+            catch(e) {}
             for (; eff < 7; eff++) {
-                if (effectAllowedTable[eff] === dt.effectAllowed) break;
+                if (effectAllowedTable[eff] === effectAllowed) break;
             }
             dnd.enabledOperations = eff;
-            if (dt.types) {
-                for (var i = 0; i < dt.types.length; i++) {
-                    (<any>dnd).data[dt.types[i]] = null;
+            var dttypes = dt.types;
+            if (dttypes) {
+                for (var i = 0; i < dttypes.length; i++) {
+                    var tt = dttypes[i];
+                    if (tt === "text/plain") tt = "Text";
+                    else if (tt === "text/uri-list") tt = "Url";
+                    (<any>dnd).data[tt] = null;
                 }
             } else {
                 if (dt.getData("Text") !== undefined) (<any>dnd).data["Text"] = null;
@@ -386,9 +393,14 @@
             var dt = ev.dataTransfer;
             for (let i = 0; i < dataKeys.length; i++) {
                 var k = dataKeys[i];
-                var d = dt.getData(k);
-                if (typeof d !== "string") {
-                    d = JSON.parse(d);
+                var d: any;
+                if (k === "Files") {
+                    d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
+                } else {
+                    d = dt.getData(k);
+                    if (typeof d !== "string") {
+                        d = JSON.parse(d);
+                    }
                 }
                 (<any>dnd).data[k] = d;
             }

@@ -260,6 +260,7 @@ var DndApp;
             return false;
         },
         onDragEnd: function (ctx, dndCtx) {
+            ctx.wasEnd = true;
             b.invalidate(ctx);
             return false;
         }

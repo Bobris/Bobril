@@ -94,7 +94,7 @@ const enum Consts {
         if (revertVisibilityChanges(hiddenEls)) {
             try {
                 if (b.ieVersion() < 9)
-                    t.fireEvent("on" + ev.type, ev);
+                    (<any>t).fireEvent("on" + ev.type, ev);
                 else {
                     t.dispatchEvent(ev);
                 }
