@@ -128,7 +128,7 @@
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY };
+            var param = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY, button: ev.button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -143,7 +143,7 @@
                 var t = ev.changedTouches[i];
                 target = document.elementFromPoint(t.clientX, t.clientY);
                 node = b.deref(target);
-                var param = { id: t.identifier + 2, type: 1 /* Touch */, x: t.clientX, y: t.clientY };
+                var param = { id: t.identifier + 2, type: 1 /* Touch */, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
                 if (b.emitEvent("!" + name, param, target, node))
                     preventDef = true;
             }
@@ -163,7 +163,7 @@
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param = { id: 1, type: 0 /* Mouse */, x: ev.clientX, y: ev.clientY };
+            var param = { id: 1, type: 0 /* Mouse */, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -215,7 +215,6 @@
     }
     var prevMousePath = [];
     function mouseEnterAndLeave(ev) {
-        var param = { x: ev.x, y: ev.y };
         var t = document.elementFromPoint(ev.x, ev.y);
         var toPath = b.vdomPath(t);
         var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
@@ -224,7 +223,7 @@
             t = fixed[0];
             toPath = b.vdomPath(t);
         }
-        b.bubble(node, "onMouseOver", param);
+        b.bubble(node, "onMouseOver", ev);
         var common = 0;
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
             common++;
@@ -237,7 +236,7 @@
             if (n) {
                 c = n.component;
                 if (c && c.onMouseLeave)
-                    c.onMouseLeave(n.ctx, param);
+                    c.onMouseLeave(n.ctx, ev);
             }
         }
         while (i < toPath.length) {
@@ -245,7 +244,7 @@
             if (n) {
                 c = n.component;
                 if (c && c.onMouseEnter)
-                    c.onMouseEnter(n.ctx, param);
+                    c.onMouseEnter(n.ctx, ev);
             }
             i++;
         }
@@ -272,6 +271,12 @@
         return false;
     }
     function bustingPointerMove(ev, target, node) {
+        // Browser forgot to send mouse up? Let's fix it
+        if (ev.type === 0 /* Mouse */ && ev.button === 0 && pointersDown[ev.id] != null) {
+            ev.button = 1;
+            b.emitEvent("!PointerUp", ev, target, node);
+            ev.button = 0;
+        }
         if (firstPointerDown === ev.id) {
             mouseEnterAndLeave(ev);
             if (!diffLess(firstPointerDownX, ev.x, 13 /* MoveOverIsNotTap */) || !diffLess(firstPointerDownY, ev.y, 13 /* MoveOverIsNotTap */))
@@ -290,8 +295,7 @@
             if (ev.type == 1 /* Touch */ && !tapCanceled) {
                 if (now() - firstPointerDownTime < 750 /* TapShouldBeShorterThanMs */) {
                     b.emitEvent("!PointerCancel", ev, target, node);
-                    var param = { x: ev.x, y: ev.y };
-                    var handled = invokeMouseOwner(onClickText, param) || (b.bubble(node, onClickText, param) != null);
+                    var handled = invokeMouseOwner(onClickText, ev) || (b.bubble(node, onClickText, ev) != null);
                     var delay = (b.ieVersion()) ? 800 /* MaxBustDelayForIE */ : 500 /* MaxBustDelay */;
                     toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                     return handled;
@@ -334,8 +338,7 @@
         return function (ev, target, node) {
             if (firstPointerDown != ev.id && !noPointersDown())
                 return false;
-            var param = { x: ev.x, y: ev.y };
-            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+            if (invokeMouseOwner(handlerName, ev) || b.bubble(node, handlerName, ev)) {
                 return true;
             }
             return false;
@@ -345,9 +348,23 @@
     for (var i = 0; i < 4; i++) {
         addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
     }
+    function decodeButton(ev) {
+        if (b.ieVersion() === 8) {
+            switch (ev.button) {
+                case 2:
+                case 6: return 3;
+                case 4: return 2;
+                case 0: return 0;
+                default: return 1;
+            }
+        }
+        else {
+            return ev.which || ev.button;
+        }
+    }
     function createHandler(handlerName) {
         return function (ev, target, node) {
-            var param = { x: ev.clientX, y: ev.clientY };
+            var param = { x: ev.clientX, y: ev.clientY, button: decodeButton(ev) || 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;

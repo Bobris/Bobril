@@ -99,7 +99,7 @@ module MouseApp {
         constructor(private ev: IBobrilMouseEvent, private eventName: string) { }
 
         toString(): string {
-            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
         }
     }
 

@@ -77,7 +77,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     var hasTextContent = "textContent" in createTextNode("");
-    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
 
     function isObject(value: any): boolean {
         return typeof value === "object";
@@ -197,10 +196,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function removeProperty(s: any, name: string) {
-        if (hasRemovePropertyInStyle)
-            (<any>s)[name] = "";
-        else
-            s.removeAttribute(name);
+        (<any>s)[name] = "";
     }
 
     function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {

@@ -11,7 +11,7 @@
     var DndCtx = function (pointerId) {
         this.id = ++lastDndId;
         this.pointerid = pointerId;
-        this.enanbledOperations = 7 /* MoveCopyLink */;
+        this.enabledOperations = 7 /* MoveCopyLink */;
         this.operation = 0 /* None */;
         this.local = true;
         this.ended = false;
@@ -53,9 +53,7 @@
                 }
             }
             me.tag = "div";
-            me.style = { position: "fixed", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
-            if (b.ieVersion() < 10)
-                me.attrs = { unselectable: "on" };
+            me.style = { position: "fixed", userSelect: "none", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
             me.children = res;
         },
         onDrag: function (ctx) {
@@ -117,7 +115,9 @@
         if (dnd && dnd.totalX == null) {
             dnd.cancelDnd();
         }
-        pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
+        if (ev.button === 1) {
+            pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
+        }
         return false;
     }
     function dndmoved(node, dnd) {
@@ -127,11 +127,18 @@
         }
         b.broadcast("onDrag", dnd);
     }
+    function updateDndFromPointerEvent(dnd, ev) {
+        dnd.shift = ev.shift;
+        dnd.ctrl = ev.ctrl;
+        dnd.alt = ev.alt;
+        dnd.meta = ev.meta;
+    }
     function handlePointerMove(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
             dnd.x = ev.x;
             dnd.y = ev.y;
+            updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             return true;
         }
@@ -149,6 +156,7 @@
                 dnd.startY = startY;
                 dnd.x = ev.x;
                 dnd.y = ev.y;
+                updateDndFromPointerEvent(dnd, ev);
                 var sourceCtx = b.bubble(node, "onDragStart", dnd);
                 if (sourceCtx) {
                     var htmlNode = b.getDomNode(sourceCtx.me);
@@ -177,6 +185,7 @@
         if (dnd && dnd.totalX == null) {
             dnd.x = ev.x;
             dnd.y = ev.y;
+            updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             var t = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
