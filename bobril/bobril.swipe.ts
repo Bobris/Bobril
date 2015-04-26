@@ -43,9 +43,8 @@
             if (totalX > deltaX * 1.5) return false; // too much shaking hand
             if (totalY > deltaX * 0.7) return false; // too much shaking hand
             var method = "onSwipe" + (ev.x>startX ? "Right" : "Left");
-            var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
             b.ignoreClick(ev.x, ev.y);
-            b.bubble(node, method, param);
+            b.bubble(node, method, ev);
         }
         return false;
     }

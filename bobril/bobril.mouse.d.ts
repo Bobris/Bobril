@@ -3,6 +3,12 @@
 interface IBobrilMouseEvent {
     x: number;
     y: number;
+    // 1 - left (or touch), 2 - middle, 3 - right <- it does not make sense but that's W3C 
+    button: number;
+    shift: boolean;
+    ctrl: boolean;
+    alt: boolean;
+    meta: boolean;
 }
 
 declare const enum BobrilPointerType {
@@ -11,11 +17,9 @@ declare const enum BobrilPointerType {
     Pen = 2
 }
 
-interface IBobrilPointerEvent {
+interface IBobrilPointerEvent extends IBobrilMouseEvent {
     id: number;
     type: BobrilPointerType;
-    x: number;
-    y: number;
 }
 
 interface IBobrilComponent {

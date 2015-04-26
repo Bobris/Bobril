@@ -152,6 +152,9 @@
         v = data.miterLimit;
         if (v)
             attrs["stroke-miterlimit"] = "" + v;
+        v = data.dasharray;
+        if (v && b.isArray(v))
+            attrs["stroke-dasharray"] = v.join();
         var path = data.path || [];
         var resultPath = "";
         var index = 0;
@@ -249,6 +252,11 @@
             vmlStroke.joinstyle = data.lineJoin || "miter";
             v = data.miterLimit;
             vmlStroke.miterlimit = v != null ? v : 10;
+            v = data.dasharray;
+            if (v && b.isArray(v)) {
+                var w = data.strokeWidth != null ? data.strokeWidth : 1;
+                vmlStroke.dashstyle = v.map(function (d) { return Math.ceil(d / w); }).join(' ');
+            }
         }
         else {
             el.stroked = false;

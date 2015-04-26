@@ -43,10 +43,9 @@ module DndApp {
         },
         render(ctx: IProgLangSourceCtx, me: IBobrilNode) {
             me.tag = "div";
-            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
             if (ctx.draggingId > 0) {
                 me.style.background = "#444";
-                me.children = String.fromCharCode(0xa0);
                 return;
             }
             if (ctx.data.dnd) {
@@ -174,6 +173,132 @@ module DndApp {
         return { component: ProgLangTargetComp, data };
     }
 
+    interface INativeSourceData {
+        nativeType: string;
+        content: any;
+        dnd?: IDndCtx;
+    }
+
+    interface INativeSourceCtx extends IBobrilCtx {
+        data: INativeSourceData;
+        draggingId: number;
+        lastAction: string;
+    }
+
+    var NativeSourceComp: IBobrilComponent = {
+        init(ctx: INativeSourceCtx) {
+            ctx.draggingId = 0;
+            ctx.lastAction = "N/A";
+        },
+        render(ctx: INativeSourceCtx, me: IBobrilNode) {
+            me.tag = "div";
+            me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 60, height: 50, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            if (ctx.draggingId > 0) {
+                me.style.background = "#444";
+                return;
+            }
+            if (ctx.data.dnd) {
+                var dnd = ctx.data.dnd;
+                me.style.outline = "1px solid #f00";
+                me.style.margin = 0;
+                me.style.left = dnd.deltaX;
+                me.style.top = dnd.deltaY;
+                me.style.opacity = 0.5;
+                me.children = ctx.data.nativeType.toUpperCase();
+                return;
+            } else {
+                me.attrs = { draggable: "true" };
+            }
+            me.children = ctx.data.nativeType + " " + ctx.lastAction;
+        },
+        onDragStart(ctx: INativeSourceCtx, dndCtx: IDndStartCtx): boolean {
+            // Do not allow to drag this item again if it is already dragged
+            if (ctx.draggingId > 0) return false;
+            ctx.draggingId = dndCtx.id;
+            dndCtx.addData(ctx.data.nativeType, ctx.data.content);
+            dndCtx.setEnabledOps(DndEnabledOps.MoveCopyLink);
+            dndCtx.setDragNodeView(dnd=> ({ component: NativeSourceComp, data: { nativeType: ctx.data.nativeType, dnd } }));
+            b.invalidate(ctx);
+            return true;
+        },
+        onDragEnd(ctx: INativeSourceCtx, dndCtx: IDndCtx): boolean {
+            if (ctx.draggingId == 0) return false;
+            switch (dndCtx.operation) {
+                case DndOp.None: ctx.lastAction = "None"; break;
+                case DndOp.Link: ctx.lastAction = "Link"; break;
+                case DndOp.Copy: ctx.lastAction = "Copy"; break;
+                case DndOp.Move: ctx.lastAction = "Move"; break;
+                default: ctx.lastAction = "Unknown"; break;
+            }
+            ctx.draggingId = 0;
+            b.invalidate(ctx);
+            return false;
+        }
+    };
+
+    function nativeSource(nativeType: string, content: any) {
+        return { component: NativeSourceComp, data: { nativeType, content } };
+    }
+
+    interface IAnyTargetCtx extends IBobrilCtx {
+        text: string;
+    }
+
+    var AnyTargetComp: IBobrilComponent = {
+        init(ctx: IAnyTargetCtx) {
+            ctx.text = "";
+        },
+        render(ctx: IAnyTargetCtx, me: IBobrilNode) {
+            me.tag = "div";
+            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, margin: 5, padding: 20, border: "1px solid #444" };
+            var dnds = b.getDnds();
+            var isPossibleTarget = false;
+            for (let i = 0; i < dnds.length; i++) {
+                var dnd = dnds[i];
+                if (dnd.ended) continue;
+                isPossibleTarget = true;
+                break;
+            }
+            if (isPossibleTarget) {
+                me.style.background = "#4f8";
+            }
+            me.children = {
+                tag: "div", style: { display: "inline-block", top: -me.style.top, position: "relative", minWidth: 200, minHeight: 40 },
+                children: ctx.text
+            };
+        },
+        onDragOver(ctx: IAnyTargetCtx, dndCtx: IDndOverCtx): boolean {
+            ctx.text = dndCtx.listData().join();
+            dndCtx.setOperation(DndOp.Link);
+            b.invalidate(ctx);
+            return true;
+        },
+        onDrop(ctx: IAnyTargetCtx, dndCtx: IDndCtx): boolean {
+            var k = dndCtx.listData();
+            var s = "";
+            for (let i = 0; i < k.length; i++) {
+                s += k[i] + " " + JSON.stringify(dndCtx.getData(k[i])) + " ";
+            }
+            ctx.text = s;
+            b.invalidate(ctx);
+            return true;
+        },
+        onDrag(ctx: IAnyTargetCtx, dndCtx: IDndCtx): boolean {
+            ctx.text = dndCtx.listData().join();
+            b.invalidate(ctx);
+            return false;
+        },
+        onDragEnd(ctx: IAnyTargetCtx, dndCtx: IDndCtx): boolean {
+            (<any>ctx).wasEnd=true;
+            b.invalidate(ctx);
+            return false;
+        }
+    }
+
+    function anyTarget(): IBobrilNode {
+        return { component: AnyTargetComp };
+    }
+
     b.init(() => {
         return {
             tag: "div", style: { maxWidth: 700, touchAction: "none" }, children: [
@@ -181,6 +306,10 @@ module DndApp {
                 layoutPair(
                     progLangs.map(l=> progSource(l)),
                     progTarget({ test: l=> true, content: [{ tag: "div", children: "Any language" }, progTarget({ test: l=> l.gc, content: "Has GC" }), " ", progTarget({ test: l=> l.jit, content: "Has JIT" })] })
+                    ),
+                layoutPair(
+                    [nativeSource("Text", "Hello"), nativeSource("Url", "https://github.com/Bobris")],
+                    anyTarget()
                     ),
                 h("p", "Frame: " + b.frame() + " Last frame duration:" + b.lastFrameDuration())
             ]

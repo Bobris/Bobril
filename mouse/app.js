@@ -76,7 +76,7 @@ var MouseApp;
             this.eventName = eventName;
         }
         EventWrapper.prototype.toString = function () {
-            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
         };
         return EventWrapper;
     })();

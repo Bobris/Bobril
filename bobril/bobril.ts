@@ -77,7 +77,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     var hasTextContent = "textContent" in createTextNode("");
-    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
 
     function isObject(value: any): boolean {
         return typeof value === "object";
@@ -154,7 +153,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function ieVersion() {
-        return document.documentMode;
+        return (<any>document).documentMode;
     }
 
     var onIE8 = ieVersion() === 8;
@@ -196,11 +195,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
-    function removeProperty(s: MSStyleCSSProperties, name: string) {
-        if (hasRemovePropertyInStyle)
-            (<any>s)[name] = "";
-        else
-            s.removeAttribute(name);
+    function removeProperty(s: any, name: string) {
+        (<any>s)[name] = "";
     }
 
     function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {
@@ -1179,7 +1175,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (el.addEventListener) {
             el.addEventListener(name, enhanceEvent);
         } else {
-            (<MSEventAttachmentTarget><any>el).attachEvent("on" + name, enhanceEvent);
+            (<any>el).attachEvent("on" + name, enhanceEvent);
         }
     }
 

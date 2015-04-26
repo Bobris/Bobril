@@ -28,10 +28,9 @@ var DndApp;
         },
         render: function (ctx, me) {
             me.tag = "div";
-            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
             if (ctx.draggingId > 0) {
                 me.style.background = "#444";
-                me.children = String.fromCharCode(0xa0);
                 return;
             }
             if (ctx.data.dnd) {
@@ -149,11 +148,132 @@ var DndApp;
     function progTarget(data) {
         return { component: ProgLangTargetComp, data: data };
     }
+    var NativeSourceComp = {
+        init: function (ctx) {
+            ctx.draggingId = 0;
+            ctx.lastAction = "N/A";
+        },
+        render: function (ctx, me) {
+            me.tag = "div";
+            me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 60, height: 50, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
+            if (ctx.draggingId > 0) {
+                me.style.background = "#444";
+                return;
+            }
+            if (ctx.data.dnd) {
+                var dnd = ctx.data.dnd;
+                me.style.outline = "1px solid #f00";
+                me.style.margin = 0;
+                me.style.left = dnd.deltaX;
+                me.style.top = dnd.deltaY;
+                me.style.opacity = 0.5;
+                me.children = ctx.data.nativeType.toUpperCase();
+                return;
+            }
+            else {
+                me.attrs = { draggable: "true" };
+            }
+            me.children = ctx.data.nativeType + " " + ctx.lastAction;
+        },
+        onDragStart: function (ctx, dndCtx) {
+            // Do not allow to drag this item again if it is already dragged
+            if (ctx.draggingId > 0)
+                return false;
+            ctx.draggingId = dndCtx.id;
+            dndCtx.addData(ctx.data.nativeType, ctx.data.content);
+            dndCtx.setEnabledOps(7 /* MoveCopyLink */);
+            dndCtx.setDragNodeView(function (dnd) { return ({ component: NativeSourceComp, data: { nativeType: ctx.data.nativeType, dnd: dnd } }); });
+            b.invalidate(ctx);
+            return true;
+        },
+        onDragEnd: function (ctx, dndCtx) {
+            if (ctx.draggingId == 0)
+                return false;
+            switch (dndCtx.operation) {
+                case 0 /* None */:
+                    ctx.lastAction = "None";
+                    break;
+                case 1 /* Link */:
+                    ctx.lastAction = "Link";
+                    break;
+                case 2 /* Copy */:
+                    ctx.lastAction = "Copy";
+                    break;
+                case 3 /* Move */:
+                    ctx.lastAction = "Move";
+                    break;
+                default:
+                    ctx.lastAction = "Unknown";
+                    break;
+            }
+            ctx.draggingId = 0;
+            b.invalidate(ctx);
+            return false;
+        }
+    };
+    function nativeSource(nativeType, content) {
+        return { component: NativeSourceComp, data: { nativeType: nativeType, content: content } };
+    }
+    var AnyTargetComp = {
+        init: function (ctx) {
+            ctx.text = "";
+        },
+        render: function (ctx, me) {
+            me.tag = "div";
+            me.style = { display: "inline-block", position: "relative", left: 0, top: 0, margin: 5, padding: 20, border: "1px solid #444" };
+            var dnds = b.getDnds();
+            var isPossibleTarget = false;
+            for (var i = 0; i < dnds.length; i++) {
+                var dnd = dnds[i];
+                if (dnd.ended)
+                    continue;
+                isPossibleTarget = true;
+                break;
+            }
+            if (isPossibleTarget) {
+                me.style.background = "#4f8";
+            }
+            me.children = {
+                tag: "div", style: { display: "inline-block", top: -me.style.top, position: "relative", minWidth: 200, minHeight: 40 },
+                children: ctx.text
+            };
+        },
+        onDragOver: function (ctx, dndCtx) {
+            ctx.text = dndCtx.listData().join();
+            dndCtx.setOperation(1 /* Link */);
+            b.invalidate(ctx);
+            return true;
+        },
+        onDrop: function (ctx, dndCtx) {
+            var k = dndCtx.listData();
+            var s = "";
+            for (var i = 0; i < k.length; i++) {
+                s += k[i] + " " + JSON.stringify(dndCtx.getData(k[i])) + " ";
+            }
+            ctx.text = s;
+            b.invalidate(ctx);
+            return true;
+        },
+        onDrag: function (ctx, dndCtx) {
+            ctx.text = dndCtx.listData().join();
+            b.invalidate(ctx);
+            return false;
+        },
+        onDragEnd: function (ctx, dndCtx) {
+            ctx.wasEnd = true;
+            b.invalidate(ctx);
+            return false;
+        }
+    };
+    function anyTarget() {
+        return { component: AnyTargetComp };
+    }
     b.init(function () {
         return {
             tag: "div", style: { maxWidth: 700, touchAction: "none" }, children: [
                 h("h1", "Drag and drop sample"),
                 layoutPair(progLangs.map(function (l) { return progSource(l); }), progTarget({ test: function (l) { return true; }, content: [{ tag: "div", children: "Any language" }, progTarget({ test: function (l) { return l.gc; }, content: "Has GC" }), " ", progTarget({ test: function (l) { return l.jit; }, content: "Has JIT" })] })),
+                layoutPair([nativeSource("Text", "Hello"), nativeSource("Url", "https://github.com/Bobris")], anyTarget()),
                 h("p", "Frame: " + b.frame() + " Last frame duration:" + b.lastFrameDuration())
             ]
         };

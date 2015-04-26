@@ -11,7 +11,7 @@
     var DndCtx = function (pointerId) {
         this.id = ++lastDndId;
         this.pointerid = pointerId;
-        this.enanbledOperations = 7 /* MoveCopyLink */;
+        this.enabledOperations = 7 /* MoveCopyLink */;
         this.operation = 0 /* None */;
         this.local = true;
         this.ended = false;
@@ -53,9 +53,7 @@
                 }
             }
             me.tag = "div";
-            me.style = { position: "fixed", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
-            if (b.ieVersion() < 10)
-                me.attrs = { unselectable: "on" };
+            me.style = { position: "fixed", userSelect: "none", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
             me.children = res;
         },
         onDrag: function (ctx) {
@@ -76,6 +74,9 @@
     dndProto.addData = function (type, data) {
         this.data[type] = data;
         return true;
+    };
+    dndProto.listData = function () {
+        return Object.keys(this.data);
     };
     dndProto.hasData = function (type) {
         return this.data[type] !== undefined;
@@ -114,7 +115,9 @@
         if (dnd && dnd.totalX == null) {
             dnd.cancelDnd();
         }
-        pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
+        if (ev.button === 1) {
+            pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
+        }
         return false;
     }
     function dndmoved(node, dnd) {
@@ -124,11 +127,18 @@
         }
         b.broadcast("onDrag", dnd);
     }
+    function updateDndFromPointerEvent(dnd, ev) {
+        dnd.shift = ev.shift;
+        dnd.ctrl = ev.ctrl;
+        dnd.alt = ev.alt;
+        dnd.meta = ev.meta;
+    }
     function handlePointerMove(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
             dnd.x = ev.x;
             dnd.y = ev.y;
+            updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             return true;
         }
@@ -146,6 +156,7 @@
                 dnd.startY = startY;
                 dnd.x = ev.x;
                 dnd.y = ev.y;
+                updateDndFromPointerEvent(dnd, ev);
                 var sourceCtx = b.bubble(node, "onDragStart", dnd);
                 if (sourceCtx) {
                     var htmlNode = b.getDomNode(sourceCtx.me);
@@ -174,12 +185,12 @@
         if (dnd && dnd.totalX == null) {
             dnd.x = ev.x;
             dnd.y = ev.y;
+            updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             var t = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
                 dnd.ended = true;
                 b.broadcast("onDragEnd", dnd);
-                dndmoved(null, dnd);
                 dnd.destroy();
             }
             else {
@@ -313,14 +324,24 @@
             dnd.local = false;
             var dt = ev.dataTransfer;
             var eff = 0;
+            try {
+                var effectAllowed = dt.effectAllowed;
+            }
+            catch (e) { }
             for (; eff < 7; eff++) {
-                if (effectAllowedTable[eff] === dt.effectAllowed)
+                if (effectAllowedTable[eff] === effectAllowed)
                     break;
             }
             dnd.enabledOperations = eff;
-            if (dt.types) {
-                for (var i = 0; i < dt.types.length; i++) {
-                    dnd.data[dt.types[i]] = null;
+            var dttypes = dt.types;
+            if (dttypes) {
+                for (var i = 0; i < dttypes.length; i++) {
+                    var tt = dttypes[i];
+                    if (tt === "text/plain")
+                        tt = "Text";
+                    else if (tt === "text/uri-list")
+                        tt = "Url";
+                    dnd.data[tt] = null;
                 }
             }
             else {
@@ -367,9 +388,15 @@
             var dt = ev.dataTransfer;
             for (var i = 0; i < dataKeys.length; i++) {
                 var k = dataKeys[i];
-                var d = dt.getData(k);
-                if (typeof d !== "string") {
-                    d = JSON.parse(d);
+                var d;
+                if (k === "Files") {
+                    d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
+                }
+                else {
+                    d = dt.getData(k);
+                    if (typeof d !== "string") {
+                        d = JSON.parse(d);
+                    }
                 }
                 dnd.data[k] = d;
             }

@@ -18,6 +18,7 @@ declare const enum DndEnabledOps {
 
 interface IDndCtx {
     id: number;
+    listData(): string[];
     hasData(type: string): boolean;
     getData(type: string): any;
     enabledOperations: DndEnabledOps;

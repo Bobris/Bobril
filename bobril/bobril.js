@@ -67,7 +67,6 @@ b = (function (window, document) {
         return document.createElement(name);
     }
     var hasTextContent = "textContent" in createTextNode("");
-    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
     function isObject(value) {
         return typeof value === "object";
     }
@@ -180,10 +179,7 @@ b = (function (window, document) {
         }
     }
     function removeProperty(s, name) {
-        if (hasRemovePropertyInStyle)
-            s[name] = "";
-        else
-            s.removeAttribute(name);
+        s[name] = "";
     }
     function updateStyle(n, el, newStyle, oldStyle) {
         var s = el.style;
