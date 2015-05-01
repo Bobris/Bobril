@@ -6,6 +6,8 @@ Bobril
 
 Version 2.0.0
 
+Version 2.x is last version which supports IE8. It will be maintained for next year, but it will not probably have any new features. If you don't need IE8 compatibility use version 3+ for smaller and faster code.
+
 Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework). 
 Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE8. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
 Because it is already used in Production code, further development must not broke any functionality. Any new feature must be optional or its perceived value to minified size ratio must be high enough.
