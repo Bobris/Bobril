@@ -29,7 +29,7 @@ describe("asap", function () {
 });
 describe("Promise", function () {
     it("itwillcallThenResolve", function (done) {
-        var promise = new b.Promise(function (resolve, revoke) {
+        var promise = new Promise(function (resolve, revoke) {
             resolve("OK");
         });
         promise.then(function (v) {
@@ -38,7 +38,7 @@ describe("Promise", function () {
         });
     });
     it("itwillcallThenResolveAsync", function (done) {
-        var promise = new b.Promise(function (resolve, revoke) {
+        var promise = new Promise(function (resolve, revoke) {
             setTimeout(function () { return resolve("OK"); }, 0);
         });
         promise.then(function (v) {
@@ -47,7 +47,7 @@ describe("Promise", function () {
         });
     });
     it("itwillcallThenRevoke", function (done) {
-        var promise = new b.Promise(function (resolve, revoke) {
+        var promise = new Promise(function (resolve, revoke) {
             revoke("OK");
         });
         promise.then(null, function (r) {
@@ -56,7 +56,7 @@ describe("Promise", function () {
         });
     });
     it("itwillcallThenRevokeAsync", function (done) {
-        var promise = new b.Promise(function (resolve, revoke) {
+        var promise = new Promise(function (resolve, revoke) {
             setTimeout(function () { return revoke("OK"); }, 0);
         });
         promise.then(null, function (r) {
@@ -65,7 +65,7 @@ describe("Promise", function () {
         });
     });
     it("thenChainingSuccess", function (done) {
-        var promise = new b.Promise(function (resolve, revoke) {
+        var promise = new Promise(function (resolve, revoke) {
             setTimeout(function () { return resolve("O"); }, 0);
         });
         promise.then(function (v) {
@@ -76,7 +76,7 @@ describe("Promise", function () {
         });
     });
     it("thenChainingFailure", function (done) {
-        var promise = new b.Promise(function (resolve, revoke) {
+        var promise = new Promise(function (resolve, revoke) {
             setTimeout(function () { return revoke("OK"); }, 0);
         });
         promise.then(function (v) {
@@ -88,38 +88,38 @@ describe("Promise", function () {
     });
 });
 function delay(time, value) {
-    return new b.Promise(function (resolve) {
+    return new Promise(function (resolve) {
         setTimeout(function () { return resolve(value); }, time);
     });
 }
 describe("Promise.all", function () {
     it("zeroParams", function (done) {
-        b.Promise.all().then(function (p) {
+        Promise.all().then(function (p) {
             expect(p).toEqual([]);
             done();
         });
     });
     it("someNonPromiseParams", function (done) {
-        b.Promise.all(1, "A", true).then(function (p) {
+        Promise.all(1, "A", true).then(function (p) {
             expect(p).toEqual([1, "A", true]);
             done();
         });
     });
     it("someNonPromiseArrayParam", function (done) {
-        b.Promise.all([1, "A", true]).then(function (p) {
+        Promise.all([1, "A", true]).then(function (p) {
             expect(p).toEqual([1, "A", true]);
             done();
         });
     });
     it("PromiseParam", function (done) {
-        b.Promise.all([1, b.Promise.resolve("A"), true]).then(function (p) {
+        Promise.all([1, Promise.resolve("A"), true]).then(function (p) {
             expect(p).toEqual([1, "A", true]);
             done();
         });
     });
     it("TimerPromiseParams", function (done) {
         var start = b.now();
-        b.Promise.all(delay(100, 1), delay(300, "A"), delay(200, true)).then(function (p) {
+        Promise.all(delay(100, 1), delay(300, "A"), delay(200, true)).then(function (p) {
             expect(p).toEqual([1, "A", true]);
             expect(b.now() - start).toBeLessThan(400);
             done();
@@ -127,7 +127,7 @@ describe("Promise.all", function () {
     });
     it("TimerPromiseParamsOneFail", function (done) {
         var start = b.now();
-        b.Promise.all(delay(100, 1), b.Promise.reject("OK"), delay(200, true)).then(null, function (err) {
+        Promise.all(delay(100, 1), Promise.reject("OK"), delay(200, true)).then(null, function (err) {
             expect(err).toEqual("OK");
             expect(b.now() - start).toBeLessThan(100);
             done();
@@ -137,7 +137,7 @@ describe("Promise.all", function () {
 describe("Promise.race", function () {
     it("TimerPromiseParamsFastestWin", function (done) {
         var start = b.now();
-        b.Promise.race([delay(100, 1), delay(300, "A"), delay(200, true)]).then(function (value) {
+        Promise.race([delay(100, 1), delay(300, "A"), delay(200, true)]).then(function (value) {
             expect(value).toEqual(1);
             expect(b.now() - start).toBeLessThan(200);
             done();
@@ -145,7 +145,7 @@ describe("Promise.race", function () {
     });
     it("TimerPromiseParamsFastestWinEvenFailure", function (done) {
         var start = b.now();
-        b.Promise.race([delay(100, 1), b.Promise.reject("OK"), delay(200, true)]).then(null, function (err) {
+        Promise.race([delay(100, 1), Promise.reject("OK"), delay(200, true)]).then(null, function (err) {
             expect(err).toEqual("OK");
             expect(b.now() - start).toBeLessThan(100);
             done();

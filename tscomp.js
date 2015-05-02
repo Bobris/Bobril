@@ -109,7 +109,7 @@ function reportDiagnostics(diagnostics) {
 }
 
 /// string
-function typeScriptCompile(tsconfig) {
+function typeScriptCompile(tsconfig, rebuild) {
 	var curDir = ts.sys.getCurrentDirectory();
 	if (!path.isAbsolute(tsconfig)) tsconfig = path.join(curDir, tsconfig);
 	curDir = path.dirname(tsconfig);
@@ -150,7 +150,7 @@ function typeScriptCompile(tsconfig) {
 		sourcetime = (new Date()).getTime();
 	}
 
-	if (sourcetime < outtime) {
+	if (!rebuild && sourcetime < outtime) {
 		return;
 	}
 

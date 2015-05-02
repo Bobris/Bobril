@@ -38,7 +38,6 @@
         "./bobril.swipe.ts",
         "./bobril.ts",
         "./bobril.vg.d.ts",
-        "./bobril.vg.ts",
-        "./lib.touch.d.ts"
+        "./bobril.vg.ts"
     ]
 }

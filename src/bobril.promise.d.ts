@@ -17,10 +17,11 @@ interface Thenable<R> {
 interface IBobrilStatic {
     // run fn async faster than setImmediate or setTimer(fn,0)
     asap?: (fn: () => void) => void;
-    // Mostly Promise A+ compatible (only exception is that 'then' does not ignore non functions parameters)
-    Promise?: PromiseImpl;
 }
 
 interface Window {
+	// Mostly Promise A+ compatible (only exception is that 'then' does not ignore non functions parameters)
 	Promise: PromiseImpl;
 }
+
+declare var Promise: PromiseImpl;

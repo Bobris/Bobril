@@ -1,4 +1,4 @@
-﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.router.d.ts"/>
 
 // Heavily inspired by https://github.com/rackt/react-router/ Thanks to authors
@@ -24,7 +24,7 @@ interface OutFindMatch {
         return false;
     }
 
-    b.addEvent("hashchange", 100, emitOnHashChange);
+    b.addEvent("hashchange", 10, emitOnHashChange);
 
     var PUSH = 0;
     var REPLACE = 1;

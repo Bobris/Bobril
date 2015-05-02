@@ -29,7 +29,7 @@ describe("asap", () => {
 
 describe("Promise", () => {
     it("itwillcallThenResolve", (done) => {
-        var promise = new b.Promise<string>((resolve, revoke) => {
+        var promise = new Promise<string>((resolve, revoke) => {
             resolve("OK");
         });
         promise.then((v) => {
@@ -39,7 +39,7 @@ describe("Promise", () => {
     });
 
     it("itwillcallThenResolveAsync", (done) => {
-        var promise = new b.Promise<string>((resolve, revoke) => {
+        var promise = new Promise<string>((resolve, revoke) => {
             setTimeout(() => resolve("OK"), 0);
         });
         promise.then((v) => {
@@ -49,7 +49,7 @@ describe("Promise", () => {
     });
 
     it("itwillcallThenRevoke", (done) => {
-        var promise = new b.Promise<string>((resolve, revoke) => {
+        var promise = new Promise<string>((resolve, revoke) => {
             revoke("OK");
         });
         promise.then(null, (r: string) => {
@@ -59,7 +59,7 @@ describe("Promise", () => {
     });
 
     it("itwillcallThenRevokeAsync", (done) => {
-        var promise = new b.Promise<string>((resolve, revoke) => {
+        var promise = new Promise<string>((resolve, revoke) => {
             setTimeout(() => revoke("OK"), 0);
         });
         promise.then(null, (r: string) => {
@@ -69,7 +69,7 @@ describe("Promise", () => {
     });
 
     it("thenChainingSuccess", (done) => {
-        var promise = new b.Promise<string>((resolve, revoke) => {
+        var promise = new Promise<string>((resolve, revoke) => {
             setTimeout(() => resolve("O"), 0);
         });
         promise.then((v) => {
@@ -81,7 +81,7 @@ describe("Promise", () => {
     });
 
     it("thenChainingFailure", (done) => {
-        var promise = new b.Promise<string>((resolve, revoke) => {
+        var promise = new Promise<string>((resolve, revoke) => {
             setTimeout(() => revoke("OK"), 0);
         });
         promise.then((v: string) => {
@@ -94,35 +94,35 @@ describe("Promise", () => {
 });
 
 function delay(time: number, value: any) {
-    return new b.Promise((resolve: (v: any) => void) => {
+    return new Promise((resolve: (v: any) => void) => {
         setTimeout(() => resolve(value), time);
     });
 }
 
 describe("Promise.all", () => {
     it("zeroParams", (done) => {
-        b.Promise.all().then(p => {
+        Promise.all().then(p => {
             expect(p).toEqual(<any>[]);
             done();
         });
     });
 
     it("someNonPromiseParams", (done) => {
-        b.Promise.all(1, "A", true).then(p => {
+        Promise.all(1, "A", true).then(p => {
             expect(p).toEqual(<any>[1, "A", true]);
             done();
         });
     });
 
     it("someNonPromiseArrayParam", (done) => {
-        b.Promise.all([1, "A", true]).then(p => {
+        Promise.all([1, "A", true]).then(p => {
             expect(p).toEqual(<any>[1, "A", true]);
             done();
         });
     });
 
     it("PromiseParam", (done) => {
-        b.Promise.all([1, b.Promise.resolve("A"), true]).then(p => {
+        Promise.all([1, Promise.resolve("A"), true]).then(p => {
             expect(p).toEqual(<any>[1, "A", true]);
             done();
         });
@@ -130,7 +130,7 @@ describe("Promise.all", () => {
 
     it("TimerPromiseParams", (done) => {
         var start = b.now();
-        b.Promise.all(delay(100, 1), delay(300, "A"), delay(200, true)).then(p => {
+        Promise.all(delay(100, 1), delay(300, "A"), delay(200, true)).then(p => {
             expect(p).toEqual(<any>[1, "A", true]);
             expect(b.now() - start).toBeLessThan(400);
             done();
@@ -139,7 +139,7 @@ describe("Promise.all", () => {
 
     it("TimerPromiseParamsOneFail", (done) => {
         var start = b.now();
-        b.Promise.all(delay(100, 1), b.Promise.reject("OK"), delay(200, true)).then(null,  (err : any) => {
+        Promise.all(delay(100, 1), Promise.reject("OK"), delay(200, true)).then(null,  (err : any) => {
             expect(err).toEqual("OK");
             expect(b.now() - start).toBeLessThan(100);
             done();
@@ -150,7 +150,7 @@ describe("Promise.all", () => {
 describe("Promise.race", () => {
     it("TimerPromiseParamsFastestWin", (done) => {
         var start = b.now();
-        b.Promise.race([delay(100, 1), delay(300,  "A"), delay(200, true)]).then((value: any) => {
+        Promise.race([delay(100, 1), delay(300,  "A"), delay(200, true)]).then((value: any) => {
             expect(value).toEqual(1);
             expect(b.now() - start).toBeLessThan(200);
             done();
@@ -159,7 +159,7 @@ describe("Promise.race", () => {
 
     it("TimerPromiseParamsFastestWinEvenFailure", (done) => {
         var start = b.now();
-        b.Promise.race([delay(100, 1), b.Promise.reject("OK"), delay(200, true)]).then(null,  (err: any) => {
+        Promise.race([delay(100, 1), Promise.reject("OK"), delay(200, true)]).then(null,  (err: any) => {
             expect(err).toEqual("OK");
             expect(b.now() - start).toBeLessThan(100);
             done();

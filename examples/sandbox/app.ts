@@ -37,8 +37,8 @@ module SandboxApp {
                 var cbData: any;
                 if (ev.clipboardData) {
                     cbData = ev.clipboardData;
-                } else if (window.clipboardData) {
-                    cbData = window.clipboardData;
+                } else if ((<any>window).clipboardData) {
+                    cbData = (<any>window).clipboardData;
                 }
                 if (cbData.items && cbData.items.length > 0) {
                     var blob = cbData.items[0].getAsFile();

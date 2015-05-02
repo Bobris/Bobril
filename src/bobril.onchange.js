@@ -138,7 +138,7 @@
             }
         }
         else if (isCheckboxlike(target)) {
-            // Postpone change event so onCLick will be processed before it
+            // Postpone change event so onClick will be processed before it
             if (ev && ev.type === "change") {
                 setTimeout(function () {
                     emitOnChange(null, target, node);

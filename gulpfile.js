@@ -159,14 +159,23 @@ var alltsfilesToWatch = ['./src/**/*.ts','./examples/**/*.ts','./test/**/*.ts'];
 var alltsProjsToCompile = ['./src/**/tsconfig.json','./examples/**/tsconfig.json','./test/**/tsconfig.json'];
 alltsfilesToWatch = alltsfilesToWatch.concat(alltsProjsToCompile);
 
-gulp.task('ts', function () {
-    gulp.watch(alltsfilesToWatch, ['compilets']);
+gulp.task('ts', ['compilets'], function () {
+    gulp.watch(alltsfilesToWatch, ['compiletsi']);
+});
+
+gulp.task('compiletsi', function () {
+    return gulp.src(alltsProjsToCompile, { read:false })
+	      .pipe(through2.obj(function(file,enc,cb) {
+			  typeScriptCompile(file.path, false);
+			  setImmediate(cb);
+			  }));
 });
 
 gulp.task('compilets', function () {
     return gulp.src(alltsProjsToCompile, { read:false })
 	      .pipe(through2.obj(function(file,enc,cb) {
-			  typeScriptCompile(file.path);
+			  console.log(file.path);
+			  typeScriptCompile(file.path, true);
 			  setImmediate(cb);
 			  }));
 });

@@ -104,7 +104,7 @@ module Automata.Components.Graph {
     }
 
     var Component: IBobrilComponent = {
-        init(ctx: ICtx, me: IBobrilCacheNode, createInto:Element, createBefore:Node): void {
+        init(ctx: ICtx, me: IBobrilCacheNode): void {
             ctx.dragMode = Models.DragMode.Move;
             b.invalidate();
         },

@@ -1,58 +1,6 @@
 /// <reference path="bobril.d.ts"/>
 if (typeof DEBUG === "undefined")
     DEBUG = true;
-// IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
-if (!Array.prototype.map) {
-    Array.prototype.map = function (callback, thisArg) {
-        var a, k;
-        // ReSharper disable once ConditionIsAlwaysConst
-        if (DEBUG && this == null) {
-            throw new TypeError("this==null");
-        }
-        var o = Object(this);
-        var len = o.length >>> 0;
-        if (DEBUG && typeof callback != "function") {
-            throw new TypeError(callback + " isn't func");
-        }
-        a = new Array(len);
-        k = 0;
-        while (k < len) {
-            var kValue, mappedValue;
-            if (k in o) {
-                kValue = o[k];
-                mappedValue = callback.call(thisArg, kValue, k, o);
-                a[k] = mappedValue;
-            }
-            k++;
-        }
-        return a;
-    };
-}
-// Object create polyfill
-if (!Object.create) {
-    Object.create = function (o) {
-        function f() { }
-        f.prototype = o;
-        return new f();
-    };
-}
-// Object keys polyfill
-if (!Object.keys) {
-    Object.keys = (function (obj) {
-        var keys = [];
-        for (var i in obj) {
-            if (obj.hasOwnProperty(i)) {
-                keys.push(i);
-            }
-        }
-        return keys;
-    });
-}
-// Array isArray polyfill
-if (!Array.isArray) {
-    var objectToString = {}.toString;
-    Array.isArray = (function (a) { return objectToString.call(a) === "[object Array]"; });
-}
 b = (function (window, document) {
     function assert(shoudBeTrue, messageIfFalse) {
         if (DEBUG && !shoudBeTrue)
@@ -135,10 +83,6 @@ b = (function (window, document) {
     }
     function ieVersion() {
         return document.documentMode;
-    }
-    var onIE8 = ieVersion() === 8;
-    if (onIE8) {
-        mapping.cssFloat = renamer("styleFloat");
     }
     function shimStyle(newValue) {
         var k = Object.keys(newValue);
@@ -251,8 +195,6 @@ b = (function (window, document) {
                     else
                         el.setAttribute(attrName, newAttr);
                 }
-                else if (onIE8 && attrName === "type" && el.nodeName === "input") {
-                }
                 else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
                 }
@@ -329,13 +271,11 @@ b = (function (window, document) {
             var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             c.ctx = ctx;
             if (component.init) {
-                component.init(ctx, c, createInto, createBefore);
+                component.init(ctx, c);
             }
             if (component.render) {
                 component.render(ctx, c);
             }
-            if (c.element)
-                return c;
         }
         var tag = c.tag;
         var children = c.children;
@@ -413,10 +353,6 @@ b = (function (window, document) {
         }
         else if (!el) {
             el = createElement(tag);
-        }
-        if (onIE8 && tag === "input" && "type" in c.attrs) {
-            // On IE8 input.type has to be written before writing adding to document
-            el.type = c.attrs.type;
         }
         createInto.insertBefore(el, createBefore);
         c.element = el;
@@ -1176,20 +1112,20 @@ b = (function (window, document) {
     function addListener(el, name) {
         if (name[0] == "!")
             return;
+        var capture = (name[0] == "^");
+        var eventName = name;
+        if (capture) {
+            eventName = name.slice(1);
+        }
         function enhanceEvent(ev) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement || el;
             var n = getCacheNode(t);
             emitEvent(name, ev, t, n);
         }
-        if (("on" + name) in window)
+        if (("on" + eventName) in window)
             el = window;
-        if (el.addEventListener) {
-            el.addEventListener(name, enhanceEvent);
-        }
-        else {
-            el.attachEvent("on" + name, enhanceEvent);
-        }
+        el.addEventListener(eventName, enhanceEvent, capture);
     }
     var eventsCaptured = false;
     function initEvents() {

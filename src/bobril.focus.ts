@@ -1,4 +1,4 @@
-﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.focus.d.ts"/>
 
 ((b: IBobrilStatic) => {

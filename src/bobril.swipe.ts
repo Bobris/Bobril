@@ -1,4 +1,4 @@
-﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.mouse.d.ts"/>
 /// <reference path="bobril.swipe.d.ts"/>
 

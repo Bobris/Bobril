@@ -1,7 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
 var OpacityApp;
 (function (OpacityApp) {
-    var spacer = { tag: "div", style: { height: "2px" } };
+    var spacer = { tag: "div", style: { height: 2 } };
     var animtype = 0;
     var opacity = 0;
     function radiobox(groupName, value, constant, onChange, content) {
@@ -33,7 +33,6 @@ var OpacityApp;
         var bg = "rgba(0,255,0," + ((opacity === "") ? 1 : opacity.toFixed(3)) + ")";
         return [
             { tag: "h1", children: "Bobril sample for opacity" },
-            // unselectable attribute is for IE8/IE9
             { tag: "p", style: { userSelect: "none" }, children: "This text should not be selectable" },
             radiobox("a", animtype, 0, function (v) { return animtype = v; }, "Solid"), spacer,
             radiobox("a", animtype, 1, function (v) { return animtype = v; }, "Half"), spacer,

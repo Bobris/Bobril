@@ -95,7 +95,7 @@ var Automata;
                 }
             }
             var Component = {
-                init: function (ctx, me, createInto, createBefore) {
+                init: function (ctx, me) {
                     ctx.dragMode = Automata.Models.DragMode.Move;
                     b.invalidate();
                 },

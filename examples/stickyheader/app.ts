@@ -339,15 +339,6 @@ module StickyHeaderApp {
         return res;
     }
 
-    var ScrollableComp: IBobrilComponent = {
-        postInitDom(ctx: any, me: IBobrilNode, element: HTMLElement) {
-            b.registerScrollable(element);
-        },
-        destroy(ctx: any, me: IBobrilNode, element: HTMLElement) {
-            b.unregisterScrollable(element);
-        }
-    };
-
     var cols = 20;
     var borderSpacing = 5;
     var borderCollapse = false;
@@ -382,7 +373,6 @@ module StickyHeaderApp {
             {
                 tag: "div",
                 style: { height: "150px", width: "300px", overflow: "auto" },
-                component: ScrollableComp,
                 children: [
                     h("p", "Before table"),
                     stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(j => headerCell("Header " + j))), rows()),

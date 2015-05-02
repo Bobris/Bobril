@@ -4,11 +4,12 @@ Bobril
 
 [![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Version 2.0.0
+Version 3.0.0
 
 Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework). 
-Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE8. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
+Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE9. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
 Because it is already used in Production code, further development must not broke any functionality. Any new feature must be optional or its perceived value to minified size ratio must be high enough.
+If you need compatibility with IE8 look at 2.x branch.
 
 Examples: http://bobris.github.io/Bobril/
 
@@ -28,28 +29,28 @@ Features in core:
 - Components does not need to be HTML Elements - where is component(0-1) to HTMLNode(0-n) mapping (New in 2.0)
 - Support for partial invalidates for even faster redraws (including recursion deepness limited new in 2.0)
 - Normalization of Events
-- support for IE8+, Android 4.0+
+- support for IE9+, Android 4.1+ (Support for IE8 removed in 3.0)
 - batching of redrawing
 - any html element could be root
 - automatic passing of global configuration/context to children
 - automatic adding of "px" to length like inline style (New in 2.0)
 - reference to children nodes ala React (New in 2.0)
-- under 15kb minified (6kb gzip)
+- under 14kb minified (6kb gzip)
 
 Features in extensions:
 - OnChange event and value attribute normalization
 - Key events
 - Mouse, Touch and Swipe Events (includes polyfill pointerEvents:none and userSelect:none)
-- Vector graphic in spirit of React-Art just very limited in features, but under 4kb with SVG and VML backends
+- Vector graphic in spirit of React-Art just very limited in features, but under 2kb with SVG backend
 - Router inspired by https://github.com/rackt/react-router/
 - Media detection
 - Focus, Blur, FocusIn, FocusOut events
 - Transparently add vendor prefixes for inline styles
-- Asap (setImmediate) and Promise A+ implementation/polyfill - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
-- Scroll notification (crude solution to non-bubbling onScroll)
-- Drag and Drop - uses browser one except on IE8-9, multi touch, allows animating drag, state of the art as usual
+- Asap (setImmediate) and Promise A+ polyfill - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
+- Scroll notification
+- Drag and Drop - uses browser one except on IE9, multi touch, allows animating drag, state of the art as usual
 
-All extensions + core are 41kb minified (16kb gzip)
+All extensions + core are 37kb minified (14kb gzip)
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:
@@ -59,7 +60,7 @@ Longer term extensions:
 - Prevent exit (Should be integrated with Router)
 - Ajax (should mostly copy Mithril implementation)
 
-Uses NodeJs, NPM, TypeScript 1.5 Alpha, Karma, Jasmine, Coverage
+Uses NodeJs, NPM, TypeScript 1.5 Beta, Karma, Jasmine, Coverage
 
 MIT Licensed
 

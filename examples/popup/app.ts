@@ -1,4 +1,4 @@
-﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.onkey.d.ts"/>
@@ -388,7 +388,7 @@ module PopupApp {
                                 if (v5) {
                                     v6 = true;
                                     b.invalidate();
-                                    return new b.Promise<boolean>((resolve, reject) => {
+                                    return new window.Promise<boolean>((resolve, reject) => {
                                         v6resolver = resolve;
                                     });
                                 }
