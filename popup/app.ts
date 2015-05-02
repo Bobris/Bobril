@@ -388,7 +388,7 @@ module PopupApp {
                                 if (v5) {
                                     v6 = true;
                                     b.invalidate();
-                                    return new b.Promise<boolean>((resolve, reject) => {
+                                    return new window.Promise<boolean>((resolve, reject) => {
                                         v6resolver = resolve;
                                     });
                                 }

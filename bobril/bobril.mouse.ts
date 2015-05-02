@@ -1,6 +1,5 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.mouse.d.ts"/>
-/// <reference path="lib.touch.d.ts"/>
 
 const enum Consts {
     MoveOverIsNotTap = 13,
@@ -388,16 +387,7 @@ const enum Consts {
     }
 
     function decodeButton(ev: MouseEvent): number {
-        if (b.ieVersion() === 8) {
-            switch (ev.button) {
-                case 2: case 6: return 3;
-                case 4: return 2;
-                case 0: return 0;
-                default: return 1;
-            }
-        } else {
-            return ev.which || ev.button;
-        }
+        return ev.which || ev.button;
     }
 
     function createHandler(handlerName: string) {

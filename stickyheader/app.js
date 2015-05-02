@@ -329,14 +329,6 @@ var StickyHeaderApp;
         }
         return res;
     }
-    var ScrollableComp = {
-        postInitDom: function (ctx, me, element) {
-            b.registerScrollable(element);
-        },
-        destroy: function (ctx, me, element) {
-            b.unregisterScrollable(element);
-        }
-    };
     var cols = 20;
     var borderSpacing = 5;
     var borderCollapse = false;
@@ -370,7 +362,6 @@ var StickyHeaderApp;
             {
                 tag: "div",
                 style: { height: "150px", width: "300px", overflow: "auto" },
-                component: ScrollableComp,
                 children: [
                     h("p", "Before table"),
                     stickyTable(borderCollapse, { borderSpacing: borderSpacing + "px", border: "1px solid #000" }, h("tr", range(1, cols).map(function (j) { return headerCell("Header " + j); })), rows()),

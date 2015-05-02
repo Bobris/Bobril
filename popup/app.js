@@ -373,7 +373,7 @@ var PopupApp;
                                 if (v5) {
                                     v6 = true;
                                     b.invalidate();
-                                    return new b.Promise(function (resolve, reject) {
+                                    return new window.Promise(function (resolve, reject) {
                                         v6resolver = resolve;
                                     });
                                 }

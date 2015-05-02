@@ -7,7 +7,7 @@
                     [414, 800, 900], //portrait widths
                     [736, 1280, 1440] //landscape widths
                  ];
-                 
+
     function emitOnMediaChange() {
         media = null;
         b.invalidate();
@@ -16,7 +16,7 @@
 
     var events = ["resize", "orientationchange"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 100, emitOnMediaChange);
+        b.addEvent(events[i], 10, emitOnMediaChange);
 
     function accDeviceBreaks(newBreaks?: number[][]): number[][] {
         if (newBreaks != null) {

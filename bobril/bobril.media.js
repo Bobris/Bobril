@@ -13,7 +13,7 @@
     }
     var events = ["resize", "orientationchange"];
     for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 100, emitOnMediaChange);
+        b.addEvent(events[i], 10, emitOnMediaChange);
     function accDeviceBreaks(newBreaks) {
         if (newBreaks != null) {
             breaks = newBreaks;

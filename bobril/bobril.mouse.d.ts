@@ -3,7 +3,7 @@
 interface IBobrilMouseEvent {
     x: number;
     y: number;
-    // 1 - left (or touch), 2 - middle, 3 - right <- it does not make sense but that's W3C 
+    // 1 - left (or touch), 2 - middle, 3 - right <- it does not make sense but that's W3C
     button: number;
     shift: boolean;
     ctrl: boolean;

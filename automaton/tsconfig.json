@@ -30,6 +30,7 @@
         "./models/transition.ts",
         "./models/vector.ts",
         "../../src/bobril.d.ts",
+        "../../src/bobril.dnd.d.ts",
         "../../src/bobril.focus.d.ts",
         "../../src/bobril.media.d.ts",
         "../../src/bobril.mouse.d.ts",
@@ -39,7 +40,6 @@
         "../../src/bobril.router.d.ts",
         "../../src/bobril.scroll.d.ts",
         "../../src/bobril.swipe.d.ts",
-        "../../src/bobril.vg.d.ts",
-        "../../src/lib.touch.d.ts"
+        "../../src/bobril.vg.d.ts"
     ]
 }

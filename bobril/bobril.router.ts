@@ -24,7 +24,7 @@ interface OutFindMatch {
         return false;
     }
 
-    b.addEvent("hashchange", 100, emitOnHashChange);
+    b.addEvent("hashchange", 10, emitOnHashChange);
 
     var PUSH = 0;
     var REPLACE = 1;

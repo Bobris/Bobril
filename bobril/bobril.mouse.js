@@ -1,6 +1,5 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.mouse.d.ts"/>
-/// <reference path="lib.touch.d.ts"/>
 (function (b, window, document) {
     var ownerCtx = null;
     var invokingOwner;
@@ -349,18 +348,7 @@
         addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
     }
     function decodeButton(ev) {
-        if (b.ieVersion() === 8) {
-            switch (ev.button) {
-                case 2:
-                case 6: return 3;
-                case 4: return 2;
-                case 0: return 0;
-                default: return 1;
-            }
-        }
-        else {
-            return ev.which || ev.button;
-        }
+        return ev.which || ev.button;
     }
     function createHandler(handlerName) {
         return function (ev, target, node) {
