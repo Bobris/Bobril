@@ -33,6 +33,8 @@
         "./bobril.router.ts",
         "./bobril.scroll.d.ts",
         "./bobril.scroll.ts",
+        "./bobril.style.d.ts",
+        "./bobril.style.ts",
         "./bobril.styleshim.ts",
         "./bobril.swipe.d.ts",
         "./bobril.swipe.ts",
