@@ -84,11 +84,11 @@ b = (function (window, document) {
     function ieVersion() {
         return document.documentMode;
     }
-    function linearGradinetStyleShim(newValue, value, name) {
+    function linearGradientStyleShim(style, value, name) {
         var testEl = document.createElement('div').style;
         testEl.cssText = name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase() + ": " + value;
         if (testEl[name].length < 1)
-            newValue[name] = "-webkit-" + value;
+            style[name] = "-webkit-" + value;
     }
     function shimStyle(newValue) {
         var k = Object.keys(newValue);
@@ -96,8 +96,7 @@ b = (function (window, document) {
             var ki = k[i];
             var mi = mapping[ki];
             var vi = newValue[ki];
-            if (("" + newValue[ki]).indexOf("gradient") > -1)
-                linearGradinetStyleShim(newValue, vi, ki);
+            mi = (("" + vi).indexOf("gradient") > -1) ? linearGradientStyleShim : undefined;
             if (vi === undefined)
                 continue; // don't want to map undefined
             if (mi === undefined) {

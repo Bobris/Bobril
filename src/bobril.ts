@@ -100,7 +100,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return (<any>document).documentMode;
     }
 
-    function linearGradinetStyleShim(style: any, value: any, name: string) {
+    function linearGradientStyleShim(style: any, value: any, name: string) {
         var testEl = document.createElement('div').style;
         testEl.cssText = name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase() + ": " + value;
         if (testEl[name].length < 1)
@@ -113,8 +113,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var ki = k[i];
             var mi = mapping[ki];
             var vi = newValue[ki];
-            if(("" + newValue[ki]).indexOf("gradient") > -1)
-                linearGradinetStyleShim(newValue, vi, ki);
+            mi = (("" + vi).indexOf("gradient") > -1) ? linearGradientStyleShim : undefined;
             if (vi === undefined) continue;  // don't want to map undefined
             if (mi === undefined) {
                 if (DEBUG) {
