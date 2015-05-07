@@ -96,7 +96,8 @@ b = (function (window, document) {
             var ki = k[i];
             var mi = mapping[ki];
             var vi = newValue[ki];
-            mi = (("" + vi).indexOf("gradient") > -1) ? linearGradientStyleShim : undefined;
+            if (("" + vi).indexOf("gradient") > -1)
+                mi = linearGradientStyleShim;
             if (vi === undefined)
                 continue; // don't want to map undefined
             if (mi === undefined) {
