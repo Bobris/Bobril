@@ -53,7 +53,7 @@ var OpacityApp;
                     }, {
                         tag: "div",
                         style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
-                        children: { tag: "div", style: { backgroundImage: "linear-gradient(to bottom, #f00, #00f)", border: "2px solid #00F", width: "5em", height: "5em" }, children: "Red top" }
+                        children: { tag: "div", style: { background: "linear-gradient(to bottom,red,blue)", border: "2px solid #00F", width: "5em", height: "5em" }, children: "Red top" }
                     }]
             }
         ];

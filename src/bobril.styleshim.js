@@ -21,6 +21,47 @@
         }
         ;
         b.setStyleShim("background", gradientWebkitter);
-        b.setStyleShim("backgroundImage", gradientWebkitter);
+    }
+    if (b.ieVersion() === 9) {
+        var setStyleShim = b.setStyleShim;
+        function addFilter(s, v) {
+            if (s.zoom == null)
+                s.zoom = "1";
+            var f = s.filter;
+            s.filter = (f == null) ? v : f + " " + v;
+        }
+        var simpleLinearGradient = /^linear\-gradient\(to (.+?),(.+?),(.+?)\)/ig;
+        setStyleShim("background", function (s, v, oldName) {
+            var match = simpleLinearGradient.exec(v);
+            if (match == null)
+                return;
+            var dir = match[1];
+            var color1 = match[2];
+            var color2 = match[3];
+            var tmp;
+            switch (dir) {
+                case "top":
+                    dir = "0";
+                    tmp = color1;
+                    color1 = color2;
+                    color2 = tmp;
+                    break;
+                case "bottom":
+                    dir = "0";
+                    break;
+                case "left":
+                    dir = "1";
+                    tmp = color1;
+                    color1 = color2;
+                    color2 = tmp;
+                    break;
+                case "right":
+                    dir = "1";
+                    break;
+                default: return;
+            }
+            s[oldName] = "none";
+            addFilter(s, "progid:DXImageTransform.Microsoft.gradient(startColorstr='" + color1 + "',endColorstr='" + color2 + "', gradientType='" + dir + "')");
+        });
     }
 })(b);
