@@ -1,15 +1,40 @@
 ﻿/// <reference path="bobril.d.ts"/>
 
 ((b: IBobrilStatic) => {
-    if (b.ieVersion() === 8) {
-        var setStyleShim = b.setStyleShim;
+    var setStyleShim = b.setStyleShim;
 
-        function addFilter(s: any, v: string) {
-            if (s.zoom == null) s.zoom = "1";
-            var f = s.filter;
-            s.filter = (f == null) ? v : f + " " + v;
+    function addFilter(s: any, v: string) {
+        if (s.zoom == null) s.zoom = "1";
+        var f = s.filter;
+        s.filter = (f == null) ? v : f + " " + v;
+    }
+
+    function addGradientFilter(s: any, c1: string, c2: string, dir: string) {
+        addFilter(s, "progid:DXImageTransform.Microsoft.gradient(startColorstr='" + c1 + "',endColorstr='" + c2 + "', gradientType='" + dir + "')");
+    }
+
+    var simpleLinearGradient = /^linear\-gradient\(to (.+?),(.+?),(.+?)\)/ig;
+
+    function ieGradient(s: any, v: any, oldName: string): boolean {
+        var match = simpleLinearGradient.exec(v);
+        if (match == null) return false;
+        var dir = match[1];
+        var color1 = match[2];
+        var color2 = match[3];
+        var tmp: string;
+        switch (dir) {
+            case "top": dir = "0"; tmp = color1; color1 = color2; color2 = tmp; break;
+            case "bottom": dir = "0"; break;
+            case "left": dir = "1"; tmp = color1; color1 = color2; color2 = tmp; break;
+            case "right": dir = "1"; break;
+            default: return false;
         }
+        s[oldName] = "none";
+        addGradientFilter(s, color1, color2, dir);
+        return true;
+    }
 
+    if (b.ieVersion() === 8) {
         setStyleShim("opacity", (s: any, v: any, oldName: string) => {
             s[oldName] = undefined;
             if (v === "") return;
@@ -17,7 +42,7 @@
             addFilter(s, "alpha(opacity=" + (((<number>v) * 100) | 0) + ")");
         });
 
-        function hex2(n: number):string {
+        function hex2(n: number): string {
             if (n <= 0) return "00"; else if (n >= 255) return "ff";
             var r = Math.round(n).toString(16);
             if (r.length < 2) return "0" + r;
@@ -27,11 +52,12 @@
         var rergba = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
 
         setStyleShim("background", (s: any, v: any, oldName: string) => {
+            if (ieGradient(s, v, oldName)) return;
             var match = rergba.exec(v);
             if (match == null) return;
-            var colorstr = hex2(parseFloat(match[4]) * 255) + hex2(parseFloat(match[1])) + hex2(parseFloat(match[2])) + hex2(parseFloat(match[3]));
+            var colorstr = "#" + hex2(parseFloat(match[4]) * 255) + hex2(parseFloat(match[1])) + hex2(parseFloat(match[2])) + hex2(parseFloat(match[3]));
             s[oldName] = "none";
-            addFilter(s, "progid:DXImageTransform.Microsoft.gradient(startColorstr=#" + colorstr + ",endColorstr=#" + colorstr + ")");
+            addGradientFilter(s, colorstr, colorstr, "0");
         });
 
         var deg2radians = Math.PI * 2 / 360;
@@ -70,5 +96,29 @@
             s.left = Math.round((origWidth - (maxX - minX)) * 0.5) + "px";
             s.top = Math.round((origHeight - (maxY - minY)) * 0.5) + "px";
         });
+    } else if (b.ieVersion() === 9) {
+        setStyleShim("background", ieGradient);
+    } else {
+        var teststyle = document.createElement("div").style;
+        teststyle.cssText = "background:-webkit-linear-gradient(top,red,red)";
+        if (teststyle.background.length > 0) {
+            var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/ig;
+            var revdirs = { top: "bottom", bottom: "top", left: "right", right: "left" };
+            function gradientWebkitter(style: any, value: any, name: string) {
+                if (startsWithGradient.test(value)) {
+                    var pos = (<string>value).indexOf("(to ");
+                    if (pos > 0) {
+                        pos += 4;
+                        var posend = (<string>value).indexOf(",", pos);
+                        var dir = (<string>value).slice(pos, posend);
+                        dir = dir.split(" ").map(v=> revdirs[v] || v).join(" ");
+                        value = (<string>value).slice(0, pos - 3) + dir + (<string>value).slice(posend);
+                    }
+                    value = "-webkit-" + value;
+                }
+                style[name] = value;
+            };
+            setStyleShim("background", gradientWebkitter);
+        }
     }
 })(b);

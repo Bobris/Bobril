@@ -1,7 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
 var OpacityApp;
 (function (OpacityApp) {
-    var spacer = { tag: "div", style: { height: "2px" } };
+    var spacer = { tag: "div", style: { height: 2 } };
     var animtype = 0;
     var opacity = 0;
     function radiobox(groupName, value, constant, onChange, content) {
@@ -33,7 +33,6 @@ var OpacityApp;
         var bg = "rgba(0,255,0," + ((opacity === "") ? 1 : opacity.toFixed(3)) + ")";
         return [
             { tag: "h1", children: "Bobril sample for opacity" },
-            // unselectable attribute is for IE8/IE9
             { tag: "p", style: { userSelect: "none" }, children: "This text should not be selectable" },
             radiobox("a", animtype, 0, function (v) { return animtype = v; }, "Solid"), spacer,
             radiobox("a", animtype, 1, function (v) { return animtype = v; }, "Half"), spacer,
@@ -42,7 +41,7 @@ var OpacityApp;
             { tag: "p", children: "Left has opacity:" + opacity + " Right has background:" + bg },
             {
                 tag: "div",
-                style: { background: "#f88", width: "20em", height: "10em" },
+                style: { background: "#f88", width: "30em", height: "10em" },
                 children: [{
                         tag: "div",
                         style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
@@ -51,6 +50,10 @@ var OpacityApp;
                         tag: "div",
                         style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
                         children: { tag: "div", style: { background: bg, border: "2px solid #00F", width: "5em", height: "5em" }, children: "World" }
+                    }, {
+                        tag: "div",
+                        style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
+                        children: { tag: "div", style: { background: "linear-gradient(to bottom,red,blue)", border: "2px solid #00F", width: "5em", height: "5em" }, children: "Red top" }
                     }]
             }
         ];
