@@ -1163,7 +1163,13 @@ b = (function (window, document) {
             }
         }
     }
+    var beforeFrameCallback = function () { };
     var afterFrameCallback = function () { };
+    function setBeforeFrame(callback) {
+        var res = beforeFrameCallback;
+        beforeFrameCallback = callback;
+        return res;
+    }
     function setAfterFrame(callback) {
         var res = afterFrameCallback;
         afterFrameCallback = callback;
@@ -1197,6 +1203,7 @@ b = (function (window, document) {
         frame++;
         uptime = time;
         scheduled = false;
+        beforeFrameCallback();
         var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
@@ -1447,6 +1454,7 @@ b = (function (window, document) {
         addRoot: addRoot,
         removeRoot: removeRoot,
         getRoots: getRoots,
+        setBeforeFrame: setBeforeFrame,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: function () { return uptime; },
@@ -1467,6 +1475,7 @@ b = (function (window, document) {
         broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
-        cloneNode: cloneNode
+        cloneNode: cloneNode,
+        shimStyle: shimStyle
     };
 })(window, document);

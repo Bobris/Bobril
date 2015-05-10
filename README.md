@@ -49,11 +49,13 @@ Features in extensions:
 - Asap (setImmediate) and Promise A+ polyfill - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 - Scroll notification
 - Drag and Drop - uses browser one except on IE9, multi touch, allows animating drag, state of the art as usual
+- Style - create css dynamicaly for even faster speeed
 
-All extensions + core are 37kb minified (14kb gzip)
+All extensions + core are 40kb minified (15kb gzip)
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:
+- Style -> add more features sprites recoloring, build system around
 
 Longer term extensions:
 - New/Deleted Node animation (prototype in Router2 example)

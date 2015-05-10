@@ -49,6 +49,8 @@ interface IBobrilStatic {
     setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;
     // Set callback after frame is done, returns previous callback to allow chaining
     setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
+    // Set callback before frame is rendering, returns previous callback to allow chaining
+    setBeforeFrame(callback: () => void): () => void;
     // shim for [].isArray
     isArray(a: any): boolean;
     // time in miliseconds from start only use from roots factory function
@@ -85,6 +87,8 @@ interface IBobrilStatic {
     postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
     // clone IBobrilNode with attrs, style, children cloned deeply
     cloneNode(node: IBobrilNode): IBobrilNode;
+    // shim inline style (it is used internally)
+    shimStyle(style: any): void;
 }
 
 interface IBobrilAttributes {

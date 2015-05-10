@@ -1148,7 +1148,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
+    var beforeFrameCallback: () => void = () => { };
     var afterFrameCallback: (root: IBobrilCacheChildren) => void = () => { };
+
+    function setBeforeFrame(callback: () => void): () => void {
+        var res = beforeFrameCallback;
+        beforeFrameCallback = callback;
+        return res;
+    }
 
     function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void {
         var res = afterFrameCallback;
@@ -1185,6 +1192,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         frame++;
         uptime = time;
         scheduled = false;
+        beforeFrameCallback();
         var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
@@ -1431,6 +1439,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         addRoot: addRoot,
         removeRoot: removeRoot,
         getRoots: getRoots,
+        setBeforeFrame: setBeforeFrame,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: () => uptime,
@@ -1451,6 +1460,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
-        cloneNode: cloneNode
+        cloneNode: cloneNode,
+        shimStyle: shimStyle
     };
 })(window, document);

@@ -1,4 +1,4 @@
-﻿/// <reference path="jasmine.d.ts"/>
+/// <reference path="jasmine.d.ts"/>
 
 describe("sandbox", () => {
     var root: HTMLDivElement;
@@ -23,7 +23,7 @@ describe("sandbox", () => {
                 pos += 4;
                 var posend = (<string>value).indexOf(",", pos);
                 var dir = (<string>value).slice(pos, posend);
-                dir = dir.split(" ").map(v=> revdirs[v] || v).join(" ");
+                dir = dir.split(" ").map(v=> (<any>revdirs)[v] || v).join(" ");
                 value = (<string>value).slice(0, pos - 3) + dir + (<string>value).slice(posend);
             }
             value = "-webkit-" + value;
@@ -34,6 +34,6 @@ describe("sandbox", () => {
     it("gradient", () => {
         var s = {};
         gradientWebkitter(s, "linear-gradient(to bottom,red,blue)", "background");
-        expect(s["background"]).toBe("-webkit-linear-gradient(top,red,blue)");
+        expect((<any>s)["background"]).toBe("-webkit-linear-gradient(top,red,blue)");
     });
 })
