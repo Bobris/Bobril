@@ -120,9 +120,64 @@
         b.invalidate();
         return nameHint;
     }
-    function sprite(url, width, height, left, top) {
-        // TODO
-        return url;
+    function updateSprite(spDef) {
+        var stDef = allStyles[spDef.styleid];
+        var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
+        b.shimStyle(style);
+        if (spDef.left || spDef.top) {
+            style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
+        }
+        stDef.fullInlStyle = style;
+        stDef.cssStyle = inlineStyleToCssDeclaration(style);
+        rebuildStyles = true;
+        b.invalidate();
+    }
+    function sprite(url, color, width, height, left, top) {
+        var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + (left || 0) + ":" + (top || 0);
+        var spDef = allSprites[key];
+        if (spDef)
+            return spDef.styleid;
+        var styleid = styleDef({ width: 0, height: 0 });
+        spDef = { styleid: styleid, url: url, width: width, height: height, left: left || 0, top: top || 0 };
+        if (width == null || height == null || color != null) {
+            var image = new Image();
+            image.addEventListener("load", function () {
+                if (spDef.width == null)
+                    spDef.width = image.width;
+                if (spDef.height == null)
+                    spDef.height = image.height;
+                if (color != null) {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = spDef.width;
+                    canvas.height = spDef.height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(image, -spDef.left, -spDef.top);
+                    var imgdata = ctx.getImageData(0, 0, spDef.width, spDef.height);
+                    var imgd = imgdata.data;
+                    var cred = parseInt(color.substr(1, 2), 16);
+                    var cgreen = parseInt(color.substr(3, 2), 16);
+                    var cblue = parseInt(color.substr(5, 2), 16);
+                    for (var i = 0; i < imgd.length; i += 4) {
+                        if (imgd[i] === 0x80 && imgd[i + 1] === 0x80 && imgd[i + 2] === 0x80) {
+                            imgd[i] = cred;
+                            imgd[i + 1] = cgreen;
+                            imgd[i + 2] = cblue;
+                        }
+                    }
+                    ctx.putImageData(imgdata, 0, 0);
+                    spDef.url = canvas.toDataURL();
+                    spDef.left = 0;
+                    spDef.top = 0;
+                }
+                updateSprite(spDef);
+            });
+            image.src = url;
+        }
+        else {
+            updateSprite(spDef);
+        }
+        allSprites[key] = spDef;
+        return styleid;
     }
     b.style = style;
     b.styleDef = styleDef;
