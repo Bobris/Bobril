@@ -44,7 +44,7 @@ interface IInternalStyle {
             var styleElement = document.createElement('style');
             styleElement.type = 'text/css';
             if ((<any>styleElement).styleSheet) {
-                (<any>styleElement).styleSheet.cssText = style;
+                (<any>styleElement).styleSheet.cssText = stylestr;
             } else {
                 styleElement.appendChild(document.createTextNode(stylestr));
             }
@@ -63,7 +63,9 @@ interface IInternalStyle {
     }
 
     function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, any] {
-        if (typeof s === "string") {
+        if (typeof s === "boolean") {
+            //skip
+        } else if (typeof s === "string") {
             var sd = allStyles[s];
             if (inlineStyle != null) {
                 inlineStyle = b.assign(inlineStyle, sd.fullInlStyle);
@@ -107,7 +109,9 @@ interface IInternalStyle {
     function inlineStyleToCssDeclaration(style: any): string {
         var res = "";
         for (var key in style) {
-            res += hyphenateStyle(key) + ":" + style[key] + ";";
+            var v = style[key];
+            if (v === undefined) continue;
+            res += hyphenateStyle(key) + ":" + v + ";";
         }
         return res;
     }
@@ -122,8 +126,30 @@ interface IInternalStyle {
         } else {
             nameHint = "b-" + globalCounter++;
         }
+        var extractedInlStyle: any = null;
+        if (style["pointerEvents"]) {
+            extractedInlStyle = Object.create(null);
+            extractedInlStyle["pointerEvents"] = style["pointerEvents"];
+        }
+        if (b.ieVersion() === 9) {
+            if (style["userSelect"]) {
+                if (extractedInlStyle == null)
+                    extractedInlStyle = Object.create(null);
+                extractedInlStyle["userSelect"] = style["userSelect"];
+                style["userSelect"] = undefined;
+            }
+        }
         b.shimStyle(style);
-        allStyles[nameHint] = { name: nameHint, fullInlStyle: style, inlStyle: null, cssStyle: inlineStyleToCssDeclaration(style), pseudo: null };
+        var processedPseudo: { [name: string]: string } = null;
+        if (pseudo) {
+            processedPseudo = Object.create(null);
+            for (var key in pseudo) {
+                var ps = pseudo[key];
+                b.shimStyle(ps);
+                processedPseudo[key] = inlineStyleToCssDeclaration(ps);
+            }
+        }
+        allStyles[nameHint] = { name: nameHint, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
         rebuildStyles = true;
         b.invalidate();
         return nameHint;
