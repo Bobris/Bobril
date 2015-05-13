@@ -113,6 +113,7 @@ interface IInternalStyle {
             if (v === undefined) continue;
             res += hyphenateStyle(key) + ":" + v + ";";
         }
+        res = res.slice(0,-1);
         return res;
     }
 
