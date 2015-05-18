@@ -7,7 +7,7 @@ interface IRoute {
     name?: string;
     url?: string;
     data?: Object;
-    handler: IBobrilComponent;
+    handler: IRouteHandler;
     keyBuilder?: (params: Params) => string;
     children?: Array<IRoute>;
     isDefault?: boolean;
@@ -26,25 +26,20 @@ interface OutFindMatch {
 
     b.addEvent("hashchange", 10, emitOnHashChange);
 
-    var PUSH = 0;
-    var REPLACE = 1;
-    var POP = 2;
+    var myAppHistoryDeepness = 0;
 
-    var actionType: number;
-
-    function push(path: string) {
-        actionType = PUSH;
+    function push(path: string): void {
         window.location.hash = path;
+        myAppHistoryDeepness++;
     }
 
     function replace(path: string) {
-        actionType = REPLACE;
         var l = window.location;
         l.replace(l.pathname + l.search + "#" + path);
     }
 
     function pop() {
-        actionType = POP;
+        myAppHistoryDeepness--;
         window.history.back();
     }
 
@@ -71,7 +66,7 @@ interface OutFindMatch {
     function compilePattern(pattern: string) {
         if (!(pattern in <any>compiledPatterns)) {
             var paramNames: Array<string> = [];
-            var source = pattern.replace(paramCompileMatcher, (match:string, paramName:string) => {
+            var source = pattern.replace(paramCompileMatcher, (match: string, paramName: string) => {
                 if (paramName) {
                     paramNames.push(paramName);
                     return "([^/?#]+)";
@@ -123,7 +118,7 @@ interface OutFindMatch {
 
         var splatIndex = 0;
 
-        return pattern.replace(paramInjectMatcher, (match:string, paramName:string) => {
+        return pattern.replace(paramInjectMatcher, (match: string, paramName: string) => {
             paramName = paramName || "splat";
 
             // If param is optional don't check for existence
@@ -198,6 +193,11 @@ interface OutFindMatch {
 
     var activeRoutes: IRoute[];
     var activeParams: Params;
+    var urlRegex = /\:|\//g;
+
+    function isInApp(name: string): boolean {
+        return !urlRegex.test(name);
+    }
 
     function isAbsolute(url: string): boolean {
         return url[0] === "/";
@@ -222,7 +222,15 @@ interface OutFindMatch {
                     b.assign(data, otherdata);
                     data.activeRouteHandler = fninner;
                     data.routeParams = routeParams;
-                    return { key: r.keyBuilder ? r.keyBuilder(routeParams): undefined, data: data, component: r.handler };
+                    var handler = r.handler;
+                    var res: IBobrilNode;
+                    if (typeof handler === "function") {
+                        res = (<(data: any) => IBobrilNode>handler)(data);
+                    } else {
+                        res = { key: undefined, data, component: handler };
+                    }
+                    if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
+                    return res;
                 }
             })(fn, matches[i], activeParams);
         }
@@ -297,17 +305,24 @@ interface OutFindMatch {
         return false;
     }
 
+    function urlOfRoute(name: string, params?: Params): string {
+        if (isInApp(name)) {
+            var r = nameRouteMap[name];
+            return injectParams(r.url, params);
+        }
+        return name;
+    }
+
     function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
-        var r = nameRouteMap[name];
-        var url = injectParams(r.url, params);
         node.data = node.data || {};
         node.data.active = isActive(name, params);
-        node.data.url = url;
+        node.data.url = urlOfRoute(name, params);
+        node.data.transition = createRedirectPush(name, params);
         b.postEnhance(node, {
             render(ctx: any, me: IBobrilNode) {
                 me.attrs = me.attrs || {};
                 if (me.tag === "a") {
-                    me.attrs.href = "#" + url;
+                    me.attrs.href = "#" + ctx.data.url;
                 }
                 me.className = me.className || "";
                 if (ctx.data.active) {
@@ -315,16 +330,66 @@ interface OutFindMatch {
                 }
             },
             onClick(ctx: any) {
-                push(ctx.data.url);
+                runTransition(ctx.data.transition);
                 return true;
             }
         });
         return node;
     }
 
+    function createRedirectPush(name: string, params?: Params): IRouteTransition {
+        return {
+            inApp: isInApp(name),
+            type: IRouteTransitionType.Push,
+            name: name,
+            params: params || {}
+        }
+    }
+
+    function createRedirectReplace(name: string, params?: Params): IRouteTransition {
+        return {
+            inApp: isInApp(name),
+            type: IRouteTransitionType.Replace,
+            name: name,
+            params: params || {}
+        }
+    }
+
+    function createBackTransition(): IRouteTransition {
+        return {
+            inApp: myAppHistoryDeepness > 0,
+            type: IRouteTransitionType.Pop,
+            name: null,
+            params: {}
+        }
+    }
+
+    function runTransition(transition: IRouteTransition): void {
+        // solve canDeactivates
+        // solve canActivates
+        // do change
+        switch (transition.type) {
+            case IRouteTransitionType.Push:
+                push(urlOfRoute(transition.name, transition.params));
+                break;
+            case IRouteTransitionType.Replace:
+                replace(urlOfRoute(transition.name, transition.params));
+                break;
+            case IRouteTransitionType.Pop:
+                pop();
+                break;
+        }
+    }
+
     b.routes = routes;
     b.route = route;
     b.routeDefault = routeDefault;
     b.routeNotFound = routeNotFound;
+    b.isRouteActive = isActive;
+    b.urlOfRoute = urlOfRoute;
+    b.createRedirectPush = createRedirectPush;
+    b.createRedirectReplace = createRedirectReplace;
+    b.createBackTransition = createBackTransition;
+    b.runTransition = runTransition;
     b.link = link;
 })(b, window);

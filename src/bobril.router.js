@@ -6,21 +6,17 @@
         return false;
     }
     b.addEvent("hashchange", 10, emitOnHashChange);
-    var PUSH = 0;
-    var REPLACE = 1;
-    var POP = 2;
-    var actionType;
+    var myAppHistoryDeepness = 0;
     function push(path) {
-        actionType = PUSH;
         window.location.hash = path;
+        myAppHistoryDeepness++;
     }
     function replace(path) {
-        actionType = REPLACE;
         var l = window.location;
         l.replace(l.pathname + l.search + "#" + path);
     }
     function pop() {
-        actionType = POP;
+        myAppHistoryDeepness--;
         window.history.back();
     }
     var rootRoutes;
@@ -157,6 +153,10 @@
     ;
     var activeRoutes;
     var activeParams;
+    var urlRegex = /\:|\//g;
+    function isInApp(name) {
+        return !urlRegex.test(name);
+    }
     function isAbsolute(url) {
         return url[0] === "/";
     }
@@ -179,7 +179,17 @@
                     b.assign(data, otherdata);
                     data.activeRouteHandler = fninner;
                     data.routeParams = routeParams;
-                    return { key: r.keyBuilder ? r.keyBuilder(routeParams) : undefined, data: data, component: r.handler };
+                    var handler = r.handler;
+                    var res;
+                    if (typeof handler === "function") {
+                        res = handler(data);
+                    }
+                    else {
+                        res = { key: undefined, data: data, component: handler };
+                    }
+                    if (r.keyBuilder)
+                        res.key = r.keyBuilder(routeParams);
+                    return res;
                 };
             })(fn, matches[i], activeParams);
         }
@@ -249,17 +259,23 @@
         }
         return false;
     }
+    function urlOfRoute(name, params) {
+        if (isInApp(name)) {
+            var r = nameRouteMap[name];
+            return injectParams(r.url, params);
+        }
+        return name;
+    }
     function link(node, name, params) {
-        var r = nameRouteMap[name];
-        var url = injectParams(r.url, params);
         node.data = node.data || {};
         node.data.active = isActive(name, params);
-        node.data.url = url;
+        node.data.url = urlOfRoute(name, params);
+        node.data.transition = createRedirectPush(name, params);
         b.postEnhance(node, {
             render: function (ctx, me) {
                 me.attrs = me.attrs || {};
                 if (me.tag === "a") {
-                    me.attrs.href = "#" + url;
+                    me.attrs.href = "#" + ctx.data.url;
                 }
                 me.className = me.className || "";
                 if (ctx.data.active) {
@@ -267,15 +283,61 @@
                 }
             },
             onClick: function (ctx) {
-                push(ctx.data.url);
+                runTransition(ctx.data.transition);
                 return true;
             }
         });
         return node;
     }
+    function createRedirectPush(name, params) {
+        return {
+            inApp: isInApp(name),
+            type: 0 /* Push */,
+            name: name,
+            params: params || {}
+        };
+    }
+    function createRedirectReplace(name, params) {
+        return {
+            inApp: isInApp(name),
+            type: 1 /* Replace */,
+            name: name,
+            params: params || {}
+        };
+    }
+    function createBackTransition() {
+        return {
+            inApp: myAppHistoryDeepness > 0,
+            type: 2 /* Pop */,
+            name: null,
+            params: {}
+        };
+    }
+    function runTransition(transition) {
+        // solve canDeactivates
+        // solve canActivates
+        // do change
+        switch (transition.type) {
+            case 0 /* Push */:
+                push(urlOfRoute(transition.name, transition.params));
+                break;
+            case 1 /* Replace */:
+                replace(urlOfRoute(transition.name, transition.params));
+                break;
+            case 2 /* Pop */:
+                pop();
+                break;
+        }
+    }
     b.routes = routes;
     b.route = route;
     b.routeDefault = routeDefault;
     b.routeNotFound = routeNotFound;
+    b.isRouteActive = isActive;
+    b.urlOfRoute = urlOfRoute;
+    b.createRedirectPush = createRedirectPush;
+    b.createRedirectReplace = createRedirectReplace;
+    b.createBackTransition = createBackTransition;
+    b.runTransition = runTransition;
     b.link = link;
 })(b, window);

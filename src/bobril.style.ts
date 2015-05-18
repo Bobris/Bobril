@@ -184,7 +184,7 @@ interface IInternalStyle {
                     var canvas = document.createElement("canvas");
                     canvas.width = spDef.width;
                     canvas.height = spDef.height;
-                    var ctx = canvas.getContext("2d");
+                    var ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
                     ctx.drawImage(image, -spDef.left, -spDef.top);
                     var imgdata = ctx.getImageData(0, 0, spDef.width, spDef.height);
                     var imgd = imgdata.data;
