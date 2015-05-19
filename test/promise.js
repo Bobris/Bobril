@@ -93,18 +93,6 @@ function delay(time, value) {
     });
 }
 describe("Promise.all", function () {
-    it("zeroParams", function (done) {
-        Promise.all().then(function (p) {
-            expect(p).toEqual([]);
-            done();
-        });
-    });
-    it("someNonPromiseParams", function (done) {
-        Promise.all(1, "A", true).then(function (p) {
-            expect(p).toEqual([1, "A", true]);
-            done();
-        });
-    });
     it("someNonPromiseArrayParam", function (done) {
         Promise.all([1, "A", true]).then(function (p) {
             expect(p).toEqual([1, "A", true]);
@@ -119,7 +107,7 @@ describe("Promise.all", function () {
     });
     it("TimerPromiseParams", function (done) {
         var start = b.now();
-        Promise.all(delay(100, 1), delay(300, "A"), delay(200, true)).then(function (p) {
+        Promise.all([delay(100, 1), delay(300, "A"), delay(200, true)]).then(function (p) {
             expect(p).toEqual([1, "A", true]);
             expect(b.now() - start).toBeLessThan(400);
             done();
@@ -127,7 +115,7 @@ describe("Promise.all", function () {
     });
     it("TimerPromiseParamsOneFail", function (done) {
         var start = b.now();
-        Promise.all(delay(100, 1), Promise.reject("OK"), delay(200, true)).then(null, function (err) {
+        Promise.all([delay(100, 1), Promise.reject("OK"), delay(200, true)]).then(null, function (err) {
             expect(err).toEqual("OK");
             expect(b.now() - start).toBeLessThan(100);
             done();

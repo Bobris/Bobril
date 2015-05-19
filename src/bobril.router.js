@@ -1,5 +1,6 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.router.d.ts"/>
+/// <reference path="bobril.promise.d.ts"/>
 (function (b, window) {
     function emitOnHashChange() {
         b.invalidate();
@@ -152,7 +153,9 @@
     }
     ;
     var activeRoutes;
+    var futureRoutes;
     var activeParams;
+    var fakeCtxOfRefs = {};
     var urlRegex = /\:|\//g;
     function isInApp(name) {
         return !urlRegex.test(name);
@@ -171,6 +174,15 @@
         var matches = findMatch(path, rootRoutes, out) || [];
         activeRoutes = matches;
         activeParams = out.p;
+        if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
+            currentTransition.inApp = true;
+            if (currentTransition.name == null && activeRoutes.length > 0) {
+                currentTransition.name = activeRoutes[0].name;
+                currentTransition.params = activeParams;
+                nextIteration();
+            }
+            return null;
+        }
         var fn = noop;
         for (var i = 0; i < matches.length; i++) {
             (function (fninner, r, routeParams) {
@@ -185,10 +197,11 @@
                         res = handler(data);
                     }
                     else {
-                        res = { key: undefined, data: data, component: handler };
+                        res = { key: undefined, ref: undefined, data: data, component: handler };
                     }
                     if (r.keyBuilder)
                         res.key = r.keyBuilder(routeParams);
+                    res.ref = [fakeCtxOfRefs, r.name];
                     return res;
                 };
             })(fn, matches[i], activeParams);
@@ -313,10 +326,10 @@
             params: {}
         };
     }
-    function runTransition(transition) {
-        // solve canDeactivates
-        // solve canActivates
-        // do change
+    var currentTransition = null;
+    var nextTransition = null;
+    var transitionState = 0;
+    function doAction(transition) {
         switch (transition.type) {
             case 0 /* Push */:
                 push(urlOfRoute(transition.name, transition.params));
@@ -328,6 +341,105 @@
                 pop();
                 break;
         }
+    }
+    function nextIteration() {
+        while (true) {
+            if (transitionState >= 0 && transitionState < activeRoutes.length) {
+                var rname = activeRoutes[transitionState].name;
+                transitionState++;
+                var node = fakeCtxOfRefs.refs[rname];
+                if (!node)
+                    continue;
+                var comp = node.component;
+                if (!comp)
+                    continue;
+                var fn = comp.canDeactivate;
+                if (!fn)
+                    continue;
+                var res = fn.call(comp, node.ctx, currentTransition);
+                Promise.resolve(res).then(function (resp) {
+                    if (resp === true) { }
+                    else if (resp === false) {
+                        currentTransition = null;
+                        nextTransition = null;
+                        return;
+                    }
+                    else {
+                        nextTransition = resp;
+                    }
+                    nextIteration();
+                }).catch(console.log.bind(console));
+                return;
+            }
+            else if (transitionState == activeRoutes.length) {
+                if (nextTransition) {
+                    currentTransition = nextTransition;
+                    nextTransition = null;
+                }
+                transitionState = -1;
+                if (!currentTransition.inApp || currentTransition.type === 2 /* Pop */) {
+                    doAction(currentTransition);
+                    return;
+                }
+            }
+            else if (transitionState === -1) {
+                var out = { p: {} };
+                var matches = findMatch(urlOfRoute(currentTransition.name, currentTransition.params), rootRoutes, out) || [];
+                futureRoutes = matches;
+                transitionState = -2;
+            }
+            else if (transitionState === -2 - futureRoutes.length) {
+                if (nextTransition) {
+                    transitionState = activeRoutes.length;
+                    continue;
+                }
+                if (currentTransition.type !== 2 /* Pop */) {
+                    doAction(currentTransition);
+                }
+                currentTransition = null;
+                return;
+            }
+            else {
+                if (nextTransition) {
+                    transitionState = activeRoutes.length;
+                    continue;
+                }
+                var rname = futureRoutes[futureRoutes.length + 1 + transitionState].name;
+                transitionState--;
+                var node = fakeCtxOfRefs.refs[rname];
+                if (!node)
+                    continue;
+                var comp = node.component;
+                if (!comp)
+                    continue;
+                var fn = comp.canActivate;
+                if (!fn)
+                    continue;
+                var res = fn.call(comp, currentTransition);
+                Promise.resolve(res).then(function (resp) {
+                    if (resp === true) { }
+                    else if (resp === false) {
+                        currentTransition = null;
+                        nextTransition = null;
+                        return;
+                    }
+                    else {
+                        nextTransition = resp;
+                    }
+                    nextIteration();
+                }).catch(console.log.bind(console));
+                return;
+            }
+        }
+    }
+    function runTransition(transition) {
+        if (currentTransition != null) {
+            nextTransition = transition;
+            return;
+        }
+        currentTransition = transition;
+        transitionState = 0;
+        nextIteration();
     }
     b.routes = routes;
     b.route = route;

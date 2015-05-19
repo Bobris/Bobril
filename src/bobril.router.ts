@@ -1,5 +1,6 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.router.d.ts"/>
+/// <reference path="bobril.promise.d.ts"/>
 
 // Heavily inspired by https://github.com/rackt/react-router/ Thanks to authors
 
@@ -192,7 +193,9 @@ interface OutFindMatch {
     };
 
     var activeRoutes: IRoute[];
+    var futureRoutes: IRoute[];
     var activeParams: Params;
+    var fakeCtxOfRefs: IBobrilCtx = {};
     var urlRegex = /\:|\//g;
 
     function isInApp(name: string): boolean {
@@ -214,6 +217,15 @@ interface OutFindMatch {
         var matches = findMatch(path, rootRoutes, out) || [];
         activeRoutes = matches;
         activeParams = out.p;
+        if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
+            currentTransition.inApp = true;
+            if (currentTransition.name == null && activeRoutes.length > 0) {
+                currentTransition.name = activeRoutes[0].name;
+                currentTransition.params = activeParams;
+                nextIteration();
+            }
+            return null;
+        }
         var fn: (otherdata?: any) => IBobrilNode = noop;
         for (var i = 0; i < matches.length; i++) {
             ((fninner: Function, r: IRoute, routeParams: Params) => {
@@ -227,9 +239,10 @@ interface OutFindMatch {
                     if (typeof handler === "function") {
                         res = (<(data: any) => IBobrilNode>handler)(data);
                     } else {
-                        res = { key: undefined, data, component: handler };
+                        res = { key: undefined, ref: undefined, data, component: handler };
                     }
                     if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
+                    res.ref = [fakeCtxOfRefs, r.name];
                     return res;
                 }
             })(fn, matches[i], activeParams);
@@ -340,7 +353,7 @@ interface OutFindMatch {
     function createRedirectPush(name: string, params?: Params): IRouteTransition {
         return {
             inApp: isInApp(name),
-            type: IRouteTransitionType.Push,
+            type: RouteTransitionType.Push,
             name: name,
             params: params || {}
         }
@@ -349,7 +362,7 @@ interface OutFindMatch {
     function createRedirectReplace(name: string, params?: Params): IRouteTransition {
         return {
             inApp: isInApp(name),
-            type: IRouteTransitionType.Replace,
+            type: RouteTransitionType.Replace,
             name: name,
             params: params || {}
         }
@@ -358,29 +371,117 @@ interface OutFindMatch {
     function createBackTransition(): IRouteTransition {
         return {
             inApp: myAppHistoryDeepness > 0,
-            type: IRouteTransitionType.Pop,
+            type: RouteTransitionType.Pop,
             name: null,
             params: {}
         }
     }
 
-    function runTransition(transition: IRouteTransition): void {
-        // solve canDeactivates
-        // solve canActivates
-        // do change
+    var currentTransition: IRouteTransition = null;
+    var nextTransition: IRouteTransition = null;
+    var transitionState: number = 0;
+
+    function doAction(transition: IRouteTransition) {
         switch (transition.type) {
-            case IRouteTransitionType.Push:
+            case RouteTransitionType.Push:
                 push(urlOfRoute(transition.name, transition.params));
                 break;
-            case IRouteTransitionType.Replace:
+            case RouteTransitionType.Replace:
                 replace(urlOfRoute(transition.name, transition.params));
                 break;
-            case IRouteTransitionType.Pop:
+            case RouteTransitionType.Pop:
                 pop();
                 break;
         }
     }
 
+    function nextIteration(): void {
+        while (true) {
+            if (transitionState >= 0 && transitionState < activeRoutes.length) {
+                let rname = activeRoutes[transitionState].name;
+                transitionState++;
+                let node = fakeCtxOfRefs.refs[rname];
+                if (!node) continue;
+                let comp = node.component;
+                if (!comp) continue;
+                let fn = comp.canDeactivate;
+                if (!fn) continue;
+                let res = fn.call(comp, node.ctx, currentTransition);
+                Promise.resolve(res).then((resp) => {
+                    if (resp === true) { }
+                    else if (resp === false) {
+                        currentTransition = null; nextTransition = null;
+                        return;
+                    } else {
+                        nextTransition = resp;
+                    }
+                    nextIteration();
+                }).catch(console.log.bind(console));
+                return;
+            } else if (transitionState == activeRoutes.length) {
+                if (nextTransition) {
+                    currentTransition = nextTransition;
+                    nextTransition = null;
+                }
+                transitionState = -1;
+                if (!currentTransition.inApp || currentTransition.type === RouteTransitionType.Pop) {
+                    doAction(currentTransition);
+                    return;
+                }
+            } else if (transitionState === -1) {
+                var out: OutFindMatch = { p: {} };
+                var matches = findMatch(urlOfRoute(currentTransition.name, currentTransition.params), rootRoutes, out) || [];
+                futureRoutes = matches;
+                transitionState = -2;
+            } else if (transitionState === -2 - futureRoutes.length) {
+                if (nextTransition) {
+                    transitionState = activeRoutes.length;
+                    continue;
+                }
+                if (currentTransition.type !== RouteTransitionType.Pop) {
+                    doAction(currentTransition);
+                }
+                currentTransition = null;
+                return;
+            } else {
+                if (nextTransition) {
+                    transitionState = activeRoutes.length;
+                    continue;
+                }
+                let rname = futureRoutes[futureRoutes.length + 1 + transitionState].name;
+                transitionState--;
+                let node = fakeCtxOfRefs.refs[rname];
+                if (!node) continue;
+                let comp = node.component;
+                if (!comp) continue;
+                let fn = comp.canActivate;
+                if (!fn) continue;
+                let res = fn.call(comp, currentTransition);
+                Promise.resolve(res).then((resp) => {
+                    if (resp === true) { }
+                    else if (resp === false) {
+                        currentTransition = null; nextTransition = null;
+                        return;
+                    } else {
+                        nextTransition = resp;
+                    }
+                    nextIteration();
+                }).catch(console.log.bind(console));
+                return;
+            }
+        }
+    }
+
+    function runTransition(transition: IRouteTransition): void {
+        if (currentTransition != null) {
+            nextTransition = transition;
+            return;
+        }
+        currentTransition = transition;
+        transitionState = 0;
+        nextIteration();
+    }
+    
     b.routes = routes;
     b.route = route;
     b.routeDefault = routeDefault;

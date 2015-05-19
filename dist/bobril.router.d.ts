@@ -23,7 +23,7 @@ interface Params {
 interface IRoute {
 }
 
-declare const enum IRouteTransitionType {
+declare const enum RouteTransitionType {
     Push,
     Replace,
     Pop
@@ -31,7 +31,7 @@ declare const enum IRouteTransitionType {
 
 interface IRouteTransition {
     inApp: boolean;
-    type: IRouteTransitionType;
+    type: RouteTransitionType;
     name: string;
     params: Params;
 }
@@ -46,6 +46,7 @@ interface IBobrilComponent {
 declare type IRouteHandler = IBobrilComponent | ((data: any) => IBobrilNode);
 
 interface IRouteConfig {
+    // name cannot contain ":" or "/"
     name?: string;
     url?: string;
     data?: Object;

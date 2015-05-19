@@ -100,20 +100,6 @@ function delay(time: number, value: any) {
 }
 
 describe("Promise.all", () => {
-    it("zeroParams", (done) => {
-        Promise.all().then(p => {
-            expect(p).toEqual(<any>[]);
-            done();
-        });
-    });
-
-    it("someNonPromiseParams", (done) => {
-        Promise.all(1, "A", true).then(p => {
-            expect(p).toEqual(<any>[1, "A", true]);
-            done();
-        });
-    });
-
     it("someNonPromiseArrayParam", (done) => {
         Promise.all([1, "A", true]).then(p => {
             expect(p).toEqual(<any>[1, "A", true]);
@@ -122,7 +108,7 @@ describe("Promise.all", () => {
     });
 
     it("PromiseParam", (done) => {
-        Promise.all([1, Promise.resolve("A"), true]).then(p => {
+        Promise.all<any>([1, Promise.resolve("A"), true]).then(p => {
             expect(p).toEqual(<any>[1, "A", true]);
             done();
         });
@@ -130,7 +116,7 @@ describe("Promise.all", () => {
 
     it("TimerPromiseParams", (done) => {
         var start = b.now();
-        Promise.all(delay(100, 1), delay(300, "A"), delay(200, true)).then(p => {
+        Promise.all<any>([delay(100, 1), delay(300, "A"), delay(200, true)]).then(p => {
             expect(p).toEqual(<any>[1, "A", true]);
             expect(b.now() - start).toBeLessThan(400);
             done();
@@ -139,7 +125,7 @@ describe("Promise.all", () => {
 
     it("TimerPromiseParamsOneFail", (done) => {
         var start = b.now();
-        Promise.all(delay(100, 1), Promise.reject("OK"), delay(200, true)).then(null,  (err : any) => {
+        Promise.all<any>([delay(100, 1), Promise.reject("OK"), delay(200, true)]).then(null,  (err : any) => {
             expect(err).toEqual("OK");
             expect(b.now() - start).toBeLessThan(100);
             done();
