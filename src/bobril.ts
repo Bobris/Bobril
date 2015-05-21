@@ -10,7 +10,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     var isArray = Array.isArray;
-    var objectKeys = Object.keys;
 
     function createTextNode(content: string): Text {
         return document.createTextNode(content);
@@ -1117,7 +1116,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (eventsCaptured)
             return;
         eventsCaptured = true;
-        var eventNames = objectKeys(registryEvents);
+        var eventNames = Object.keys(registryEvents);
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
             var arr = registryEvents[eventName];
