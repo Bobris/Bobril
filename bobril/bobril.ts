@@ -10,7 +10,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     var isArray = Array.isArray;
-    var objectKeys = Object.keys;
 
     function createTextNode(content: string): Text {
         return document.createTextNode(content);
@@ -241,8 +240,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return cfg;
     }
 
-    function setRef(ref: [IBobrilCtx, string], value: IBobrilCacheNode) {
+    function setRef(ref: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
         if (ref == null) return;
+        if (typeof ref === "function") {
+            (<(node: IBobrilCacheNode) => void>ref)(value);
+            return;
+        }
         var ctx = ref[0];
         var refs = ctx.refs;
         if (!refs) {
@@ -582,7 +585,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         if (DEBUG) {
             if (!((n.ref == null && c.ref == null) ||
-                ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" || n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
                 if (window.console && console.warn) console.warn("ref changed in child in update");
             }
         }
@@ -1117,7 +1120,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (eventsCaptured)
             return;
         eventsCaptured = true;
-        var eventNames = objectKeys(registryEvents);
+        var eventNames = Object.keys(registryEvents);
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
             var arr = registryEvents[eventName];
@@ -1148,7 +1151,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
     }
 
+    var beforeFrameCallback: () => void = () => { };
     var afterFrameCallback: (root: IBobrilCacheChildren) => void = () => { };
+
+    function setBeforeFrame(callback: () => void): () => void {
+        var res = beforeFrameCallback;
+        beforeFrameCallback = callback;
+        return res;
+    }
 
     function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void {
         var res = afterFrameCallback;
@@ -1185,6 +1195,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         frame++;
         uptime = time;
         scheduled = false;
+        beforeFrameCallback();
         var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
@@ -1431,6 +1442,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         addRoot: addRoot,
         removeRoot: removeRoot,
         getRoots: getRoots,
+        setBeforeFrame: setBeforeFrame,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: () => uptime,
@@ -1451,6 +1463,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
-        cloneNode: cloneNode
+        cloneNode: cloneNode,
+        shimStyle: shimStyle
     };
 })(window, document);

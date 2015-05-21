@@ -1,0 +1,58 @@
+/* used from http://webdesign.about.com/od/examples/l/bltables.htm */
+
+table { margin: 1em; border-collapse: collapse; }
+td, th { padding: .3em; border: 1px #ccc solid; }
+thead { background: #fc9; }
+
+
+/* inspired by http://css.maxdesign.com.au/listutorial/horizontal_master.htm */
+.paginatorContainer ul
+{
+margin: 1em;
+padding: 0;
+list-style-type: none;
+
+}
+
+.paginatorContainer ul li { display: inline; }
+
+.paginatorContainer ul li a
+{
+text-decoration: none;
+padding: .2em 1em;
+color: #fff;
+background-color: #969696;
+}
+
+.paginatorContainer ul li a:hover
+{
+color: #fff;
+background-color: #b4bdc2;
+}
+
+.paginatorContainer ul li a.active
+{
+color: #fff;
+background-color: #b4bdc2;
+}
+
+/*  taken from http://davidwalsh.name/css-triangles all code on the page is MIT license */
+div.arrow-up {
+	width: 0;
+	height: 0;
+	border-left: 5px solid transparent;  /* left arrow slant */
+	border-right: 5px solid transparent; /* right arrow slant */
+	border-bottom: 5px solid #2f2f2f; /* bottom, add background color here */
+	font-size: 0;
+	line-height: 0;
+}
+
+div.arrow-down {
+	width: 0;
+	height: 0;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 5px solid #2f2f2f;
+	font-size: 0;
+	line-height: 0;
+}

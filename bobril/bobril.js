@@ -7,7 +7,6 @@ b = (function (window, document) {
             throw Error(messageIfFalse || "assertion failed");
     }
     var isArray = Array.isArray;
-    var objectKeys = Object.keys;
     function createTextNode(content) {
         return document.createTextNode(content);
     }
@@ -239,6 +238,10 @@ b = (function (window, document) {
     function setRef(ref, value) {
         if (ref == null)
             return;
+        if (typeof ref === "function") {
+            ref(value);
+            return;
+        }
         var ctx = ref[0];
         var refs = ctx.refs;
         if (!refs) {
@@ -588,7 +591,7 @@ b = (function (window, document) {
         }
         if (DEBUG) {
             if (!((n.ref == null && c.ref == null) ||
-                ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" || n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
                 if (window.console && console.warn)
                     console.warn("ref changed in child in update");
             }
@@ -1132,7 +1135,7 @@ b = (function (window, document) {
         if (eventsCaptured)
             return;
         eventsCaptured = true;
-        var eventNames = objectKeys(registryEvents);
+        var eventNames = Object.keys(registryEvents);
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
             var arr = registryEvents[eventName];
@@ -1163,7 +1166,13 @@ b = (function (window, document) {
             }
         }
     }
+    var beforeFrameCallback = function () { };
     var afterFrameCallback = function () { };
+    function setBeforeFrame(callback) {
+        var res = beforeFrameCallback;
+        beforeFrameCallback = callback;
+        return res;
+    }
     function setAfterFrame(callback) {
         var res = afterFrameCallback;
         afterFrameCallback = callback;
@@ -1197,6 +1206,7 @@ b = (function (window, document) {
         frame++;
         uptime = time;
         scheduled = false;
+        beforeFrameCallback();
         var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
@@ -1447,6 +1457,7 @@ b = (function (window, document) {
         addRoot: addRoot,
         removeRoot: removeRoot,
         getRoots: getRoots,
+        setBeforeFrame: setBeforeFrame,
         setAfterFrame: setAfterFrame,
         isArray: isArray,
         uptime: function () { return uptime; },
@@ -1467,6 +1478,7 @@ b = (function (window, document) {
         broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
-        cloneNode: cloneNode
+        cloneNode: cloneNode,
+        shimStyle: shimStyle
     };
 })(window, document);

@@ -41,7 +41,7 @@ var OpacityApp;
             { tag: "p", children: "Left has opacity:" + opacity + " Right has background:" + bg },
             {
                 tag: "div",
-                style: { background: "#f88", width: "20em", height: "10em" },
+                style: { background: "#f88", width: "30em", height: "10em" },
                 children: [{
                         tag: "div",
                         style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
@@ -50,6 +50,10 @@ var OpacityApp;
                         tag: "div",
                         style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
                         children: { tag: "div", style: { background: bg, border: "2px solid #00F", width: "5em", height: "5em" }, children: "World" }
+                    }, {
+                        tag: "div",
+                        style: { display: "inline-block", width: "5em", height: "5em", "padding": "2.5em" },
+                        children: { tag: "div", style: { background: "linear-gradient(to bottom,red,blue)", border: "2px solid #00F", width: "5em", height: "5em" }, children: "Red top" }
                     }]
             }
         ];

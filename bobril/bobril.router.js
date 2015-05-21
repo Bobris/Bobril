@@ -1,26 +1,23 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.router.d.ts"/>
+/// <reference path="bobril.promise.d.ts"/>
 (function (b, window) {
     function emitOnHashChange() {
         b.invalidate();
         return false;
     }
     b.addEvent("hashchange", 10, emitOnHashChange);
-    var PUSH = 0;
-    var REPLACE = 1;
-    var POP = 2;
-    var actionType;
+    var myAppHistoryDeepness = 0;
     function push(path) {
-        actionType = PUSH;
         window.location.hash = path;
+        myAppHistoryDeepness++;
     }
     function replace(path) {
-        actionType = REPLACE;
         var l = window.location;
         l.replace(l.pathname + l.search + "#" + path);
     }
     function pop() {
-        actionType = POP;
+        myAppHistoryDeepness--;
         window.history.back();
     }
     var rootRoutes;
@@ -156,21 +153,53 @@
     }
     ;
     var activeRoutes;
+    var futureRoutes;
     var activeParams;
+    var nodesArray = [];
+    var setterOfNodesArray = [];
+    var urlRegex = /\:|\//g;
+    function isInApp(name) {
+        return !urlRegex.test(name);
+    }
     function isAbsolute(url) {
         return url[0] === "/";
     }
     function noop() {
         return null;
     }
+    function getSetterOfNodesArray(idx) {
+        while (idx >= setterOfNodesArray.length) {
+            setterOfNodesArray.push((function (a, i) { return (function (n) { return a[i] = n; }); })(nodesArray, idx));
+        }
+        return setterOfNodesArray[idx];
+    }
+    var firstRouting = true;
     function rootNodeFactory() {
         var path = window.location.hash.substr(1);
         if (!isAbsolute(path))
             path = "/" + path;
         var out = { p: {} };
         var matches = findMatch(path, rootRoutes, out) || [];
+        if (firstRouting) {
+            firstRouting = false;
+            currentTransition = { inApp: true, type: 2 /* Pop */, name: null, params: null };
+            transitionState = -1;
+        }
         activeRoutes = matches;
+        while (nodesArray.length > activeRoutes.length)
+            nodesArray.pop();
+        while (nodesArray.length < activeRoutes.length)
+            nodesArray.push(null);
         activeParams = out.p;
+        if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
+            currentTransition.inApp = true;
+            if (currentTransition.name == null && activeRoutes.length > 0) {
+                currentTransition.name = activeRoutes[0].name;
+                currentTransition.params = activeParams;
+                nextIteration();
+            }
+            return null;
+        }
         var fn = noop;
         for (var i = 0; i < matches.length; i++) {
             (function (fninner, r, routeParams) {
@@ -179,7 +208,18 @@
                     b.assign(data, otherdata);
                     data.activeRouteHandler = fninner;
                     data.routeParams = routeParams;
-                    return { key: r.keyBuilder ? r.keyBuilder(routeParams) : undefined, data: data, component: r.handler };
+                    var handler = r.handler;
+                    var res;
+                    if (typeof handler === "function") {
+                        res = handler(data);
+                    }
+                    else {
+                        res = { key: undefined, ref: undefined, data: data, component: handler };
+                    }
+                    if (r.keyBuilder)
+                        res.key = r.keyBuilder(routeParams);
+                    res.ref = getSetterOfNodesArray(i);
+                    return res;
                 };
             })(fn, matches[i], activeParams);
         }
@@ -249,17 +289,23 @@
         }
         return false;
     }
+    function urlOfRoute(name, params) {
+        if (isInApp(name)) {
+            var r = nameRouteMap[name];
+            return injectParams(r.url, params);
+        }
+        return name;
+    }
     function link(node, name, params) {
-        var r = nameRouteMap[name];
-        var url = injectParams(r.url, params);
         node.data = node.data || {};
         node.data.active = isActive(name, params);
-        node.data.url = url;
+        node.data.url = urlOfRoute(name, params);
+        node.data.transition = createRedirectPush(name, params);
         b.postEnhance(node, {
             render: function (ctx, me) {
                 me.attrs = me.attrs || {};
                 if (me.tag === "a") {
-                    me.attrs.href = "#" + url;
+                    me.attrs.href = "#" + ctx.data.url;
                 }
                 me.className = me.className || "";
                 if (ctx.data.active) {
@@ -267,15 +313,174 @@
                 }
             },
             onClick: function (ctx) {
-                push(ctx.data.url);
+                runTransition(ctx.data.transition);
                 return true;
             }
         });
         return node;
     }
+    function createRedirectPush(name, params) {
+        return {
+            inApp: isInApp(name),
+            type: 0 /* Push */,
+            name: name,
+            params: params || {}
+        };
+    }
+    function createRedirectReplace(name, params) {
+        return {
+            inApp: isInApp(name),
+            type: 1 /* Replace */,
+            name: name,
+            params: params || {}
+        };
+    }
+    function createBackTransition() {
+        return {
+            inApp: myAppHistoryDeepness > 0,
+            type: 2 /* Pop */,
+            name: null,
+            params: {}
+        };
+    }
+    var currentTransition = null;
+    var nextTransition = null;
+    var transitionState = 0;
+    function doAction(transition) {
+        switch (transition.type) {
+            case 0 /* Push */:
+                push(urlOfRoute(transition.name, transition.params));
+                break;
+            case 1 /* Replace */:
+                replace(urlOfRoute(transition.name, transition.params));
+                break;
+            case 2 /* Pop */:
+                pop();
+                break;
+        }
+        b.invalidate();
+    }
+    function nextIteration() {
+        while (true) {
+            if (transitionState >= 0 && transitionState < activeRoutes.length) {
+                var node = nodesArray[transitionState];
+                transitionState++;
+                if (!node)
+                    continue;
+                var comp = node.component;
+                if (!comp)
+                    continue;
+                var fn = comp.canDeactivate;
+                if (!fn)
+                    continue;
+                var res = fn.call(comp, node.ctx, currentTransition);
+                Promise.resolve(res).then(function (resp) {
+                    if (resp === true) { }
+                    else if (resp === false) {
+                        currentTransition = null;
+                        nextTransition = null;
+                        return;
+                    }
+                    else {
+                        nextTransition = resp;
+                    }
+                    nextIteration();
+                }).catch(console.log.bind(console));
+                return;
+            }
+            else if (transitionState == activeRoutes.length) {
+                if (nextTransition) {
+                    if (currentTransition && currentTransition.type == 0 /* Push */) {
+                        push(urlOfRoute(currentTransition.name, currentTransition.params));
+                    }
+                    currentTransition = nextTransition;
+                    nextTransition = null;
+                }
+                transitionState = -1;
+                if (!currentTransition.inApp || currentTransition.type === 2 /* Pop */) {
+                    doAction(currentTransition);
+                    return;
+                }
+            }
+            else if (transitionState === -1) {
+                var out = { p: {} };
+                var matches = findMatch(urlOfRoute(currentTransition.name, currentTransition.params), rootRoutes, out) || [];
+                futureRoutes = matches;
+                transitionState = -2;
+            }
+            else if (transitionState === -2 - futureRoutes.length) {
+                if (nextTransition) {
+                    transitionState = activeRoutes.length;
+                    continue;
+                }
+                if (currentTransition.type !== 2 /* Pop */) {
+                    doAction(currentTransition);
+                }
+                else {
+                    b.invalidate();
+                }
+                currentTransition = null;
+                return;
+            }
+            else {
+                if (nextTransition) {
+                    transitionState = activeRoutes.length;
+                    continue;
+                }
+                var rr = futureRoutes[futureRoutes.length + 1 + transitionState];
+                transitionState--;
+                var handler = rr.handler;
+                var comp = null;
+                if (typeof handler === "function") {
+                    var node = handler({});
+                    if (!node)
+                        continue;
+                    comp = node.component;
+                }
+                else {
+                    comp = handler;
+                }
+                if (!comp)
+                    continue;
+                var fn = comp.canActivate;
+                if (!fn)
+                    continue;
+                var res = fn.call(comp, currentTransition);
+                Promise.resolve(res).then(function (resp) {
+                    if (resp === true) { }
+                    else if (resp === false) {
+                        currentTransition = null;
+                        nextTransition = null;
+                        return;
+                    }
+                    else {
+                        nextTransition = resp;
+                    }
+                    nextIteration();
+                }).catch(console.log.bind(console));
+                return;
+            }
+        }
+    }
+    function runTransition(transition) {
+        if (currentTransition != null) {
+            nextTransition = transition;
+            return;
+        }
+        firstRouting = false;
+        currentTransition = transition;
+        transitionState = 0;
+        nextIteration();
+    }
     b.routes = routes;
     b.route = route;
     b.routeDefault = routeDefault;
     b.routeNotFound = routeNotFound;
+    b.isRouteActive = isActive;
+    b.urlOfRoute = urlOfRoute;
+    b.createRedirectPush = createRedirectPush;
+    b.createRedirectReplace = createRedirectReplace;
+    b.createBackTransition = createBackTransition;
+    b.runTransition = runTransition;
     b.link = link;
 })(b, window);

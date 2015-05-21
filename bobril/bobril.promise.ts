@@ -79,7 +79,7 @@
 
     b.asap = asap;
 
-    if (!window.Promise) {
+    if (!(<any>window).Promise) {
         // Polyfill for Function.prototype.bind
         function bind(fn: (args: any) => void, thisArg: any) {
             return function() {
@@ -232,6 +232,6 @@
             }
         });
 
-        window.Promise = <any>Promise;
+        (<any>window).Promise = <any>Promise;
     }
 })(b, window, document);
