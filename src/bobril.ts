@@ -240,8 +240,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return cfg;
     }
 
-    function setRef(ref: [IBobrilCtx, string], value: IBobrilCacheNode) {
+    function setRef(ref: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
         if (ref == null) return;
+        if (typeof ref === "function") {
+            (<(node: IBobrilCacheNode) => void>ref)(value);
+            return;
+        }
         var ctx = ref[0];
         var refs = ctx.refs;
         if (!refs) {
@@ -581,7 +585,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         if (DEBUG) {
             if (!((n.ref == null && c.ref == null) ||
-                ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" || n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
                 if (window.console && console.warn) console.warn("ref changed in child in update");
             }
         }

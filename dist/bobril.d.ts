@@ -133,7 +133,7 @@ interface IBobrilNode {
     style?: any;
     attrs?: IBobrilAttributes;
     children?: IBobrilChildren;
-    ref?: [IBobrilCtx, string];
+    ref?: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void);
     // set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway
     cfg?: any;
     component?: IBobrilComponent;

@@ -195,7 +195,8 @@ interface OutFindMatch {
     var activeRoutes: IRoute[];
     var futureRoutes: IRoute[];
     var activeParams: Params;
-    var fakeCtxOfRefs: IBobrilCtx = {};
+    var nodesArray: IBobrilCacheNode[] = [];
+    var setterOfNodesArray: ((node: IBobrilCacheNode) => void)[] = [];
     var urlRegex = /\:|\//g;
 
     function isInApp(name: string): boolean {
@@ -210,12 +211,27 @@ interface OutFindMatch {
         return null;
     }
 
+    function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode) => void {
+        while (idx >= setterOfNodesArray.length) {
+            setterOfNodesArray.push(((a: IBobrilCacheNode[], i: number) => ((n: IBobrilCacheNode) => a[i] = n))(nodesArray, idx));
+        }
+        return setterOfNodesArray[idx];
+    }
+
+    var firstRouting = true;
     function rootNodeFactory(): IBobrilNode {
         var path = window.location.hash.substr(1);
         if (!isAbsolute(path)) path = "/" + path;
         var out: OutFindMatch = { p: {} };
         var matches = findMatch(path, rootRoutes, out) || [];
+        if (firstRouting) {
+            firstRouting = false;
+            currentTransition = { inApp: true, type: RouteTransitionType.Pop, name: null, params: null };
+            transitionState = -1;
+        }
         activeRoutes = matches;
+        while (nodesArray.length > activeRoutes.length) nodesArray.pop();
+        while (nodesArray.length < activeRoutes.length) nodesArray.push(null);
         activeParams = out.p;
         if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
             currentTransition.inApp = true;
@@ -242,7 +258,7 @@ interface OutFindMatch {
                         res = { key: undefined, ref: undefined, data, component: handler };
                     }
                     if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
-                    res.ref = [fakeCtxOfRefs, r.name];
+                    res.ref = getSetterOfNodesArray(i);
                     return res;
                 }
             })(fn, matches[i], activeParams);
@@ -393,14 +409,14 @@ interface OutFindMatch {
                 pop();
                 break;
         }
+        b.invalidate();
     }
 
     function nextIteration(): void {
         while (true) {
             if (transitionState >= 0 && transitionState < activeRoutes.length) {
-                let rname = activeRoutes[transitionState].name;
+                let node = nodesArray[transitionState];
                 transitionState++;
-                let node = fakeCtxOfRefs.refs[rname];
                 if (!node) continue;
                 let comp = node.component;
                 if (!comp) continue;
@@ -420,6 +436,9 @@ interface OutFindMatch {
                 return;
             } else if (transitionState == activeRoutes.length) {
                 if (nextTransition) {
+                    if (currentTransition && currentTransition.type==RouteTransitionType.Push) {
+                        push(urlOfRoute(currentTransition.name, currentTransition.params));
+                    }
                     currentTransition = nextTransition;
                     nextTransition = null;
                 }
@@ -440,6 +459,8 @@ interface OutFindMatch {
                 }
                 if (currentTransition.type !== RouteTransitionType.Pop) {
                     doAction(currentTransition);
+                } else {
+                    b.invalidate();
                 }
                 currentTransition = null;
                 return;
@@ -448,11 +469,17 @@ interface OutFindMatch {
                     transitionState = activeRoutes.length;
                     continue;
                 }
-                let rname = futureRoutes[futureRoutes.length + 1 + transitionState].name;
+                let rr = futureRoutes[futureRoutes.length + 1 + transitionState];
                 transitionState--;
-                let node = fakeCtxOfRefs.refs[rname];
-                if (!node) continue;
-                let comp = node.component;
+                let handler = rr.handler;
+                let comp: IBobrilComponent = null;
+                if (typeof handler === "function") {
+                    let node = (<(data: any) => IBobrilNode>handler)({});
+                    if (!node) continue;
+                    comp = node.component;
+                } else {
+                    comp = handler;
+                }
                 if (!comp) continue;
                 let fn = comp.canActivate;
                 if (!fn) continue;
@@ -477,11 +504,12 @@ interface OutFindMatch {
             nextTransition = transition;
             return;
         }
+        firstRouting = false;
         currentTransition = transition;
         transitionState = 0;
         nextIteration();
     }
-    
+
     b.routes = routes;
     b.route = route;
     b.routeDefault = routeDefault;

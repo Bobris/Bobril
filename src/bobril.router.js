@@ -155,7 +155,8 @@
     var activeRoutes;
     var futureRoutes;
     var activeParams;
-    var fakeCtxOfRefs = {};
+    var nodesArray = [];
+    var setterOfNodesArray = [];
     var urlRegex = /\:|\//g;
     function isInApp(name) {
         return !urlRegex.test(name);
@@ -166,13 +167,29 @@
     function noop() {
         return null;
     }
+    function getSetterOfNodesArray(idx) {
+        while (idx >= setterOfNodesArray.length) {
+            setterOfNodesArray.push((function (a, i) { return (function (n) { return a[i] = n; }); })(nodesArray, idx));
+        }
+        return setterOfNodesArray[idx];
+    }
+    var firstRouting = true;
     function rootNodeFactory() {
         var path = window.location.hash.substr(1);
         if (!isAbsolute(path))
             path = "/" + path;
         var out = { p: {} };
         var matches = findMatch(path, rootRoutes, out) || [];
+        if (firstRouting) {
+            firstRouting = false;
+            currentTransition = { inApp: true, type: 2 /* Pop */, name: null, params: null };
+            transitionState = -1;
+        }
         activeRoutes = matches;
+        while (nodesArray.length > activeRoutes.length)
+            nodesArray.pop();
+        while (nodesArray.length < activeRoutes.length)
+            nodesArray.push(null);
         activeParams = out.p;
         if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
             currentTransition.inApp = true;
@@ -201,7 +218,7 @@
                     }
                     if (r.keyBuilder)
                         res.key = r.keyBuilder(routeParams);
-                    res.ref = [fakeCtxOfRefs, r.name];
+                    res.ref = getSetterOfNodesArray(i);
                     return res;
                 };
             })(fn, matches[i], activeParams);
@@ -341,13 +358,13 @@
                 pop();
                 break;
         }
+        b.invalidate();
     }
     function nextIteration() {
         while (true) {
             if (transitionState >= 0 && transitionState < activeRoutes.length) {
-                var rname = activeRoutes[transitionState].name;
+                var node = nodesArray[transitionState];
                 transitionState++;
-                var node = fakeCtxOfRefs.refs[rname];
                 if (!node)
                     continue;
                 var comp = node.component;
@@ -373,6 +390,9 @@
             }
             else if (transitionState == activeRoutes.length) {
                 if (nextTransition) {
+                    if (currentTransition && currentTransition.type == 0 /* Push */) {
+                        push(urlOfRoute(currentTransition.name, currentTransition.params));
+                    }
                     currentTransition = nextTransition;
                     nextTransition = null;
                 }
@@ -396,6 +416,9 @@
                 if (currentTransition.type !== 2 /* Pop */) {
                     doAction(currentTransition);
                 }
+                else {
+                    b.invalidate();
+                }
                 currentTransition = null;
                 return;
             }
@@ -404,12 +427,19 @@
                     transitionState = activeRoutes.length;
                     continue;
                 }
-                var rname = futureRoutes[futureRoutes.length + 1 + transitionState].name;
+                var rr = futureRoutes[futureRoutes.length + 1 + transitionState];
                 transitionState--;
-                var node = fakeCtxOfRefs.refs[rname];
-                if (!node)
-                    continue;
-                var comp = node.component;
+                var handler = rr.handler;
+                var comp = null;
+                if (typeof handler === "function") {
+                    var node = handler({});
+                    if (!node)
+                        continue;
+                    comp = node.component;
+                }
+                else {
+                    comp = handler;
+                }
                 if (!comp)
                     continue;
                 var fn = comp.canActivate;
@@ -437,6 +467,7 @@
             nextTransition = transition;
             return;
         }
+        firstRouting = false;
         currentTransition = transition;
         transitionState = 0;
         nextIteration();
