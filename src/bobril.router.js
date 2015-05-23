@@ -8,13 +8,24 @@
     }
     b.addEvent("hashchange", 10, emitOnHashChange);
     var myAppHistoryDeepness = 0;
-    function push(path) {
-        window.location.hash = path;
-        myAppHistoryDeepness++;
-    }
-    function replace(path) {
+    function push(path, inapp) {
         var l = window.location;
-        l.replace(l.pathname + l.search + "#" + path);
+        if (inapp) {
+            l.hash = path.substring(1);
+            myAppHistoryDeepness++;
+        }
+        else {
+            l.href = path;
+        }
+    }
+    function replace(path, inapp) {
+        var l = window.location;
+        if (inapp) {
+            l.replace(l.pathname + l.search + path);
+        }
+        else {
+            l.replace(path);
+        }
     }
     function pop() {
         myAppHistoryDeepness--;
@@ -152,9 +163,9 @@
         return null;
     }
     ;
-    var activeRoutes;
+    var activeRoutes = [];
     var futureRoutes;
-    var activeParams;
+    var activeParams = Object.create(null);
     var nodesArray = [];
     var setterOfNodesArray = [];
     var urlRegex = /\:|\//g;
@@ -169,7 +180,12 @@
     }
     function getSetterOfNodesArray(idx) {
         while (idx >= setterOfNodesArray.length) {
-            setterOfNodesArray.push((function (a, i) { return (function (n) { return a[i] = n; }); })(nodesArray, idx));
+            setterOfNodesArray.push((function (a, i) {
+                return (function (n) {
+                    if (n)
+                        a[i] = n;
+                });
+            })(nodesArray, idx));
         }
         return setterOfNodesArray[idx];
     }
@@ -185,24 +201,26 @@
             currentTransition = { inApp: true, type: 2 /* Pop */, name: null, params: null };
             transitionState = -1;
         }
-        activeRoutes = matches;
-        while (nodesArray.length > activeRoutes.length)
-            nodesArray.pop();
-        while (nodesArray.length < activeRoutes.length)
-            nodesArray.push(null);
-        activeParams = out.p;
         if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
             currentTransition.inApp = true;
-            if (currentTransition.name == null && activeRoutes.length > 0) {
-                currentTransition.name = activeRoutes[0].name;
-                currentTransition.params = activeParams;
+            if (currentTransition.name == null && matches.length > 0) {
+                currentTransition.name = matches[0].name;
+                currentTransition.params = out.p;
                 nextIteration();
             }
             return null;
         }
+        if (currentTransition == null) {
+            activeRoutes = matches;
+            while (nodesArray.length > activeRoutes.length)
+                nodesArray.pop();
+            while (nodesArray.length < activeRoutes.length)
+                nodesArray.push(null);
+            activeParams = out.p;
+        }
         var fn = noop;
-        for (var i = 0; i < matches.length; i++) {
-            (function (fninner, r, routeParams) {
+        for (var i = 0; i < activeRoutes.length; i++) {
+            (function (fninner, r, routeParams, i) {
                 fn = function (otherdata) {
                     var data = r.data || {};
                     b.assign(data, otherdata);
@@ -221,7 +239,7 @@
                     res.ref = getSetterOfNodesArray(i);
                     return res;
                 };
-            })(fn, matches[i], activeParams);
+            })(fn, activeRoutes[i], activeParams, i);
         }
         return fn();
     }
@@ -292,7 +310,7 @@
     function urlOfRoute(name, params) {
         if (isInApp(name)) {
             var r = nameRouteMap[name];
-            return injectParams(r.url, params);
+            return "#" + injectParams(r.url, params);
         }
         return name;
     }
@@ -305,7 +323,7 @@
             render: function (ctx, me) {
                 me.attrs = me.attrs || {};
                 if (me.tag === "a") {
-                    me.attrs.href = "#" + ctx.data.url;
+                    me.attrs.href = ctx.data.url;
                 }
                 me.className = me.className || "";
                 if (ctx.data.active) {
@@ -349,10 +367,10 @@
     function doAction(transition) {
         switch (transition.type) {
             case 0 /* Push */:
-                push(urlOfRoute(transition.name, transition.params));
+                push(urlOfRoute(transition.name, transition.params), transition.inApp);
                 break;
             case 1 /* Replace */:
-                replace(urlOfRoute(transition.name, transition.params));
+                replace(urlOfRoute(transition.name, transition.params), transition.inApp);
                 break;
             case 2 /* Pop */:
                 pop();
@@ -391,7 +409,7 @@
             else if (transitionState == activeRoutes.length) {
                 if (nextTransition) {
                     if (currentTransition && currentTransition.type == 0 /* Push */) {
-                        push(urlOfRoute(currentTransition.name, currentTransition.params));
+                        push(urlOfRoute(currentTransition.name, currentTransition.params), currentTransition.inApp);
                     }
                     currentTransition = nextTransition;
                     nextTransition = null;

@@ -246,13 +246,13 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             (<(node: IBobrilCacheNode) => void>ref)(value);
             return;
         }
-        var ctx = ref[0];
+        var ctx = (<[IBobrilCtx, string]>ref)[0];
         var refs = ctx.refs;
         if (!refs) {
             refs = newHashObj();
             ctx.refs = refs;
         }
-        refs[ref[1]] = value;
+        refs[(<[IBobrilCtx, string]>ref)[1]] = value;
     }
 
     function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: Element, createBefore: Node): IBobrilCacheNode {
@@ -585,7 +585,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         if (DEBUG) {
             if (!((n.ref == null && c.ref == null) ||
-                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" || n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
+                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" ||
+                    (<[IBobrilCtx, string]>n.ref)[0] === (<[IBobrilCtx, string]>c.ref)[0] && (<[IBobrilCtx, string]>n.ref)[1] === (<[IBobrilCtx, string]>c.ref)[1]))))) {
                 if (window.console && console.warn) console.warn("ref changed in child in update");
             }
         }
