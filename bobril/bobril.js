@@ -591,7 +591,8 @@ b = (function (window, document) {
         }
         if (DEBUG) {
             if (!((n.ref == null && c.ref == null) ||
-                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" || n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
+                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" ||
+                    n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
                 if (window.console && console.warn)
                     console.warn("ref changed in child in update");
             }

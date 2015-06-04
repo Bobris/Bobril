@@ -29,14 +29,23 @@ interface OutFindMatch {
 
     var myAppHistoryDeepness = 0;
 
-    function push(path: string): void {
-        window.location.hash = path;
-        myAppHistoryDeepness++;
+    function push(path: string, inapp: boolean): void {
+        var l = window.location;
+        if (inapp) {
+            l.hash = path.substring(1);
+            myAppHistoryDeepness++;
+        } else {
+            l.href = path;
+        }
     }
 
-    function replace(path: string) {
+    function replace(path: string, inapp: boolean) {
         var l = window.location;
-        l.replace(l.pathname + l.search + "#" + path);
+        if (inapp) {
+            l.replace(l.pathname + l.search + path);
+        } else {
+            l.replace(path);
+        }
     }
 
     function pop() {
@@ -192,9 +201,9 @@ interface OutFindMatch {
         return null;
     };
 
-    var activeRoutes: IRoute[];
+    var activeRoutes: IRoute[] = [];
     var futureRoutes: IRoute[];
-    var activeParams: Params;
+    var activeParams: Params = Object.create(null);
     var nodesArray: IBobrilCacheNode[] = [];
     var setterOfNodesArray: ((node: IBobrilCacheNode) => void)[] = [];
     var urlRegex = /\:|\//g;
@@ -213,7 +222,11 @@ interface OutFindMatch {
 
     function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode) => void {
         while (idx >= setterOfNodesArray.length) {
-            setterOfNodesArray.push(((a: IBobrilCacheNode[], i: number) => ((n: IBobrilCacheNode) => a[i] = n))(nodesArray, idx));
+            setterOfNodesArray.push(((a: IBobrilCacheNode[], i: number) =>
+                ((n: IBobrilCacheNode) => {
+                    if (n)
+                        a[i] = n
+                }))(nodesArray, idx));
         }
         return setterOfNodesArray[idx];
     }
@@ -229,22 +242,24 @@ interface OutFindMatch {
             currentTransition = { inApp: true, type: RouteTransitionType.Pop, name: null, params: null };
             transitionState = -1;
         }
-        activeRoutes = matches;
-        while (nodesArray.length > activeRoutes.length) nodesArray.pop();
-        while (nodesArray.length < activeRoutes.length) nodesArray.push(null);
-        activeParams = out.p;
         if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
             currentTransition.inApp = true;
-            if (currentTransition.name == null && activeRoutes.length > 0) {
-                currentTransition.name = activeRoutes[0].name;
-                currentTransition.params = activeParams;
+            if (currentTransition.name == null && matches.length > 0) {
+                currentTransition.name = matches[0].name;
+                currentTransition.params = out.p;
                 nextIteration();
             }
             return null;
         }
+        if (currentTransition == null) {
+            activeRoutes = matches;
+            while (nodesArray.length > activeRoutes.length) nodesArray.pop();
+            while (nodesArray.length < activeRoutes.length) nodesArray.push(null);
+            activeParams = out.p;
+        }
         var fn: (otherdata?: any) => IBobrilNode = noop;
-        for (var i = 0; i < matches.length; i++) {
-            ((fninner: Function, r: IRoute, routeParams: Params) => {
+        for (var i = 0; i < activeRoutes.length; i++) {
+            ((fninner: Function, r: IRoute, routeParams: Params, i: number) => {
                 fn = (otherdata?: any) => {
                     var data: any = r.data || {};
                     b.assign(data, otherdata);
@@ -261,7 +276,7 @@ interface OutFindMatch {
                     res.ref = getSetterOfNodesArray(i);
                     return res;
                 }
-            })(fn, matches[i], activeParams);
+            })(fn, activeRoutes[i], activeParams, i);
         }
         return fn();
     }
@@ -337,7 +352,7 @@ interface OutFindMatch {
     function urlOfRoute(name: string, params?: Params): string {
         if (isInApp(name)) {
             var r = nameRouteMap[name];
-            return injectParams(r.url, params);
+            return "#" + injectParams(r.url, params);
         }
         return name;
     }
@@ -351,7 +366,7 @@ interface OutFindMatch {
             render(ctx: any, me: IBobrilNode) {
                 me.attrs = me.attrs || {};
                 if (me.tag === "a") {
-                    me.attrs.href = "#" + ctx.data.url;
+                    me.attrs.href = ctx.data.url;
                 }
                 me.className = me.className || "";
                 if (ctx.data.active) {
@@ -400,10 +415,10 @@ interface OutFindMatch {
     function doAction(transition: IRouteTransition) {
         switch (transition.type) {
             case RouteTransitionType.Push:
-                push(urlOfRoute(transition.name, transition.params));
+                push(urlOfRoute(transition.name, transition.params), transition.inApp);
                 break;
             case RouteTransitionType.Replace:
-                replace(urlOfRoute(transition.name, transition.params));
+                replace(urlOfRoute(transition.name, transition.params), transition.inApp);
                 break;
             case RouteTransitionType.Pop:
                 pop();
@@ -436,8 +451,8 @@ interface OutFindMatch {
                 return;
             } else if (transitionState == activeRoutes.length) {
                 if (nextTransition) {
-                    if (currentTransition && currentTransition.type==RouteTransitionType.Push) {
-                        push(urlOfRoute(currentTransition.name, currentTransition.params));
+                    if (currentTransition && currentTransition.type == RouteTransitionType.Push) {
+                        push(urlOfRoute(currentTransition.name, currentTransition.params), currentTransition.inApp);
                     }
                     currentTransition = nextTransition;
                     nextTransition = null;

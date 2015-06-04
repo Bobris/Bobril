@@ -1,6 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 /// <reference path="../../src/bobril.promise.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 var RouterApp;
 (function (RouterApp) {
     function h(tag) {
@@ -9,6 +10,14 @@ var RouterApp;
             args[_i - 1] = arguments[_i];
         }
         return { tag: tag, children: args };
+    }
+    var OnChangeComponent = {
+        onChange: function (ctx, v) {
+            ctx.data.onChange(v);
+        }
+    };
+    function textInput(value, onChange) {
+        return { tag: "input", attrs: { value: value }, data: { onChange: onChange }, component: OnChangeComponent };
     }
     var needLogin = true;
     function checkAuthorization(tr) {
@@ -29,13 +38,21 @@ var RouterApp;
     var Page1 = {
         id: "Page1",
         canActivate: checkAuthorization,
+        canDeactivate: function (ctx, transition) {
+            return ctx.text === "";
+        },
         init: function (ctx, me) {
             ctx.ticks = 0;
             ctx.timer = setInterval(function () { ctx.ticks++; b.invalidate(); }, 1000);
+            ctx.text = "";
         },
         render: function (ctx, me) {
             me.tag = "div";
-            me.children = [h("h3", "Page1"), h("p", "Ticks :" + ctx.ticks)];
+            me.children = [h("h3", "Page1"), h("p", "Ticks :" + ctx.ticks),
+                h("p", "Edit some text :", textInput(ctx.text, function (v) {
+                    ctx.text = v;
+                })),
+                h("p", "Nonempty text prevents changing of route")];
         },
         destroy: function (ctx, me) {
             clearInterval(ctx.timer);
@@ -72,7 +89,7 @@ var RouterApp;
             me.tag = "div";
             me.children = [
                 h("h1", "Router sample with login"),
-                h("ul", h("li", b.link(h("a", "Page 1 - needs to be logged in"), "page1")), h("li", b.link(h("a", "Login"), "login"))),
+                h("ul", h("li", b.link(h("a", "Page 1 - needs to be logged in"), "page1")), h("li", b.link(h("a", "Login"), "login")), h("li", b.link(h("a", "Bobril - external link"), "https://github.com/bobris/bobril"))),
                 me.data.activeRouteHandler()
             ];
         }

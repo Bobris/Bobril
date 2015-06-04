@@ -95,6 +95,8 @@
     var uppercasePattern = /([A-Z])/g;
     var msPattern = /^ms-/;
     function hyphenateStyle(s) {
+        if (s === "cssFloat")
+            return "float";
         return s.replace(uppercasePattern, '-$1').toLowerCase().replace(msPattern, '-ms-');
     }
     function inlineStyleToCssDeclaration(style) {
