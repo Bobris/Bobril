@@ -103,6 +103,7 @@ interface IInternalStyle {
     var msPattern = /^ms-/;
 
     function hyphenateStyle(s: string): string {
+        if (s==="cssFloat") return "float";
         return s.replace(uppercasePattern, '-$1').toLowerCase().replace(msPattern, '-ms-');
     }
 

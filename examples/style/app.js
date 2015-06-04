@@ -7,6 +7,7 @@ var StyleApp;
     var icon = b.sprite("light.png");
     var iconShine = b.sprite("light.png", "#80ff80");
     var iconOff = b.sprite("light.png", "#e03030");
+    var leftfloat = b.styleDef({ cssFloat: "left", width: 50, height: 30 });
     var l = true;
     b.init(function () {
         return [
@@ -14,6 +15,8 @@ var StyleApp;
             b.style({ tag: "div", children: "Red text with border" }, redWithBorder),
             b.style({ tag: "div" }, inline, icon),
             b.style({ tag: "div", component: { onClick: function () { l = !l; b.invalidate(); } } }, inline, l && iconShine, l || iconOff),
+            b.style({ tag: "div", children: "float" }, leftfloat),
+            b.style({ tag: "div", children: "float2" }, leftfloat)
         ];
     });
 })(StyleApp || (StyleApp = {}));
