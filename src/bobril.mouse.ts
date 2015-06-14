@@ -152,7 +152,7 @@ const enum Consts {
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param: IBobrilPointerEvent = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY, button: ev.button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var param: IBobrilPointerEvent = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY, button: ev.button + 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
