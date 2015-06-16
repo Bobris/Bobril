@@ -3,7 +3,8 @@
 var StyleApp;
 (function (StyleApp) {
     var redWithBorder = b.styleDef({ color: "red", border: "blue solid 3px", padding: 3 });
-    var inline = b.styleDef({ display: "inline-block", margin: 5 }, { hover: { outline: "blue solid 2px" } });
+    var inline = b.styleDef({ display: "inline-block", margin: 5 }, { hover: { outline: "blue solid 2px" }, "hover:after": { content: "", background: "blue", position: "absolute", display: "block", height: 8, width: 8 } });
+    var biggerMargin = b.styleDefEx(inline, { margin: 10 });
     var icon = b.sprite("light.png");
     var iconShine = b.sprite("light.png", "#80ff80");
     var iconOff = b.sprite("light.png", "#e03030");
@@ -14,6 +15,7 @@ var StyleApp;
             { tag: "h1", children: "Bobril sample for styling" },
             b.style({ tag: "div", children: "Red text with border" }, redWithBorder),
             b.style({ tag: "div" }, inline, icon),
+            b.style({ tag: "div" }, inline, biggerMargin, icon),
             b.style({ tag: "div", component: { onClick: function () { l = !l; b.invalidate(); } } }, inline, l && iconShine, l || iconOff),
             b.style({ tag: "div", children: "float" }, leftfloat),
             b.style({ tag: "div", children: "float2" }, leftfloat)

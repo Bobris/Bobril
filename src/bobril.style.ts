@@ -12,6 +12,7 @@ interface ISprite {
 
 interface IInternalStyle {
     name: string;
+    parent?: IBobrilStyleDef;
     cssStyle: string;
     fullInlStyle: any;
     inlStyle?: any;
@@ -34,11 +35,15 @@ interface IInternalStyle {
             var stylestr = "";
             for (var key in allStyles) {
                 var ss = allStyles[key];
+                let parentStylePrefix = ".";
+                if (ss.parent) {
+                    parentStylePrefix += allStyles[ss.parent].name + ".";
+                }
                 if (ss.cssStyle.length > 0)
-                    stylestr += "." + ss.name + " {" + ss.cssStyle + "}\n";
+                    stylestr += parentStylePrefix + ss.name + " {" + ss.cssStyle + "}\n";
                 var ssp = ss.pseudo;
                 if (ssp) for (var key2 in ssp) {
-                    stylestr += "." + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                    stylestr += parentStylePrefix + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
                 }
             }
             var styleElement = document.createElement('style');
@@ -103,7 +108,7 @@ interface IInternalStyle {
     var msPattern = /^ms-/;
 
     function hyphenateStyle(s: string): string {
-        if (s==="cssFloat") return "float";
+        if (s === "cssFloat") return "float";
         return s.replace(uppercasePattern, '-$1').toLowerCase().replace(msPattern, '-ms-');
     }
 
@@ -112,13 +117,17 @@ interface IInternalStyle {
         for (var key in style) {
             var v = style[key];
             if (v === undefined) continue;
-            res += hyphenateStyle(key) + ":" + v + ";";
+            res += hyphenateStyle(key) + ":" + (v === "" ? '""' : v) + ";";
         }
-        res = res.slice(0,-1);
+        res = res.slice(0, -1);
         return res;
     }
 
     function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+        return styleDefEx(null, style, pseudo, nameHint);
+    }
+
+    function styleDefEx(parent: IBobrilStyleDef, style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
         if (nameHint) {
             if (allNameHints[nameHint]) {
                 var counter = 1;
@@ -151,7 +160,7 @@ interface IInternalStyle {
                 processedPseudo[key] = inlineStyleToCssDeclaration(ps);
             }
         }
-        allStyles[nameHint] = { name: nameHint, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
+        allStyles[nameHint] = { name: nameHint, parent, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
         rebuildStyles = true;
         b.invalidate();
         return nameHint;
@@ -214,5 +223,6 @@ interface IInternalStyle {
 
     b.style = style;
     b.styleDef = styleDef;
+    b.styleDefEx = styleDefEx;
     b.sprite = sprite;
 })(b, document);

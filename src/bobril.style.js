@@ -13,12 +13,16 @@
             var stylestr = "";
             for (var key in allStyles) {
                 var ss = allStyles[key];
+                var parentStylePrefix = ".";
+                if (ss.parent) {
+                    parentStylePrefix += allStyles[ss.parent].name + ".";
+                }
                 if (ss.cssStyle.length > 0)
-                    stylestr += "." + ss.name + " {" + ss.cssStyle + "}\n";
+                    stylestr += parentStylePrefix + ss.name + " {" + ss.cssStyle + "}\n";
                 var ssp = ss.pseudo;
                 if (ssp)
                     for (var key2 in ssp) {
-                        stylestr += "." + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                        stylestr += parentStylePrefix + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
                     }
             }
             var styleElement = document.createElement('style');
@@ -105,12 +109,15 @@
             var v = style[key];
             if (v === undefined)
                 continue;
-            res += hyphenateStyle(key) + ":" + v + ";";
+            res += hyphenateStyle(key) + ":" + (v === "" ? '""' : v) + ";";
         }
         res = res.slice(0, -1);
         return res;
     }
     function styleDef(style, pseudo, nameHint) {
+        return styleDefEx(null, style, pseudo, nameHint);
+    }
+    function styleDefEx(parent, style, pseudo, nameHint) {
         if (nameHint) {
             if (allNameHints[nameHint]) {
                 var counter = 1;
@@ -145,7 +152,7 @@
                 processedPseudo[key] = inlineStyleToCssDeclaration(ps);
             }
         }
-        allStyles[nameHint] = { name: nameHint, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
+        allStyles[nameHint] = { name: nameHint, parent: parent, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
         rebuildStyles = true;
         b.invalidate();
         return nameHint;
@@ -211,5 +218,6 @@
     }
     b.style = style;
     b.styleDef = styleDef;
+    b.styleDefEx = styleDefEx;
     b.sprite = sprite;
 })(b, document);
