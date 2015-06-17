@@ -92,11 +92,7 @@ const enum Consts {
         }
         if (revertVisibilityChanges(hiddenEls)) {
             try {
-                if (b.ieVersion() < 9)
-                    (<any>t).fireEvent("on" + ev.type, ev);
-                else {
-                    t.dispatchEvent(ev);
-                }
+                t.dispatchEvent(ev);
             } catch (e) {
                 return false;
             }

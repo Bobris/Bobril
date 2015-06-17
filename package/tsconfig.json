@@ -3,16 +3,16 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
-        "declaration": false,
+        "declaration": true,
         "noImplicitAny": false,
-        "removeComments": true,
+        "removeComments": false,
         "noLib": false,
-        "preserveConstEnums": true,
+        "preserveConstEnums": false,
         "suppressImplicitAnyIndexErrors": true
     },
     "filesGlob": [
         "./**/*.ts",
-        "!./node_modules/**/*.ts"
+        "!./**/*.d.ts"
     ],
     "files": [
         "./bobril.ts"

@@ -68,10 +68,6 @@
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 50, <any>(b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
 
-    if (b.ieVersion() === 8) {
-        setInterval(emitOnFocusChange, 100);
-    }
-
     function focused(): IBobrilCacheNode {
         return currentFocusedNode;
     }
