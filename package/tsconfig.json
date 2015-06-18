@@ -15,6 +15,6 @@
         "!./**/*.d.ts"
     ],
     "files": [
-        "./bobril.ts"
+        "./index.ts"
     ]
 }
