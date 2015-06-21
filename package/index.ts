@@ -4054,6 +4054,18 @@ export function sprite(url: string, color?: string, width?: number, height?: num
     return styleid;
 }
 
+export function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
+    let url = "bundle.png";
+    var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
+    var spDef = allSprites[key];
+    if (spDef) return spDef.styleid;
+    var styleid = styleDef({ width: 0, height: 0 });
+    spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+    updateSprite(spDef);
+    allSprites[key] = spDef;
+    return styleid;
+}
+
 // Bobril.svgExtensions
 
 function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number): { x: number; y: number } {

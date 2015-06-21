@@ -3728,6 +3728,19 @@ function sprite(url, color, width, height, left, top) {
     return styleid;
 }
 exports.sprite = sprite;
+function spriteb(width, height, left, top) {
+    var url = "bundle.png";
+    var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
+    var spDef = allSprites[key];
+    if (spDef)
+        return spDef.styleid;
+    var styleid = styleDef({ width: 0, height: 0 });
+    spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+    updateSprite(spDef);
+    allSprites[key] = spDef;
+    return styleid;
+}
+exports.spriteb = spriteb;
 // Bobril.svgExtensions
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
     var angleInRadians = angleInDegrees * Math.PI / 180.0;

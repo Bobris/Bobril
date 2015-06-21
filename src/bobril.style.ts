@@ -169,10 +169,10 @@ interface IInternalStyle {
     function updateSprite(spDef: ISprite): void {
         var stDef = allStyles[spDef.styleid];
         var style: any = { backgroundImage: `url(${spDef.url})`, width: spDef.width, height: spDef.height };
-        b.shimStyle(style);
         if (spDef.left || spDef.top) {
             style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
         }
+        b.shimStyle(style);
         stDef.fullInlStyle = style;
         stDef.cssStyle = inlineStyleToCssDeclaration(style);
         rebuildStyles = true;
@@ -221,8 +221,21 @@ interface IInternalStyle {
         return styleid;
     }
 
+    function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
+        let url = "bundle.png";
+        var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
+        var spDef = allSprites[key];
+        if (spDef) return spDef.styleid;
+        var styleid = styleDef({ width: 0, height: 0 });
+        spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+        updateSprite(spDef);
+        allSprites[key] = spDef;
+        return styleid;
+    }
+
     b.style = style;
     b.styleDef = styleDef;
     b.styleDefEx = styleDefEx;
     b.sprite = sprite;
+    b.spriteb = spriteb;
 })(b, document);
