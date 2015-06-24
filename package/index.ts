@@ -3851,7 +3851,7 @@ export interface ISprite {
 
 interface IInternalStyle {
     name: string;
-    parent?: IBobrilStyleDef;
+    parent?: IBobrilStyleDef|IBobrilStyleDef[];
     cssStyle: string;
     fullInlStyle: any;
     inlStyle?: any;
@@ -3868,20 +3868,35 @@ let globalCounter: number = 0;
 
 let chainedBeforeFrame = setBeforeFrame(beforeFrame);
 
+function buildCssRule(parent: string|string[], name: string): string {
+    let result = "";
+    if (parent) {
+        if (isArray(parent)) {
+            for (let i = 0; i < parent.length; i++) {
+                if (i > 0) result += ",";
+                result += "." + allStyles[parent[i]].name + "." + name;
+            }
+        } else {
+            result = "." + allStyles[<string>parent].name + "." + name;
+        }
+    } else {
+        result = "." + name;
+    }
+    return result;
+}
+
 function beforeFrame() {
     if (rebuildStyles) {
         var stylestr = "";
         for (var key in allStyles) {
             var ss = allStyles[key];
-            let parentStylePrefix = ".";
-            if (ss.parent) {
-                parentStylePrefix += allStyles[ss.parent].name + ".";
-            }
+            let parent = ss.parent;
+            let name = ss.name;
             if (ss.cssStyle.length > 0)
-                stylestr += parentStylePrefix + ss.name + " {" + ss.cssStyle + "}\n";
+                stylestr += buildCssRule(parent, name) + " {" + ss.cssStyle + "}\n";
             var ssp = ss.pseudo;
             if (ssp) for (var key2 in ssp) {
-                stylestr += parentStylePrefix + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                stylestr += buildCssRule(parent, name + ":" + key2) + " {" + ssp[key2] + "}\n";
             }
         }
         var styleElement = document.createElement('style');
@@ -3965,7 +3980,17 @@ export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?
     return styleDefEx(null, style, pseudo, nameHint);
 }
 
-export function styleDefEx(parent: IBobrilStyleDef, style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+function flattenStyle(style: any): any {
+    if (!isArray(style))
+        return style;
+    var res = {};
+    for (let i = 0; i < style.length; i++) {
+        assign(res, style[i]);
+    }
+    return res;
+}
+
+export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     if (nameHint) {
         if (allNameHints[nameHint]) {
             var counter = 1;
@@ -3976,6 +4001,7 @@ export function styleDefEx(parent: IBobrilStyleDef, style: any, pseudo?: { [name
         nameHint = "b-" + globalCounter++;
     }
     var extractedInlStyle: any = null;
+    style = flattenStyle(style);
     if (style["pointerEvents"]) {
         extractedInlStyle = Object.create(null);
         extractedInlStyle["pointerEvents"] = style["pointerEvents"];
@@ -3993,7 +4019,7 @@ export function styleDefEx(parent: IBobrilStyleDef, style: any, pseudo?: { [name
     if (pseudo) {
         processedPseudo = Object.create(null);
         for (var key in pseudo) {
-            var ps = pseudo[key];
+            var ps = flattenStyle(pseudo[key]);
             shimStyle(ps);
             processedPseudo[key] = inlineStyleToCssDeclaration(ps);
         }
@@ -4007,10 +4033,10 @@ export function styleDefEx(parent: IBobrilStyleDef, style: any, pseudo?: { [name
 function updateSprite(spDef: ISprite): void {
     var stDef = allStyles[spDef.styleid];
     var style: any = { backgroundImage: `url(${spDef.url})`, width: spDef.width, height: spDef.height };
-    shimStyle(style);
     if (spDef.left || spDef.top) {
         style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
     }
+    shimStyle(style);
     stDef.fullInlStyle = style;
     stDef.cssStyle = inlineStyleToCssDeclaration(style);
     rebuildStyles = true;

@@ -3521,21 +3521,38 @@ var rebuildStyles = false;
 var htmlStyle = null;
 var globalCounter = 0;
 var chainedBeforeFrame = setBeforeFrame(beforeFrame);
+function buildCssRule(parent, name) {
+    var result = "";
+    if (parent) {
+        if (isArray(parent)) {
+            for (var i_2 = 0; i_2 < parent.length; i_2++) {
+                if (i_2 > 0)
+                    result += ",";
+                result += "." + allStyles[parent[i_2]].name + "." + name;
+            }
+        }
+        else {
+            result = "." + allStyles[parent].name + "." + name;
+        }
+    }
+    else {
+        result = "." + name;
+    }
+    return result;
+}
 function beforeFrame() {
     if (rebuildStyles) {
         var stylestr = "";
         for (var key in allStyles) {
             var ss = allStyles[key];
-            var parentStylePrefix = ".";
-            if (ss.parent) {
-                parentStylePrefix += allStyles[ss.parent].name + ".";
-            }
+            var parent_1 = ss.parent;
+            var name_1 = ss.name;
             if (ss.cssStyle.length > 0)
-                stylestr += parentStylePrefix + ss.name + " {" + ss.cssStyle + "}\n";
+                stylestr += buildCssRule(parent_1, name_1) + " {" + ss.cssStyle + "}\n";
             var ssp = ss.pseudo;
             if (ssp)
                 for (var key2 in ssp) {
-                    stylestr += parentStylePrefix + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                    stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + ssp[key2] + "}\n";
                 }
         }
         var styleElement = document.createElement('style');
@@ -3632,6 +3649,15 @@ function styleDef(style, pseudo, nameHint) {
     return styleDefEx(null, style, pseudo, nameHint);
 }
 exports.styleDef = styleDef;
+function flattenStyle(style) {
+    if (!isArray(style))
+        return style;
+    var res = {};
+    for (var i_3 = 0; i_3 < style.length; i_3++) {
+        assign(res, style[i_3]);
+    }
+    return res;
+}
 function styleDefEx(parent, style, pseudo, nameHint) {
     if (nameHint) {
         if (allNameHints[nameHint]) {
@@ -3645,6 +3671,7 @@ function styleDefEx(parent, style, pseudo, nameHint) {
         nameHint = "b-" + globalCounter++;
     }
     var extractedInlStyle = null;
+    style = flattenStyle(style);
     if (style["pointerEvents"]) {
         extractedInlStyle = Object.create(null);
         extractedInlStyle["pointerEvents"] = style["pointerEvents"];
@@ -3662,7 +3689,7 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     if (pseudo) {
         processedPseudo = Object.create(null);
         for (var key in pseudo) {
-            var ps = pseudo[key];
+            var ps = flattenStyle(pseudo[key]);
             shimStyle(ps);
             processedPseudo[key] = inlineStyleToCssDeclaration(ps);
         }
@@ -3676,10 +3703,10 @@ exports.styleDefEx = styleDefEx;
 function updateSprite(spDef) {
     var stDef = allStyles[spDef.styleid];
     var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
-    shimStyle(style);
     if (spDef.left || spDef.top) {
         style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
     }
+    shimStyle(style);
     stDef.fullInlStyle = style;
     stDef.cssStyle = inlineStyleToCssDeclaration(style);
     rebuildStyles = true;

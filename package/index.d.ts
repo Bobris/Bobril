@@ -281,7 +281,7 @@ export declare function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IB
 export declare function styleDef(style: any, pseudo?: {
     [name: string]: any;
 }, nameHint?: string): IBobrilStyleDef;
-export declare function styleDefEx(parent: IBobrilStyleDef, style: any, pseudo?: {
+export declare function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], style: any, pseudo?: {
     [name: string]: any;
 }, nameHint?: string): IBobrilStyleDef;
 export declare function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;

@@ -8,21 +8,38 @@
     var htmlStyle = null;
     var globalCounter = 0;
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
+    function buildCssRule(parent, name) {
+        var result = "";
+        if (parent) {
+            if (b.isArray(parent)) {
+                for (var i = 0; i < parent.length; i++) {
+                    if (i > 0)
+                        result += ",";
+                    result += "." + allStyles[parent[i]].name + "." + name;
+                }
+            }
+            else {
+                result = "." + allStyles[parent].name + "." + name;
+            }
+        }
+        else {
+            result = "." + name;
+        }
+        return result;
+    }
     function beforeFrame() {
         if (rebuildStyles) {
             var stylestr = "";
             for (var key in allStyles) {
                 var ss = allStyles[key];
-                var parentStylePrefix = ".";
-                if (ss.parent) {
-                    parentStylePrefix += allStyles[ss.parent].name + ".";
-                }
+                var parent_1 = ss.parent;
+                var name_1 = ss.name;
                 if (ss.cssStyle.length > 0)
-                    stylestr += parentStylePrefix + ss.name + " {" + ss.cssStyle + "}\n";
+                    stylestr += buildCssRule(parent_1, name_1) + " {" + ss.cssStyle + "}\n";
                 var ssp = ss.pseudo;
                 if (ssp)
                     for (var key2 in ssp) {
-                        stylestr += parentStylePrefix + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                        stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + ssp[key2] + "}\n";
                     }
             }
             var styleElement = document.createElement('style');
@@ -117,6 +134,15 @@
     function styleDef(style, pseudo, nameHint) {
         return styleDefEx(null, style, pseudo, nameHint);
     }
+    function flattenStyle(style) {
+        if (!b.isArray(style))
+            return style;
+        var res = {};
+        for (var i = 0; i < style.length; i++) {
+            b.assign(res, style[i]);
+        }
+        return res;
+    }
     function styleDefEx(parent, style, pseudo, nameHint) {
         if (nameHint) {
             if (allNameHints[nameHint]) {
@@ -130,6 +156,7 @@
             nameHint = "b-" + globalCounter++;
         }
         var extractedInlStyle = null;
+        style = flattenStyle(style);
         if (style["pointerEvents"]) {
             extractedInlStyle = Object.create(null);
             extractedInlStyle["pointerEvents"] = style["pointerEvents"];
@@ -147,7 +174,7 @@
         if (pseudo) {
             processedPseudo = Object.create(null);
             for (var key in pseudo) {
-                var ps = pseudo[key];
+                var ps = flattenStyle(pseudo[key]);
                 b.shimStyle(ps);
                 processedPseudo[key] = inlineStyleToCssDeclaration(ps);
             }

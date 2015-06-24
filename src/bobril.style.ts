@@ -12,7 +12,7 @@ interface ISprite {
 
 interface IInternalStyle {
     name: string;
-    parent?: IBobrilStyleDef;
+    parent?: IBobrilStyleDef|IBobrilStyleDef[];
     cssStyle: string;
     fullInlStyle: any;
     inlStyle?: any;
@@ -30,20 +30,35 @@ interface IInternalStyle {
 
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
 
+    function buildCssRule(parent: string|string[], name: string): string {
+        let result = "";
+        if (parent) {
+            if (b.isArray(parent)) {
+                for (let i = 0; i < parent.length; i++) {
+                    if (i > 0) result += ",";
+                    result += "." + allStyles[parent[i]].name + "." + name;
+                }
+            } else {
+                result = "." + allStyles[<string>parent].name + "." + name;
+            }
+        } else {
+            result = "." + name;
+        }
+        return result;
+    }
+
     function beforeFrame() {
         if (rebuildStyles) {
             var stylestr = "";
             for (var key in allStyles) {
                 var ss = allStyles[key];
-                let parentStylePrefix = ".";
-                if (ss.parent) {
-                    parentStylePrefix += allStyles[ss.parent].name + ".";
-                }
+                let parent = ss.parent;
+                let name = ss.name;
                 if (ss.cssStyle.length > 0)
-                    stylestr += parentStylePrefix + ss.name + " {" + ss.cssStyle + "}\n";
+                    stylestr += buildCssRule(parent, name) + " {" + ss.cssStyle + "}\n";
                 var ssp = ss.pseudo;
                 if (ssp) for (var key2 in ssp) {
-                    stylestr += parentStylePrefix + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                    stylestr += buildCssRule(parent, name + ":" + key2) + " {" + ssp[key2] + "}\n";
                 }
             }
             var styleElement = document.createElement('style');
@@ -127,7 +142,17 @@ interface IInternalStyle {
         return styleDefEx(null, style, pseudo, nameHint);
     }
 
-    function styleDefEx(parent: IBobrilStyleDef, style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+    function flattenStyle(style: any): any {
+        if (!b.isArray(style))
+            return style;
+        var res = {};
+        for (let i = 0; i < style.length; i++) {
+            b.assign(res, style[i]);
+        }
+        return res;
+    }
+
+    function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
         if (nameHint) {
             if (allNameHints[nameHint]) {
                 var counter = 1;
@@ -138,6 +163,7 @@ interface IInternalStyle {
             nameHint = "b-" + globalCounter++;
         }
         var extractedInlStyle: any = null;
+        style = flattenStyle(style);
         if (style["pointerEvents"]) {
             extractedInlStyle = Object.create(null);
             extractedInlStyle["pointerEvents"] = style["pointerEvents"];
@@ -155,7 +181,7 @@ interface IInternalStyle {
         if (pseudo) {
             processedPseudo = Object.create(null);
             for (var key in pseudo) {
-                var ps = pseudo[key];
+                var ps = flattenStyle(pseudo[key]);
                 b.shimStyle(ps);
                 processedPseudo[key] = inlineStyleToCssDeclaration(ps);
             }
