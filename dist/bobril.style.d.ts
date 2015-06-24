@@ -15,4 +15,6 @@ declare type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
     // define class for background with sprite usually you specify only first parameter and build system does rest
     // { background: `url(${url})`, width: `${width||widthofurl}px`, height: `${height||heightofurl}px` }
     sprite?(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
+    // already bundled image bundle.png
+    spriteb?(width: number, height: number, left: number, top: number): IBobrilStyleDef;
 }

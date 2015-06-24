@@ -3264,7 +3264,12 @@ function registerRoutes(url, rs) {
         var r = rs[i];
         var u = url;
         var name = r.name;
-        if (name) {
+        if (!name && url === "/") {
+            name = "root";
+            r.name = name;
+            nameRouteMap[name] = r;
+        }
+        else if (name) {
             nameRouteMap[name] = r;
             u = joinPath(u, name);
         }
