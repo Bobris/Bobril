@@ -8,17 +8,38 @@
     var htmlStyle = null;
     var globalCounter = 0;
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
+    function buildCssRule(parent, name) {
+        var result = "";
+        if (parent) {
+            if (b.isArray(parent)) {
+                for (var i = 0; i < parent.length; i++) {
+                    if (i > 0)
+                        result += ",";
+                    result += "." + allStyles[parent[i]].name + "." + name;
+                }
+            }
+            else {
+                result = "." + allStyles[parent].name + "." + name;
+            }
+        }
+        else {
+            result = "." + name;
+        }
+        return result;
+    }
     function beforeFrame() {
         if (rebuildStyles) {
             var stylestr = "";
             for (var key in allStyles) {
                 var ss = allStyles[key];
+                var parent_1 = ss.parent;
+                var name_1 = ss.name;
                 if (ss.cssStyle.length > 0)
-                    stylestr += "." + ss.name + " {" + ss.cssStyle + "}\n";
+                    stylestr += buildCssRule(parent_1, name_1) + " {" + ss.cssStyle + "}\n";
                 var ssp = ss.pseudo;
                 if (ssp)
                     for (var key2 in ssp) {
-                        stylestr += "." + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                        stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + ssp[key2] + "}\n";
                     }
             }
             var styleElement = document.createElement('style');
@@ -105,12 +126,24 @@
             var v = style[key];
             if (v === undefined)
                 continue;
-            res += hyphenateStyle(key) + ":" + v + ";";
+            res += hyphenateStyle(key) + ":" + (v === "" ? '""' : v) + ";";
         }
         res = res.slice(0, -1);
         return res;
     }
     function styleDef(style, pseudo, nameHint) {
+        return styleDefEx(null, style, pseudo, nameHint);
+    }
+    function flattenStyle(style) {
+        if (!b.isArray(style))
+            return style;
+        var res = {};
+        for (var i = 0; i < style.length; i++) {
+            b.assign(res, style[i]);
+        }
+        return res;
+    }
+    function styleDefEx(parent, style, pseudo, nameHint) {
         if (nameHint) {
             if (allNameHints[nameHint]) {
                 var counter = 1;
@@ -123,6 +156,7 @@
             nameHint = "b-" + globalCounter++;
         }
         var extractedInlStyle = null;
+        style = flattenStyle(style);
         if (style["pointerEvents"]) {
             extractedInlStyle = Object.create(null);
             extractedInlStyle["pointerEvents"] = style["pointerEvents"];
@@ -140,12 +174,12 @@
         if (pseudo) {
             processedPseudo = Object.create(null);
             for (var key in pseudo) {
-                var ps = pseudo[key];
+                var ps = flattenStyle(pseudo[key]);
                 b.shimStyle(ps);
                 processedPseudo[key] = inlineStyleToCssDeclaration(ps);
             }
         }
-        allStyles[nameHint] = { name: nameHint, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
+        allStyles[nameHint] = { name: nameHint, parent: parent, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
         rebuildStyles = true;
         b.invalidate();
         return nameHint;
@@ -153,10 +187,10 @@
     function updateSprite(spDef) {
         var stDef = allStyles[spDef.styleid];
         var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
-        b.shimStyle(style);
         if (spDef.left || spDef.top) {
             style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
         }
+        b.shimStyle(style);
         stDef.fullInlStyle = style;
         stDef.cssStyle = inlineStyleToCssDeclaration(style);
         rebuildStyles = true;
@@ -209,7 +243,21 @@
         allSprites[key] = spDef;
         return styleid;
     }
+    function spriteb(width, height, left, top) {
+        var url = "bundle.png";
+        var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
+        var spDef = allSprites[key];
+        if (spDef)
+            return spDef.styleid;
+        var styleid = styleDef({ width: 0, height: 0 });
+        spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+        updateSprite(spDef);
+        allSprites[key] = spDef;
+        return styleid;
+    }
     b.style = style;
     b.styleDef = styleDef;
+    b.styleDefEx = styleDefEx;
     b.sprite = sprite;
+    b.spriteb = spriteb;
 })(b, document);

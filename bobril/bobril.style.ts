@@ -12,6 +12,7 @@ interface ISprite {
 
 interface IInternalStyle {
     name: string;
+    parent?: IBobrilStyleDef|IBobrilStyleDef[];
     cssStyle: string;
     fullInlStyle: any;
     inlStyle?: any;
@@ -29,16 +30,35 @@ interface IInternalStyle {
 
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
 
+    function buildCssRule(parent: string|string[], name: string): string {
+        let result = "";
+        if (parent) {
+            if (b.isArray(parent)) {
+                for (let i = 0; i < parent.length; i++) {
+                    if (i > 0) result += ",";
+                    result += "." + allStyles[parent[i]].name + "." + name;
+                }
+            } else {
+                result = "." + allStyles[<string>parent].name + "." + name;
+            }
+        } else {
+            result = "." + name;
+        }
+        return result;
+    }
+
     function beforeFrame() {
         if (rebuildStyles) {
             var stylestr = "";
             for (var key in allStyles) {
                 var ss = allStyles[key];
+                let parent = ss.parent;
+                let name = ss.name;
                 if (ss.cssStyle.length > 0)
-                    stylestr += "." + ss.name + " {" + ss.cssStyle + "}\n";
+                    stylestr += buildCssRule(parent, name) + " {" + ss.cssStyle + "}\n";
                 var ssp = ss.pseudo;
                 if (ssp) for (var key2 in ssp) {
-                    stylestr += "." + ss.name + ":" + key2 + " {" + ssp[key2] + "}\n";
+                    stylestr += buildCssRule(parent, name + ":" + key2) + " {" + ssp[key2] + "}\n";
                 }
             }
             var styleElement = document.createElement('style');
@@ -103,7 +123,7 @@ interface IInternalStyle {
     var msPattern = /^ms-/;
 
     function hyphenateStyle(s: string): string {
-        if (s==="cssFloat") return "float";
+        if (s === "cssFloat") return "float";
         return s.replace(uppercasePattern, '-$1').toLowerCase().replace(msPattern, '-ms-');
     }
 
@@ -112,13 +132,27 @@ interface IInternalStyle {
         for (var key in style) {
             var v = style[key];
             if (v === undefined) continue;
-            res += hyphenateStyle(key) + ":" + v + ";";
+            res += hyphenateStyle(key) + ":" + (v === "" ? '""' : v) + ";";
         }
-        res = res.slice(0,-1);
+        res = res.slice(0, -1);
         return res;
     }
 
     function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+        return styleDefEx(null, style, pseudo, nameHint);
+    }
+
+    function flattenStyle(style: any): any {
+        if (!b.isArray(style))
+            return style;
+        var res = {};
+        for (let i = 0; i < style.length; i++) {
+            b.assign(res, style[i]);
+        }
+        return res;
+    }
+
+    function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
         if (nameHint) {
             if (allNameHints[nameHint]) {
                 var counter = 1;
@@ -129,6 +163,7 @@ interface IInternalStyle {
             nameHint = "b-" + globalCounter++;
         }
         var extractedInlStyle: any = null;
+        style = flattenStyle(style);
         if (style["pointerEvents"]) {
             extractedInlStyle = Object.create(null);
             extractedInlStyle["pointerEvents"] = style["pointerEvents"];
@@ -146,12 +181,12 @@ interface IInternalStyle {
         if (pseudo) {
             processedPseudo = Object.create(null);
             for (var key in pseudo) {
-                var ps = pseudo[key];
+                var ps = flattenStyle(pseudo[key]);
                 b.shimStyle(ps);
                 processedPseudo[key] = inlineStyleToCssDeclaration(ps);
             }
         }
-        allStyles[nameHint] = { name: nameHint, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
+        allStyles[nameHint] = { name: nameHint, parent, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
         rebuildStyles = true;
         b.invalidate();
         return nameHint;
@@ -160,10 +195,10 @@ interface IInternalStyle {
     function updateSprite(spDef: ISprite): void {
         var stDef = allStyles[spDef.styleid];
         var style: any = { backgroundImage: `url(${spDef.url})`, width: spDef.width, height: spDef.height };
-        b.shimStyle(style);
         if (spDef.left || spDef.top) {
             style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
         }
+        b.shimStyle(style);
         stDef.fullInlStyle = style;
         stDef.cssStyle = inlineStyleToCssDeclaration(style);
         rebuildStyles = true;
@@ -212,7 +247,21 @@ interface IInternalStyle {
         return styleid;
     }
 
+    function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
+        let url = "bundle.png";
+        var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
+        var spDef = allSprites[key];
+        if (spDef) return spDef.styleid;
+        var styleid = styleDef({ width: 0, height: 0 });
+        spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+        updateSprite(spDef);
+        allSprites[key] = spDef;
+        return styleid;
+    }
+
     b.style = style;
     b.styleDef = styleDef;
+    b.styleDefEx = styleDefEx;
     b.sprite = sprite;
+    b.spriteb = spriteb;
 })(b, document);

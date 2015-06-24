@@ -63,9 +63,6 @@
     var events = ["focus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 50, (b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
-    if (b.ieVersion() === 8) {
-        setInterval(emitOnFocusChange, 100);
-    }
     function focused() {
         return currentFocusedNode;
     }

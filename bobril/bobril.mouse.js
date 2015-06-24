@@ -71,11 +71,7 @@
         }
         if (revertVisibilityChanges(hiddenEls)) {
             try {
-                if (b.ieVersion() < 9)
-                    t.fireEvent("on" + ev.type, ev);
-                else {
-                    t.dispatchEvent(ev);
-                }
+                t.dispatchEvent(ev);
             }
             catch (e) {
                 return false;
@@ -127,7 +123,7 @@
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY, button: ev.button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var param = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY, button: ev.button + 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
