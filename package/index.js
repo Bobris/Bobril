@@ -1424,7 +1424,7 @@ function assign(target, source) {
         target = {};
     if (source != null)
         for (var propname in source) {
-            if (!source.hasOwnProperty(propname))
+            if (!Object.prototype.hasOwnProperty.call(source, propname))
                 continue;
             target[propname] = source[propname];
         }
@@ -3520,6 +3520,7 @@ var allNameHints = Object.create(null);
 var rebuildStyles = false;
 var htmlStyle = null;
 var globalCounter = 0;
+var isIE9 = ieVersion() === 9;
 var chainedBeforeFrame = setBeforeFrame(beforeFrame);
 function buildCssRule(parent, name) {
     var result = "";
@@ -3540,6 +3541,36 @@ function buildCssRule(parent, name) {
     }
     return result;
 }
+function flattenStyle(cur, style) {
+    if (style === true || style === false || style == null) {
+        return cur;
+    }
+    if (typeof style === "string") {
+        var externalStyle = allStyles[style];
+        if (externalStyle === undefined)
+            throw new Error("uknown style " + style);
+        return flattenStyle(cur, externalStyle.style);
+    }
+    if (typeof style === "function") {
+        return style(cur);
+    }
+    if (isArray(style)) {
+        for (var i_3 = 0; i_3 < style.length; i_3++) {
+            cur = flattenStyle(cur, style[i_3]);
+        }
+        return cur;
+    }
+    for (var key in style) {
+        if (!Object.prototype.hasOwnProperty.call(style, key))
+            continue;
+        var val = style[key];
+        if (typeof val === "function") {
+            val = val(cur, key);
+        }
+        cur[key] = val;
+    }
+    return cur;
+}
 function beforeFrame() {
     if (rebuildStyles) {
         var stylestr = "";
@@ -3547,12 +3578,32 @@ function beforeFrame() {
             var ss = allStyles[key];
             var parent_1 = ss.parent;
             var name_1 = ss.name;
-            if (ss.cssStyle.length > 0)
-                stylestr += buildCssRule(parent_1, name_1) + " {" + ss.cssStyle + "}\n";
+            var style_1 = flattenStyle(Object.create(null), ss.style);
+            var extractedInlStyle = null;
+            if (style_1["pointerEvents"]) {
+                extractedInlStyle = Object.create(null);
+                extractedInlStyle["pointerEvents"] = style_1["pointerEvents"];
+            }
+            if (isIE9) {
+                if (style_1["userSelect"]) {
+                    if (extractedInlStyle == null)
+                        extractedInlStyle = Object.create(null);
+                    extractedInlStyle["userSelect"] = style_1["userSelect"];
+                    delete style_1["userSelect"];
+                }
+            }
+            ss.inlStyle = extractedInlStyle;
+            ss.expStyle = assign(Object.create(null), style_1); // clone it so it stays unshimed
+            shimStyle(style_1);
+            var cssStyle = inlineStyleToCssDeclaration(style_1);
+            if (cssStyle.length > 0)
+                stylestr += buildCssRule(parent_1, name_1) + " {" + cssStyle + "}\n";
             var ssp = ss.pseudo;
             if (ssp)
                 for (var key2 in ssp) {
-                    stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + ssp[key2] + "}\n";
+                    var sspi = flattenStyle(Object.create(null), ssp[key2]);
+                    shimStyle(sspi);
+                    stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
                 }
         }
         var styleElement = document.createElement('style');
@@ -3581,7 +3632,7 @@ function apply(s, className, inlineStyle) {
     else if (typeof s === "string") {
         var sd = allStyles[s];
         if (inlineStyle != null) {
-            inlineStyle = assign(inlineStyle, sd.fullInlStyle);
+            inlineStyle = assign(inlineStyle, sd.expStyle);
         }
         else {
             if (className == null)
@@ -3649,68 +3700,47 @@ function styleDef(style, pseudo, nameHint) {
     return styleDefEx(null, style, pseudo, nameHint);
 }
 exports.styleDef = styleDef;
-function flattenStyle(style) {
-    if (!isArray(style))
-        return style;
-    var res = {};
-    for (var i_3 = 0; i_3 < style.length; i_3++) {
-        assign(res, style[i_3]);
-    }
-    return res;
-}
 function styleDefEx(parent, style, pseudo, nameHint) {
-    if (nameHint) {
+    if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
             var counter = 1;
             while (allNameHints[nameHint + counter])
                 counter++;
+            nameHint = nameHint + counter;
         }
         allNameHints[nameHint] = true;
     }
     else {
         nameHint = "b-" + globalCounter++;
     }
-    var extractedInlStyle = null;
-    style = flattenStyle(style);
-    if (style["pointerEvents"]) {
-        extractedInlStyle = Object.create(null);
-        extractedInlStyle["pointerEvents"] = style["pointerEvents"];
-    }
-    if (ieVersion() === 9) {
-        if (style["userSelect"]) {
-            if (extractedInlStyle == null)
-                extractedInlStyle = Object.create(null);
-            extractedInlStyle["userSelect"] = style["userSelect"];
-            style["userSelect"] = undefined;
-        }
-    }
     shimStyle(style);
     var processedPseudo = null;
     if (pseudo) {
         processedPseudo = Object.create(null);
         for (var key in pseudo) {
-            var ps = flattenStyle(pseudo[key]);
-            shimStyle(ps);
-            processedPseudo[key] = inlineStyleToCssDeclaration(ps);
+            if (!Object.prototype.hasOwnProperty.call(pseudo, key))
+                continue;
+            processedPseudo[key] = pseudo[key];
         }
     }
-    allStyles[nameHint] = { name: nameHint, parent: parent, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
-    rebuildStyles = true;
-    invalidate();
+    allStyles[nameHint] = { name: nameHint, parent: parent, style: style, expStyle: null, inlStyle: null, pseudo: processedPseudo };
+    invalidateStyles();
     return nameHint;
 }
 exports.styleDefEx = styleDefEx;
+function invalidateStyles() {
+    rebuildStyles = true;
+    invalidate();
+}
+exports.invalidateStyles = invalidateStyles;
 function updateSprite(spDef) {
     var stDef = allStyles[spDef.styleid];
     var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
     if (spDef.left || spDef.top) {
         style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
     }
-    shimStyle(style);
-    stDef.fullInlStyle = style;
-    stDef.cssStyle = inlineStyleToCssDeclaration(style);
-    rebuildStyles = true;
-    invalidate();
+    stDef.style = style;
+    invalidateStyles();
 }
 function sprite(url, color, width, height, left, top) {
     var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + (left || 0) + ":" + (top || 0);

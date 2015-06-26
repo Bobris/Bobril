@@ -1518,7 +1518,7 @@ export function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobr
 export function assign(target: Object, source: Object): Object {
     if (target == null) target = {};
     if (source != null) for (var propname in source) {
-        if (!source.hasOwnProperty(propname)) continue;
+        if (!Object.prototype.hasOwnProperty.call(source, propname)) continue;
         (<any>target)[propname] = (<any>source)[propname];
     }
     return target;
@@ -3840,7 +3840,7 @@ export type IBobrilStyle = Object | IBobrilStyleDef | boolean;
 // place inline styles at end for optimal speed
 export type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
 
-export interface ISprite {
+interface ISprite {
     styleid: IBobrilStyleDef;
     url: string;
     width: number;
@@ -3852,21 +3852,22 @@ export interface ISprite {
 interface IInternalStyle {
     name: string;
     parent?: IBobrilStyleDef|IBobrilStyleDef[];
-    cssStyle: string;
-    fullInlStyle: any;
+    style: any;
+    expStyle: any;
     inlStyle?: any;
     pseudo?: { [name: string]: string };
 }
 
-let allStyles: { [id: string]: IInternalStyle } = Object.create(null);
-let allSprites: { [key: string]: ISprite } = Object.create(null);
-let allNameHints: { [name: string]: boolean } = Object.create(null);
+var allStyles: { [id: string]: IInternalStyle } = Object.create(null);
+var allSprites: { [key: string]: ISprite } = Object.create(null);
+var allNameHints: { [name: string]: boolean } = Object.create(null);
 
-let rebuildStyles = false;
-let htmlStyle: HTMLStyleElement = null;
-let globalCounter: number = 0;
+var rebuildStyles = false;
+var htmlStyle: HTMLStyleElement = null;
+var globalCounter: number = 0;
+const isIE9 = ieVersion() === 9;
 
-let chainedBeforeFrame = setBeforeFrame(beforeFrame);
+var chainedBeforeFrame = setBeforeFrame(beforeFrame);
 
 function buildCssRule(parent: string|string[], name: string): string {
     let result = "";
@@ -3885,6 +3886,35 @@ function buildCssRule(parent: string|string[], name: string): string {
     return result;
 }
 
+function flattenStyle(cur: any, style: any): any {
+    if (style === true || style === false || style == null) {
+        return cur;
+    }
+    if (typeof style === "string") {
+        let externalStyle = allStyles[style];
+        if (externalStyle === undefined) throw new Error("uknown style " + style);
+        return flattenStyle(cur, externalStyle.style);
+    }
+    if (typeof style === "function") {
+        return style(cur);
+    }
+    if (isArray(style)) {
+        for (let i = 0; i < style.length; i++) {
+            cur = flattenStyle(cur, style[i]);
+        }
+        return cur;
+    }
+    for (let key in style) {
+        if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
+        let val = style[key];
+        if (typeof val === "function") {
+            val = val(cur, key);
+        }
+        cur[key] = val;
+    }
+    return cur;
+}
+
 function beforeFrame() {
     if (rebuildStyles) {
         var stylestr = "";
@@ -3892,11 +3922,31 @@ function beforeFrame() {
             var ss = allStyles[key];
             let parent = ss.parent;
             let name = ss.name;
-            if (ss.cssStyle.length > 0)
-                stylestr += buildCssRule(parent, name) + " {" + ss.cssStyle + "}\n";
+            let style = flattenStyle(Object.create(null), ss.style);
+            var extractedInlStyle: any = null;
+            if (style["pointerEvents"]) {
+                extractedInlStyle = Object.create(null);
+                extractedInlStyle["pointerEvents"] = style["pointerEvents"];
+            }
+            if (isIE9) {
+                if (style["userSelect"]) {
+                    if (extractedInlStyle == null)
+                        extractedInlStyle = Object.create(null);
+                    extractedInlStyle["userSelect"] = style["userSelect"];
+                    delete style["userSelect"];
+                }
+            }
+            ss.inlStyle = extractedInlStyle;
+            ss.expStyle = assign(Object.create(null), style); // clone it so it stays unshimed
+            shimStyle(style);
+            let cssStyle = inlineStyleToCssDeclaration(style);
+            if (cssStyle.length > 0)
+                stylestr += buildCssRule(parent, name) + " {" + cssStyle + "}\n";
             var ssp = ss.pseudo;
             if (ssp) for (var key2 in ssp) {
-                stylestr += buildCssRule(parent, name + ":" + key2) + " {" + ssp[key2] + "}\n";
+                let sspi = flattenStyle(Object.create(null), ssp[key2]);
+                shimStyle(sspi);
+                stylestr += buildCssRule(parent, name + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
             }
         }
         var styleElement = document.createElement('style');
@@ -3926,7 +3976,7 @@ function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, 
     } else if (typeof s === "string") {
         var sd = allStyles[s];
         if (inlineStyle != null) {
-            inlineStyle = assign(inlineStyle, sd.fullInlStyle);
+            inlineStyle = assign(inlineStyle, sd.expStyle);
         } else {
             if (className == null) className = sd.name; else className = className + " " + sd.name;
             var inls = sd.inlStyle;
@@ -3980,54 +4030,34 @@ export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?
     return styleDefEx(null, style, pseudo, nameHint);
 }
 
-function flattenStyle(style: any): any {
-    if (!isArray(style))
-        return style;
-    var res = {};
-    for (let i = 0; i < style.length; i++) {
-        assign(res, style[i]);
-    }
-    return res;
-}
-
 export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
-    if (nameHint) {
+    if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
             var counter = 1;
             while (allNameHints[nameHint + counter]) counter++;
+            nameHint = nameHint + counter;
         }
         allNameHints[nameHint] = true;
     } else {
         nameHint = "b-" + globalCounter++;
-    }
-    var extractedInlStyle: any = null;
-    style = flattenStyle(style);
-    if (style["pointerEvents"]) {
-        extractedInlStyle = Object.create(null);
-        extractedInlStyle["pointerEvents"] = style["pointerEvents"];
-    }
-    if (ieVersion() === 9) {
-        if (style["userSelect"]) {
-            if (extractedInlStyle == null)
-                extractedInlStyle = Object.create(null);
-            extractedInlStyle["userSelect"] = style["userSelect"];
-            style["userSelect"] = undefined;
-        }
     }
     shimStyle(style);
     var processedPseudo: { [name: string]: string } = null;
     if (pseudo) {
         processedPseudo = Object.create(null);
         for (var key in pseudo) {
-            var ps = flattenStyle(pseudo[key]);
-            shimStyle(ps);
-            processedPseudo[key] = inlineStyleToCssDeclaration(ps);
+            if (!Object.prototype.hasOwnProperty.call(pseudo, key)) continue;
+            processedPseudo[key] = pseudo[key];
         }
     }
-    allStyles[nameHint] = { name: nameHint, parent, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
+    allStyles[nameHint] = { name: nameHint, parent, style, expStyle: null, inlStyle: null, pseudo: processedPseudo };
+    invalidateStyles();
+    return nameHint;
+}
+
+export function invalidateStyles(): void {
     rebuildStyles = true;
     invalidate();
-    return nameHint;
 }
 
 function updateSprite(spDef: ISprite): void {
@@ -4036,11 +4066,8 @@ function updateSprite(spDef: ISprite): void {
     if (spDef.left || spDef.top) {
         style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
     }
-    shimStyle(style);
-    stDef.fullInlStyle = style;
-    stDef.cssStyle = inlineStyleToCssDeclaration(style);
-    rebuildStyles = true;
-    invalidate();
+    stDef.style = style;
+    invalidateStyles();
 }
 
 export function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {

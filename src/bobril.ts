@@ -1389,7 +1389,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function assign(target: Object, source: Object): Object {
         if (target == null) target = {};
         if (source != null) for (var propname in source) {
-            if (!source.hasOwnProperty(propname)) continue;
+            if (!Object.prototype.hasOwnProperty.call(source, propname)) continue;
             (<any>target)[propname] = (<any>source)[propname];
         }
         return target;
