@@ -17,4 +17,6 @@ declare type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
     sprite?(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
     // already bundled image bundle.png
     spriteb?(width: number, height: number, left: number, top: number): IBobrilStyleDef;
+    // rebuilds all styles before next frame, it also calls Bobril invalidate
+    invalidateStyles?(): void;
 }

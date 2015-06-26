@@ -1402,7 +1402,7 @@ b = (function (window, document) {
             target = {};
         if (source != null)
             for (var propname in source) {
-                if (!source.hasOwnProperty(propname))
+                if (!Object.prototype.hasOwnProperty.call(source, propname))
                     continue;
                 target[propname] = source[propname];
             }

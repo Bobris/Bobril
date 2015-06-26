@@ -13,8 +13,8 @@ interface ISprite {
 interface IInternalStyle {
     name: string;
     parent?: IBobrilStyleDef|IBobrilStyleDef[];
-    cssStyle: string;
-    fullInlStyle: any;
+    style: any;
+    expStyle: any;
     inlStyle?: any;
     pseudo?: { [name: string]: string };
 }
@@ -27,6 +27,7 @@ interface IInternalStyle {
     var rebuildStyles = false;
     var htmlStyle: HTMLStyleElement = null;
     var globalCounter: number = 0;
+    const isIE9 = b.ieVersion() === 9;
 
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
 
@@ -47,6 +48,35 @@ interface IInternalStyle {
         return result;
     }
 
+    function flattenStyle(cur: any, style: any): any {
+        if (style === true || style === false || style == null) {
+            return cur;
+        }
+        if (typeof style === "string") {
+            let externalStyle = allStyles[style];
+            if (externalStyle === undefined) throw new Error("uknown style " + style);
+            return flattenStyle(cur, externalStyle.style);
+        }
+        if (typeof style === "function") {
+            return style(cur);
+        }
+        if (b.isArray(style)) {
+            for (let i = 0; i < style.length; i++) {
+                cur = flattenStyle(cur, style[i]);
+            }
+            return cur;
+        }
+        for (let key in style) {
+            if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
+            let val = style[key];
+            if (typeof val === "function") {
+                val = val(cur, key);
+            }
+            cur[key] = val;
+        }
+        return cur;
+    }
+
     function beforeFrame() {
         if (rebuildStyles) {
             var stylestr = "";
@@ -54,11 +84,31 @@ interface IInternalStyle {
                 var ss = allStyles[key];
                 let parent = ss.parent;
                 let name = ss.name;
-                if (ss.cssStyle.length > 0)
-                    stylestr += buildCssRule(parent, name) + " {" + ss.cssStyle + "}\n";
+                let style = flattenStyle(Object.create(null), ss.style);
+                var extractedInlStyle: any = null;
+                if (style["pointerEvents"]) {
+                    extractedInlStyle = Object.create(null);
+                    extractedInlStyle["pointerEvents"] = style["pointerEvents"];
+                }
+                if (isIE9) {
+                    if (style["userSelect"]) {
+                        if (extractedInlStyle == null)
+                            extractedInlStyle = Object.create(null);
+                        extractedInlStyle["userSelect"] = style["userSelect"];
+                        delete style["userSelect"];
+                    }
+                }
+                ss.inlStyle = extractedInlStyle;
+                ss.expStyle = b.assign(Object.create(null), style); // clone it so it stays unshimed
+                b.shimStyle(style);
+                let cssStyle = inlineStyleToCssDeclaration(style);
+                if (cssStyle.length > 0)
+                    stylestr += buildCssRule(parent, name) + " {" + cssStyle + "}\n";
                 var ssp = ss.pseudo;
                 if (ssp) for (var key2 in ssp) {
-                    stylestr += buildCssRule(parent, name + ":" + key2) + " {" + ssp[key2] + "}\n";
+                    let sspi = flattenStyle(Object.create(null), ssp[key2]);
+                    b.shimStyle(sspi);
+                    stylestr += buildCssRule(parent, name + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
                 }
             }
             var styleElement = document.createElement('style');
@@ -88,7 +138,7 @@ interface IInternalStyle {
         } else if (typeof s === "string") {
             var sd = allStyles[s];
             if (inlineStyle != null) {
-                inlineStyle = b.assign(inlineStyle, sd.fullInlStyle);
+                inlineStyle = b.assign(inlineStyle, sd.expStyle);
             } else {
                 if (className == null) className = sd.name; else className = className + " " + sd.name;
                 var inls = sd.inlStyle;
@@ -142,54 +192,34 @@ interface IInternalStyle {
         return styleDefEx(null, style, pseudo, nameHint);
     }
 
-    function flattenStyle(style: any): any {
-        if (!b.isArray(style))
-            return style;
-        var res = {};
-        for (let i = 0; i < style.length; i++) {
-            b.assign(res, style[i]);
-        }
-        return res;
-    }
-
     function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
-        if (nameHint) {
+        if (nameHint && nameHint !== "b-") {
             if (allNameHints[nameHint]) {
                 var counter = 1;
                 while (allNameHints[nameHint + counter]) counter++;
+                nameHint = nameHint + counter;
             }
             allNameHints[nameHint] = true;
         } else {
             nameHint = "b-" + globalCounter++;
-        }
-        var extractedInlStyle: any = null;
-        style = flattenStyle(style);
-        if (style["pointerEvents"]) {
-            extractedInlStyle = Object.create(null);
-            extractedInlStyle["pointerEvents"] = style["pointerEvents"];
-        }
-        if (b.ieVersion() === 9) {
-            if (style["userSelect"]) {
-                if (extractedInlStyle == null)
-                    extractedInlStyle = Object.create(null);
-                extractedInlStyle["userSelect"] = style["userSelect"];
-                style["userSelect"] = undefined;
-            }
         }
         b.shimStyle(style);
         var processedPseudo: { [name: string]: string } = null;
         if (pseudo) {
             processedPseudo = Object.create(null);
             for (var key in pseudo) {
-                var ps = flattenStyle(pseudo[key]);
-                b.shimStyle(ps);
-                processedPseudo[key] = inlineStyleToCssDeclaration(ps);
+                if (!Object.prototype.hasOwnProperty.call(pseudo, key)) continue;
+                processedPseudo[key] = pseudo[key];
             }
         }
-        allStyles[nameHint] = { name: nameHint, parent, fullInlStyle: style, inlStyle: extractedInlStyle, cssStyle: inlineStyleToCssDeclaration(style), pseudo: processedPseudo };
+        allStyles[nameHint] = { name: nameHint, parent, style, expStyle: null, inlStyle: null, pseudo: processedPseudo };
+        invalidateStyles();
+        return nameHint;
+    }
+
+    function invalidateStyles(): void {
         rebuildStyles = true;
         b.invalidate();
-        return nameHint;
     }
 
     function updateSprite(spDef: ISprite): void {
@@ -198,11 +228,8 @@ interface IInternalStyle {
         if (spDef.left || spDef.top) {
             style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
         }
-        b.shimStyle(style);
-        stDef.fullInlStyle = style;
-        stDef.cssStyle = inlineStyleToCssDeclaration(style);
-        rebuildStyles = true;
-        b.invalidate();
+        stDef.style = style;
+        invalidateStyles();
     }
 
     function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
@@ -264,4 +291,5 @@ interface IInternalStyle {
     b.styleDefEx = styleDefEx;
     b.sprite = sprite;
     b.spriteb = spriteb;
+    b.invalidateStyles = invalidateStyles;
 })(b, document);
