@@ -3527,8 +3527,9 @@ function buildCssRule(parent, name) {
     if (parent) {
         if (isArray(parent)) {
             for (var i_2 = 0; i_2 < parent.length; i_2++) {
-                if (i_2 > 0)
+                if (i_2 > 0) {
                     result += ",";
+                }
                 result += "." + allStyles[parent[i_2]].name + "." + name;
             }
         }
@@ -3541,35 +3542,43 @@ function buildCssRule(parent, name) {
     }
     return result;
 }
-function flattenStyle(cur, style) {
-    if (style === true || style === false || style == null) {
-        return cur;
-    }
+function flattenStyle(cur, curPseudo, style, stylePseudo) {
     if (typeof style === "string") {
         var externalStyle = allStyles[style];
-        if (externalStyle === undefined)
+        if (externalStyle === undefined) {
             throw new Error("uknown style " + style);
-        return flattenStyle(cur, externalStyle.style);
+        }
+        flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
     }
-    if (typeof style === "function") {
-        return style(cur);
+    else if (typeof style === "function") {
+        style(cur, curPseudo);
     }
-    if (isArray(style)) {
+    else if (isArray(style)) {
         for (var i_3 = 0; i_3 < style.length; i_3++) {
-            cur = flattenStyle(cur, style[i_3]);
+            flattenStyle(cur, curPseudo, style[i_3], undefined);
         }
-        return cur;
     }
-    for (var key in style) {
-        if (!Object.prototype.hasOwnProperty.call(style, key))
-            continue;
-        var val = style[key];
-        if (typeof val === "function") {
-            val = val(cur, key);
+    else if (typeof style === "object") {
+        for (var key in style) {
+            if (!Object.prototype.hasOwnProperty.call(style, key))
+                continue;
+            var val = style[key];
+            if (typeof val === "function") {
+                val = val(cur, key);
+            }
+            cur[key] = val;
         }
-        cur[key] = val;
     }
-    return cur;
+    if (stylePseudo != null && curPseudo != null) {
+        for (var pseudoKey in stylePseudo) {
+            var curPseudoVal = curPseudo[pseudoKey];
+            if (curPseudoVal === undefined) {
+                curPseudoVal = Object.create(null);
+                curPseudo[pseudoKey] = curPseudoVal;
+            }
+            flattenStyle(curPseudoVal, undefined, stylePseudo[pseudoKey], undefined);
+        }
+    }
 }
 function beforeFrame() {
     if (rebuildStyles) {
@@ -3578,7 +3587,10 @@ function beforeFrame() {
             var ss = allStyles[key];
             var parent_1 = ss.parent;
             var name_1 = ss.name;
-            var style_1 = flattenStyle(Object.create(null), ss.style);
+            var style_1 = Object.create(null);
+            var flattenPseudo = Object.create(null);
+            flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
+            flattenStyle(style_1, flattenPseudo, ss.style, undefined);
             var extractedInlStyle = null;
             if (style_1["pointerEvents"]) {
                 extractedInlStyle = Object.create(null);
@@ -3598,15 +3610,13 @@ function beforeFrame() {
             var cssStyle = inlineStyleToCssDeclaration(style_1);
             if (cssStyle.length > 0)
                 stylestr += buildCssRule(parent_1, name_1) + " {" + cssStyle + "}\n";
-            var ssp = ss.pseudo;
-            if (ssp)
-                for (var key2 in ssp) {
-                    var sspi = flattenStyle(Object.create(null), ssp[key2]);
-                    shimStyle(sspi);
-                    stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
-                }
+            for (var key2 in flattenPseudo) {
+                var sspi = flattenPseudo[key2];
+                shimStyle(sspi);
+                stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
+            }
         }
-        var styleElement = document.createElement('style');
+        var styleElement = document.createElement("style");
         styleElement.type = 'text/css';
         if (styleElement.styleSheet) {
             styleElement.styleSheet.cssText = stylestr;
@@ -3641,10 +3651,12 @@ function apply(s, className, inlineStyle) {
                 className = className + " " + sd.name;
             var inls = sd.inlStyle;
             if (inls) {
-                if (inlineStyle == null)
+                if (inlineStyle == null) {
                     inlineStyle = inls;
-                else
+                }
+                else {
                     inlineStyle = assign(inlineStyle, inls);
+                }
             }
         }
     }
@@ -3677,7 +3689,6 @@ function style(node) {
     return node;
     var _a;
 }
-exports.style = style;
 var uppercasePattern = /([A-Z])/g;
 var msPattern = /^ms-/;
 function hyphenateStyle(s) {
@@ -3699,7 +3710,6 @@ function inlineStyleToCssDeclaration(style) {
 function styleDef(style, pseudo, nameHint) {
     return styleDefEx(null, style, pseudo, nameHint);
 }
-exports.styleDef = styleDef;
 function styleDefEx(parent, style, pseudo, nameHint) {
     if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
@@ -3727,12 +3737,10 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     invalidateStyles();
     return nameHint;
 }
-exports.styleDefEx = styleDefEx;
 function invalidateStyles() {
     rebuildStyles = true;
     invalidate();
 }
-exports.invalidateStyles = invalidateStyles;
 function updateSprite(spDef) {
     var stDef = allStyles[spDef.styleid];
     var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
@@ -3789,7 +3797,6 @@ function sprite(url, color, width, height, left, top) {
     allSprites[key] = spDef;
     return styleid;
 }
-exports.sprite = sprite;
 function spriteb(width, height, left, top) {
     var url = "bundle.png";
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
@@ -3802,7 +3809,6 @@ function spriteb(width, height, left, top) {
     allSprites[key] = spDef;
     return styleid;
 }
-exports.spriteb = spriteb;
 // Bobril.svgExtensions
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
     var angleInRadians = angleInDegrees * Math.PI / 180.0;

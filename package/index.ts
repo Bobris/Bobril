@@ -3874,7 +3874,9 @@ function buildCssRule(parent: string|string[], name: string): string {
     if (parent) {
         if (isArray(parent)) {
             for (let i = 0; i < parent.length; i++) {
-                if (i > 0) result += ",";
+                if (i > 0) {
+                    result += ",";
+                }
                 result += "." + allStyles[parent[i]].name + "." + name;
             }
         } else {
@@ -3886,33 +3888,39 @@ function buildCssRule(parent: string|string[], name: string): string {
     return result;
 }
 
-function flattenStyle(cur: any, style: any): any {
-    if (style === true || style === false || style == null) {
-        return cur;
-    }
+function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): void {
     if (typeof style === "string") {
         let externalStyle = allStyles[style];
-        if (externalStyle === undefined) throw new Error("uknown style " + style);
-        return flattenStyle(cur, externalStyle.style);
-    }
-    if (typeof style === "function") {
-        return style(cur);
-    }
-    if (isArray(style)) {
+        if (externalStyle === undefined) {
+            throw new Error("uknown style " + style);
+        }
+        flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
+    } else if (typeof style === "function") {
+        style(cur, curPseudo);
+    } else if (isArray(style)) {
         for (let i = 0; i < style.length; i++) {
-            cur = flattenStyle(cur, style[i]);
+            flattenStyle(cur, curPseudo, style[i], undefined);
         }
-        return cur;
-    }
-    for (let key in style) {
-        if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
-        let val = style[key];
-        if (typeof val === "function") {
-            val = val(cur, key);
+    } else if (typeof style === "object") {
+        for (let key in style) {
+            if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
+            let val = style[key];
+            if (typeof val === "function") {
+                val = val(cur, key);
+            }
+            cur[key] = val;
         }
-        cur[key] = val;
     }
-    return cur;
+    if (stylePseudo != null && curPseudo != null) {
+        for (let pseudoKey in stylePseudo) {
+            let curPseudoVal = curPseudo[pseudoKey];
+            if (curPseudoVal === undefined) {
+                curPseudoVal = Object.create(null);
+                curPseudo[pseudoKey] = curPseudoVal;
+            }
+            flattenStyle(curPseudoVal, undefined, stylePseudo[pseudoKey], undefined);
+        }
+    }
 }
 
 function beforeFrame() {
@@ -3922,7 +3930,10 @@ function beforeFrame() {
             var ss = allStyles[key];
             let parent = ss.parent;
             let name = ss.name;
-            let style = flattenStyle(Object.create(null), ss.style);
+            let style = Object.create(null);
+            let flattenPseudo = Object.create(null);
+            flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
+            flattenStyle(style, flattenPseudo, ss.style, undefined);
             var extractedInlStyle: any = null;
             if (style["pointerEvents"]) {
                 extractedInlStyle = Object.create(null);
@@ -3942,14 +3953,13 @@ function beforeFrame() {
             let cssStyle = inlineStyleToCssDeclaration(style);
             if (cssStyle.length > 0)
                 stylestr += buildCssRule(parent, name) + " {" + cssStyle + "}\n";
-            var ssp = ss.pseudo;
-            if (ssp) for (var key2 in ssp) {
-                let sspi = flattenStyle(Object.create(null), ssp[key2]);
+            for (var key2 in flattenPseudo) {
+                let sspi = flattenPseudo[key2];
                 shimStyle(sspi);
                 stylestr += buildCssRule(parent, name + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
             }
         }
-        var styleElement = document.createElement('style');
+        var styleElement = document.createElement("style");
         styleElement.type = 'text/css';
         if ((<any>styleElement).styleSheet) {
             (<any>styleElement).styleSheet.cssText = stylestr;
@@ -3972,7 +3982,7 @@ function beforeFrame() {
 
 function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, any] {
     if (typeof s === "boolean") {
-        //skip
+        // skip
     } else if (typeof s === "string") {
         var sd = allStyles[s];
         if (inlineStyle != null) {
@@ -3981,8 +3991,11 @@ function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, 
             if (className == null) className = sd.name; else className = className + " " + sd.name;
             var inls = sd.inlStyle;
             if (inls) {
-                if (inlineStyle == null) inlineStyle = inls;
-                else inlineStyle = assign(inlineStyle, inls);
+                if (inlineStyle == null) {
+                    inlineStyle = inls;
+                } else {
+                    inlineStyle = assign(inlineStyle, inls);
+                }
             }
         }
     } else if (Array.isArray(s)) {
@@ -3996,7 +4009,7 @@ function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, 
     return [className, inlineStyle];
 }
 
-export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
+function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
     var className = node.className;
     var inlineStyle = node.style;
     for (var i = 0; i < styles.length; i++) {
@@ -4026,11 +4039,11 @@ function inlineStyleToCssDeclaration(style: any): string {
     return res;
 }
 
-export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     return styleDefEx(null, style, pseudo, nameHint);
 }
 
-export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
             var counter = 1;
@@ -4055,7 +4068,7 @@ export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any
     return nameHint;
 }
 
-export function invalidateStyles(): void {
+function invalidateStyles(): void {
     rebuildStyles = true;
     invalidate();
 }
@@ -4070,7 +4083,7 @@ function updateSprite(spDef: ISprite): void {
     invalidateStyles();
 }
 
-export function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
+function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
     var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + (left || 0) + ":" + (top || 0);
     var spDef = allSprites[key];
     if (spDef) return spDef.styleid;
@@ -4112,7 +4125,7 @@ export function sprite(url: string, color?: string, width?: number, height?: num
     return styleid;
 }
 
-export function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
+function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
     let url = "bundle.png";
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
     var spDef = allSprites[key];
