@@ -4009,7 +4009,7 @@ function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, 
     return [className, inlineStyle];
 }
 
-function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
+export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
     var className = node.className;
     var inlineStyle = node.style;
     for (var i = 0; i < styles.length; i++) {
@@ -4039,11 +4039,11 @@ function inlineStyleToCssDeclaration(style: any): string {
     return res;
 }
 
-function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     return styleDefEx(null, style, pseudo, nameHint);
 }
 
-function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
             var counter = 1;
@@ -4068,7 +4068,7 @@ function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseud
     return nameHint;
 }
 
-function invalidateStyles(): void {
+export function invalidateStyles(): void {
     rebuildStyles = true;
     invalidate();
 }
@@ -4083,7 +4083,7 @@ function updateSprite(spDef: ISprite): void {
     invalidateStyles();
 }
 
-function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
+export function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
     var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + (left || 0) + ":" + (top || 0);
     var spDef = allSprites[key];
     if (spDef) return spDef.styleid;
@@ -4125,7 +4125,7 @@ function sprite(url: string, color?: string, width?: number, height?: number, le
     return styleid;
 }
 
-function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
+export function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
     let url = "bundle.png";
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
     var spDef = allSprites[key];

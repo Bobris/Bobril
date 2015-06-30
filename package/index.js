@@ -3689,6 +3689,7 @@ function style(node) {
     return node;
     var _a;
 }
+exports.style = style;
 var uppercasePattern = /([A-Z])/g;
 var msPattern = /^ms-/;
 function hyphenateStyle(s) {
@@ -3710,6 +3711,7 @@ function inlineStyleToCssDeclaration(style) {
 function styleDef(style, pseudo, nameHint) {
     return styleDefEx(null, style, pseudo, nameHint);
 }
+exports.styleDef = styleDef;
 function styleDefEx(parent, style, pseudo, nameHint) {
     if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
@@ -3737,10 +3739,12 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     invalidateStyles();
     return nameHint;
 }
+exports.styleDefEx = styleDefEx;
 function invalidateStyles() {
     rebuildStyles = true;
     invalidate();
 }
+exports.invalidateStyles = invalidateStyles;
 function updateSprite(spDef) {
     var stDef = allStyles[spDef.styleid];
     var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
@@ -3797,6 +3801,7 @@ function sprite(url, color, width, height, left, top) {
     allSprites[key] = spDef;
     return styleid;
 }
+exports.sprite = sprite;
 function spriteb(width, height, left, top) {
     var url = "bundle.png";
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
@@ -3809,6 +3814,7 @@ function spriteb(width, height, left, top) {
     allSprites[key] = spDef;
     return styleid;
 }
+exports.spriteb = spriteb;
 // Bobril.svgExtensions
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
     var angleInRadians = angleInDegrees * Math.PI / 180.0;
