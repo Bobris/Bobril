@@ -9,9 +9,11 @@ module StyleApp {
     var iconShine = b.sprite("light.png", "#80ff80");
     var iconOff = b.sprite("light.png", "#e03030");
     var leftfloat = b.styleDef([{ cssFloat: "left" }, { width: 50, height: 30 }]);
-    var par1 = b.styleDef({ fontFamily: "Arial", fontSize: 10, margin:5 });
-    var par2 = b.styleDef({ fontFamily: "TimesNewRoman", fontSize: 20, margin:5 });
+    var par1 = b.styleDef({ fontFamily: "Arial", fontSize: 10, margin: 5 });
+    var par2 = b.styleDef({ fontFamily: "TimesNewRoman", fontSize: 20, margin: 5 });
     var ovr1 = b.styleDefEx([par1, par2], { fontSize: 15 });
+    var par = b.styleDef({ background: "red", padding: 10 });
+    var child = b.styleDefEx(par + ":hover>", { background: "green" });
     var l = true;
 
     b.init(() => {
@@ -33,7 +35,10 @@ module StyleApp {
                     b.style({ tag: "span", children: "P1O1" }, par1, ovr1),
                     b.style({ tag: "span", children: "P2O1" }, par2, ovr1)
                 ]
-            }
+            },
+            b.style({
+                tag: "div", children: b.style({ tag: "div", children: "inner" }, child)
+            }, par)
         ];
     });
 }

@@ -27,5 +27,9 @@
     "browserify-zlib": "*",
     "typescript": "*",
     "through2": "*"
+  },
+  "dependencies": {
+    "intl": "^1.0.0-rc-4",
+    "intl-messageformat": "^1.1.0"
   }
 }

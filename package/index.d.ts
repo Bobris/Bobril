@@ -102,6 +102,7 @@ export declare function addRoot(factory: () => IBobrilChildren, element?: HTMLEl
 export declare function removeRoot(id: string): void;
 export declare function getRoots(): IBobrilRoots;
 export declare function init(factory: () => any, element?: HTMLElement): void;
+export declare function setBeforeInit(callback: (cb: () => void) => void): void;
 export declare function bubble(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx;
 export declare function broadcast(name: string, param: any): IBobrilCtx;
 export declare function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;

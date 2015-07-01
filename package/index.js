@@ -466,7 +466,7 @@ function removeNode(c) {
     destroyNode(c);
     removeNodeRecursive(c);
 }
-var roots = Object.create(null);
+var roots = newHashObj();
 function nodeContainsNode(c, n, resIndex, res) {
     var el = c.element;
     var ch = c.children;
@@ -1295,12 +1295,20 @@ function getRoots() {
     return roots;
 }
 exports.getRoots = getRoots;
+var beforeInit = invalidate;
 function init(factory, element) {
     removeRoot("0");
     roots["0"] = { f: factory, e: element, c: [] };
-    invalidate();
+    beforeInit();
 }
 exports.init = init;
+function setBeforeInit(callback) {
+    var prevBeforeInit = beforeInit;
+    beforeInit = function () {
+        callback(prevBeforeInit);
+    };
+}
+exports.setBeforeInit = setBeforeInit;
 function bubble(node, name, param) {
     while (node) {
         var c = node.component;
@@ -2240,7 +2248,7 @@ for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
         });
     })(pointersEventNames[j]);
 }
-var pointersDown = Object.create(null);
+var pointersDown = newHashObj();
 var toBust = [];
 var firstPointerDown = -1;
 var firstPointerDownTime = 0;
@@ -2606,7 +2614,7 @@ var DndCtx = function (pointerId) {
     this.ctrl = false;
     this.alt = false;
     this.meta = false;
-    this.data = Object.create(null);
+    this.data = newHashObj();
     if (pointerId >= 0)
         pointer2Dnd[pointerId] = this;
     dnds.push(this);
@@ -2688,7 +2696,7 @@ dndProto.destroy = function () {
         rootId = null;
     }
 };
-var pointer2Dnd = Object.create(null);
+var pointer2Dnd = newHashObj();
 function handlePointerDown(ev, target, node) {
     var dnd = pointer2Dnd[ev.id];
     if (dnd && dnd.totalX == null) {
@@ -3173,7 +3181,7 @@ function findMatch(path, rs, outParams) {
 ;
 var activeRoutes = [];
 var futureRoutes;
-var activeParams = Object.create(null);
+var activeParams = newHashObj();
 var nodesArray = [];
 var setterOfNodesArray = [];
 var urlRegex = /\:|\//g;
@@ -3514,14 +3522,20 @@ function runTransition(transition) {
     nextIteration();
 }
 exports.runTransition = runTransition;
-var allStyles = Object.create(null);
-var allSprites = Object.create(null);
-var allNameHints = Object.create(null);
+var allStyles = newHashObj();
+var allSprites = newHashObj();
+var allNameHints = newHashObj();
 var rebuildStyles = false;
 var htmlStyle = null;
 var globalCounter = 0;
 var isIE9 = ieVersion() === 9;
 var chainedBeforeFrame = setBeforeFrame(beforeFrame);
+function buildCssSubRule(parent) {
+    var posColon = parent.indexOf(':');
+    if (posColon === -1)
+        return allStyles[parent].name;
+    return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+}
 function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
@@ -3530,11 +3544,11 @@ function buildCssRule(parent, name) {
                 if (i_2 > 0) {
                     result += ",";
                 }
-                result += "." + allStyles[parent[i_2]].name + "." + name;
+                result += "." + buildCssSubRule(parent[i_2]) + "." + name;
             }
         }
         else {
-            result = "." + allStyles[parent].name + "." + name;
+            result = "." + buildCssSubRule(parent) + "." + name;
         }
     }
     else {
@@ -3573,7 +3587,7 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         for (var pseudoKey in stylePseudo) {
             var curPseudoVal = curPseudo[pseudoKey];
             if (curPseudoVal === undefined) {
-                curPseudoVal = Object.create(null);
+                curPseudoVal = newHashObj();
                 curPseudo[pseudoKey] = curPseudoVal;
             }
             flattenStyle(curPseudoVal, undefined, stylePseudo[pseudoKey], undefined);
@@ -3587,25 +3601,25 @@ function beforeFrame() {
             var ss = allStyles[key];
             var parent_1 = ss.parent;
             var name_1 = ss.name;
-            var style_1 = Object.create(null);
-            var flattenPseudo = Object.create(null);
+            var style_1 = newHashObj();
+            var flattenPseudo = newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
             flattenStyle(style_1, flattenPseudo, ss.style, undefined);
             var extractedInlStyle = null;
             if (style_1["pointerEvents"]) {
-                extractedInlStyle = Object.create(null);
+                extractedInlStyle = newHashObj();
                 extractedInlStyle["pointerEvents"] = style_1["pointerEvents"];
             }
             if (isIE9) {
                 if (style_1["userSelect"]) {
                     if (extractedInlStyle == null)
-                        extractedInlStyle = Object.create(null);
+                        extractedInlStyle = newHashObj();
                     extractedInlStyle["userSelect"] = style_1["userSelect"];
                     delete style_1["userSelect"];
                 }
             }
             ss.inlStyle = extractedInlStyle;
-            ss.expStyle = assign(Object.create(null), style_1); // clone it so it stays unshimed
+            ss.expStyle = assign(newHashObj(), style_1); // clone it so it stays unshimed
             shimStyle(style_1);
             var cssStyle = inlineStyleToCssDeclaration(style_1);
             if (cssStyle.length > 0)
@@ -3728,7 +3742,7 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     shimStyle(style);
     var processedPseudo = null;
     if (pseudo) {
-        processedPseudo = Object.create(null);
+        processedPseudo = newHashObj();
         for (var key in pseudo) {
             if (!Object.prototype.hasOwnProperty.call(pseudo, key))
                 continue;

@@ -589,7 +589,7 @@ function removeNode(c: IBobrilCacheNode) {
     removeNodeRecursive(c);
 }
 
-var roots: IBobrilRoots = Object.create(null);
+var roots: IBobrilRoots = newHashObj();
 
 function nodeContainsNode(c: IBobrilCacheNode, n: Node, resIndex: number, res: IBobrilCacheNode[]): IBobrilCacheNode[] {
     var el = c.element;
@@ -1396,10 +1396,19 @@ export function getRoots(): IBobrilRoots {
     return roots;
 }
 
+var beforeInit: () => void = invalidate;
+
 export function init(factory: () => any, element?: HTMLElement) {
     removeRoot("0");
     roots["0"] = { f: factory, e: element, c: [] };
-    invalidate();
+    beforeInit();
+}
+
+export function setBeforeInit(callback: (cb: () => void) => void): void {
+    let prevBeforeInit = beforeInit;
+    beforeInit = () => {
+        callback(prevBeforeInit);
+    }
 }
 
 export function bubble(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx {
@@ -2405,7 +2414,7 @@ for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
     })(pointersEventNames[j]);
 }
 
-var pointersDown: { [id: number]: BobrilPointerType } = Object.create(null);
+var pointersDown: { [id: number]: BobrilPointerType } = newHashObj();
 var toBust: Array<number>[] = [];
 var firstPointerDown = -1;
 var firstPointerDownTime = 0;
@@ -2851,7 +2860,7 @@ var DndCtx = function(pointerId: number) {
     this.ctrl = false;
     this.alt = false;
     this.meta = false;
-    this.data = Object.create(null);
+    this.data = newHashObj();
     if (pointerId >= 0)
         pointer2Dnd[pointerId] = this;
     dnds.push(this);
@@ -2946,7 +2955,7 @@ dndProto.destroy = function(): void {
     }
 }
 
-var pointer2Dnd = Object.create(null);
+var pointer2Dnd = newHashObj();
 
 function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
@@ -3504,7 +3513,7 @@ function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IR
 
 let activeRoutes: IRoute[] = [];
 let futureRoutes: IRoute[];
-let activeParams: Params = Object.create(null);
+let activeParams: Params = newHashObj();
 let nodesArray: IBobrilCacheNode[] = [];
 let setterOfNodesArray: ((node: IBobrilCacheNode) => void)[] = [];
 const urlRegex = /\:|\//g;
@@ -3858,9 +3867,9 @@ interface IInternalStyle {
     pseudo?: { [name: string]: string };
 }
 
-var allStyles: { [id: string]: IInternalStyle } = Object.create(null);
-var allSprites: { [key: string]: ISprite } = Object.create(null);
-var allNameHints: { [name: string]: boolean } = Object.create(null);
+var allStyles: { [id: string]: IInternalStyle } = newHashObj();
+var allSprites: { [key: string]: ISprite } = newHashObj();
+var allNameHints: { [name: string]: boolean } = newHashObj();
 
 var rebuildStyles = false;
 var htmlStyle: HTMLStyleElement = null;
@@ -3868,6 +3877,12 @@ var globalCounter: number = 0;
 const isIE9 = ieVersion() === 9;
 
 var chainedBeforeFrame = setBeforeFrame(beforeFrame);
+
+function buildCssSubRule(parent: string): string {
+    let posColon = parent.indexOf(':');
+    if (posColon === -1) return allStyles[parent].name;
+    return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+}
 
 function buildCssRule(parent: string|string[], name: string): string {
     let result = "";
@@ -3877,10 +3892,10 @@ function buildCssRule(parent: string|string[], name: string): string {
                 if (i > 0) {
                     result += ",";
                 }
-                result += "." + allStyles[parent[i]].name + "." + name;
+                result += "." + buildCssSubRule(parent[i]) + "." + name;
             }
         } else {
-            result = "." + allStyles[<string>parent].name + "." + name;
+            result = "." + buildCssSubRule(<string>parent) + "." + name;
         }
     } else {
         result = "." + name;
@@ -3915,7 +3930,7 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
         for (let pseudoKey in stylePseudo) {
             let curPseudoVal = curPseudo[pseudoKey];
             if (curPseudoVal === undefined) {
-                curPseudoVal = Object.create(null);
+                curPseudoVal = newHashObj();
                 curPseudo[pseudoKey] = curPseudoVal;
             }
             flattenStyle(curPseudoVal, undefined, stylePseudo[pseudoKey], undefined);
@@ -3930,25 +3945,25 @@ function beforeFrame() {
             var ss = allStyles[key];
             let parent = ss.parent;
             let name = ss.name;
-            let style = Object.create(null);
-            let flattenPseudo = Object.create(null);
+            let style = newHashObj();
+            let flattenPseudo = newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
             flattenStyle(style, flattenPseudo, ss.style, undefined);
             var extractedInlStyle: any = null;
             if (style["pointerEvents"]) {
-                extractedInlStyle = Object.create(null);
+                extractedInlStyle = newHashObj();
                 extractedInlStyle["pointerEvents"] = style["pointerEvents"];
             }
             if (isIE9) {
                 if (style["userSelect"]) {
                     if (extractedInlStyle == null)
-                        extractedInlStyle = Object.create(null);
+                        extractedInlStyle = newHashObj();
                     extractedInlStyle["userSelect"] = style["userSelect"];
                     delete style["userSelect"];
                 }
             }
             ss.inlStyle = extractedInlStyle;
-            ss.expStyle = assign(Object.create(null), style); // clone it so it stays unshimed
+            ss.expStyle = assign(newHashObj(), style); // clone it so it stays unshimed
             shimStyle(style);
             let cssStyle = inlineStyleToCssDeclaration(style);
             if (cssStyle.length > 0)
@@ -4057,7 +4072,7 @@ export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any
     shimStyle(style);
     var processedPseudo: { [name: string]: string } = null;
     if (pseudo) {
-        processedPseudo = Object.create(null);
+        processedPseudo = newHashObj();
         for (var key in pseudo) {
             if (!Object.prototype.hasOwnProperty.call(pseudo, key)) continue;
             processedPseudo[key] = pseudo[key];

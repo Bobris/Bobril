@@ -1,6 +1,6 @@
 // definition for Bobril defined class
 declare type IBobrilStyleDef = string;
-// object case if for inline style declaration, undefined, null, true and false values are ignored
+// object case is for inline style declaration, undefined, null, true and false values are ignored
 declare type IBobrilStyle = Object | IBobrilStyleDef | boolean;
 // place inline styles at end for optimal speed
 declare type IBobrilStyles = IBobrilStyle | IBobrilStyle[];

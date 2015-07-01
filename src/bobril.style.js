@@ -9,6 +9,12 @@
     var globalCounter = 0;
     var isIE9 = b.ieVersion() === 9;
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
+    function buildCssSubRule(parent) {
+        var posColon = parent.indexOf(':');
+        if (posColon === -1)
+            return allStyles[parent].name;
+        return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+    }
     function buildCssRule(parent, name) {
         var result = "";
         if (parent) {
@@ -17,11 +23,11 @@
                     if (i > 0) {
                         result += ",";
                     }
-                    result += "." + allStyles[parent[i]].name + "." + name;
+                    result += "." + buildCssSubRule(parent[i]) + "." + name;
                 }
             }
             else {
-                result = "." + allStyles[parent].name + "." + name;
+                result = "." + buildCssSubRule(parent) + "." + name;
             }
         }
         else {

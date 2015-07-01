@@ -1278,10 +1278,17 @@ b = (function (window, document) {
     function getRoots() {
         return roots;
     }
+    var beforeInit = invalidate;
     function init(factory, element) {
         removeRoot("0");
         roots["0"] = { f: factory, e: element, c: [] };
-        invalidate();
+        beforeInit();
+    }
+    function setBeforeInit(callback) {
+        var prevBeforeInit = beforeInit;
+        beforeInit = function () {
+            callback(prevBeforeInit);
+        };
     }
     function bubbleEvent(node, name, param) {
         while (node) {
@@ -1460,6 +1467,7 @@ b = (function (window, document) {
         getRoots: getRoots,
         setBeforeFrame: setBeforeFrame,
         setAfterFrame: setAfterFrame,
+        setBeforeInit: setBeforeInit,
         isArray: isArray,
         uptime: function () { return uptime; },
         lastFrameDuration: function () { return lastFrameDuration; },

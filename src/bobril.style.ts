@@ -31,6 +31,12 @@ interface IInternalStyle {
 
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
 
+    function buildCssSubRule(parent: string): string {
+        let posColon = parent.indexOf(':');
+        if (posColon === -1) return allStyles[parent].name;
+        return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+    }
+
     function buildCssRule(parent: string|string[], name: string): string {
         let result = "";
         if (parent) {
@@ -39,10 +45,10 @@ interface IInternalStyle {
                     if (i > 0) {
                         result += ",";
                     }
-                    result += "." + allStyles[parent[i]].name + "." + name;
+                    result += "." + buildCssSubRule(parent[i]) + "." + name;
                 }
             } else {
-                result = "." + allStyles[<string>parent].name + "." + name;
+                result = "." + buildCssSubRule(<string>parent) + "." + name;
             }
         } else {
             result = "." + name;

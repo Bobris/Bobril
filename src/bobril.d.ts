@@ -51,6 +51,8 @@ interface IBobrilStatic {
     setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
     // Set callback before frame is rendering, returns previous callback to allow chaining
     setBeforeFrame(callback: () => void): () => void;
+    // Set callback before init passes callback to continue with initialization
+    setBeforeInit(callback: (cb: () => void) => void): void;
     // shim for [].isArray
     isArray(a: any): boolean;
     // time in miliseconds from start only use from roots factory function
