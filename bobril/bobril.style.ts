@@ -31,16 +31,24 @@ interface IInternalStyle {
 
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
 
+    function buildCssSubRule(parent: string): string {
+        let posColon = parent.indexOf(':');
+        if (posColon === -1) return allStyles[parent].name;
+        return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+    }
+
     function buildCssRule(parent: string|string[], name: string): string {
         let result = "";
         if (parent) {
             if (b.isArray(parent)) {
                 for (let i = 0; i < parent.length; i++) {
-                    if (i > 0) result += ",";
-                    result += "." + allStyles[parent[i]].name + "." + name;
+                    if (i > 0) {
+                        result += ",";
+                    }
+                    result += "." + buildCssSubRule(parent[i]) + "." + name;
                 }
             } else {
-                result = "." + allStyles[<string>parent].name + "." + name;
+                result = "." + buildCssSubRule(<string>parent) + "." + name;
             }
         } else {
             result = "." + name;
@@ -48,33 +56,39 @@ interface IInternalStyle {
         return result;
     }
 
-    function flattenStyle(cur: any, style: any): any {
-        if (style === true || style === false || style == null) {
-            return cur;
-        }
+    function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): void {
         if (typeof style === "string") {
             let externalStyle = allStyles[style];
-            if (externalStyle === undefined) throw new Error("uknown style " + style);
-            return flattenStyle(cur, externalStyle.style);
-        }
-        if (typeof style === "function") {
-            return style(cur);
-        }
-        if (b.isArray(style)) {
+            if (externalStyle === undefined) {
+                throw new Error("uknown style " + style);
+            }
+            flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
+        } else if (typeof style === "function") {
+            style(cur, curPseudo);
+        } else if (b.isArray(style)) {
             for (let i = 0; i < style.length; i++) {
-                cur = flattenStyle(cur, style[i]);
+                flattenStyle(cur, curPseudo, style[i], undefined);
             }
-            return cur;
-        }
-        for (let key in style) {
-            if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
-            let val = style[key];
-            if (typeof val === "function") {
-                val = val(cur, key);
+        } else if (typeof style === "object") {
+            for (let key in style) {
+                if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
+                let val = style[key];
+                if (typeof val === "function") {
+                    val = val(cur, key);
+                }
+                cur[key] = val;
             }
-            cur[key] = val;
         }
-        return cur;
+        if (stylePseudo != null && curPseudo != null) {
+            for (let pseudoKey in stylePseudo) {
+                let curPseudoVal = curPseudo[pseudoKey];
+                if (curPseudoVal === undefined) {
+                    curPseudoVal = Object.create(null);
+                    curPseudo[pseudoKey] = curPseudoVal;
+                }
+                flattenStyle(curPseudoVal, undefined, stylePseudo[pseudoKey], undefined);
+            }
+        }
     }
 
     function beforeFrame() {
@@ -84,7 +98,10 @@ interface IInternalStyle {
                 var ss = allStyles[key];
                 let parent = ss.parent;
                 let name = ss.name;
-                let style = flattenStyle(Object.create(null), ss.style);
+                let style = Object.create(null);
+                let flattenPseudo = Object.create(null);
+                flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
+                flattenStyle(style, flattenPseudo, ss.style, undefined);
                 var extractedInlStyle: any = null;
                 if (style["pointerEvents"]) {
                     extractedInlStyle = Object.create(null);
@@ -104,14 +121,13 @@ interface IInternalStyle {
                 let cssStyle = inlineStyleToCssDeclaration(style);
                 if (cssStyle.length > 0)
                     stylestr += buildCssRule(parent, name) + " {" + cssStyle + "}\n";
-                var ssp = ss.pseudo;
-                if (ssp) for (var key2 in ssp) {
-                    let sspi = flattenStyle(Object.create(null), ssp[key2]);
+                for (var key2 in flattenPseudo) {
+                    let sspi = flattenPseudo[key2];
                     b.shimStyle(sspi);
                     stylestr += buildCssRule(parent, name + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
                 }
             }
-            var styleElement = document.createElement('style');
+            var styleElement = document.createElement("style");
             styleElement.type = 'text/css';
             if ((<any>styleElement).styleSheet) {
                 (<any>styleElement).styleSheet.cssText = stylestr;
@@ -134,7 +150,7 @@ interface IInternalStyle {
 
     function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, any] {
         if (typeof s === "boolean") {
-            //skip
+            // skip
         } else if (typeof s === "string") {
             var sd = allStyles[s];
             if (inlineStyle != null) {
@@ -143,8 +159,11 @@ interface IInternalStyle {
                 if (className == null) className = sd.name; else className = className + " " + sd.name;
                 var inls = sd.inlStyle;
                 if (inls) {
-                    if (inlineStyle == null) inlineStyle = inls;
-                    else inlineStyle = b.assign(inlineStyle, inls);
+                    if (inlineStyle == null) {
+                        inlineStyle = inls;
+                    } else {
+                        inlineStyle = b.assign(inlineStyle, inls);
+                    }
                 }
             }
         } else if (Array.isArray(s)) {

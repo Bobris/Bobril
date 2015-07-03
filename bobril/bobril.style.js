@@ -9,18 +9,25 @@
     var globalCounter = 0;
     var isIE9 = b.ieVersion() === 9;
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
+    function buildCssSubRule(parent) {
+        var posColon = parent.indexOf(':');
+        if (posColon === -1)
+            return allStyles[parent].name;
+        return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+    }
     function buildCssRule(parent, name) {
         var result = "";
         if (parent) {
             if (b.isArray(parent)) {
                 for (var i = 0; i < parent.length; i++) {
-                    if (i > 0)
+                    if (i > 0) {
                         result += ",";
-                    result += "." + allStyles[parent[i]].name + "." + name;
+                    }
+                    result += "." + buildCssSubRule(parent[i]) + "." + name;
                 }
             }
             else {
-                result = "." + allStyles[parent].name + "." + name;
+                result = "." + buildCssSubRule(parent) + "." + name;
             }
         }
         else {
@@ -28,35 +35,43 @@
         }
         return result;
     }
-    function flattenStyle(cur, style) {
-        if (style === true || style === false || style == null) {
-            return cur;
-        }
+    function flattenStyle(cur, curPseudo, style, stylePseudo) {
         if (typeof style === "string") {
             var externalStyle = allStyles[style];
-            if (externalStyle === undefined)
+            if (externalStyle === undefined) {
                 throw new Error("uknown style " + style);
-            return flattenStyle(cur, externalStyle.style);
+            }
+            flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
         }
-        if (typeof style === "function") {
-            return style(cur);
+        else if (typeof style === "function") {
+            style(cur, curPseudo);
         }
-        if (b.isArray(style)) {
+        else if (b.isArray(style)) {
             for (var i = 0; i < style.length; i++) {
-                cur = flattenStyle(cur, style[i]);
+                flattenStyle(cur, curPseudo, style[i], undefined);
             }
-            return cur;
         }
-        for (var key in style) {
-            if (!Object.prototype.hasOwnProperty.call(style, key))
-                continue;
-            var val = style[key];
-            if (typeof val === "function") {
-                val = val(cur, key);
+        else if (typeof style === "object") {
+            for (var key in style) {
+                if (!Object.prototype.hasOwnProperty.call(style, key))
+                    continue;
+                var val = style[key];
+                if (typeof val === "function") {
+                    val = val(cur, key);
+                }
+                cur[key] = val;
             }
-            cur[key] = val;
         }
-        return cur;
+        if (stylePseudo != null && curPseudo != null) {
+            for (var pseudoKey in stylePseudo) {
+                var curPseudoVal = curPseudo[pseudoKey];
+                if (curPseudoVal === undefined) {
+                    curPseudoVal = Object.create(null);
+                    curPseudo[pseudoKey] = curPseudoVal;
+                }
+                flattenStyle(curPseudoVal, undefined, stylePseudo[pseudoKey], undefined);
+            }
+        }
     }
     function beforeFrame() {
         if (rebuildStyles) {
@@ -65,7 +80,10 @@
                 var ss = allStyles[key];
                 var parent_1 = ss.parent;
                 var name_1 = ss.name;
-                var style_1 = flattenStyle(Object.create(null), ss.style);
+                var style_1 = Object.create(null);
+                var flattenPseudo = Object.create(null);
+                flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
+                flattenStyle(style_1, flattenPseudo, ss.style, undefined);
                 var extractedInlStyle = null;
                 if (style_1["pointerEvents"]) {
                     extractedInlStyle = Object.create(null);
@@ -85,15 +103,13 @@
                 var cssStyle = inlineStyleToCssDeclaration(style_1);
                 if (cssStyle.length > 0)
                     stylestr += buildCssRule(parent_1, name_1) + " {" + cssStyle + "}\n";
-                var ssp = ss.pseudo;
-                if (ssp)
-                    for (var key2 in ssp) {
-                        var sspi = flattenStyle(Object.create(null), ssp[key2]);
-                        b.shimStyle(sspi);
-                        stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
-                    }
+                for (var key2 in flattenPseudo) {
+                    var sspi = flattenPseudo[key2];
+                    b.shimStyle(sspi);
+                    stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
+                }
             }
-            var styleElement = document.createElement('style');
+            var styleElement = document.createElement("style");
             styleElement.type = 'text/css';
             if (styleElement.styleSheet) {
                 styleElement.styleSheet.cssText = stylestr;
@@ -128,10 +144,12 @@
                     className = className + " " + sd.name;
                 var inls = sd.inlStyle;
                 if (inls) {
-                    if (inlineStyle == null)
+                    if (inlineStyle == null) {
                         inlineStyle = inls;
-                    else
+                    }
+                    else {
                         inlineStyle = b.assign(inlineStyle, inls);
+                    }
                 }
             }
         }

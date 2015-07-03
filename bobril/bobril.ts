@@ -1267,10 +1267,19 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return roots;
     }
 
+    var beforeInit: () => void = invalidate;
+
     function init(factory: () => any, element?: HTMLElement) {
         removeRoot("0");
         roots["0"] = { f: factory, e: element, c: [] };
-        invalidate();
+        beforeInit();
+    }
+
+    function setBeforeInit(callback: (cb: () => void) => void): void {
+        let prevBeforeInit = beforeInit;
+        beforeInit = () => {
+            callback(prevBeforeInit);
+        }
     }
 
     function bubbleEvent(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx {
@@ -1445,6 +1454,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         getRoots: getRoots,
         setBeforeFrame: setBeforeFrame,
         setAfterFrame: setAfterFrame,
+        setBeforeInit: setBeforeInit,
         isArray: isArray,
         uptime: () => uptime,
         lastFrameDuration: () => lastFrameDuration,

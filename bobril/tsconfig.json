@@ -19,6 +19,8 @@
         "./bobril.dnd.ts",
         "./bobril.focus.d.ts",
         "./bobril.focus.ts",
+        "./bobril.l10n.d.ts",
+        "./bobril.l10n.ts",
         "./bobril.media.d.ts",
         "./bobril.media.ts",
         "./bobril.mouse.d.ts",
