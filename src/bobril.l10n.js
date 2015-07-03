@@ -5,6 +5,7 @@
         return new Promise(function (r, e) {
             var script = document.createElement('script');
             script.type = 'text/javascript';
+            script.charset = 'utf-8';
             script.onload = function () {
                 r();
             };
@@ -72,21 +73,29 @@
     }
     function setLocale(locale) {
         var prom = Promise.resolve(null);
-        if (loadedLocales[locale])
+        if (currentLocale === locale)
             return prom;
-        loadedLocales[locale] = true;
-        prom = Promise.all([
-            needIntlPolyfill && cfg.pathToIntlLocaleDataJsonp && jsonp(cfg.pathToIntlLocaleDataJsonp + locale + ".jsonp"),
-            cfg.pathToIntlMessageFormatLocaleData && jsonp(cfg.pathToIntlMessageFormatLocaleData + locale.substring(0, 2)),
-            cfg.pathToTranslation && jsonp(cfg.pathToTranslation(locale))
-        ]);
+        if (!loadedLocales[locale]) {
+            loadedLocales[locale] = true;
+            prom = Promise.all([
+                needIntlPolyfill && cfg.pathToIntlLocaleDataJsonp && jsonp(cfg.pathToIntlLocaleDataJsonp + locale + ".js"),
+                cfg.pathToIntlMessageFormatLocaleData && jsonp(cfg.pathToIntlMessageFormatLocaleData + locale.substring(0, 2) + ".js"),
+                cfg.pathToTranslation && jsonp(cfg.pathToTranslation(locale))
+            ]);
+        }
+        prom = prom.then(function () {
+            currentLocale = locale;
+            currentTranslations = registeredTranslations[locale];
+            currentCachedFormat = [];
+            currentCachedFormat.length = currentTranslations.length;
+        });
         return prom;
     }
     function getLocale() {
         return currentLocale;
     }
     function registerTranslations(locale, msgs) {
-        registerTranslations[locale] = msgs;
+        registeredTranslations[locale] = msgs;
     }
     b.jsonp = jsonp;
     b.t = t;

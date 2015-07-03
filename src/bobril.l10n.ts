@@ -12,6 +12,7 @@ declare const IntlMessageFormat: any;
         return new Promise((r, e) => {
             let script = document.createElement('script');
             script.type = 'text/javascript';
+            script.charset = 'utf-8';
             script.onload = () => {
                 r();
             };
@@ -81,14 +82,22 @@ declare const IntlMessageFormat: any;
 
     function setLocale(locale: string): Promise<any> {
         let prom = Promise.resolve(null);
-        if (loadedLocales[locale])
+        if (currentLocale === locale)
             return prom;
-        loadedLocales[locale] = true;
-        prom = Promise.all([
-            needIntlPolyfill && cfg.pathToIntlLocaleDataJsonp && jsonp(cfg.pathToIntlLocaleDataJsonp + locale + ".js"),
-            cfg.pathToIntlMessageFormatLocaleData && jsonp(cfg.pathToIntlMessageFormatLocaleData + locale.substring(0, 2)+".js"),
-            cfg.pathToTranslation && jsonp(cfg.pathToTranslation(locale))
-        ]);
+        if (!loadedLocales[locale]) {
+            loadedLocales[locale] = true;
+            prom = Promise.all([
+                needIntlPolyfill && cfg.pathToIntlLocaleDataJsonp && jsonp(cfg.pathToIntlLocaleDataJsonp + locale + ".js"),
+                cfg.pathToIntlMessageFormatLocaleData && jsonp(cfg.pathToIntlMessageFormatLocaleData + locale.substring(0, 2) + ".js"),
+                cfg.pathToTranslation && jsonp(cfg.pathToTranslation(locale))
+            ]);
+        }
+        prom = prom.then(() => {
+            currentLocale = locale;
+            currentTranslations = registeredTranslations[locale];
+            currentCachedFormat = [];
+            currentCachedFormat.length = currentTranslations.length;
+        });
         return prom;
     }
 
@@ -97,7 +106,7 @@ declare const IntlMessageFormat: any;
     }
 
     function registerTranslations(locale: string, msgs: string[]): void {
-        registerTranslations[locale] = msgs;
+        registeredTranslations[locale] = msgs;
     }
 
     b.jsonp = jsonp;
