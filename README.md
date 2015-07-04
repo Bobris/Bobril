@@ -4,7 +4,7 @@ Bobril
 
 [![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Version 3.0.0
+Version 3.6.0
 
 Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework). 
 Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE9. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
@@ -21,6 +21,8 @@ Chrome plugin to help you to inspect running Bobril application: https://chrome.
 (Github source for it is here: https://github.com/klesta490/bobril-clouseau)
 
 If you want to speed up your Angular app use: https://github.com/karasek/ngBobril
+
+Available in npm as bundle of most interesting and useful plugins
 
 Features in core:
 - No additional dependencies
@@ -40,8 +42,8 @@ Features in core:
 Features in extensions:
 - OnChange event and value attribute normalization
 - Key events
-- Mouse, Touch and Swipe Events (includes polyfill pointerEvents:none and userSelect:none)
-- Vector graphic in spirit of React-Art just very limited in features, but under 2kb with SVG backend
+- Mouse, Touch and Swipe Events (includes polyfill pointerEvents:none and userSelect:none) (Swipe events not in bundle)
+- Vector graphic in spirit of React-Art just very limited in features, but under 2kb with SVG backend (only SVG helpers in bundle)
 - Router inspired by https://github.com/rackt/react-router/
 - Media detection
 - Focus, Blur, FocusIn, FocusOut events
@@ -50,8 +52,9 @@ Features in extensions:
 - Scroll notification
 - Drag and Drop - uses browser one except on IE9, multi touch, allows animating drag, state of the art as usual
 - Style - create css dynamicaly for even faster speeed, allow recomputing styles for theming
+- L10n - Localization + Internalization - behind uses format.io
 
-All extensions + core are 44kb minified (17kb gzip)
+All extensions + core are 46kb minified (20kb gzip)
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:

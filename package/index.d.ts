@@ -107,7 +107,7 @@ export declare function bubble(node: IBobrilCacheNode, name: string, param: any)
 export declare function broadcast(name: string, param: any): IBobrilCtx;
 export declare function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
 export declare function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
-export declare function assign(target: Object, source: Object): Object;
+export declare function assign(target: Object, ...sources: Object[]): Object;
 export declare function preventDefault(event: Event): void;
 export declare function cloneNode(node: IBobrilNode): IBobrilNode;
 export declare function setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;
@@ -283,3 +283,17 @@ export declare function spriteb(width: number, height: number, left: number, top
 export declare function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string;
 export declare function svgCircle(x: number, y: number, radius: number): string;
 export declare function svgRect(x: number, y: number, width: number, height: number): string;
+export interface IL10NConfig {
+    defaultLocale?: string;
+    pathToIntlJs?: string;
+    pathToIntlLocaleDataJsonp?: string;
+    pathToIntlMessageFormatJs?: string;
+    pathToIntlMessageFormatLocaleData?: string;
+    pathToTranslation?: (locale: string) => string;
+}
+export declare function jsonp(url: string): Promise<any>;
+export declare function t(message: string | number, params?: Object, translationHelp?: string): string;
+export declare function initLocalization(config?: IL10NConfig): Promise<any>;
+export declare function setLocale(locale: string): Promise<any>;
+export declare function getLocale(): string;
+export declare function registerTranslations(locale: string, msgs: string[]): void;

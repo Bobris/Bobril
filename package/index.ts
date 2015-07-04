@@ -50,34 +50,34 @@ export interface IBobrilComponent {
     shouldStopBroadcast?(ctx: IBobrilCtx, name: string, param: Object): boolean;
 
     // called on input element after any change with new value (string|boolean)
-    onChange? (ctx: IBobrilCtx, value: any): void;
+    onChange?(ctx: IBobrilCtx, value: any): void;
 
-    onKeyDown? (ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
-    onKeyUp? (ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
-    onKeyPress? (ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
+    onKeyDown?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
+    onKeyUp?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
+    onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
 
     // called on input element after click/tap
-    onClick? (ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean
-    onDoubleClick? (ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseDown? (ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseUp? (ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseOver? (ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseEnter? (ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
-    onMouseLeave? (ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
-    onMouseMove? (ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onPointerDown? (ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
-    onPointerMove? (ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
-    onPointerUp? (ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
-    onPointerCancel? (ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
+    onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean
+    onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onMouseEnter?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
+    onMouseLeave?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
+    onMouseMove?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onPointerDown?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
+    onPointerMove?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
+    onPointerUp?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
+    onPointerCancel?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
 
     // this component gained focus
-    onFocus? (ctx: IBobrilCtx): void;
+    onFocus?(ctx: IBobrilCtx): void;
     // this component lost focus
-    onBlur? (ctx: IBobrilCtx): void;
+    onBlur?(ctx: IBobrilCtx): void;
     // focus moved from outside of this element to some child of this element
-    onFocusIn? (ctx: IBobrilCtx): void;
+    onFocusIn?(ctx: IBobrilCtx): void;
     // focus moved from inside of this element to some outside element
-    onFocusOut? (ctx: IBobrilCtx): void;
+    onFocusOut?(ctx: IBobrilCtx): void;
 
     // if drag should start, bubbled
     onDragStart?(ctx: IBobrilCtx, dndCtx: IDndStartCtx): boolean;
@@ -93,8 +93,8 @@ export interface IBobrilComponent {
     onDrop?(ctx: IBobrilCtx, dndCtx: IDndCtx): boolean;
 
     // this is "static" function that's why it does not have ctx - because it does not exists
-    canActivate? (transition: IRouteTransition) : IRouteCanResult;
-    canDeactivate? (ctx: IBobrilCtx, transition: IRouteTransition) : IRouteCanResult;
+    canActivate?(transition: IRouteTransition): IRouteCanResult;
+    canDeactivate?(ctx: IBobrilCtx, transition: IRouteTransition): IRouteCanResult;
 }
 
 // new node should atleast have tag or component member
@@ -549,13 +549,13 @@ function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: 
 
 function destroyNode(c: IBobrilCacheNode) {
     setRef(c.ref, null);
-    var ch = c.children;
+    let ch = c.children;
     if (isArray(ch)) {
         for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
             destroyNode((<IBobrilCacheNode[]>ch)[i]);
         }
     }
-    var component = c.component;
+    let component = c.component;
     if (component) {
         if (component.destroy)
             component.destroy(c.ctx, c, <HTMLElement>c.element);
@@ -567,12 +567,12 @@ function removeNodeRecursive(c: IBobrilCacheNode) {
     if (isArray(el)) {
         var pa = (<Node[]>el)[0].parentNode;
         if (pa) {
-            for (var i = 0; i < (<Node[]>el).length; i++) {
+            for (let i = 0; i < (<Node[]>el).length; i++) {
                 pa.removeChild((<Node[]>el)[i]);
             }
         }
     } else if (el != null) {
-        var p = (<Node>el).parentNode;
+        let p = (<Node>el).parentNode;
         if (p) p.removeChild(<Node>el);
     } else {
         var ch = c.children;
@@ -1524,11 +1524,18 @@ export function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobr
     return node;
 }
 
-export function assign(target: Object, source: Object): Object {
+export function assign(target: Object, ...sources: Object[]): Object {
     if (target == null) target = {};
-    if (source != null) for (var propname in source) {
-        if (!Object.prototype.hasOwnProperty.call(source, propname)) continue;
-        (<any>target)[propname] = (<any>source)[propname];
+    let totalArgs = arguments.length;
+    for (let i = 1; i < totalArgs; i++) {
+        let source = arguments[i];
+        if (source == null) continue;
+        let keys = Object.keys(source);
+        let totalKeys = keys.length;
+        for (let j = 0; j < totalKeys; j++) {
+            let key = keys[j];
+            (<any>target)[key] = (<any>source)[key];
+        }
     }
     return target;
 }
@@ -1598,9 +1605,9 @@ export interface IBobrilMedia {
 
 var media: IBobrilMedia = null;
 var breaks = [
-                [414, 800, 900], //portrait widths
-                [736, 1280, 1440] //landscape widths
-             ];
+    [414, 800, 900], //portrait widths
+    [736, 1280, 1440] //landscape widths
+];
 
 function emitOnMediaChange() {
     media = null;
@@ -1724,159 +1731,161 @@ export const asap = (() => {
     }
 })();
 
-if (!(<any>window).Promise) {
-    // Polyfill for Function.prototype.bind
-    function bind(fn: (args: any) => void, thisArg: any) {
-        return function() {
-            fn.apply(thisArg, arguments);
+(function() {
+    if (!(<any>window).Promise) {
+        // Polyfill for Function.prototype.bind
+        function bind(fn: (args: any) => void, thisArg: any) {
+            return function() {
+                fn.apply(thisArg, arguments);
+            }
         }
-    }
 
-    function handle(deferred: Array<(v: any) => any>) {
-        if (this.s/*tate*/ === null) {
-            this.d/*eferreds*/.push(deferred);
-            return;
-        }
-        asap(() => {
-            var cb = this.s/*tate*/ ? deferred[0] : deferred[1];
-            if (cb == null) {
-                (this.s/*tate*/ ? deferred[2] : deferred[3])(this.v/*alue*/);
+        function handle(deferred: Array<(v: any) => any>) {
+            if (this.s/*tate*/ === null) {
+                this.d/*eferreds*/.push(deferred);
                 return;
             }
-            var ret: any;
+            asap(() => {
+                var cb = this.s/*tate*/ ? deferred[0] : deferred[1];
+                if (cb == null) {
+                    (this.s/*tate*/ ? deferred[2] : deferred[3])(this.v/*alue*/);
+                    return;
+                }
+                var ret: any;
+                try {
+                    ret = cb(this.v/*alue*/);
+                } catch (e) {
+                    deferred[3](e);
+                    return;
+                }
+                deferred[2](ret);
+            });
+        }
+
+        function finale() {
+            for (var i = 0, len = this.d/*eferreds*/.length; i < len; i++) {
+                handle.call(this, this.d/*eferreds*/[i]);
+            }
+            this.d/*eferreds*/ = null;
+        }
+
+        function reject(newValue: any) {
+            this.s/*tate*/ = false;
+            this.v/*alue*/ = newValue;
+            finale.call(this);
+        }
+
+        /**
+         * Take a potentially misbehaving resolver function and make sure
+         * onFulfilled and onRejected are only called once.
+         *
+         * Makes no guarantees about asynchrony.
+         */
+        function doResolve(fn: (fulfill: (v: any) => void, reject: (r: any) => void) => void, onFulfilled: (value: any) => void, onRejected: (reason: any) => void) {
+            var done = false;
             try {
-                ret = cb(this.v/*alue*/);
-            } catch (e) {
-                deferred[3](e);
-                return;
-            }
-            deferred[2](ret);
-        });
-    }
-
-    function finale() {
-        for (var i = 0, len = this.d/*eferreds*/.length; i < len; i++) {
-            handle.call(this, this.d/*eferreds*/[i]);
-        }
-        this.d/*eferreds*/ = null;
-    }
-
-    function reject(newValue: any) {
-        this.s/*tate*/ = false;
-        this.v/*alue*/ = newValue;
-        finale.call(this);
-    }
-
-    /**
-     * Take a potentially misbehaving resolver function and make sure
-     * onFulfilled and onRejected are only called once.
-     *
-     * Makes no guarantees about asynchrony.
-     */
-    function doResolve(fn: (fulfill: (v: any) => void, reject: (r: any) => void) => void, onFulfilled: (value: any) => void, onRejected: (reason: any) => void) {
-        var done = false;
-        try {
-            fn((value: any) => {
-                if (done) return;
-                done = true;
-                onFulfilled(value);
-            }, (reason: any) => {
+                fn((value: any) => {
+                    if (done) return;
+                    done = true;
+                    onFulfilled(value);
+                }, (reason: any) => {
                     if (done) return;
                     done = true;
                     onRejected(reason);
                 });
-        } catch (ex) {
-            if (done) return;
-            done = true;
-            onRejected(ex);
+            } catch (ex) {
+                if (done) return;
+                done = true;
+                onRejected(ex);
+            }
         }
-    }
 
-    function resolve(newValue: any) {
-        try { //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
-            if (newValue === this) throw new TypeError('Promise selfresolve');
-            if (Object(newValue) === newValue) {
-                var then = newValue.then;
-                if (typeof then === 'function') {
-                    doResolve(bind(then, newValue), bind(resolve, this), bind(reject, this));
+        function resolve(newValue: any) {
+            try { //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
+                if (newValue === this) throw new TypeError('Promise selfresolve');
+                if (Object(newValue) === newValue) {
+                    var then = newValue.then;
+                    if (typeof then === 'function') {
+                        doResolve(bind(then, newValue), bind(resolve, this), bind(reject, this));
+                        return;
+                    }
+                }
+                this.s/*tate*/ = true;
+                this.v/*alue*/ = newValue;
+                finale.call(this);
+            } catch (e) { reject.call(this, e); }
+        }
+
+        function Promise(fn: (onFulfilled: (value: any) => void, onRejected: (reason: any) => void) => void) {
+            this.s/*tate*/ = null;
+            this.v/*alue*/ = null;
+            this.d/*eferreds*/ = <Array<Array<() => void>>>[];
+
+            doResolve(fn, bind(resolve, this), bind(reject, this));
+        }
+
+        Promise.prototype.then = function(onFulfilled: any, onRejected?: any) {
+            var me = this;
+            return new (<any>Promise)((resolve: any, reject: any) => {
+                handle.call(me, [onFulfilled, onRejected, resolve, reject]);
+            });
+        };
+
+        (<any>Promise).all = function() {
+            var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
+
+            return new (<any>Promise)((resolve: (value: any) => void, reject: (reason: any) => void) => {
+                if (args.length === 0) {
+                    resolve(args);
                     return;
                 }
-            }
-            this.s/*tate*/ = true;
-            this.v/*alue*/ = newValue;
-            finale.call(this);
-        } catch (e) { reject.call(this, e); }
-    }
-
-    function Promise(fn: (onFulfilled: (value: any) => void, onRejected: (reason: any) => void) => void) {
-        this.s/*tate*/ = null;
-        this.v/*alue*/ = null;
-        this.d/*eferreds*/ = <Array<Array<() => void>>>[];
-
-        doResolve(fn, bind(resolve, this), bind(reject, this));
-    }
-
-    Promise.prototype.then = function(onFulfilled: any, onRejected?: any) {
-        var me = this;
-        return new (<any>Promise)((resolve: any, reject: any) => {
-            handle.call(me, [onFulfilled, onRejected, resolve, reject]);
-        });
-    };
-
-    (<any>Promise).all = function() {
-        var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
-
-        return new (<any>Promise)((resolve: (value: any) => void, reject: (reason: any) => void) => {
-            if (args.length === 0) {
-                resolve(args);
-                return;
-            }
-            var remaining = args.length;
-            function res(i: number, val: any) {
-                try {
-                    if (val && (typeof val === 'object' || typeof val === 'function')) {
-                        var then = val.then;
-                        if (typeof then === 'function') {
-                            then.call(val, (val: any) => { res(i, val) }, reject);
-                            return;
+                var remaining = args.length;
+                function res(i: number, val: any) {
+                    try {
+                        if (val && (typeof val === 'object' || typeof val === 'function')) {
+                            var then = val.then;
+                            if (typeof then === 'function') {
+                                then.call(val, (val: any) => { res(i, val) }, reject);
+                                return;
+                            }
                         }
+                        args[i] = val;
+                        if (--remaining === 0) {
+                            resolve(args);
+                        }
+                    } catch (ex) {
+                        reject(ex);
                     }
-                    args[i] = val;
-                    if (--remaining === 0) {
-                        resolve(args);
-                    }
-                } catch (ex) {
-                    reject(ex);
                 }
+                for (var i = 0; i < args.length; i++) {
+                    res(i, args[i]);
+                }
+            });
+        };
+
+        (<any>Promise).resolve = (value: any) => {
+            if (value && typeof value === 'object' && value.constructor === Promise) {
+                return value;
             }
-            for (var i = 0; i < args.length; i++) {
-                res(i, args[i]);
+
+            return new (<any>Promise)((resolve: (value: any) => void) => {
+                resolve(value);
+            });
+        };
+
+        (<any>Promise).reject = (value: any) => new (<any>Promise)((resolve: any, reject: (reason: any) => void) => {
+            reject(value);
+        });
+
+        (<any>Promise).race = (values: any[]) => new (<any>Promise)((resolve: any, reject: any) => {
+            for (var i = 0, len = values.length; i < len; i++) {
+                values[i].then(resolve, reject);
             }
         });
-    };
 
-    (<any>Promise).resolve = (value: any) => {
-        if (value && typeof value === 'object' && value.constructor === Promise) {
-            return value;
-        }
-
-        return new (<any>Promise)((resolve: (value: any) => void) => {
-            resolve(value);
-        });
-    };
-
-    (<any>Promise).reject = (value: any) => new (<any>Promise)((resolve: any, reject: (reason: any) => void) => {
-        reject(value);
-    });
-
-    (<any>Promise).race = (values: any[]) => new (<any>Promise)((resolve: any, reject: any) => {
-        for (var i = 0, len = values.length; i < len; i++) {
-            values[i].then(resolve, reject);
-        }
-    });
-
-    (<any>window).Promise = <any>Promise;
-}
+        (<any>window)['Promise'] = <any>Promise;
+    }
+})();
 
 // Bobril.StyleShim
 
@@ -2642,8 +2651,8 @@ function emitOnFocusChange(): void {
         while (common < nodestack.length && common < newstack.length && nodestack[common] === newstack[common])
             common++;
         var i = nodestack.length - 1;
-        var n:IBobrilCacheNode;
-        var c:IBobrilComponent;
+        var n: IBobrilCacheNode;
+        var c: IBobrilComponent;
         if (i >= common) {
             n = nodestack[i];
             if (n) {
@@ -2691,7 +2700,7 @@ function emitOnFocusChangeIE(): void {
     emitOnFocusChange();
 }
 
-var events = ["focus","blur","keydown","keyup","keypress","mousedown","mouseup","mousemove","touchstart","touchend"];
+var events = ["focus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
 for (var i = 0; i < events.length; i++)
     addEvent(events[i], 50, <any>(ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
 
@@ -2763,8 +2772,8 @@ const isHtml = /^(?:html)$/i;
 const isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
 // inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js
 export function isScrollable(el: Element): [boolean, boolean] {
-    var styles:any = window.getComputedStyle(el);
-    var res:[boolean, boolean] = [true, true];
+    var styles: any = window.getComputedStyle(el);
+    var res: [boolean, boolean] = [true, true];
     if (!isHtml.test(el.nodeName)) {
         res[0] = isScrollOrAuto.test(styles.overflowX);
         res[1] = isScrollOrAuto.test(styles.overflowY);
@@ -2829,7 +2838,7 @@ export interface IDndStartCtx {
     id: number;
     addData(type: string, data: any): boolean;
     setEnabledOps(ops: DndEnabledOps): void;
-    setDragNodeView(view: (dnd:IDndCtx) => IBobrilNode): void;
+    setDragNodeView(view: (dnd: IDndCtx) => IBobrilNode): void;
 }
 
 export interface IDndOverCtx extends IDndCtx {
@@ -2962,7 +2971,7 @@ function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
     if (dnd && dnd.totalX == null) {
         dnd.cancelDnd();
     }
-    if (ev.button===1) {
+    if (ev.button === 1) {
         pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
     }
     return false;
@@ -3176,7 +3185,7 @@ function handleDragOver(ev: DragEvent, target: Node, node: IBobrilCacheNode): bo
         try {
             var effectAllowed = dt.effectAllowed;
         }
-        catch(e) {}
+        catch (e) { }
         for (; eff < 7; eff++) {
             if (effectAllowedTable[eff] === effectAllowed) break;
         }
@@ -3605,7 +3614,7 @@ function registerRoutes(url: string, rs: Array<IRoute>): void {
         var r = rs[i];
         var u = url;
         var name = r.name;
-        if (!name && url==="/") {
+        if (!name && url === "/") {
             name = "root";
             r.name = name;
             nameRouteMap[name] = r;
@@ -4204,3 +4213,131 @@ export function svgCircle(x: number, y: number, radius: number): string {
 export function svgRect(x: number, y: number, width: number, height: number): string {
     return "M" + x + " " + y + "h" + width + "v" + height + "h" + (-width) + "Z";
 }
+
+// Bobril.l10n
+
+export interface IL10NConfig {
+    defaultLocale?: string;
+    pathToIntlJs?: string;
+    pathToIntlLocaleDataJsonp?: string;
+    pathToIntlMessageFormatJs?: string;
+    pathToIntlMessageFormatLocaleData?: string;
+    pathToTranslation?: (locale: string) => string;
+}
+
+interface IIntlMessageFormat {
+    format(params?: Object): string;
+}
+
+declare const IntlMessageFormat: any;
+
+export function jsonp(url: string): Promise<any> {
+    return new Promise((r, e) => {
+        let script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.charset = 'utf-8';
+        script.onload = () => {
+            r(null);
+        };
+        script.onerror = (ev) => {
+            e('Failed to load ' + url);
+        };
+        script.src = url;
+        document.head.appendChild(script);
+    });
+}
+
+let cfg: IL10NConfig = {};
+let loadedLocales: { [name: string]: boolean } = Object.create(null);
+let registeredTranslations: { [name: string]: string[] } = Object.create(null);
+let initWasStarted = false;
+let needIntlPolyfill = false;
+let currentLocale = '';
+let currentTranslations: string[] = [];
+let currentCachedFormat: IIntlMessageFormat[] = [];
+let stringCachedFormats: { [input: string]: IIntlMessageFormat } = Object.create(null);
+
+function currentTranslationMessage(message: number): string {
+    let text = currentTranslations[message];
+    if (text === undefined) {
+        throw new Error('message ' + message + ' is not defined');
+    }
+    return text;
+}
+
+export function t(message: string | number, params?: Object, translationHelp?: string): string {
+    if (currentLocale.length === 0) {
+        throw new Error('before using t you need to wait for initialization of l10n');
+    }
+    let format: IIntlMessageFormat;
+    if (typeof message === 'number') {
+        if (params == null) {
+            return currentTranslationMessage(message);
+        }
+        format = currentCachedFormat[message];
+        if (format === undefined) {
+            format = new IntlMessageFormat(currentTranslationMessage(message), currentLocale);
+            currentCachedFormat[message] = format;
+        }
+    } else {
+        if (params == null) return message;
+        format = stringCachedFormats[message];
+        if (format === undefined) {
+            format = new IntlMessageFormat(message, currentLocale);
+            stringCachedFormats[message] = format;
+        }
+    }
+    return format.format(params);
+}
+
+export function initLocalization(config?: IL10NConfig): Promise<any> {
+    if (initWasStarted) {
+        throw new Error('initLocalization must be called only once');
+    }
+    cfg = config;
+    initWasStarted = true;
+    var prom = Promise.resolve(null);
+    if (!(<any>window).Intl) {
+        needIntlPolyfill = true;
+        if (config.pathToIntlJs) prom = Promise.all<any>([prom, jsonp(config.pathToIntlJs)]);
+    }
+    if (config.pathToIntlMessageFormatJs) {
+        prom = Promise.all<any>([prom, jsonp(config.pathToIntlMessageFormatJs)]);
+    }
+    prom = prom.then(() => setLocale(config.defaultLocale || 'en'));
+    setBeforeInit((cb) => {
+        prom.then(cb);
+    });
+    return prom;
+}
+
+export function setLocale(locale: string): Promise<any> {
+    let prom = Promise.resolve(null);
+    if (currentLocale === locale)
+        return prom;
+    if (!loadedLocales[locale]) {
+        loadedLocales[locale] = true;
+        prom = Promise.all([
+            needIntlPolyfill && cfg.pathToIntlLocaleDataJsonp && jsonp(cfg.pathToIntlLocaleDataJsonp + locale + ".js"),
+            cfg.pathToIntlMessageFormatLocaleData && jsonp(cfg.pathToIntlMessageFormatLocaleData + locale.substring(0, 2) + ".js"),
+            cfg.pathToTranslation && jsonp(cfg.pathToTranslation(locale))
+        ]);
+    }
+    prom = prom.then(() => {
+        currentLocale = locale;
+        currentTranslations = registeredTranslations[locale];
+        currentCachedFormat = [];
+        currentCachedFormat.length = currentTranslations.length;
+    });
+    return prom;
+}
+
+export function getLocale(): string {
+    return currentLocale;
+}
+
+export function registerTranslations(locale: string, msgs: string[]): void {
+    registeredTranslations[locale] = msgs;
+}
+
+(<any>window)['bobrilRegisterTranslations'] = registerTranslations;

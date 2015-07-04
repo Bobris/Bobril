@@ -1404,15 +1404,25 @@ b = (function (window, document) {
         node.component = mergeComponents(comp, methods);
         return node;
     }
-    function assign(target, source) {
+    function assign(target) {
+        var sources = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            sources[_i - 1] = arguments[_i];
+        }
         if (target == null)
             target = {};
-        if (source != null)
-            for (var propname in source) {
-                if (!Object.prototype.hasOwnProperty.call(source, propname))
-                    continue;
-                target[propname] = source[propname];
+        var totalArgs = arguments.length;
+        for (var i = 1; i < totalArgs; i++) {
+            var source = arguments[i];
+            if (source == null)
+                continue;
+            var keys = Object.keys(source);
+            var totalKeys = keys.length;
+            for (var j = 0; j < totalKeys; j++) {
+                var key = keys[j];
+                target[key] = source[key];
             }
+        }
         return target;
     }
     function preventDefault(event) {
@@ -1436,12 +1446,12 @@ b = (function (window, document) {
         return a;
     }
     function cloneNode(node) {
-        var r = b.assign({}, node);
+        var r = assign({}, node);
         if (r.attrs) {
-            r.attrs = b.assign({}, r.attrs);
+            r.attrs = assign({}, r.attrs);
         }
         if (isObject(r.style)) {
-            r.style = b.assign({}, r.style);
+            r.style = assign({}, r.style);
         }
         var ch = r.children;
         if (ch) {

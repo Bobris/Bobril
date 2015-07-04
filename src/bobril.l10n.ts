@@ -34,22 +34,30 @@ declare const IntlMessageFormat: any;
     let currentCachedFormat: IIntlMessageFormat[] = [];
     let stringCachedFormats: { [input: string]: IIntlMessageFormat } = Object.create(null);
 
+    function currentTranslationMessage(message: number): string {
+        let text = currentTranslations[message];
+        if (text === undefined) {
+            throw new Error('message ' + message + ' is not defined');
+        }
+        return text;
+    }
+
     function t(message: string | number, params?: Object, translationHelp?: string): string {
         if (currentLocale.length === 0) {
             throw new Error('before using t you need to wait for initialization of l10n');
         }
         let format: IIntlMessageFormat;
         if (typeof message === 'number') {
+            if (params == null) {
+                return currentTranslationMessage(message);
+            }
             format = currentCachedFormat[message];
             if (format === undefined) {
-                let text = currentTranslations[message];
-                if (text === undefined) {
-                    throw new Error('message ' + message + ' is not defined');
-                }
-                format = new IntlMessageFormat(text, currentLocale);
+                format = new IntlMessageFormat(currentTranslationMessage(message), currentLocale);
                 currentCachedFormat[message] = format;
             }
         } else {
+            if (params == null) return message;
             format = stringCachedFormats[message];
             if (format === undefined) {
                 format = new IntlMessageFormat(message, currentLocale);
@@ -61,7 +69,7 @@ declare const IntlMessageFormat: any;
 
     function initLocalization(config?: IL10NConfig): Promise<any> {
         if (initWasStarted) {
-            throw new Error("initLocalization must be called only once");
+            throw new Error('initLocalization must be called only once');
         }
         cfg = config;
         initWasStarted = true;
@@ -73,7 +81,7 @@ declare const IntlMessageFormat: any;
         if (config.pathToIntlMessageFormatJs) {
             prom = Promise.all<any>([prom, jsonp(config.pathToIntlMessageFormatJs)]);
         }
-        prom = prom.then(() => setLocale(config.defaultLocale || "en"));
+        prom = prom.then(() => setLocale(config.defaultLocale || 'en'));
         b.setBeforeInit((cb) => {
             prom.then(cb);
         });
@@ -115,5 +123,5 @@ declare const IntlMessageFormat: any;
     b.setLocale = setLocale;
     b.getLocale = getLocale;
     b.registerTranslations = registerTranslations;
-    (<any>window).bobrilRegisterTranslations = registerTranslations;
+    (<any>window)['bobrilRegisterTranslations'] = registerTranslations;
 })(b, window, document);
