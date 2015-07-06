@@ -1,26 +1,23 @@
-interface PromiseImpl {
-	new <T>(resolver: (resolvePromise: (value: T) => void, rejectPromise: (reason: any) => void) => void): Thenable<T>;
-    all<T>(values: any[]): Thenable<T[]>;
-    all<T>(...values: any[]): Thenable<T[]>;
-    resolve<T>(value: any): Thenable<T>;
-    reject(reason: any): Thenable<any>;
-    race<T>(values: Thenable<T>[]): Thenable<T>;
+interface Thenable<R> {
+    then<U>(onFulfilled?: (value: R) => U | Thenable<U>, onRejected?: (error: any) => U | Thenable<U>): Thenable<U>;
+    then<U>(onFulfilled?: (value: R) => U | Thenable<U>, onRejected?: (error: any) => void): Thenable<U>;
 }
 
-interface Thenable<R> {
-	then<U>(onFulfill: (value: R) => Thenable<U>, onReject: (error: any) => Thenable<U>): Thenable<U>;
-	then<U>(onFulfill: (value: R) => Thenable<U>, onReject?: (error: any) => U): Thenable<U>;
-	then<U>(onFulfill: (value: R) => U, onReject: (error: any) => Thenable<U>): Thenable<U>;
-    then<U>(onFulfill?: (value: R) => U, onReject?: (error: any) => U): Thenable<U>;
+declare class Promise<R> implements Thenable<R> {
+	constructor(callback: (resolve : (value?: R | Thenable<R>) => void, reject: (error?: any) => void) => void);
+    then<U>(onFulfilled?: (value: R) => U | Thenable<U>, onRejected?: (error: any) => U | Thenable<U>): Promise<U>;
+    then<U>(onFulfilled?: (value: R) => U | Thenable<U>, onRejected?: (error: any) => void): Promise<U>;
+	catch<U>(onRejected?: (error: any) => U | Thenable<U>): Promise<U>;
+}
+
+declare module Promise {
+	function resolve<R>(value?: R | Thenable<R>): Promise<R>;
+	function reject(error: any): Promise<any>;
+	function all<R>(promises: (R | Thenable<R>)[]): Promise<R[]>;
+	function race<R>(promises: (R | Thenable<R>)[]): Promise<R>;
 }
 
 interface IBobrilStatic {
     // run fn async faster than setImmediate or setTimer(fn,0)
     asap?: (fn: () => void) => void;
-    // Mostly Promise A+ compatible (only exception is that 'then' does not ignore non functions parameters)
-    Promise?: PromiseImpl;
-}
-
-interface Window {
-	Promise: PromiseImpl;
 }
