@@ -297,3 +297,4 @@ export declare function initLocalization(config?: IL10NConfig): Promise<any>;
 export declare function setLocale(locale: string): Promise<any>;
 export declare function getLocale(): string;
 export declare function registerTranslations(locale: string, msgs: string[]): void;
+export declare function withKey(node: IBobrilNode, key: string): IBobrilNode;

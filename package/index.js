@@ -3921,3 +3921,8 @@ export function registerTranslations(locale, msgs) {
     registeredTranslations[locale] = msgs;
 }
 window['bobrilRegisterTranslations'] = registerTranslations;
+// Bobril.helpers
+export function withKey(node, key) {
+    node.key = key;
+    return node;
+}

@@ -4341,3 +4341,10 @@ export function registerTranslations(locale: string, msgs: string[]): void {
 }
 
 (<any>window)['bobrilRegisterTranslations'] = registerTranslations;
+
+// Bobril.helpers
+
+export function withKey(node: IBobrilNode, key: string): IBobrilNode {
+    node.key = key;
+    return node;
+}
