@@ -3595,48 +3595,49 @@ function beforeFrame() {
     }
     chainedBeforeFrame();
 }
-function apply(s, className, inlineStyle) {
-    if (typeof s === "boolean") {
-    }
-    else if (typeof s === "string") {
-        var sd = allStyles[s];
-        if (inlineStyle != null) {
-            inlineStyle = assign(inlineStyle, sd.expStyle);
+export function style(node, ...styles) {
+    let className = node.className;
+    let inlineStyle = node.style;
+    let stack = null;
+    let i = 0;
+    let ca = styles;
+    while (true) {
+        if (ca.length === i) {
+            if (stack === null)
+                break;
+            ca = stack.pop();
+            i = stack.pop() + 1;
+            continue;
         }
-        else {
+        let s = ca[i];
+        if (typeof s === "boolean") {
+        }
+        else if (typeof s === "string") {
+            var sd = allStyles[s];
             if (className == null)
                 className = sd.name;
             else
                 className = className + " " + sd.name;
             var inls = sd.inlStyle;
             if (inls) {
-                if (inlineStyle == null) {
-                    inlineStyle = inls;
-                }
-                else {
-                    inlineStyle = assign(inlineStyle, inls);
-                }
+                inlineStyle = assign(inlineStyle, inls);
             }
         }
-    }
-    else if (Array.isArray(s)) {
-        for (var i = 0; i < s.length; i++) {
-            [className, inlineStyle] = apply(s[i], className, inlineStyle);
+        else if (isArray(s)) {
+            if (ca.length > i + 1) {
+                if (stack == null)
+                    stack = [];
+                stack.push(i);
+                stack.push(ca);
+            }
+            ca = s;
+            i = 0;
+            continue;
         }
-    }
-    else {
-        if (inlineStyle == null)
-            inlineStyle = s;
-        else
+        else {
             inlineStyle = assign(inlineStyle, s);
-    }
-    return [className, inlineStyle];
-}
-export function style(node, ...styles) {
-    var className = node.className;
-    var inlineStyle = node.style;
-    for (var i = 0; i < styles.length; i++) {
-        [className, inlineStyle] = apply(styles[i], className, inlineStyle);
+        }
+        i++;
     }
     node.className = className;
     node.style = inlineStyle;

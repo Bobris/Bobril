@@ -4004,40 +4004,40 @@ function beforeFrame() {
     chainedBeforeFrame();
 }
 
-function apply(s: IBobrilStyles, className: string, inlineStyle: any): [string, any] {
-    if (typeof s === "boolean") {
-        // skip
-    } else if (typeof s === "string") {
-        var sd = allStyles[s];
-        if (inlineStyle != null) {
-            inlineStyle = assign(inlineStyle, sd.expStyle);
-        } else {
+export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
+    let className = node.className;
+    let inlineStyle = node.style;
+    let stack = <(IBobrilStyles|number)[]>null;
+    let i = 0;
+    let ca = styles;
+    while (true) {
+        if (ca.length === i) {
+            if (stack === null) break;
+            ca = <IBobrilStyles[]>stack.pop();
+            i = <number>stack.pop() + 1;
+            continue;
+        }
+        let s = ca[i];
+        if (typeof s === "boolean") {
+            // skip
+        } else if (typeof s === "string") {
+            var sd = allStyles[s];
             if (className == null) className = sd.name; else className = className + " " + sd.name;
             var inls = sd.inlStyle;
             if (inls) {
-                if (inlineStyle == null) {
-                    inlineStyle = inls;
-                } else {
-                    inlineStyle = assign(inlineStyle, inls);
-                }
+                inlineStyle = assign(inlineStyle, inls);
             }
+        } else if (isArray(s)) {
+            if (ca.length > i + 1) {
+                if (stack == null) stack = [];
+                stack.push(i); stack.push(ca);
+            }
+            ca = <IBobrilStyles[]>s; i = 0;
+            continue;
+        } else {
+            inlineStyle = assign(inlineStyle, s);
         }
-    } else if (Array.isArray(s)) {
-        for (var i = 0; i < (<IBobrilStyle[]>s).length; i++) {
-            [className, inlineStyle] = apply((<IBobrilStyle[]>s)[i], className, inlineStyle);
-        }
-    } else {
-        if (inlineStyle == null) inlineStyle = s;
-        else inlineStyle = assign(inlineStyle, s);
-    }
-    return [className, inlineStyle];
-}
-
-export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
-    var className = node.className;
-    var inlineStyle = node.style;
-    for (var i = 0; i < styles.length; i++) {
-        [className, inlineStyle] = apply(styles[i], className, inlineStyle);
+        i++;
     }
     node.className = className;
     node.style = inlineStyle;
