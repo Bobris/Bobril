@@ -25,23 +25,31 @@
     var currentTranslations = [];
     var currentCachedFormat = [];
     var stringCachedFormats = Object.create(null);
+    function currentTranslationMessage(message) {
+        var text = currentTranslations[message];
+        if (text === undefined) {
+            throw new Error('message ' + message + ' is not defined');
+        }
+        return text;
+    }
     function t(message, params, translationHelp) {
         if (currentLocale.length === 0) {
             throw new Error('before using t you need to wait for initialization of l10n');
         }
         var format;
         if (typeof message === 'number') {
+            if (params == null) {
+                return currentTranslationMessage(message);
+            }
             format = currentCachedFormat[message];
             if (format === undefined) {
-                var text = currentTranslations[message];
-                if (text === undefined) {
-                    throw new Error('message ' + message + ' is not defined');
-                }
-                format = new IntlMessageFormat(text, currentLocale);
+                format = new IntlMessageFormat(currentTranslationMessage(message), currentLocale);
                 currentCachedFormat[message] = format;
             }
         }
         else {
+            if (params == null)
+                return message;
             format = stringCachedFormats[message];
             if (format === undefined) {
                 format = new IntlMessageFormat(message, currentLocale);
@@ -52,7 +60,7 @@
     }
     function initLocalization(config) {
         if (initWasStarted) {
-            throw new Error("initLocalization must be called only once");
+            throw new Error('initLocalization must be called only once');
         }
         cfg = config;
         initWasStarted = true;
@@ -65,7 +73,7 @@
         if (config.pathToIntlMessageFormatJs) {
             prom = Promise.all([prom, jsonp(config.pathToIntlMessageFormatJs)]);
         }
-        prom = prom.then(function () { return setLocale(config.defaultLocale || "en"); });
+        prom = prom.then(function () { return setLocale(config.defaultLocale || 'en'); });
         b.setBeforeInit(function (cb) {
             prom.then(cb);
         });
@@ -103,5 +111,5 @@
     b.setLocale = setLocale;
     b.getLocale = getLocale;
     b.registerTranslations = registerTranslations;
-    window.bobrilRegisterTranslations = registerTranslations;
+    window['bobrilRegisterTranslations'] = registerTranslations;
 })(b, window, document);

@@ -33,7 +33,7 @@ module StyleApp {
                     b.style({ tag: "span", children: "P1" }, par1),
                     b.style({ tag: "span", children: "P2" }, par2),
                     b.style({ tag: "span", children: "P1O1" }, par1, ovr1),
-                    b.style({ tag: "span", children: "P2O1" }, par2, ovr1)
+                    b.style({ tag: "span", children: "P2O1" }, [[par2], ovr1])
                 ]
             },
             b.style({

@@ -65,8 +65,8 @@ interface IBobrilStatic {
     lastFrameDuration(): number;
     // returns IE version 8 - 11, for other browsers returns undefined
     ieVersion(): number;
-    // shalows copy all own members from source to target returns target, source could be null, target must be non-null
-    assign(target: Object, source: Object): Object;
+    // shalows copy all own members from source to target returns target, source could be null, if target is null then it is create empty
+    assign(target: Object, ...sources: Object[]): Object;
     // shim for Event.preventDefault()
     preventDefault(event: Event): void;
     // DOM to vdom stack resolver

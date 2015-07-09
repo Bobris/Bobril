@@ -9,11 +9,13 @@
     var globalCounter = 0;
     var isIE9 = b.ieVersion() === 9;
     var chainedBeforeFrame = b.setBeforeFrame(beforeFrame);
+    var cssSubRuleDelimiter = /\:|\ |\>/;
     function buildCssSubRule(parent) {
-        var posColon = parent.indexOf(':');
-        if (posColon === -1)
+        var matchSplit = cssSubRuleDelimiter.exec(parent);
+        if (!matchSplit)
             return allStyles[parent].name;
-        return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+        var posSplit = matchSplit.index;
+        return allStyles[parent.substring(0, posSplit)].name + parent.substring(posSplit);
     }
     function buildCssRule(parent, name) {
         var result = "";
@@ -98,7 +100,6 @@
                     }
                 }
                 ss.inlStyle = extractedInlStyle;
-                ss.expStyle = b.assign(Object.create(null), style_1); // clone it so it stays unshimed
                 b.shimStyle(style_1);
                 var cssStyle = inlineStyleToCssDeclaration(style_1);
                 if (cssStyle.length > 0)
@@ -129,44 +130,6 @@
         }
         chainedBeforeFrame();
     }
-    function apply(s, className, inlineStyle) {
-        if (typeof s === "boolean") {
-        }
-        else if (typeof s === "string") {
-            var sd = allStyles[s];
-            if (inlineStyle != null) {
-                inlineStyle = b.assign(inlineStyle, sd.expStyle);
-            }
-            else {
-                if (className == null)
-                    className = sd.name;
-                else
-                    className = className + " " + sd.name;
-                var inls = sd.inlStyle;
-                if (inls) {
-                    if (inlineStyle == null) {
-                        inlineStyle = inls;
-                    }
-                    else {
-                        inlineStyle = b.assign(inlineStyle, inls);
-                    }
-                }
-            }
-        }
-        else if (Array.isArray(s)) {
-            for (var i = 0; i < s.length; i++) {
-                _a = apply(s[i], className, inlineStyle), className = _a[0], inlineStyle = _a[1];
-            }
-        }
-        else {
-            if (inlineStyle == null)
-                inlineStyle = s;
-            else
-                inlineStyle = b.assign(inlineStyle, s);
-        }
-        return [className, inlineStyle];
-        var _a;
-    }
     function style(node) {
         var styles = [];
         for (var _i = 1; _i < arguments.length; _i++) {
@@ -174,13 +137,50 @@
         }
         var className = node.className;
         var inlineStyle = node.style;
-        for (var i = 0; i < styles.length; i++) {
-            _a = apply(styles[i], className, inlineStyle), className = _a[0], inlineStyle = _a[1];
+        var stack = null;
+        var i = 0;
+        var ca = styles;
+        while (true) {
+            if (ca.length === i) {
+                if (stack === null || stack.length === 0)
+                    break;
+                ca = stack.pop();
+                i = stack.pop() + 1;
+                continue;
+            }
+            var s = ca[i];
+            if (s == null || typeof s === "boolean") {
+            }
+            else if (typeof s === "string") {
+                var sd = allStyles[s];
+                if (className == null)
+                    className = sd.name;
+                else
+                    className = className + " " + sd.name;
+                var inls = sd.inlStyle;
+                if (inls) {
+                    inlineStyle = b.assign(inlineStyle, inls);
+                }
+            }
+            else if (b.isArray(s)) {
+                if (ca.length > i + 1) {
+                    if (stack == null)
+                        stack = [];
+                    stack.push(i);
+                    stack.push(ca);
+                }
+                ca = s;
+                i = 0;
+                continue;
+            }
+            else {
+                inlineStyle = b.assign(inlineStyle, s);
+            }
+            i++;
         }
         node.className = className;
         node.style = inlineStyle;
         return node;
-        var _a;
     }
     var uppercasePattern = /([A-Z])/g;
     var msPattern = /^ms-/;
@@ -248,7 +248,7 @@
         var spDef = allSprites[key];
         if (spDef)
             return spDef.styleid;
-        var styleid = styleDef({ width: 0, height: 0 });
+        var styleid = styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
         spDef = { styleid: styleid, url: url, width: width, height: height, left: left || 0, top: top || 0 };
         if (width == null || height == null || color != null) {
             var image = new Image();

@@ -1395,11 +1395,18 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return node;
     }
 
-    function assign(target: Object, source: Object): Object {
+    function assign(target: Object, ...sources: Object[]): Object {
         if (target == null) target = {};
-        if (source != null) for (var propname in source) {
-            if (!Object.prototype.hasOwnProperty.call(source, propname)) continue;
-            (<any>target)[propname] = (<any>source)[propname];
+        let totalArgs = arguments.length;
+        for (let i = 1; i < totalArgs; i++) {
+            let source = arguments[i];
+            if (source == null) continue;
+            let keys = Object.keys(source);
+            let totalKeys = keys.length;
+            for (let j = 0; j < totalKeys; j++) {
+                let key = keys[j];
+                (<any>target)[key] = (<any>source)[key];
+            }
         }
         return target;
     }
@@ -1423,12 +1430,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function cloneNode(node: IBobrilNode): IBobrilNode {
-        var r = <IBobrilNode>b.assign({}, node);
+        var r = <IBobrilNode>assign({}, node);
         if (r.attrs) {
-            r.attrs = <IBobrilAttributes>b.assign({}, r.attrs);
+            r.attrs = <IBobrilAttributes>assign({}, r.attrs);
         }
         if (isObject(r.style)) {
-            r.style = b.assign({}, r.style);
+            r.style = assign({}, r.style);
         }
         var ch = r.children;
         if (ch) {
