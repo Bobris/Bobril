@@ -123,7 +123,17 @@
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY, button: ev.button + 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var button = ev.button + 1;
+            var type = type2Bobril(ev.pointerType);
+            var buttons = ev.buttons;
+            if (button === 0 && type === 0 /* Mouse */ && buttons) {
+                button = 1;
+                while (!(buttons & 1)) {
+                    buttons = buttons >> 1;
+                    button++;
+                }
+            }
+            var param = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -348,7 +358,11 @@
     }
     function createHandler(handlerName) {
         return function (ev, target, node) {
-            var param = { x: ev.clientX, y: ev.clientY, button: decodeButton(ev) || 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var button = decodeButton(ev) || 1;
+            // Ignore non left mouse click/dblclick event
+            if (button !== 1)
+                return false;
+            var param = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;

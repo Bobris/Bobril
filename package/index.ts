@@ -2346,7 +2346,14 @@ function buildHandlerPointer(name: string) {
             target = fixed[0];
             node = fixed[1];
         }
-        var param: IBobrilPointerEvent = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY, button: ev.button + 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        let button = ev.button + 1;
+        let type = type2Bobril(ev.pointerType);
+        let buttons = ev.buttons;
+        if (button===0 && type===BobrilPointerType.Mouse && buttons) {
+            button = 1;
+            while (!(buttons&1)) { buttons=buttons>>1; button++; }
+        }
+        var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
             return true;
@@ -2586,7 +2593,10 @@ function decodeButton(ev: MouseEvent): number {
 
 function createHandler(handlerName: string) {
     return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
-        var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: decodeButton(ev) || 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        let button = decodeButton(ev) || 1;
+        // Ignore non left mouse click/dblclick event
+        if (button !== 1) return false;
+        var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
         if (invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
             preventDefault(ev);
             return true;
@@ -3887,10 +3897,13 @@ const isIE9 = ieVersion() === 9;
 
 var chainedBeforeFrame = setBeforeFrame(beforeFrame);
 
+const cssSubRuleDelimiter = /\:|\ |\>/;
+
 function buildCssSubRule(parent: string): string {
-    let posColon = parent.indexOf(':');
-    if (posColon === -1) return allStyles[parent].name;
-    return allStyles[parent.substring(0, posColon)].name + parent.substring(posColon);
+    let matchSplit = cssSubRuleDelimiter.exec(parent);
+    if (!matchSplit) return allStyles[parent].name;
+    let posSplit = matchSplit.index;
+    return allStyles[parent.substring(0, posSplit)].name + parent.substring(posSplit);
 }
 
 function buildCssRule(parent: string|string[], name: string): string {
@@ -4012,13 +4025,13 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
     let ca = styles;
     while (true) {
         if (ca.length === i) {
-            if (stack === null) break;
+            if (stack === null || stack.length === 0) break;
             ca = <IBobrilStyles[]>stack.pop();
             i = <number>stack.pop() + 1;
             continue;
         }
         let s = ca[i];
-        if (typeof s === "boolean") {
+        if (s == null || typeof s === "boolean") {
             // skip
         } else if (typeof s === "string") {
             var sd = allStyles[s];
@@ -4111,7 +4124,7 @@ export function sprite(url: string, color?: string, width?: number, height?: num
     var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + (left || 0) + ":" + (top || 0);
     var spDef = allSprites[key];
     if (spDef) return spDef.styleid;
-    var styleid = styleDef({ width: 0, height: 0 });
+    var styleid = styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
     spDef = { styleid: styleid, url: url, width: width, height: height, left: left || 0, top: top || 0 };
     if (width == null || height == null || color != null) {
         var image = new Image();
