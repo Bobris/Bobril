@@ -3798,8 +3798,11 @@ function nextIteration(): void {
             }
         } else if (transitionState === -1) {
             var out: OutFindMatch = { p: {} };
-            var matches = findMatch(urlOfRoute(currentTransition.name, currentTransition.params), rootRoutes, out) || [];
-            futureRoutes = matches;
+            if (currentTransition.inApp) {
+                futureRoutes = findMatch(urlOfRoute(currentTransition.name, currentTransition.params).substring(1), rootRoutes, out) || [];
+            } else {
+                futureRoutes = [];
+            }
             transitionState = -2;
         } else if (transitionState === -2 - futureRoutes.length) {
             if (nextTransition) {
