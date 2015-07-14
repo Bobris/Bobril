@@ -223,16 +223,7 @@ interface IInternalStyle {
         } else {
             nameHint = "b-" + globalCounter++;
         }
-        b.shimStyle(style);
-        var processedPseudo: { [name: string]: string } = null;
-        if (pseudo) {
-            processedPseudo = Object.create(null);
-            for (var key in pseudo) {
-                if (!Object.prototype.hasOwnProperty.call(pseudo, key)) continue;
-                processedPseudo[key] = pseudo[key];
-            }
-        }
-        allStyles[nameHint] = { name: nameHint, parent, style, expStyle: null, inlStyle: null, pseudo: processedPseudo };
+        allStyles[nameHint] = { name: nameHint, parent, style, inlStyle: null, pseudo };
         invalidateStyles();
         return nameHint;
     }
