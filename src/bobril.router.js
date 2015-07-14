@@ -8,9 +8,11 @@
     }
     b.addEvent("hashchange", 10, emitOnHashChange);
     var myAppHistoryDeepness = 0;
+    var programPath = '';
     function push(path, inapp) {
         var l = window.location;
         if (inapp) {
+            programPath = path;
             l.hash = path.substring(1);
             myAppHistoryDeepness++;
         }
@@ -21,6 +23,7 @@
     function replace(path, inapp) {
         var l = window.location;
         if (inapp) {
+            programPath = path;
             l.replace(l.pathname + l.search + path);
         }
         else {
@@ -191,7 +194,8 @@
     }
     var firstRouting = true;
     function rootNodeFactory() {
-        var path = window.location.hash.substr(1);
+        var browserPath = window.location.hash;
+        var path = browserPath.substr(1);
         if (!isAbsolute(path))
             path = "/" + path;
         var out = { p: {} };
@@ -200,6 +204,12 @@
             firstRouting = false;
             currentTransition = { inApp: true, type: 2 /* Pop */, name: null, params: null };
             transitionState = -1;
+            programPath = browserPath;
+        }
+        else {
+            if (!currentTransition && matches.length > 0 && browserPath != programPath) {
+                runTransition(createRedirectPush(matches[0].name, out.p));
+            }
         }
         if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
             currentTransition.inApp = true;
@@ -236,6 +246,8 @@
                     }
                     if (r.keyBuilder)
                         res.key = r.keyBuilder(routeParams);
+                    else
+                        res.key = r.name;
                     res.ref = getSetterOfNodesArray(i);
                     return res;
                 };

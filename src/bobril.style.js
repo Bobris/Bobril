@@ -216,17 +216,7 @@
         else {
             nameHint = "b-" + globalCounter++;
         }
-        b.shimStyle(style);
-        var processedPseudo = null;
-        if (pseudo) {
-            processedPseudo = Object.create(null);
-            for (var key in pseudo) {
-                if (!Object.prototype.hasOwnProperty.call(pseudo, key))
-                    continue;
-                processedPseudo[key] = pseudo[key];
-            }
-        }
-        allStyles[nameHint] = { name: nameHint, parent: parent, style: style, expStyle: null, inlStyle: null, pseudo: processedPseudo };
+        allStyles[nameHint] = { name: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
         invalidateStyles();
         return nameHint;
     }

@@ -27,11 +27,13 @@ interface OutFindMatch {
 
     b.addEvent("hashchange", 10, emitOnHashChange);
 
-    var myAppHistoryDeepness = 0;
+    let myAppHistoryDeepness = 0;
+    let programPath = '';
 
     function push(path: string, inapp: boolean): void {
         var l = window.location;
         if (inapp) {
+            programPath = path;
             l.hash = path.substring(1);
             myAppHistoryDeepness++;
         } else {
@@ -42,6 +44,7 @@ interface OutFindMatch {
     function replace(path: string, inapp: boolean) {
         var l = window.location;
         if (inapp) {
+            programPath = path;
             l.replace(l.pathname + l.search + path);
         } else {
             l.replace(path);
@@ -233,7 +236,8 @@ interface OutFindMatch {
 
     var firstRouting = true;
     function rootNodeFactory(): IBobrilNode {
-        var path = window.location.hash.substr(1);
+        let browserPath = window.location.hash;
+        let path = browserPath.substr(1);
         if (!isAbsolute(path)) path = "/" + path;
         var out: OutFindMatch = { p: {} };
         var matches = findMatch(path, rootRoutes, out) || [];
@@ -241,6 +245,11 @@ interface OutFindMatch {
             firstRouting = false;
             currentTransition = { inApp: true, type: RouteTransitionType.Pop, name: null, params: null };
             transitionState = -1;
+            programPath = browserPath;
+        } else {
+            if (!currentTransition && matches.length>0 && browserPath!=programPath) {
+                runTransition(createRedirectPush(matches[0].name,out.p));
+            }
         }
         if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
             currentTransition.inApp = true;
@@ -272,7 +281,7 @@ interface OutFindMatch {
                     } else {
                         res = { key: undefined, ref: undefined, data, component: handler };
                     }
-                    if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
+                    if (r.keyBuilder) res.key = r.keyBuilder(routeParams); else res.key = r.name;
                     res.ref = getSetterOfNodesArray(i);
                     return res;
                 }

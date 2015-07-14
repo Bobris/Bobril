@@ -555,6 +555,9 @@ export function deref(n) {
         return null;
     return s[s.length - 1];
 }
+// bobril-clouseau needs this
+if (!window.b)
+    window.b = { deref: deref };
 function finishUpdateNode(n, c, component) {
     if (component) {
         if (component.postRender) {
@@ -2996,9 +2999,11 @@ function emitOnHashChange() {
 }
 addEvent("hashchange", 10, emitOnHashChange);
 let myAppHistoryDeepness = 0;
+let programPath = '';
 function push(path, inapp) {
     var l = window.location;
     if (inapp) {
+        programPath = path;
         l.hash = path.substring(1);
         myAppHistoryDeepness++;
     }
@@ -3009,6 +3014,7 @@ function push(path, inapp) {
 function replace(path, inapp) {
     var l = window.location;
     if (inapp) {
+        programPath = path;
         l.replace(l.pathname + l.search + path);
     }
     else {
@@ -3177,7 +3183,8 @@ function getSetterOfNodesArray(idx) {
 }
 var firstRouting = true;
 function rootNodeFactory() {
-    var path = window.location.hash.substr(1);
+    let browserPath = window.location.hash;
+    let path = browserPath.substr(1);
     if (!isAbsolute(path))
         path = "/" + path;
     var out = { p: {} };
@@ -3186,6 +3193,12 @@ function rootNodeFactory() {
         firstRouting = false;
         currentTransition = { inApp: true, type: 2 /* Pop */, name: null, params: null };
         transitionState = -1;
+        programPath = browserPath;
+    }
+    else {
+        if (!currentTransition && matches.length > 0 && browserPath != programPath) {
+            runTransition(createRedirectPush(matches[0].name, out.p));
+        }
     }
     if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
         currentTransition.inApp = true;
@@ -3222,6 +3235,8 @@ function rootNodeFactory() {
                 }
                 if (r.keyBuilder)
                     res.key = r.keyBuilder(routeParams);
+                else
+                    res.key = r.name;
                 res.ref = getSetterOfNodesArray(i);
                 return res;
             };
@@ -3584,7 +3599,6 @@ function beforeFrame() {
                 }
             }
             ss.inlStyle = extractedInlStyle;
-            ss.expStyle = assign(newHashObj(), style); // clone it so it stays unshimed
             shimStyle(style);
             let cssStyle = inlineStyleToCssDeclaration(style);
             if (cssStyle.length > 0)
@@ -3697,17 +3711,7 @@ export function styleDefEx(parent, style, pseudo, nameHint) {
     else {
         nameHint = "b-" + globalCounter++;
     }
-    shimStyle(style);
-    var processedPseudo = null;
-    if (pseudo) {
-        processedPseudo = newHashObj();
-        for (var key in pseudo) {
-            if (!Object.prototype.hasOwnProperty.call(pseudo, key))
-                continue;
-            processedPseudo[key] = pseudo[key];
-        }
-    }
-    allStyles[nameHint] = { name: nameHint, parent, style, expStyle: null, inlStyle: null, pseudo: processedPseudo };
+    allStyles[nameHint] = { name: nameHint, parent, style, inlStyle: null, pseudo };
     invalidateStyles();
     return nameHint;
 }

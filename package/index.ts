@@ -678,6 +678,9 @@ export function deref(n: Node): IBobrilCacheNode {
     return s[s.length - 1];
 }
 
+// bobril-clouseau needs this
+if (!(<any>window).b) (<any>window).b = { deref: deref };
+
 function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent) {
     if (component) {
         if (component.postRender) {
@@ -2349,9 +2352,9 @@ function buildHandlerPointer(name: string) {
         let button = ev.button + 1;
         let type = type2Bobril(ev.pointerType);
         let buttons = ev.buttons;
-        if (button===0 && type===BobrilPointerType.Mouse && buttons) {
+        if (button === 0 && type === BobrilPointerType.Mouse && buttons) {
             button = 1;
-            while (!(buttons&1)) { buttons=buttons>>1; button++; }
+            while (!(buttons & 1)) { buttons = buttons >> 1; button++; }
         }
         var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
         if (emitEvent("!" + name, param, target, node)) {
@@ -3357,10 +3360,12 @@ function emitOnHashChange() {
 addEvent("hashchange", 10, emitOnHashChange);
 
 let myAppHistoryDeepness = 0;
+let programPath = '';
 
 function push(path: string, inapp: boolean): void {
     var l = window.location;
     if (inapp) {
+        programPath = path;
         l.hash = path.substring(1);
         myAppHistoryDeepness++;
     } else {
@@ -3371,6 +3376,7 @@ function push(path: string, inapp: boolean): void {
 function replace(path: string, inapp: boolean) {
     var l = window.location;
     if (inapp) {
+        programPath = path;
         l.replace(l.pathname + l.search + path);
     } else {
         l.replace(path);
@@ -3562,7 +3568,8 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode) => void {
 
 var firstRouting = true;
 function rootNodeFactory(): IBobrilNode {
-    var path = window.location.hash.substr(1);
+    let browserPath = window.location.hash;
+    let path = browserPath.substr(1);
     if (!isAbsolute(path)) path = "/" + path;
     var out: OutFindMatch = { p: {} };
     var matches = findMatch(path, rootRoutes, out) || [];
@@ -3570,6 +3577,11 @@ function rootNodeFactory(): IBobrilNode {
         firstRouting = false;
         currentTransition = { inApp: true, type: RouteTransitionType.Pop, name: null, params: null };
         transitionState = -1;
+        programPath = browserPath;
+    } else {
+        if (!currentTransition && matches.length>0 && browserPath!=programPath) {
+            runTransition(createRedirectPush(matches[0].name,out.p));
+        }
     }
     if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
         currentTransition.inApp = true;
@@ -3601,7 +3613,7 @@ function rootNodeFactory(): IBobrilNode {
                 } else {
                     res = { key: undefined, ref: undefined, data, component: handler };
                 }
-                if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
+                if (r.keyBuilder) res.key = r.keyBuilder(routeParams); else res.key = r.name;
                 res.ref = getSetterOfNodesArray(i);
                 return res;
             }
@@ -3884,7 +3896,6 @@ interface IInternalStyle {
     name: string;
     parent?: IBobrilStyleDef|IBobrilStyleDef[];
     style: any;
-    expStyle: any;
     inlStyle?: any;
     pseudo?: { [name: string]: string };
 }
@@ -3988,7 +3999,6 @@ function beforeFrame() {
                 }
             }
             ss.inlStyle = extractedInlStyle;
-            ss.expStyle = assign(newHashObj(), style); // clone it so it stays unshimed
             shimStyle(style);
             let cssStyle = inlineStyleToCssDeclaration(style);
             if (cssStyle.length > 0)
@@ -4094,16 +4104,7 @@ export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any
     } else {
         nameHint = "b-" + globalCounter++;
     }
-    shimStyle(style);
-    var processedPseudo: { [name: string]: string } = null;
-    if (pseudo) {
-        processedPseudo = newHashObj();
-        for (var key in pseudo) {
-            if (!Object.prototype.hasOwnProperty.call(pseudo, key)) continue;
-            processedPseudo[key] = pseudo[key];
-        }
-    }
-    allStyles[nameHint] = { name: nameHint, parent, style, expStyle: null, inlStyle: null, pseudo: processedPseudo };
+    allStyles[nameHint] = { name: nameHint, parent, style, inlStyle: null, pseudo };
     invalidateStyles();
     return nameHint;
 }
