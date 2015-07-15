@@ -2,7 +2,7 @@ var ts = require("typescript");
 var fs = require("graceful-fs");
 var path = require("path");
 
-var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.d.ts");
+var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.es6.d.ts");
 var lastLibVersion;
 var lastLibPrecompiled;
 var fc = Object.create(null);
@@ -114,6 +114,8 @@ function typeScriptCompile(tsconfig, rebuild) {
 	if (!path.isAbsolute(tsconfig)) tsconfig = path.join(curDir, tsconfig);
 	curDir = path.dirname(tsconfig);
 	var tsconfigjson = ts.readConfigFile(tsconfig);
+	tsconfigjson["compilerOptions"]["target"]="es5";
+	tsconfigjson["compilerOptions"]["module"]="commonjs";
 	var tscmd = ts.parseConfigFile(tsconfigjson, curDir);
 	if (tscmd.errors.length) {
 		reportDiagnostics(tscmd.errors);

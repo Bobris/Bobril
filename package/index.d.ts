@@ -298,3 +298,7 @@ export declare function setLocale(locale: string): Promise<any>;
 export declare function getLocale(): string;
 export declare function registerTranslations(locale: string, msgs: string[]): void;
 export declare function withKey(node: IBobrilNode, key: string): IBobrilNode;
+export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode;
+export declare function createVirtualComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode;
+export declare function createComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode;
+export declare function createDerivedComponent<TData>(original: (data: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode;

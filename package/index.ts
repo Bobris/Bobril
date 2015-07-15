@@ -1892,8 +1892,6 @@ export const asap = (() => {
 
 // Bobril.StyleShim
 
-/// <reference path="bobril.d.ts"/>
-
 if (ieVersion() === 9) {
     function addFilter(s: any, v: string) {
         if (s.zoom == null) s.zoom = "1";
@@ -1945,9 +1943,6 @@ if (ieVersion() === 9) {
 }
 
 // Bobril.OnChange
-
-/// <reference path="bobril.d.ts"/>
-/// <reference path="bobril.onchange.d.ts"/>
 
 var bvalue = "b$value";
 var tvalue = "value";
@@ -4364,4 +4359,37 @@ export function registerTranslations(locale: string, msgs: string[]): void {
 export function withKey(node: IBobrilNode, key: string): IBobrilNode {
     node.key = key;
     return node;
+}
+
+export function styledDiv(children: IBobrilChildren, ...styles:any[]): IBobrilNode {
+    return style({ tag: 'div', children }, styles);
+}
+
+export function createVirtualComponent<TData>(component: IBobrilComponent): (data:TData, children?: IBobrilChildren) => IBobrilNode {
+    return (data:TData, children?: IBobrilChildren):IBobrilNode => {
+        if (children !== undefined) (<any>data).children = children;
+        return { data, component: component };
+    };
+}
+
+export function createComponent<TData>(component: IBobrilComponent): (data:TData, children?: IBobrilChildren) => IBobrilNode {
+    const originalRender = component.render;
+    if (originalRender) {
+        component.render = function (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
+            me.tag = 'div';
+            return originalRender.call(component, ctx, me, oldMe);
+        }
+    } else {
+        component.render = (ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
+    }
+    return (data:TData, children?: IBobrilChildren): IBobrilNode => {
+        if (children !== undefined) (<any>data).children = children;
+        return { data, component: component };
+    };
+}
+
+export function createDerivedComponent<TData>(original: (data: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data:TData, children?: IBobrilChildren) => IBobrilNode {
+    const originalComponent = original({}).component;
+    const merged = mergeComponents(originalComponent, after);
+    return createVirtualComponent<TData>(merged);
 }

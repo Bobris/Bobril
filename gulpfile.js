@@ -155,8 +155,8 @@ gulp.task('calc', ['uglify'], function () {
 });
 
 
-var alltsfilesToWatch = ['./src/**/*.ts','./examples/**/*.ts','./test/**/*.ts'];
-var alltsProjsToCompile = ['./src/**/tsconfig.json','./examples/**/tsconfig.json','./test/**/tsconfig.json'];
+var alltsfilesToWatch = ['./src/**/*.ts','./examples/**/*.ts','./test/**/*.ts','./package/**/*.ts'];
+var alltsProjsToCompile = ['./src/**/tsconfig.json','./examples/**/tsconfig.json','./test/**/tsconfig.json','./package/**/tsconfig.json'];
 alltsfilesToWatch = alltsfilesToWatch.concat(alltsProjsToCompile);
 
 gulp.task('ts', ['compilets'], function () {

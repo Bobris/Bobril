@@ -28,7 +28,7 @@ module RouterApp {
     }
 
     var needLogin = true;
-    function checkAuthorization(tr: IRouteTransition): (boolean | Thenable<IRouteTransition>) {
+    function checkAuthorization(tr: IRouteTransition): (boolean | Promise<IRouteTransition>) {
         if (needLogin) {
             // Faking calling API to check if logged in
             return new Promise((resolve, reject) => {
