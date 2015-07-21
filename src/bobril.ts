@@ -578,8 +578,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                         return c;
                 (<any>ctx).data = n.data || {};
                 c.component = component;
-                if (component.render)
+                if (component.render) {
+                    n = assign({}, n); // need to clone me because it should not be modified for next updates
                     component.render(ctx, n, c);
+                }
                 c.cfg = n.cfg;
             }
         }

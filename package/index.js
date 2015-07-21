@@ -592,8 +592,10 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                     return c;
             ctx.data = n.data || {};
             c.component = component;
-            if (component.render)
+            if (component.render) {
+                n = assign({}, n); // need to clone me because it should not be modified for next updates
                 component.render(ctx, n, c);
+            }
             c.cfg = n.cfg;
         }
     }
