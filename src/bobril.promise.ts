@@ -64,7 +64,7 @@
             // All other browsers
         } else {
             var timeout: number;
-            var timeoutFn = window.setImmediate || setTimeout;
+            var timeoutFn: (cb: () => void, timeout: number) => number = window.setImmediate || setTimeout;
             return (callback: () => void) => {
                 callbacks.push(callback);
                 if (!timeout) {

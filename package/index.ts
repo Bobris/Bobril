@@ -1723,7 +1723,7 @@ export const asap = (() => {
         // All other browsers
     } else {
         var timeout: number;
-        var timeoutFn = window.setImmediate || setTimeout;
+        var timeoutFn: (cb: () => void, timeout: number) => number = window.setImmediate || setTimeout;
         return (callback: () => void) => {
             callbacks.push(callback);
             if (!timeout) {
@@ -3576,8 +3576,8 @@ function rootNodeFactory(): IBobrilNode {
         transitionState = -1;
         programPath = browserPath;
     } else {
-        if (!currentTransition && matches.length>0 && browserPath!=programPath) {
-            runTransition(createRedirectPush(matches[0].name,out.p));
+        if (!currentTransition && matches.length > 0 && browserPath != programPath) {
+            runTransition(createRedirectPush(matches[0].name, out.p));
         }
     }
     if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
@@ -4363,34 +4363,34 @@ export function withKey(node: IBobrilNode, key: string): IBobrilNode {
     return node;
 }
 
-export function styledDiv(children: IBobrilChildren, ...styles:any[]): IBobrilNode {
+export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
     return style({ tag: 'div', children }, styles);
 }
 
-export function createVirtualComponent<TData>(component: IBobrilComponent): (data:TData, children?: IBobrilChildren) => IBobrilNode {
-    return (data:TData, children?: IBobrilChildren):IBobrilNode => {
+export function createVirtualComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
+    return (data: TData, children?: IBobrilChildren): IBobrilNode => {
         if (children !== undefined) (<any>data).children = children;
         return { data, component: component };
     };
 }
 
-export function createComponent<TData>(component: IBobrilComponent): (data:TData, children?: IBobrilChildren) => IBobrilNode {
+export function createComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
     const originalRender = component.render;
     if (originalRender) {
-        component.render = function (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
+        component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
             me.tag = 'div';
             return originalRender.call(component, ctx, me, oldMe);
         }
     } else {
         component.render = (ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
     }
-    return (data:TData, children?: IBobrilChildren): IBobrilNode => {
+    return (data: TData, children?: IBobrilChildren): IBobrilNode => {
         if (children !== undefined) (<any>data).children = children;
         return { data, component: component };
     };
 }
 
-export function createDerivedComponent<TData>(original: (data: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data:TData, children?: IBobrilChildren) => IBobrilNode {
+export function createDerivedComponent<TData>(original: (data: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
     const originalComponent = original({}).component;
     const merged = mergeComponents(originalComponent, after);
     return createVirtualComponent<TData>(merged);
