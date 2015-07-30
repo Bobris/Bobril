@@ -1250,7 +1250,8 @@ function update(time) {
         }
     }
     callPostCallbacks();
-    afterFrameCallback(roots["0"].c);
+    var r0 = roots["0"];
+    afterFrameCallback(r0 ? r0.c : null);
     lastFrameDurationMs = exports.now() - renderFrameBegin;
 }
 function invalidate(ctx, deepness) {
@@ -1305,6 +1306,7 @@ function init(factory, element) {
     removeRoot("0");
     roots["0"] = { f: factory, e: element, c: [] };
     beforeInit();
+    beforeInit = invalidate;
 }
 exports.init = init;
 function setBeforeInit(callback) {

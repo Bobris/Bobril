@@ -1234,7 +1234,8 @@ b = (function (window, document) {
             }
         }
         callPostCallbacks();
-        afterFrameCallback(roots["0"].c);
+        var r0 = roots["0"];
+        afterFrameCallback(r0 ? r0.c : null);
         lastFrameDuration = now() - renderFrameBegin;
     }
     function invalidate(ctx, deepness) {
@@ -1285,6 +1286,7 @@ b = (function (window, document) {
         removeRoot("0");
         roots["0"] = { f: factory, e: element, c: [] };
         beforeInit();
+        beforeInit = invalidate;
     }
     function setBeforeInit(callback) {
         var prevBeforeInit = beforeInit;

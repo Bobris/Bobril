@@ -1353,7 +1353,8 @@ function update(time: number) {
         }
     }
     callPostCallbacks();
-    afterFrameCallback(roots["0"].c);
+    let r0 = roots["0"];
+    afterFrameCallback(r0 ? r0.c : null);
     lastFrameDurationMs = now() - renderFrameBegin;
 }
 
@@ -1407,6 +1408,7 @@ export function init(factory: () => any, element?: HTMLElement) {
     removeRoot("0");
     roots["0"] = { f: factory, e: element, c: [] };
     beforeInit();
+    beforeInit = invalidate;
 }
 
 export function setBeforeInit(callback: (cb: () => void) => void): void {

@@ -1221,7 +1221,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
         }
         callPostCallbacks();
-        afterFrameCallback(roots["0"].c);
+        let r0 = roots["0"];
+        afterFrameCallback(r0 ? r0.c : null);
         lastFrameDuration = now() - renderFrameBegin;
     }
 
@@ -1275,6 +1276,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         removeRoot("0");
         roots["0"] = { f: factory, e: element, c: [] };
         beforeInit();
+        beforeInit = invalidate;
     }
 
     function setBeforeInit(callback: (cb: () => void) => void): void {
