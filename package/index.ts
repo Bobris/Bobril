@@ -172,7 +172,7 @@ function newHashObj() {
     return Object.create(null);
 }
 
-var vendors = ["webkit", "Moz", "ms", "o"];
+var vendors = ["Webkit", "Moz", "ms", "O"];
 var testingDivStyle: any = document.createElement("div").style;
 function testPropExistence(name: string) {
     return typeof testingDivStyle[name] === "string";

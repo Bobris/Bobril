@@ -33,7 +33,7 @@ exports.setSetValue = setSetValue;
 function newHashObj() {
     return Object.create(null);
 }
-var vendors = ["webkit", "Moz", "ms", "o"];
+var vendors = ["Webkit", "Moz", "ms", "O"];
 var testingDivStyle = document.createElement("div").style;
 function testPropExistence(name) {
     return typeof testingDivStyle[name] === "string";

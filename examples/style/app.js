@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.style.d.ts"/>
 var StyleApp;
 (function (StyleApp) {
@@ -14,6 +15,7 @@ var StyleApp;
     var ovr1 = b.styleDefEx([par1, par2], { fontSize: 15 });
     var par = b.styleDef({ background: "red", padding: 10 });
     var child = b.styleDefEx(par + ":hover>", { background: "green" });
+    var unselectable = b.styleDef({ userSelect: "none" });
     var l = true;
     b.init(function () {
         return [
@@ -23,7 +25,7 @@ var StyleApp;
                     b.style({ tag: "div", children: "Red text with border" }, redWithBorder),
                     b.style({ tag: "div" }, inline, icon),
                     b.style({ tag: "div" }, inline, biggerMargin, icon),
-                    b.style({ tag: "div", component: { onClick: function () { l = !l; b.invalidate(); } } }, inline, l && iconShine, l || iconOff),
+                    b.style({ tag: "div", component: { onClick: function () { l = !l; b.invalidate(); return true; } } }, inline, l && iconShine, l || iconOff),
                     b.style({ tag: "div", children: "float" }, leftfloat),
                     b.style({ tag: "div", children: "float2" }, leftfloat)]
             },
@@ -37,7 +39,13 @@ var StyleApp;
             },
             b.style({
                 tag: "div", children: b.style({ tag: "div", children: "inner" }, child)
-            }, par)
+            }, par),
+            {
+                tag: "div", children: [
+                    b.style({ tag: "div", children: "unselectable as css" }, unselectable),
+                    b.style({ tag: "div", children: "unselectable as inline" }, { userSelect: "none" }),
+                ]
+            }
         ];
     });
 })(StyleApp || (StyleApp = {}));
