@@ -283,20 +283,6 @@ export declare function spriteb(width: number, height: number, left: number, top
 export declare function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string;
 export declare function svgCircle(x: number, y: number, radius: number): string;
 export declare function svgRect(x: number, y: number, width: number, height: number): string;
-export interface IL10NConfig {
-    defaultLocale?: string;
-    pathToIntlJs?: string;
-    pathToIntlLocaleDataJsonp?: string;
-    pathToIntlMessageFormatJs?: string;
-    pathToIntlMessageFormatLocaleData?: string;
-    pathToTranslation?: (locale: string) => string;
-}
-export declare function jsonp(url: string): Promise<any>;
-export declare function t(message: string | number, params?: Object, translationHelp?: string): string;
-export declare function initLocalization(config?: IL10NConfig): Promise<any>;
-export declare function setLocale(locale: string): Promise<any>;
-export declare function getLocale(): string;
-export declare function registerTranslations(locale: string, msgs: string[]): void;
 export declare function withKey(node: IBobrilNode, key: string): IBobrilNode;
 export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode;
 export declare function createVirtualComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode;
