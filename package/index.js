@@ -297,6 +297,7 @@ function createNode(n, parentNode, createInto, createBefore) {
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
+            pushInitCallback(c, false);
         }
         return c;
     }
@@ -349,6 +350,7 @@ function createNode(n, parentNode, createInto, createBefore) {
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
+            pushInitCallback(c, false);
         }
         return c;
     }
@@ -419,7 +421,7 @@ function createChildren(c, createInto, createBefore) {
             l--;
             continue;
         }
-        var j = ch[i] = createNode(item, c, createInto, createBefore);
+        ch[i] = createNode(item, c, createInto, createBefore);
         i++;
     }
     c.children = ch;
@@ -1279,10 +1281,10 @@ function invalidate(ctx, deepness) {
 }
 exports.invalidate = invalidate;
 var lastRootId = 0;
-function addRoot(factory, element) {
+function addRoot(factory, element, parent) {
     lastRootId++;
     var rootId = "" + lastRootId;
-    roots[rootId] = { f: factory, e: element, c: [] };
+    roots[rootId] = { f: factory, e: element, c: [], p: parent };
     invalidate();
     return rootId;
 }
@@ -1304,7 +1306,7 @@ exports.getRoots = getRoots;
 var beforeInit = invalidate;
 function init(factory, element) {
     removeRoot("0");
-    roots["0"] = { f: factory, e: element, c: [] };
+    roots["0"] = { f: factory, e: element, c: [], p: undefined };
     beforeInit();
     beforeInit = invalidate;
 }

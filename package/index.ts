@@ -12,6 +12,8 @@ export interface IBobrilRoot {
     e: HTMLElement;
     // Virtual Dom Cache
     c: IBobrilCacheNode[];
+    // Optional Logical parent
+    p: IBobrilCacheNode;
 }
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -428,6 +430,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: 
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
+            pushInitCallback(c, false);
         }
         return c;
     } else if (tag === "/") {
@@ -477,6 +480,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: 
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
+            pushInitCallback(c, false);
         }
         return c;
     } else if (inSvg || tag === "svg") {
@@ -541,7 +545,7 @@ function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: 
             l--;
             continue;
         }
-        var j = (<IBobrilNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
+        (<IBobrilNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
         i++;
     }
     c.children = ch;
@@ -1381,10 +1385,10 @@ export function invalidate(ctx?: Object, deepness?: number) {
 
 var lastRootId = 0;
 
-export function addRoot(factory: () => IBobrilChildren, element?: HTMLElement): string {
+export function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string {
     lastRootId++;
     var rootId = "" + lastRootId;
-    roots[rootId] = { f: factory, e: element, c: [] };
+    roots[rootId] = { f: factory, e: element, c: [], p: parent };
     invalidate();
     return rootId;
 }
@@ -1406,7 +1410,7 @@ var beforeInit: () => void = invalidate;
 
 export function init(factory: () => any, element?: HTMLElement) {
     removeRoot("0");
-    roots["0"] = { f: factory, e: element, c: [] };
+    roots["0"] = { f: factory, e: element, c: [], p: undefined };
     beforeInit();
     beforeInit = invalidate;
 }

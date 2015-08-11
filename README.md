@@ -4,11 +4,12 @@ Bobril
 
 [![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Version 3.6.0
+Version 4.1.0
 
-Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework). 
+Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework).
 Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE9. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
 Because it is already used in Production code, further development must not broke any functionality. Any new feature must be optional or its perceived value to minified size ratio must be high enough.
+
 If you need compatibility with IE8 look at 2.x branch.
 
 Examples: http://bobris.github.io/Bobril/
@@ -52,20 +53,20 @@ Features in extensions:
 - Scroll notification
 - Drag and Drop - uses browser one except on IE9, multi touch, allows animating drag, state of the art as usual
 - Style - create css dynamicaly for even faster speeed, allow recomputing styles for theming
-- L10n - Localization + Internalization - behind uses format.io
+- G11N - Globalization - behind uses moment.js and others (this is in separate npm bobril-g11n)
 
 All extensions + core are 46kb minified (20kb gzip)
 Of course you don't need all extensions, it is pure a la carte, so actual application could be shorter.
 
 Near term planned extensions:
-- Style -> add more features sprites recoloring, build system around
+- G11N, Style -> finish build system around bobril-build
 
 Longer term extensions:
 - New/Deleted Node animation (prototype in Router2 example)
 - Prevent exit (Should be integrated with Router)
 - Ajax (should mostly copy Mithril implementation)
 
-Uses NodeJs, NPM, TypeScript 1.5 Beta, Karma, Jasmine, Coverage
+Uses NodeJs, NPM, TypeScript 1.5, Karma, Jasmine, Coverage
 
 MIT Licensed
 

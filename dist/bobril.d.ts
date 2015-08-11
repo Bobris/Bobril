@@ -12,6 +12,8 @@ interface IBobrilRoot {
     e: HTMLElement;
     // Virtual Dom Cache
     c: IBobrilCacheNode[];
+    // Optional Logical parent
+    p: IBobrilCacheNode;
 }
 
 declare type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -29,7 +31,7 @@ interface IBobrilStatic {
     // When you need to know if next frame/update is already scheduled
     invalidated(): boolean;
     // Register new root and return its id
-    addRoot(factory: () => IBobrilChildren, element?: HTMLElement): string;
+    addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string;
     // Unregister root with specified id
     removeRoot(id: string): void;
     // Returns all information about all roots

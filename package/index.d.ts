@@ -8,6 +8,7 @@ export interface IBobrilRoot {
     f: () => IBobrilChildren;
     e: HTMLElement;
     c: IBobrilCacheNode[];
+    p: IBobrilCacheNode;
 }
 export declare type IBobrilRoots = {
     [id: string]: IBobrilRoot;
@@ -98,7 +99,7 @@ export declare function emitEvent(name: string, ev: any, target: Node, node: IBo
 export declare function setBeforeFrame(callback: () => void): () => void;
 export declare function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void;
 export declare function invalidate(ctx?: Object, deepness?: number): void;
-export declare function addRoot(factory: () => IBobrilChildren, element?: HTMLElement): string;
+export declare function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string;
 export declare function removeRoot(id: string): void;
 export declare function getRoots(): IBobrilRoots;
 export declare function init(factory: () => any, element?: HTMLElement): void;
