@@ -56,7 +56,7 @@ if (!Object.keys) {
 // Array isArray polyfill
 if (!Array.isArray) {
     var objectToString = {}.toString;
-    Array.isArray = ((a: any) => objectToString.call(a) === "[object Array]");
+    (<any>Array).isArray = ((a: any) => objectToString.call(a) === "[object Array]");
 }
 
 b = ((window: Window, document: Document): IBobrilStatic => {
@@ -345,7 +345,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (component.render) {
                 component.render(ctx, c);
             }
-            if (c.element) return c;
+            if (c.element) {
+                pushInitCallback(c, false);
+                return c;
+            }
         }
         var tag = c.tag;
         var children = c.children;
@@ -361,6 +364,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (component.postRender) {
                     component.postRender(c.ctx, c);
                 }
+                pushInitCallback(c, false);
             }
             return c;
         } else if (tag === "/") {
@@ -410,6 +414,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (component.postRender) {
                     component.postRender(c.ctx, c);
                 }
+                pushInitCallback(c, false);
             }
             return c;
         } else if (inSvg || tag === "svg") {
@@ -478,7 +483,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 l--;
                 continue;
             }
-            var j = (<IBobrilNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
+            (<IBobrilNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
             i++;
         }
         c.children = ch;
@@ -1302,10 +1307,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var lastRootId = 0;
 
-    function addRoot(factory: () => IBobrilChildren, element?: HTMLElement): string {
+    function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string {
         lastRootId++;
         var rootId = "" + lastRootId;
-        roots[rootId] = { f: factory, e: element, c: [] };
+        roots[rootId] = { f: factory, e: element, c: [], p: parent };
         invalidate();
         return rootId;
     }
@@ -1325,7 +1330,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     function init(factory: () => any, element?: HTMLElement) {
         removeRoot("0");
-        roots["0"] = { f: factory, e: element, c: [] };
+        roots["0"] = { f: factory, e: element, c: [], p: undefined };
         invalidate();
     }
 
