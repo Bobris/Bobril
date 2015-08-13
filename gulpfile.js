@@ -159,7 +159,7 @@ var alltsfilesToWatch = ['./src/**/*.ts','./examples/**/*.ts','./test/**/*.ts'];
 var alltsProjsToCompile = ['./src/**/tsconfig.json','./examples/**/tsconfig.json','./test/**/tsconfig.json'];
 alltsfilesToWatch = alltsfilesToWatch.concat(alltsProjsToCompile);
 
-gulp.task('ts', function () {
+gulp.task('ts', ['compilets'], function () {
     gulp.watch(alltsfilesToWatch, ['compilets']);
 });
 

@@ -2,7 +2,7 @@ var ts = require("typescript");
 var fs = require("graceful-fs");
 var path = require("path");
 
-var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.d.ts");
+var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.es6.d.ts");
 var lastLibVersion;
 var lastLibPrecompiled;
 var fc = Object.create(null);
@@ -45,6 +45,10 @@ function createCompilerHost(currentDirectory) {
 	function getSourceFile(filename, languageVersion, onError) {
 		if (filename===defaultLibFilename && languageVersion===lastLibVersion) {
 			return lastLibPrecompiled;
+		}
+		var indexOfNodeModules = filename.lastIndexOf('/node_modules/');
+		if (indexOfNodeModules >= 0) {
+			filename = filename.substr(indexOfNodeModules + 1);
 		}
 		try {
 			var text = getFileFromCache(filename).content;
@@ -95,7 +99,7 @@ function reportDiagnostic(diagnostic) {
 	var output = "";
 	if (diagnostic.file) {
 		var loc = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-		output += diagnostic.file.fileName + "(" + loc.line + "," + loc.character + "): ";
+		output += diagnostic.file.fileName + "(" + (loc.line+1) + "," + (loc.character+1) + "): ";
 	}
 	var category = ts.DiagnosticCategory[diagnostic.category].toLowerCase();
 	output += category + " TS" + diagnostic.code + ": " + diagnostic.messageText + ts.sys.newLine;
@@ -109,12 +113,14 @@ function reportDiagnostics(diagnostics) {
 }
 
 /// string
-function typeScriptCompile(tsconfig) {
+function typeScriptCompile(tsconfig, rebuild) {
 	var curDir = ts.sys.getCurrentDirectory();
 	if (!path.isAbsolute(tsconfig)) tsconfig = path.join(curDir, tsconfig);
 	curDir = path.dirname(tsconfig);
-	var tsconfigjson = ts.readConfigFile(tsconfig);
-	var tscmd = ts.parseConfigFile(tsconfigjson, curDir);
+	var tsconfigjson = ts.readConfigFile(tsconfig)['config'];
+	tsconfigjson["compilerOptions"]["target"]="es5";
+	tsconfigjson["compilerOptions"]["module"]="commonjs";
+	var tscmd = ts.parseConfigFile(tsconfigjson, null, curDir);
 	if (tscmd.errors.length) {
 		reportDiagnostics(tscmd.errors);
 		return 1;
@@ -150,7 +156,7 @@ function typeScriptCompile(tsconfig) {
 		sourcetime = (new Date()).getTime();
 	}
 
-	if (sourcetime < outtime) {
+	if (!rebuild && sourcetime < outtime) {
 		return;
 	}
 

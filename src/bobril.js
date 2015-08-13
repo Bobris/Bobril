@@ -334,8 +334,10 @@ b = (function (window, document) {
             if (component.render) {
                 component.render(ctx, c);
             }
-            if (c.element)
+            if (c.element) {
+                pushInitCallback(c, false);
                 return c;
+            }
         }
         var tag = c.tag;
         var children = c.children;
@@ -352,6 +354,7 @@ b = (function (window, document) {
                 if (component.postRender) {
                     component.postRender(c.ctx, c);
                 }
+                pushInitCallback(c, false);
             }
             return c;
         }
@@ -404,6 +407,7 @@ b = (function (window, document) {
                 if (component.postRender) {
                     component.postRender(c.ctx, c);
                 }
+                pushInitCallback(c, false);
             }
             return c;
         }
@@ -477,7 +481,7 @@ b = (function (window, document) {
                 l--;
                 continue;
             }
-            var j = ch[i] = createNode(item, c, createInto, createBefore);
+            ch[i] = createNode(item, c, createInto, createBefore);
             i++;
         }
         c.children = ch;
@@ -1312,10 +1316,10 @@ b = (function (window, document) {
         requestAnimationFrame(update);
     }
     var lastRootId = 0;
-    function addRoot(factory, element) {
+    function addRoot(factory, element, parent) {
         lastRootId++;
         var rootId = "" + lastRootId;
-        roots[rootId] = { f: factory, e: element, c: [] };
+        roots[rootId] = { f: factory, e: element, c: [], p: parent };
         invalidate();
         return rootId;
     }
@@ -1333,7 +1337,7 @@ b = (function (window, document) {
     }
     function init(factory, element) {
         removeRoot("0");
-        roots["0"] = { f: factory, e: element, c: [] };
+        roots["0"] = { f: factory, e: element, c: [], p: undefined };
         invalidate();
     }
     function bubbleEvent(node, name, param) {
