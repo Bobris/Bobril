@@ -25,6 +25,31 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return typeof value === "object";
     }
 
+    function flatten(a:any|any[]): any[] {
+        if (!isArray(a)) {
+            if (a == null || a === false || a === true)
+                return [];
+            return [a];
+        }
+        a = a.split(0);
+        let alen = a.length;
+        for (let i = 0; i < alen;) {
+            let item = a[i];
+            if (isArray(item)) {
+                a.splice.apply(a, [i, 1].concat(item));
+                alen = a.length;
+                continue;
+            }
+            if (item == null || item === false || item === true) {
+                a.splice(i, 1);
+                alen--;
+                continue;
+            }
+            i++;
+        }
+        return a;
+    }
+
     var inSvg: boolean = false;
     var updateCall: Array<boolean> = [];
     var updateInstance: Array<IBobrilCacheNode> = [];
@@ -1488,6 +1513,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         preEnhance: preEnhance,
         postEnhance: postEnhance,
         cloneNode: cloneNode,
-        shimStyle: shimStyle
+        shimStyle: shimStyle,
+        flatten: flatten
     };
 })(window, document);

@@ -93,6 +93,8 @@ interface IBobrilStatic {
     cloneNode(node: IBobrilNode): IBobrilNode;
     // shim inline style (it is used internally)
     shimStyle(style: any): void;
+    // flatten array or wrap by array as needed - removing null, undefined, false, true - always returning new array
+    flatten(a:any|any[]): any[];
 }
 
 interface IBobrilAttributes {

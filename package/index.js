@@ -17,6 +17,31 @@ var hasTextContent = "textContent" in createTextNode("");
 function isObject(value) {
     return typeof value === "object";
 }
+function flatten(a) {
+    if (!isArray(a)) {
+        if (a == null || a === false || a === true)
+            return [];
+        return [a];
+    }
+    a = a.split(0);
+    var alen = a.length;
+    for (var i_1 = 0; i_1 < alen;) {
+        var item = a[i_1];
+        if (isArray(item)) {
+            a.splice.apply(a, [i_1, 1].concat(item));
+            alen = a.length;
+            continue;
+        }
+        if (item == null || item === false || item === true) {
+            a.splice(i_1, 1);
+            alen--;
+            continue;
+        }
+        i_1++;
+    }
+    return a;
+}
+exports.flatten = flatten;
 var inSvg = false;
 var updateCall = [];
 var updateInstance = [];
@@ -445,8 +470,8 @@ function removeNodeRecursive(c) {
     if (isArray(el)) {
         var pa = el[0].parentNode;
         if (pa) {
-            for (var i_1 = 0; i_1 < el.length; i_1++) {
-                pa.removeChild(el[i_1]);
+            for (var i_2 = 0; i_2 < el.length; i_2++) {
+                pa.removeChild(el[i_2]);
             }
         }
     }
@@ -1444,8 +1469,8 @@ function assign(target) {
     if (target == null)
         target = {};
     var totalArgs = arguments.length;
-    for (var i_2 = 1; i_2 < totalArgs; i_2++) {
-        var source = arguments[i_2];
+    for (var i_3 = 1; i_3 < totalArgs; i_3++) {
+        var source = arguments[i_3];
         if (source == null)
             continue;
         var keys = Object.keys(source);
@@ -3005,8 +3030,8 @@ function handleDrop(ev, target, node) {
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer;
-        for (var i_3 = 0; i_3 < dataKeys.length; i_3++) {
-            var k = dataKeys[i_3];
+        for (var i_4 = 0; i_4 < dataKeys.length; i_4++) {
+            var k = dataKeys[i_4];
             var d;
             if (k === "Files") {
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
@@ -3590,11 +3615,11 @@ function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
         if (isArray(parent)) {
-            for (var i_4 = 0; i_4 < parent.length; i_4++) {
-                if (i_4 > 0) {
+            for (var i_5 = 0; i_5 < parent.length; i_5++) {
+                if (i_5 > 0) {
                     result += ",";
                 }
-                result += "." + buildCssSubRule(parent[i_4]) + "." + name;
+                result += "." + buildCssSubRule(parent[i_5]) + "." + name;
             }
         }
         else {
@@ -3618,8 +3643,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         style(cur, curPseudo);
     }
     else if (isArray(style)) {
-        for (var i_5 = 0; i_5 < style.length; i_5++) {
-            flattenStyle(cur, curPseudo, style[i_5], undefined);
+        for (var i_6 = 0; i_6 < style.length; i_6++) {
+            flattenStyle(cur, curPseudo, style[i_6], undefined);
         }
     }
     else if (typeof style === "object") {

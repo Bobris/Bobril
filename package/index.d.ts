@@ -84,6 +84,7 @@ export interface IBobrilCtx {
         [name: string]: IBobrilCacheNode;
     };
 }
+export declare function flatten(a: any | any[]): any[];
 export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void;
 export declare function ieVersion(): any;
 export declare function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: Element, createBefore: Node): IBobrilCacheNode;

@@ -98,7 +98,7 @@ function reportDiagnostic(diagnostic) {
 		output += diagnostic.file.fileName + "(" + loc.line + "," + loc.character + "): ";
 	}
 	var category = ts.DiagnosticCategory[diagnostic.category].toLowerCase();
-	output += category + " TS" + diagnostic.code + ": " + diagnostic.messageText + ts.sys.newLine;
+	output += category + " TS" + diagnostic.code + ": " + ts.flattenDiagnosticMessageText(diagnostic.messageText) + ts.sys.newLine;
 	ts.sys.write(output);
 }
 

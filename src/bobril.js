@@ -17,6 +17,30 @@ b = (function (window, document) {
     function isObject(value) {
         return typeof value === "object";
     }
+    function flatten(a) {
+        if (!isArray(a)) {
+            if (a == null || a === false || a === true)
+                return [];
+            return [a];
+        }
+        a = a.split(0);
+        var alen = a.length;
+        for (var i = 0; i < alen;) {
+            var item = a[i];
+            if (isArray(item)) {
+                a.splice.apply(a, [i, 1].concat(item));
+                alen = a.length;
+                continue;
+            }
+            if (item == null || item === false || item === true) {
+                a.splice(i, 1);
+                alen--;
+                continue;
+            }
+            i++;
+        }
+        return a;
+    }
     var inSvg = false;
     var updateCall = [];
     var updateInstance = [];
@@ -1504,6 +1528,7 @@ b = (function (window, document) {
         preEnhance: preEnhance,
         postEnhance: postEnhance,
         cloneNode: cloneNode,
-        shimStyle: shimStyle
+        shimStyle: shimStyle,
+        flatten: flatten
     };
 })(window, document);
