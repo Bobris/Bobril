@@ -3269,7 +3269,7 @@ function handleDragEnd(ev: DragEvent, target: Node, node: IBobrilCacheNode): boo
     if (systemdnd != null) {
         systemdnd.ended = true;
         broadcast("onDragEnd", systemdnd);
-        (<any>systemdnd).cancelDnd();
+        (<any>systemdnd).destroy();
     }
     return false;
 }

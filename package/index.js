@@ -3017,7 +3017,7 @@ function handleDragEnd(ev, target, node) {
     if (systemdnd != null) {
         systemdnd.ended = true;
         broadcast("onDragEnd", systemdnd);
-        systemdnd.cancelDnd();
+        systemdnd.destroy();
     }
     return false;
 }

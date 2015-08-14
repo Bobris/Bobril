@@ -388,7 +388,7 @@
         if (systemdnd != null) {
             systemdnd.ended = true;
             b.broadcast("onDragEnd", systemdnd);
-            (<any>systemdnd).cancelDnd();
+            (<any>systemdnd).destroy();
         }
         return false;
     }

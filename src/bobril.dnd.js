@@ -373,7 +373,7 @@
         if (systemdnd != null) {
             systemdnd.ended = true;
             b.broadcast("onDragEnd", systemdnd);
-            systemdnd.cancelDnd();
+            systemdnd.destroy();
         }
         return false;
     }
