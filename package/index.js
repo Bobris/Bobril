@@ -1132,7 +1132,7 @@ function requestAnimationFrame(callback) {
 }
 var ctxInvalidated = "$invalidated";
 var ctxDeepness = "$deepness";
-var fullRecreateRequested = false;
+var fullRecreateRequested = true;
 var scheduled = false;
 var uptimeMs = 0;
 var frameCounter = 0;
@@ -1305,12 +1305,17 @@ function invalidate(ctx, deepness) {
     requestAnimationFrame(update);
 }
 exports.invalidate = invalidate;
+function forceInvalidate() {
+    if (!scheduled)
+        fullRecreateRequested = false;
+    invalidate();
+}
 var lastRootId = 0;
 function addRoot(factory, element, parent) {
     lastRootId++;
     var rootId = "" + lastRootId;
     roots[rootId] = { f: factory, e: element, c: [], p: parent };
-    invalidate();
+    forceInvalidate();
     return rootId;
 }
 exports.addRoot = addRoot;
@@ -1328,12 +1333,12 @@ function getRoots() {
     return roots;
 }
 exports.getRoots = getRoots;
-var beforeInit = invalidate;
+var beforeInit = forceInvalidate;
 function init(factory, element) {
     removeRoot("0");
     roots["0"] = { f: factory, e: element, c: [], p: undefined };
     beforeInit();
-    beforeInit = invalidate;
+    beforeInit = forceInvalidate;
 }
 exports.init = init;
 function setBeforeInit(callback) {

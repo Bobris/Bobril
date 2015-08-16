@@ -25,7 +25,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return typeof value === "object";
     }
 
-    function flatten(a:any|any[]): any[] {
+    function flatten(a: any|any[]): any[] {
         if (!isArray(a)) {
             if (a == null || a === false || a === true)
                 return [];
@@ -1102,7 +1102,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var ctxInvalidated = "$invalidated";
     var ctxDeepness = "$deepness";
-    var fullRecreateRequested = false;
+    var fullRecreateRequested = true;
     var scheduled = false;
     var uptime = 0;
     var frame = 0;
@@ -1276,11 +1276,17 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var lastRootId = 0;
 
+    function forceInvalidate() {
+        if (!scheduled)
+            fullRecreateRequested = false;
+        invalidate();
+    }
+
     function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string {
         lastRootId++;
         var rootId = "" + lastRootId;
         roots[rootId] = { f: factory, e: element, c: [], p: parent };
-        invalidate();
+        forceInvalidate();
         return rootId;
     }
 
@@ -1297,13 +1303,13 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return roots;
     }
 
-    var beforeInit: () => void = invalidate;
+    var beforeInit: () => void = forceInvalidate;
 
     function init(factory: () => any, element?: HTMLElement) {
         removeRoot("0");
         roots["0"] = { f: factory, e: element, c: [], p: undefined };
         beforeInit();
-        beforeInit = invalidate;
+        beforeInit = forceInvalidate;
     }
 
     function setBeforeInit(callback: (cb: () => void) => void): void {

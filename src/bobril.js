@@ -1119,7 +1119,7 @@ b = (function (window, document) {
     }
     var ctxInvalidated = "$invalidated";
     var ctxDeepness = "$deepness";
-    var fullRecreateRequested = false;
+    var fullRecreateRequested = true;
     var scheduled = false;
     var uptime = 0;
     var frame = 0;
@@ -1288,11 +1288,16 @@ b = (function (window, document) {
         requestAnimationFrame(update);
     }
     var lastRootId = 0;
+    function forceInvalidate() {
+        if (!scheduled)
+            fullRecreateRequested = false;
+        invalidate();
+    }
     function addRoot(factory, element, parent) {
         lastRootId++;
         var rootId = "" + lastRootId;
         roots[rootId] = { f: factory, e: element, c: [], p: parent };
-        invalidate();
+        forceInvalidate();
         return rootId;
     }
     function removeRoot(id) {
@@ -1307,12 +1312,12 @@ b = (function (window, document) {
     function getRoots() {
         return roots;
     }
-    var beforeInit = invalidate;
+    var beforeInit = forceInvalidate;
     function init(factory, element) {
         removeRoot("0");
         roots["0"] = { f: factory, e: element, c: [], p: undefined };
         beforeInit();
-        beforeInit = invalidate;
+        beforeInit = forceInvalidate;
     }
     function setBeforeInit(callback) {
         var prevBeforeInit = beforeInit;
