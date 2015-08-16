@@ -4,7 +4,7 @@
         "target": "es6",
         "module": "system",
         "declaration": true,
-        "noImplicitAny": false,
+        "noImplicitAny": true,
         "removeComments": false,
         "noLib": false,
         "preserveConstEnums": false,

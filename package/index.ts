@@ -156,7 +156,7 @@ function isObject(value: any): boolean {
     return typeof value === "object";
 }
 
-export function flatten(a:any|any[]): any[] {
+export function flatten(a: any|any[]): any[] {
     if (!isArray(a)) {
         if (a == null || a === false || a === true)
             return [];
@@ -3812,13 +3812,13 @@ function nextIteration(): void {
             let fn = comp.canDeactivate;
             if (!fn) continue;
             let res = fn.call(comp, node.ctx, currentTransition);
-            (<any>Promise).resolve(res).then((resp) => {
+            (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
                 if (resp === true) { }
                 else if (resp === false) {
                     currentTransition = null; nextTransition = null;
                     return;
                 } else {
-                    nextTransition = resp;
+                    nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
             }).catch(console.log.bind(console));
@@ -3876,13 +3876,13 @@ function nextIteration(): void {
             let fn = comp.canActivate;
             if (!fn) continue;
             let res = fn.call(comp, currentTransition);
-            (<any>Promise).resolve(res).then((resp) => {
+            (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
                 if (resp === true) { }
                 else if (resp === false) {
                     currentTransition = null; nextTransition = null;
                     return;
                 } else {
-                    nextTransition = resp;
+                    nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
             }).catch(console.log.bind(console));
