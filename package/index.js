@@ -3897,6 +3897,10 @@ function spriteb(width, height, left, top) {
     return styleid;
 }
 exports.spriteb = spriteb;
+function asset(path) {
+    return path;
+}
+exports.asset = asset;
 // Bobril.svgExtensions
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
     var angleInRadians = angleInDegrees * Math.PI / 180.0;

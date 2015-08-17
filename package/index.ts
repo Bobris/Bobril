@@ -4212,6 +4212,10 @@ export function spriteb(width: number, height: number, left: number, top: number
     return styleid;
 }
 
+export function asset(path: string): string {
+    return path;
+}
+
 // Bobril.svgExtensions
 
 function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number): { x: number; y: number } {

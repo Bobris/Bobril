@@ -282,6 +282,7 @@ export declare function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], 
 export declare function invalidateStyles(): void;
 export declare function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
 export declare function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef;
+export declare function asset(path: string): string;
 export declare function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string;
 export declare function svgCircle(x: number, y: number, radius: number): string;
 export declare function svgRect(x: number, y: number, width: number, height: number): string;
