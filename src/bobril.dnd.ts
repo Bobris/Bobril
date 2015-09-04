@@ -409,9 +409,6 @@
                     d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
                 } else {
                     d = dt.getData(k);
-                    if (typeof d !== "string") {
-                        d = JSON.parse(d);
-                    }
                 }
                 (<any>dnd).data[k] = d;
             }
