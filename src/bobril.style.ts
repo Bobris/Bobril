@@ -286,7 +286,9 @@ interface IInternalStyle {
         var cgreen = parseInt(colorStr.substr(3, 2), 16);
         var cblue = parseInt(colorStr.substr(5, 2), 16);
         for (var i = 0; i < imgd.length; i += 4) {
-            if (imgd[i] === 0x80 && imgd[i + 1] === 0x80 && imgd[i + 2] === 0x80) {
+            // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
+            let red = imgd[i];
+            if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && imgd[i] > 0x70)) {
                 imgd[i] = cred; imgd[i + 1] = cgreen; imgd[i + 2] = cblue;
             }
         }
