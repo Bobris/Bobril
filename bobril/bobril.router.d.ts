@@ -36,7 +36,7 @@ interface IRouteTransition {
     params: Params;
 }
 
-declare type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
+declare type IRouteCanResult = boolean | Promise<boolean> | IRouteTransition | Promise<IRouteTransition>;
 
 interface IBobrilComponent {
     canActivate?: (transition: IRouteTransition) => IRouteCanResult;

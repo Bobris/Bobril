@@ -177,7 +177,7 @@ module PopupApp {
     interface IPopupButton {
         content: IBobrilChildren;
         style: PopupButtonStyle;
-        action?: () => boolean | Thenable<boolean>;
+        action?: () => boolean | Promise<boolean>;
     }
 
     function innerpopup(cfg: any, title: IBobrilChildren, width: string, buttons: IPopupButton[], hideAction: () => void, content: IBobrilChildren): IBobrilNode {
@@ -187,14 +187,14 @@ module PopupApp {
         for (var i = 0; i < buttons.length; i++) {
             if (i > 0) buttonNodes.push(" ");
             var bb = buttons[i];
-            var action: () => boolean | Thenable<boolean> = () => true;
+            var action: () => boolean | Promise<boolean> = () => true;
             if (bb.action) action = bb.action;
-            action = ((act: () => boolean | Thenable<boolean>) => () => {
+            action = ((act: () => boolean | Promise<boolean>) => () => {
                 var res = act();
                 if (typeof res === "boolean") {
                     if (res) hideAction();
                 } else {
-                    (<Thenable<boolean>>res).then((v) => {
+                    (<Promise<boolean>>res).then((v) => {
                         if (v) hideAction();
                     });
                 }

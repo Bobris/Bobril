@@ -373,7 +373,7 @@
         if (systemdnd != null) {
             systemdnd.ended = true;
             b.broadcast("onDragEnd", systemdnd);
-            systemdnd.cancelDnd();
+            systemdnd.destroy();
         }
         return false;
     }
@@ -394,9 +394,6 @@
                 }
                 else {
                     d = dt.getData(k);
-                    if (typeof d !== "string") {
-                        d = JSON.parse(d);
-                    }
                 }
                 dnd.data[k] = d;
             }

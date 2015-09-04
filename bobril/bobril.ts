@@ -25,6 +25,31 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return typeof value === "object";
     }
 
+    function flatten(a: any|any[]): any[] {
+        if (!isArray(a)) {
+            if (a == null || a === false || a === true)
+                return [];
+            return [a];
+        }
+        a = a.split(0);
+        let alen = a.length;
+        for (let i = 0; i < alen;) {
+            let item = a[i];
+            if (isArray(item)) {
+                a.splice.apply(a, [i, 1].concat(item));
+                alen = a.length;
+                continue;
+            }
+            if (item == null || item === false || item === true) {
+                a.splice(i, 1);
+                alen--;
+                continue;
+            }
+            i++;
+        }
+        return a;
+    }
+
     var inSvg: boolean = false;
     var updateCall: Array<boolean> = [];
     var updateInstance: Array<IBobrilCacheNode> = [];
@@ -43,7 +68,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return Object.create(null);
     }
 
-    var vendors = ["webkit", "Moz", "ms", "o"];
+    var vendors = ["Webkit", "Moz", "ms", "O"];
     var testingDivStyle: any = document.createElement("div").style;
     function testPropExistence(name: string) {
         return typeof testingDivStyle[name] === "string";
@@ -299,6 +324,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (component.postRender) {
                     component.postRender(c.ctx, c);
                 }
+                pushInitCallback(c, false);
             }
             return c;
         } else if (tag === "/") {
@@ -348,6 +374,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (component.postRender) {
                     component.postRender(c.ctx, c);
                 }
+                pushInitCallback(c, false);
             }
             return c;
         } else if (inSvg || tag === "svg") {
@@ -412,7 +439,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 l--;
                 continue;
             }
-            var j = (<IBobrilNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
+            (<IBobrilNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
             i++;
         }
         c.children = ch;
@@ -578,8 +605,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                         return c;
                 (<any>ctx).data = n.data || {};
                 c.component = component;
-                if (component.render)
+                if (component.render) {
+                    n = assign({}, n); // need to clone me because it should not be modified for next updates
                     component.render(ctx, n, c);
+                }
                 c.cfg = n.cfg;
             }
         }
@@ -1073,7 +1102,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var ctxInvalidated = "$invalidated";
     var ctxDeepness = "$deepness";
-    var fullRecreateRequested = false;
+    var fullRecreateRequested = true;
     var scheduled = false;
     var uptime = 0;
     var frame = 0;
@@ -1219,7 +1248,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
         }
         callPostCallbacks();
-        afterFrameCallback(roots["0"].c);
+        let r0 = roots["0"];
+        afterFrameCallback(r0 ? r0.c : null);
         lastFrameDuration = now() - renderFrameBegin;
     }
 
@@ -1246,11 +1276,17 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var lastRootId = 0;
 
-    function addRoot(factory: () => IBobrilChildren, element?: HTMLElement): string {
+    function forceInvalidate() {
+        if (!scheduled)
+            fullRecreateRequested = false;
+        invalidate();
+    }
+
+    function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string {
         lastRootId++;
         var rootId = "" + lastRootId;
-        roots[rootId] = { f: factory, e: element, c: [] };
-        invalidate();
+        roots[rootId] = { f: factory, e: element, c: [], p: parent };
+        forceInvalidate();
         return rootId;
     }
 
@@ -1267,12 +1303,13 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return roots;
     }
 
-    var beforeInit: () => void = invalidate;
+    var beforeInit: () => void = forceInvalidate;
 
     function init(factory: () => any, element?: HTMLElement) {
         removeRoot("0");
-        roots["0"] = { f: factory, e: element, c: [] };
+        roots["0"] = { f: factory, e: element, c: [], p: undefined };
         beforeInit();
+        beforeInit = forceInvalidate;
     }
 
     function setBeforeInit(callback: (cb: () => void) => void): void {
@@ -1482,6 +1519,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         preEnhance: preEnhance,
         postEnhance: postEnhance,
         cloneNode: cloneNode,
-        shimStyle: shimStyle
+        shimStyle: shimStyle,
+        flatten: flatten
     };
 })(window, document);
