@@ -735,7 +735,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c))
+                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
                     return c;
             (<any>ctx).data = n.data || {};
             c.component = component;
@@ -1357,6 +1357,8 @@ function update(time: number) {
     renderFrameBegin = now();
     initEvents();
     frameCounter++;
+    ignoringShouldChange = nextIgnoreShouldChange;
+    nextIgnoreShouldChange = false;
     uptimeMs = time;
     scheduled = false;
     beforeFrameCallback();
@@ -1385,6 +1387,14 @@ function update(time: number) {
     let r0 = roots["0"];
     afterFrameCallback(r0 ? r0.c : null);
     lastFrameDurationMs = now() - renderFrameBegin;
+}
+
+var nextIgnoreShouldChange = false;
+var ignoringShouldChange = false;
+
+export function ignoreShouldChange() {
+    nextIgnoreShouldChange = true;
+    invalidate();
 }
 
 export function invalidate(ctx?: Object, deepness?: number) {
@@ -2864,6 +2874,7 @@ export interface IDndCtx {
     getData(type: string): any;
     enabledOperations: DndEnabledOps;
     operation: DndOp;
+    overNode: IBobrilCacheNode;
     local: boolean;
     ended: boolean;
     // drag started at this pointer position
@@ -2892,10 +2903,10 @@ export interface IDndOverCtx extends IDndCtx {
     setOperation(operation: DndOp): void;
 }
 
-let lastDndId = 0;
-let dnds: IDndCtx[] = [];
-let systemdnd: IDndCtx = null;
-let rootId: string = null;
+var lastDndId = 0;
+var dnds: IDndCtx[] = [];
+var systemdnd: IDndCtx = null;
+var rootId: string = null;
 
 var DndCtx = function(pointerId: number) {
     this.id = ++lastDndId;
@@ -2904,6 +2915,7 @@ var DndCtx = function(pointerId: number) {
     this.operation = DndOp.None;
     this.local = true;
     this.ended = false;
+    this.overNode = null;
     this.targetCtx = null;
     this.dragView = null;
     this.startX = 0;
@@ -2929,10 +2941,20 @@ var DndComp: IBobrilComponent = {
     render(ctx: IBobrilCtx, me: IBobrilNode) {
         var dnd: IDndCtx = ctx.data;
         me.tag = "div";
-        me.style = { position: "absolute", left: dnd.x, top: dnd.y };
+        me.style = { position: "absolute", userSelect: "none", pointerEvents: "none", left: dnd.x, top: dnd.y };
         me.children = (<any>dnd).dragView(dnd);
     }
 };
+
+function currentCursor() {
+    let cursor = "no-drop";
+    if (dnds.length !== 0) switch (dnds[0].operation) {
+        case DndOp.Move: cursor = 'move'; break;
+        case DndOp.Link: cursor = 'alias'; break;
+        case DndOp.Copy: cursor = 'copy'; break;
+    }
+    return cursor;
+}
 
 var DndRootComp: IBobrilComponent = {
     render(ctx: IBobrilCtx, me: IBobrilNode) {
@@ -2944,7 +2966,13 @@ var DndRootComp: IBobrilComponent = {
             }
         }
         me.tag = "div";
-        me.style = { position: "fixed", userSelect: "none", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
+        me.style = { position: "fixed", userSelect: "none", left: 0, top: 0, right: 0, bottom: 0 };
+        if (systemdnd != null) {
+            me.style.pointerEvents = "none";
+        } else {
+            me.style.pointerEvents = "all";
+            me.style.cursor = currentCursor();
+        }
         me.children = res;
     },
     onDrag(ctx: IBobrilCtx): boolean {
@@ -3025,6 +3053,7 @@ function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
 }
 
 function dndmoved(node: IBobrilCacheNode, dnd: IDndCtx) {
+    dnd.overNode = node;
     (<any>dnd).targetCtx = bubble(node, "onDragOver", dnd);
     if ((<any>dnd).targetCtx == null) {
         dnd.operation = DndOp.None;
@@ -3032,19 +3061,38 @@ function dndmoved(node: IBobrilCacheNode, dnd: IDndCtx) {
     broadcast("onDrag", dnd);
 }
 
-function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent) {
+function safelySetRootPointerEventsNone() {
+    if (rootId == null) return;
+    let c = getRoots()[rootId].c;
+    if (c.length === 0) return;
+    c[0].style.pointerEvents = 'none';
+}
+
+function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent): IBobrilCacheNode {
     dnd.shift = ev.shift;
     dnd.ctrl = ev.ctrl;
     dnd.alt = ev.alt;
     dnd.meta = ev.meta;
+    dnd.x = ev.x;
+    dnd.y = ev.y;
+    safelySetRootPointerEventsNone();
+    let bodyStyle = document.body.style;
+    let cursorBackup: string;
+    if (systemdnd == null) {
+        cursorBackup = bodyStyle.cursor;
+        bodyStyle.cursor = currentCursor();
+    }
+    let node = nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+    if (systemdnd == null) {
+        bodyStyle.cursor = cursorBackup;
+    }
+    return node;
 }
 
 function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (dnd && dnd.totalX == null) {
-        dnd.x = ev.x;
-        dnd.y = ev.y;
-        updateDndFromPointerEvent(dnd, ev);
+        node = updateDndFromPointerEvent(dnd, ev);
         dndmoved(node, dnd);
         return true;
     } else if (dnd && dnd.totalX != null) {
@@ -3059,9 +3107,7 @@ function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
             dnd = new (<any>DndCtx)(ev.id);
             dnd.startX = startX;
             dnd.startY = startY;
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            updateDndFromPointerEvent(dnd, ev);
+            node = updateDndFromPointerEvent(dnd, ev);
             var sourceCtx = bubble(node, "onDragStart", dnd);
             if (sourceCtx) {
                 var htmlNode = getDomNode(sourceCtx.me);
@@ -3088,9 +3134,7 @@ function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
 function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (dnd && dnd.totalX == null) {
-        dnd.x = ev.x;
-        dnd.y = ev.y;
-        updateDndFromPointerEvent(dnd, ev);
+        node = updateDndFromPointerEvent(dnd, ev);
         dndmoved(node, dnd);
         var t: IBobrilCtx = dnd.targetCtx;
         if (t && bubble(t.me, "onDrop", dnd)) {
@@ -3124,6 +3168,7 @@ function updateFromNative(dnd: IDndCtx, ev: DragEvent) {
     dnd.meta = ev.metaKey;
     dnd.x = ev.clientX;
     dnd.y = ev.clientY;
+    safelySetRootPointerEventsNone();
     var node = nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
     dndmoved(node, dnd);
 }
@@ -3296,9 +3341,6 @@ function handleDrop(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolea
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
             } else {
                 d = dt.getData(k);
-                if (typeof d !== "string") {
-                    d = JSON.parse(d);
-                }
             }
             (<any>dnd).data[k] = d;
         }
@@ -3739,22 +3781,23 @@ export function urlOfRoute(name: string, params?: Params): string {
 
 export function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
     node.data = node.data || {};
-    node.data.active = isActive(name, params);
-    node.data.url = urlOfRoute(name, params);
-    node.data.transition = createRedirectPush(name, params);
+    node.data.routeName = name;
+    node.data.routeParams = params;
     postEnhance(node, {
-        render(ctx: IBobrilCtx, me: IBobrilNode) {
+        render(ctx: any, me: IBobrilNode) {
+            let data = ctx.data;
             me.attrs = me.attrs || {};
             if (me.tag === "a") {
-                me.attrs.href = ctx.data.url;
+                me.attrs.href = urlOfRoute(data.routeName, data.routeParams);
             }
             me.className = me.className || "";
-            if (ctx.data.active) {
+            if (isActive(data.routeName, data.routeParams)) {
                 me.className += " active";
             }
         },
-        onClick(ctx: IBobrilCtx) {
-            runTransition(ctx.data.transition);
+        onClick(ctx: any) {
+            let data = ctx.data;
+            runTransition(createRedirectPush(data.routeName, data.routeParams));
             return true;
         }
     });
@@ -3926,6 +3969,18 @@ interface ISprite {
     top: number;
 }
 
+interface IDynamicSprite {
+    styleid: IBobrilStyleDef;
+    color: () => string;
+    url: string;
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+    lastColor: string;
+    lastUrl: string;
+}
+
 interface IInternalStyle {
     name: string;
     parent?: IBobrilStyleDef|IBobrilStyleDef[];
@@ -3937,7 +3992,8 @@ interface IInternalStyle {
 var allStyles: { [id: string]: IInternalStyle } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
-
+var dynamicSprites: IDynamicSprite[] = [];
+var imageCache: { [url: string]: HTMLImageElement } = newHashObj();
 var rebuildStyles = false;
 var htmlStyle: HTMLStyleElement = null;
 var globalCounter: number = 0;
@@ -3954,7 +4010,7 @@ function buildCssSubRule(parent: string): string {
     return allStyles[parent.substring(0, posSplit)].name + parent.substring(posSplit);
 }
 
-function buildCssRule(parent: string|string[], name: string): string {
+function buildCssRule(parent: string | string[], name: string): string {
     let result = "";
     if (parent) {
         if (isArray(parent)) {
@@ -4010,6 +4066,20 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
 
 function beforeFrame() {
     if (rebuildStyles) {
+        for (let i = 0; i < dynamicSprites.length; i++) {
+            let dynSprite = dynamicSprites[i];
+            let image = imageCache[dynSprite.url];
+            if (image == null) continue;
+            let colorStr = dynSprite.color();
+            if (colorStr !== dynSprite.lastColor) {
+                dynSprite.lastColor = colorStr;
+                if (dynSprite.width == null) dynSprite.width = image.width;
+                if (dynSprite.height == null) dynSprite.height = image.height;
+                let lastUrl = recolorAndClip(image, colorStr, dynSprite.width, dynSprite.height, dynSprite.left, dynSprite.top);
+                var stDef = allStyles[dynSprite.styleid];
+                stDef.style = { backgroundImage: `url(${lastUrl})`, width: dynSprite.width, height: dynSprite.height };
+            }
+        }
         var stylestr = "";
         for (var key in allStyles) {
             var ss = allStyles[key];
@@ -4067,7 +4137,7 @@ function beforeFrame() {
 export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
     let className = node.className;
     let inlineStyle = node.style;
-    let stack = <(IBobrilStyles|number)[]>null;
+    let stack = <(IBobrilStyles | number)[]>null;
     let i = 0;
     let ca = styles;
     while (true) {
@@ -4127,7 +4197,7 @@ export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?
     return styleDefEx(null, style, pseudo, nameHint);
 }
 
-export function styleDefEx(parent: IBobrilStyleDef|IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+export function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
             var counter = 1;
@@ -4158,35 +4228,64 @@ function updateSprite(spDef: ISprite): void {
     invalidateStyles();
 }
 
-export function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
-    var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + (left || 0) + ":" + (top || 0);
+function emptyStyleDef(url: string): IBobrilStyleDef {
+    return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
+}
+
+function recolorAndClip(image: HTMLImageElement, colorStr: string, width: number, height: number, left: number, top: number): string {
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
+    ctx.drawImage(image, -left, -top);
+    var imgdata = ctx.getImageData(0, 0, width, height);
+    var imgd = imgdata.data;
+    var cred = parseInt(colorStr.substr(1, 2), 16);
+    var cgreen = parseInt(colorStr.substr(3, 2), 16);
+    var cblue = parseInt(colorStr.substr(5, 2), 16);
+    for (var i = 0; i < imgd.length; i += 4) {
+        // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
+        let red = imgd[i];
+        if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
+            imgd[i] = cred; imgd[i + 1] = cgreen; imgd[i + 2] = cblue;
+        }
+    }
+    ctx.putImageData(imgdata, 0, 0);
+    return canvas.toDataURL();
+}
+
+export function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
+    left = left || 0;
+    top = top || 0;
+    if (typeof color === 'function') {
+        var styleid = emptyStyleDef(url);
+        dynamicSprites.push({
+            styleid, color, url, width, height, left, top, lastColor: '', lastUrl: ''
+        });
+        if (imageCache[url] === undefined) {
+            imageCache[url] = null;
+            var image = new Image();
+            image.addEventListener("load", () => {
+                imageCache[url] = image;
+                invalidateStyles();
+            });
+            image.src = url;
+        }
+        return styleid;
+    }
+    var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
     var spDef = allSprites[key];
     if (spDef) return spDef.styleid;
-    var styleid = styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
-    spDef = { styleid: styleid, url: url, width: width, height: height, left: left || 0, top: top || 0 };
+    var styleid = emptyStyleDef(url);
+    spDef = { styleid, url, width, height, left, top };
+
     if (width == null || height == null || color != null) {
         var image = new Image();
         image.addEventListener("load", () => {
             if (spDef.width == null) spDef.width = image.width;
             if (spDef.height == null) spDef.height = image.height;
             if (color != null) {
-                var canvas = document.createElement("canvas");
-                canvas.width = spDef.width;
-                canvas.height = spDef.height;
-                var ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
-                ctx.drawImage(image, -spDef.left, -spDef.top);
-                var imgdata = ctx.getImageData(0, 0, spDef.width, spDef.height);
-                var imgd = imgdata.data;
-                var cred = parseInt(color.substr(1, 2), 16);
-                var cgreen = parseInt(color.substr(3, 2), 16);
-                var cblue = parseInt(color.substr(5, 2), 16);
-                for (var i = 0; i < imgd.length; i += 4) {
-                    if (imgd[i] === 0x80 && imgd[i + 1] === 0x80 && imgd[i + 2] === 0x80) {
-                        imgd[i] = cred; imgd[i + 1] = cgreen; imgd[i + 2] = cblue;
-                    }
-                }
-                ctx.putImageData(imgdata, 0, 0);
-                spDef.url = canvas.toDataURL();
+                spDef.url = recolorAndClip(image, <string>color, spDef.width, spDef.height, spDef.left, spDef.top);
                 spDef.left = 0;
                 spDef.top = 0;
             }
@@ -4200,8 +4299,10 @@ export function sprite(url: string, color?: string, width?: number, height?: num
     return styleid;
 }
 
+var bundlePath = 'bundle.png';
+
 export function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
-    let url = "bundle.png";
+    let url = bundlePath;
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
     var spDef = allSprites[key];
     if (spDef) return spDef.styleid;
@@ -4210,6 +4311,10 @@ export function spriteb(width: number, height: number, left: number, top: number
     updateSprite(spDef);
     allSprites[key] = spDef;
     return styleid;
+}
+
+export function spritebc(color: () => string, width: number, height: number, left: number, top: number): IBobrilStyleDef {
+    return sprite(bundlePath, color, width, height, left, top);
 }
 
 export function asset(path: string): string {

@@ -373,22 +373,23 @@ interface OutFindMatch {
 
     function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
         node.data = node.data || {};
-        node.data.active = isActive(name, params);
-        node.data.url = urlOfRoute(name, params);
-        node.data.transition = createRedirectPush(name, params);
+        node.data.routeName = name;
+        node.data.routeParams = params;
         b.postEnhance(node, {
             render(ctx: any, me: IBobrilNode) {
+                let data = ctx.data;
                 me.attrs = me.attrs || {};
                 if (me.tag === "a") {
-                    me.attrs.href = ctx.data.url;
+                    me.attrs.href = urlOfRoute(data.routeName, data.routeParams);
                 }
                 me.className = me.className || "";
-                if (ctx.data.active) {
+                if (isActive(data.routeName, data.routeParams)) {
                     me.className += " active";
                 }
             },
             onClick(ctx: any) {
-                runTransition(ctx.data.transition);
+                let data = ctx.data;
+                runTransition(createRedirectPush(data.routeName, data.routeParams));
                 return true;
             }
         });
@@ -452,13 +453,13 @@ interface OutFindMatch {
                 let fn = comp.canDeactivate;
                 if (!fn) continue;
                 let res = fn.call(comp, node.ctx, currentTransition);
-                Promise.resolve(res).then((resp) => {
+                (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
                     if (resp === true) { }
                     else if (resp === false) {
                         currentTransition = null; nextTransition = null;
                         return;
                     } else {
-                        nextTransition = resp;
+                        nextTransition = <IRouteTransition>resp;
                     }
                     nextIteration();
                 }).catch(console.log.bind(console));
@@ -516,13 +517,13 @@ interface OutFindMatch {
                 let fn = comp.canActivate;
                 if (!fn) continue;
                 let res = fn.call(comp, currentTransition);
-                Promise.resolve(res).then((resp) => {
+                (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
                     if (resp === true) { }
                     else if (resp === false) {
                         currentTransition = null; nextTransition = null;
                         return;
                     } else {
-                        nextTransition = resp;
+                        nextTransition = <IRouteTransition>resp;
                     }
                     nextIteration();
                 }).catch(console.log.bind(console));

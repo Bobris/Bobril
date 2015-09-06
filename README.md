@@ -4,7 +4,7 @@ Bobril
 
 [![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Version 4.2.0
+Version 4.4.0
 
 Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework).
 Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE9. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
@@ -52,7 +52,7 @@ Features in extensions:
 - Asap (setImmediate) and Promise A+ polyfill - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
 - Scroll notification
 - Drag and Drop - uses browser one except on IE9, multi touch, allows animating drag, state of the art as usual
-- Style - create css dynamicaly for even faster speeed, allow recomputing styles for theming
+- Style - create css dynamically for even faster speed, allow recomputing styles for theming
 - G11N - Globalization - behind uses moment.js and others (this is in separate npm bobril-g11n)
 
 All extensions + core are 46kb minified (20kb gzip)

@@ -15,6 +15,7 @@
         this.operation = 0 /* None */;
         this.local = true;
         this.ended = false;
+        this.overNode = null;
         this.targetCtx = null;
         this.dragView = null;
         this.startX = 0;
@@ -39,10 +40,26 @@
         render: function (ctx, me) {
             var dnd = ctx.data;
             me.tag = "div";
-            me.style = { position: "absolute", left: dnd.x, top: dnd.y };
+            me.style = { position: "absolute", userSelect: "none", pointerEvents: "none", left: dnd.x, top: dnd.y };
             me.children = dnd.dragView(dnd);
         }
     };
+    function currentCursor() {
+        var cursor = "no-drop";
+        if (dnds.length !== 0)
+            switch (dnds[0].operation) {
+                case 3 /* Move */:
+                    cursor = 'move';
+                    break;
+                case 1 /* Link */:
+                    cursor = 'alias';
+                    break;
+                case 2 /* Copy */:
+                    cursor = 'copy';
+                    break;
+            }
+        return cursor;
+    }
     var DndRootComp = {
         render: function (ctx, me) {
             var res = [];
@@ -53,7 +70,14 @@
                 }
             }
             me.tag = "div";
-            me.style = { position: "fixed", userSelect: "none", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
+            me.style = { position: "fixed", userSelect: "none", left: 0, top: 0, right: 0, bottom: 0 };
+            if (systemdnd != null) {
+                me.style.pointerEvents = "none";
+            }
+            else {
+                me.style.pointerEvents = "all";
+                me.style.cursor = currentCursor();
+            }
             me.children = res;
         },
         onDrag: function (ctx) {
@@ -121,24 +145,45 @@
         return false;
     }
     function dndmoved(node, dnd) {
+        dnd.overNode = node;
         dnd.targetCtx = b.bubble(node, "onDragOver", dnd);
         if (dnd.targetCtx == null) {
             dnd.operation = 0 /* None */;
         }
         b.broadcast("onDrag", dnd);
     }
+    function safelySetRootPointerEventsNone() {
+        if (rootId == null)
+            return;
+        var c = b.getRoots()[rootId].c;
+        if (c.length === 0)
+            return;
+        c[0].style.pointerEvents = 'none';
+    }
     function updateDndFromPointerEvent(dnd, ev) {
         dnd.shift = ev.shift;
         dnd.ctrl = ev.ctrl;
         dnd.alt = ev.alt;
         dnd.meta = ev.meta;
+        dnd.x = ev.x;
+        dnd.y = ev.y;
+        safelySetRootPointerEventsNone();
+        var bodyStyle = document.body.style;
+        var cursorBackup;
+        if (systemdnd == null) {
+            cursorBackup = bodyStyle.cursor;
+            bodyStyle.cursor = currentCursor();
+        }
+        var node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+        if (systemdnd == null) {
+            bodyStyle.cursor = cursorBackup;
+        }
+        return node;
     }
     function handlePointerMove(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            updateDndFromPointerEvent(dnd, ev);
+            node = updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             return true;
         }
@@ -154,9 +199,7 @@
                 dnd = new DndCtx(ev.id);
                 dnd.startX = startX;
                 dnd.startY = startY;
-                dnd.x = ev.x;
-                dnd.y = ev.y;
-                updateDndFromPointerEvent(dnd, ev);
+                node = updateDndFromPointerEvent(dnd, ev);
                 var sourceCtx = b.bubble(node, "onDragStart", dnd);
                 if (sourceCtx) {
                     var htmlNode = b.getDomNode(sourceCtx.me);
@@ -183,9 +226,7 @@
     function handlePointerUp(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            updateDndFromPointerEvent(dnd, ev);
+            node = updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             var t = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
@@ -220,6 +261,7 @@
         dnd.meta = ev.metaKey;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
+        safelySetRootPointerEventsNone();
         var node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
         dndmoved(node, dnd);
     }

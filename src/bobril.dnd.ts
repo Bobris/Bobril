@@ -17,6 +17,7 @@
         this.operation = DndOp.None;
         this.local = true;
         this.ended = false;
+        this.overNode = null;
         this.targetCtx = null;
         this.dragView = null;
         this.startX = 0;
@@ -42,10 +43,20 @@
         render(ctx: IBobrilCtx, me: IBobrilNode) {
             var dnd: IDndCtx = ctx.data;
             me.tag = "div";
-            me.style = { position: "absolute", left: dnd.x, top: dnd.y };
+            me.style = { position: "absolute", userSelect: "none", pointerEvents: "none", left: dnd.x, top: dnd.y };
             me.children = (<any>dnd).dragView(dnd);
         }
     };
+
+    function currentCursor() {
+        let cursor = "no-drop";
+        if (dnds.length !== 0) switch (dnds[0].operation) {
+            case DndOp.Move: cursor = 'move'; break;
+            case DndOp.Link: cursor = 'alias'; break;
+            case DndOp.Copy: cursor = 'copy'; break;
+        }
+        return cursor;
+    }
 
     var DndRootComp: IBobrilComponent = {
         render(ctx: IBobrilCtx, me: IBobrilNode) {
@@ -57,7 +68,13 @@
                 }
             }
             me.tag = "div";
-            me.style = { position: "fixed", userSelect: "none", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
+            me.style = { position: "fixed", userSelect: "none", left: 0, top: 0, right: 0, bottom: 0 };
+            if (systemdnd != null) {
+                me.style.pointerEvents = "none";
+            } else {
+                me.style.pointerEvents = "all";
+                me.style.cursor = currentCursor();
+            }
             me.children = res;
         },
         onDrag(ctx: IBobrilCtx): boolean {
@@ -131,13 +148,14 @@
         if (dnd && dnd.totalX == null) {
             dnd.cancelDnd();
         }
-        if (ev.button===1) {
+        if (ev.button === 1) {
             pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
         }
         return false;
     }
 
     function dndmoved(node: IBobrilCacheNode, dnd: IDndCtx) {
+        dnd.overNode = node;
         (<any>dnd).targetCtx = b.bubble(node, "onDragOver", dnd);
         if ((<any>dnd).targetCtx == null) {
             dnd.operation = DndOp.None;
@@ -145,19 +163,38 @@
         b.broadcast("onDrag", dnd);
     }
 
-    function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent) {
+    function safelySetRootPointerEventsNone() {
+        if (rootId == null) return;
+        let c = b.getRoots()[rootId].c;
+        if (c.length === 0) return;
+        c[0].style.pointerEvents = 'none';
+    }
+
+    function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent): IBobrilCacheNode {
         dnd.shift = ev.shift;
         dnd.ctrl = ev.ctrl;
         dnd.alt = ev.alt;
         dnd.meta = ev.meta;
+        dnd.x = ev.x;
+        dnd.y = ev.y;
+        safelySetRootPointerEventsNone();
+        let bodyStyle = document.body.style;
+        let cursorBackup: string;
+        if (systemdnd == null) {
+            cursorBackup = bodyStyle.cursor;
+            bodyStyle.cursor = currentCursor();
+        }
+        let node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+        if (systemdnd == null) {
+            bodyStyle.cursor = cursorBackup;
+        }
+        return node;
     }
 
     function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            updateDndFromPointerEvent(dnd, ev);
+            node = updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             return true;
         } else if (dnd && dnd.totalX != null) {
@@ -172,9 +209,7 @@
                 dnd = new (<any>DndCtx)(ev.id);
                 dnd.startX = startX;
                 dnd.startY = startY;
-                dnd.x = ev.x;
-                dnd.y = ev.y;
-                updateDndFromPointerEvent(dnd, ev);
+                node = updateDndFromPointerEvent(dnd, ev);
                 var sourceCtx = b.bubble(node, "onDragStart", dnd);
                 if (sourceCtx) {
                     var htmlNode = b.getDomNode(sourceCtx.me);
@@ -201,9 +236,7 @@
     function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            updateDndFromPointerEvent(dnd, ev);
+            node = updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             var t: IBobrilCtx = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
@@ -237,6 +270,7 @@
         dnd.meta = ev.metaKey;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
+        safelySetRootPointerEventsNone();
         var node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
         dndmoved(node, dnd);
     }
@@ -345,7 +379,7 @@
             try {
                 var effectAllowed = dt.effectAllowed;
             }
-            catch(e) {}
+            catch (e) { }
             for (; eff < 7; eff++) {
                 if (effectAllowedTable[eff] === effectAllowed) break;
             }

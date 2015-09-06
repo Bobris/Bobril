@@ -615,7 +615,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c))
+                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
                     return c;
             ctx.data = n.data || {};
             c.component = component;
@@ -1250,6 +1250,8 @@ function update(time) {
     renderFrameBegin = exports.now();
     initEvents();
     frameCounter++;
+    ignoringShouldChange = nextIgnoreShouldChange;
+    nextIgnoreShouldChange = false;
     uptimeMs = time;
     scheduled = false;
     beforeFrameCallback();
@@ -1281,6 +1283,13 @@ function update(time) {
     afterFrameCallback(r0 ? r0.c : null);
     lastFrameDurationMs = exports.now() - renderFrameBegin;
 }
+var nextIgnoreShouldChange = false;
+var ignoringShouldChange = false;
+function ignoreShouldChange() {
+    nextIgnoreShouldChange = true;
+    invalidate();
+}
+exports.ignoreShouldChange = ignoreShouldChange;
 function invalidate(ctx, deepness) {
     if (fullRecreateRequested)
         return;
@@ -2664,6 +2673,7 @@ var DndCtx = function (pointerId) {
     this.operation = 0 /* None */;
     this.local = true;
     this.ended = false;
+    this.overNode = null;
     this.targetCtx = null;
     this.dragView = null;
     this.startX = 0;
@@ -2688,10 +2698,26 @@ var DndComp = {
     render: function (ctx, me) {
         var dnd = ctx.data;
         me.tag = "div";
-        me.style = { position: "absolute", left: dnd.x, top: dnd.y };
+        me.style = { position: "absolute", userSelect: "none", pointerEvents: "none", left: dnd.x, top: dnd.y };
         me.children = dnd.dragView(dnd);
     }
 };
+function currentCursor() {
+    var cursor = "no-drop";
+    if (dnds.length !== 0)
+        switch (dnds[0].operation) {
+            case 3 /* Move */:
+                cursor = 'move';
+                break;
+            case 1 /* Link */:
+                cursor = 'alias';
+                break;
+            case 2 /* Copy */:
+                cursor = 'copy';
+                break;
+        }
+    return cursor;
+}
 var DndRootComp = {
     render: function (ctx, me) {
         var res = [];
@@ -2702,7 +2728,14 @@ var DndRootComp = {
             }
         }
         me.tag = "div";
-        me.style = { position: "fixed", userSelect: "none", pointerEvents: "none", left: 0, top: 0, right: 0, bottom: 0 };
+        me.style = { position: "fixed", userSelect: "none", left: 0, top: 0, right: 0, bottom: 0 };
+        if (systemdnd != null) {
+            me.style.pointerEvents = "none";
+        }
+        else {
+            me.style.pointerEvents = "all";
+            me.style.cursor = currentCursor();
+        }
         me.children = res;
     },
     onDrag: function (ctx) {
@@ -2770,24 +2803,45 @@ function handlePointerDown(ev, target, node) {
     return false;
 }
 function dndmoved(node, dnd) {
+    dnd.overNode = node;
     dnd.targetCtx = bubble(node, "onDragOver", dnd);
     if (dnd.targetCtx == null) {
         dnd.operation = 0 /* None */;
     }
     broadcast("onDrag", dnd);
 }
+function safelySetRootPointerEventsNone() {
+    if (rootId == null)
+        return;
+    var c = getRoots()[rootId].c;
+    if (c.length === 0)
+        return;
+    c[0].style.pointerEvents = 'none';
+}
 function updateDndFromPointerEvent(dnd, ev) {
     dnd.shift = ev.shift;
     dnd.ctrl = ev.ctrl;
     dnd.alt = ev.alt;
     dnd.meta = ev.meta;
+    dnd.x = ev.x;
+    dnd.y = ev.y;
+    safelySetRootPointerEventsNone();
+    var bodyStyle = document.body.style;
+    var cursorBackup;
+    if (systemdnd == null) {
+        cursorBackup = bodyStyle.cursor;
+        bodyStyle.cursor = currentCursor();
+    }
+    var node = nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+    if (systemdnd == null) {
+        bodyStyle.cursor = cursorBackup;
+    }
+    return node;
 }
 function handlePointerMove(ev, target, node) {
     var dnd = pointer2Dnd[ev.id];
     if (dnd && dnd.totalX == null) {
-        dnd.x = ev.x;
-        dnd.y = ev.y;
-        updateDndFromPointerEvent(dnd, ev);
+        node = updateDndFromPointerEvent(dnd, ev);
         dndmoved(node, dnd);
         return true;
     }
@@ -2803,9 +2857,7 @@ function handlePointerMove(ev, target, node) {
             dnd = new DndCtx(ev.id);
             dnd.startX = startX;
             dnd.startY = startY;
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            updateDndFromPointerEvent(dnd, ev);
+            node = updateDndFromPointerEvent(dnd, ev);
             var sourceCtx = bubble(node, "onDragStart", dnd);
             if (sourceCtx) {
                 var htmlNode = getDomNode(sourceCtx.me);
@@ -2832,9 +2884,7 @@ function handlePointerMove(ev, target, node) {
 function handlePointerUp(ev, target, node) {
     var dnd = pointer2Dnd[ev.id];
     if (dnd && dnd.totalX == null) {
-        dnd.x = ev.x;
-        dnd.y = ev.y;
-        updateDndFromPointerEvent(dnd, ev);
+        node = updateDndFromPointerEvent(dnd, ev);
         dndmoved(node, dnd);
         var t = dnd.targetCtx;
         if (t && bubble(t.me, "onDrop", dnd)) {
@@ -2869,6 +2919,7 @@ function updateFromNative(dnd, ev) {
     dnd.meta = ev.metaKey;
     dnd.x = ev.clientX;
     dnd.y = ev.clientY;
+    safelySetRootPointerEventsNone();
     var node = nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
     dndmoved(node, dnd);
 }
@@ -3043,9 +3094,6 @@ function handleDrop(ev, target, node) {
             }
             else {
                 d = dt.getData(k);
-                if (typeof d !== "string") {
-                    d = JSON.parse(d);
-                }
             }
             dnd.data[k] = d;
         }
@@ -3417,22 +3465,23 @@ function urlOfRoute(name, params) {
 exports.urlOfRoute = urlOfRoute;
 function link(node, name, params) {
     node.data = node.data || {};
-    node.data.active = isActive(name, params);
-    node.data.url = urlOfRoute(name, params);
-    node.data.transition = createRedirectPush(name, params);
+    node.data.routeName = name;
+    node.data.routeParams = params;
     postEnhance(node, {
         render: function (ctx, me) {
+            var data = ctx.data;
             me.attrs = me.attrs || {};
             if (me.tag === "a") {
-                me.attrs.href = ctx.data.url;
+                me.attrs.href = urlOfRoute(data.routeName, data.routeParams);
             }
             me.className = me.className || "";
-            if (ctx.data.active) {
+            if (isActive(data.routeName, data.routeParams)) {
                 me.className += " active";
             }
         },
         onClick: function (ctx) {
-            runTransition(ctx.data.transition);
+            var data = ctx.data;
+            runTransition(createRedirectPush(data.routeName, data.routeParams));
             return true;
         }
     });
@@ -3603,6 +3652,8 @@ exports.runTransition = runTransition;
 var allStyles = newHashObj();
 var allSprites = newHashObj();
 var allNameHints = newHashObj();
+var dynamicSprites = [];
+var imageCache = newHashObj();
 var rebuildStyles = false;
 var htmlStyle = null;
 var globalCounter = 0;
@@ -3676,6 +3727,23 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
 }
 function beforeFrame() {
     if (rebuildStyles) {
+        for (var i_7 = 0; i_7 < dynamicSprites.length; i_7++) {
+            var dynSprite = dynamicSprites[i_7];
+            var image = imageCache[dynSprite.url];
+            if (image == null)
+                continue;
+            var colorStr = dynSprite.color();
+            if (colorStr !== dynSprite.lastColor) {
+                dynSprite.lastColor = colorStr;
+                if (dynSprite.width == null)
+                    dynSprite.width = image.width;
+                if (dynSprite.height == null)
+                    dynSprite.height = image.height;
+                var lastUrl = recolorAndClip(image, colorStr, dynSprite.width, dynSprite.height, dynSprite.left, dynSprite.top);
+                var stDef = allStyles[dynSprite.styleid];
+                stDef.style = { backgroundImage: "url(" + lastUrl + ")", width: dynSprite.width, height: dynSprite.height };
+            }
+        }
         var stylestr = "";
         for (var key in allStyles) {
             var ss = allStyles[key];
@@ -3836,13 +3904,57 @@ function updateSprite(spDef) {
     stDef.style = style;
     invalidateStyles();
 }
+function emptyStyleDef(url) {
+    return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
+}
+function recolorAndClip(image, colorStr, width, height, left, top) {
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(image, -left, -top);
+    var imgdata = ctx.getImageData(0, 0, width, height);
+    var imgd = imgdata.data;
+    var cred = parseInt(colorStr.substr(1, 2), 16);
+    var cgreen = parseInt(colorStr.substr(3, 2), 16);
+    var cblue = parseInt(colorStr.substr(5, 2), 16);
+    for (var i = 0; i < imgd.length; i += 4) {
+        // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
+        var red = imgd[i];
+        if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
+            imgd[i] = cred;
+            imgd[i + 1] = cgreen;
+            imgd[i + 2] = cblue;
+        }
+    }
+    ctx.putImageData(imgdata, 0, 0);
+    return canvas.toDataURL();
+}
 function sprite(url, color, width, height, left, top) {
-    var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + (left || 0) + ":" + (top || 0);
+    left = left || 0;
+    top = top || 0;
+    if (typeof color === 'function') {
+        var styleid = emptyStyleDef(url);
+        dynamicSprites.push({
+            styleid: styleid, color: color, url: url, width: width, height: height, left: left, top: top, lastColor: '', lastUrl: ''
+        });
+        if (imageCache[url] === undefined) {
+            imageCache[url] = null;
+            var image = new Image();
+            image.addEventListener("load", function () {
+                imageCache[url] = image;
+                invalidateStyles();
+            });
+            image.src = url;
+        }
+        return styleid;
+    }
+    var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
     var spDef = allSprites[key];
     if (spDef)
         return spDef.styleid;
-    var styleid = styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
-    spDef = { styleid: styleid, url: url, width: width, height: height, left: left || 0, top: top || 0 };
+    var styleid = emptyStyleDef(url);
+    spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
     if (width == null || height == null || color != null) {
         var image = new Image();
         image.addEventListener("load", function () {
@@ -3851,25 +3963,7 @@ function sprite(url, color, width, height, left, top) {
             if (spDef.height == null)
                 spDef.height = image.height;
             if (color != null) {
-                var canvas = document.createElement("canvas");
-                canvas.width = spDef.width;
-                canvas.height = spDef.height;
-                var ctx = canvas.getContext("2d");
-                ctx.drawImage(image, -spDef.left, -spDef.top);
-                var imgdata = ctx.getImageData(0, 0, spDef.width, spDef.height);
-                var imgd = imgdata.data;
-                var cred = parseInt(color.substr(1, 2), 16);
-                var cgreen = parseInt(color.substr(3, 2), 16);
-                var cblue = parseInt(color.substr(5, 2), 16);
-                for (var i = 0; i < imgd.length; i += 4) {
-                    if (imgd[i] === 0x80 && imgd[i + 1] === 0x80 && imgd[i + 2] === 0x80) {
-                        imgd[i] = cred;
-                        imgd[i + 1] = cgreen;
-                        imgd[i + 2] = cblue;
-                    }
-                }
-                ctx.putImageData(imgdata, 0, 0);
-                spDef.url = canvas.toDataURL();
+                spDef.url = recolorAndClip(image, color, spDef.width, spDef.height, spDef.left, spDef.top);
                 spDef.left = 0;
                 spDef.top = 0;
             }
@@ -3884,8 +3978,9 @@ function sprite(url, color, width, height, left, top) {
     return styleid;
 }
 exports.sprite = sprite;
+var bundlePath = 'bundle.png';
 function spriteb(width, height, left, top) {
-    var url = "bundle.png";
+    var url = bundlePath;
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
     var spDef = allSprites[key];
     if (spDef)
@@ -3897,6 +3992,10 @@ function spriteb(width, height, left, top) {
     return styleid;
 }
 exports.spriteb = spriteb;
+function spritebc(color, width, height, left, top) {
+    return sprite(bundlePath, color, width, height, left, top);
+}
+exports.spritebc = spritebc;
 function asset(path) {
     return path;
 }

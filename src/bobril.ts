@@ -601,7 +601,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(ctx, n, c))
+                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
                         return c;
                 (<any>ctx).data = n.data || {};
                 c.component = component;
@@ -1223,6 +1223,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         renderFrameBegin = now();
         initEvents();
         frame++;
+        ignoringShouldChange = nextIgnoreShouldChange;
+        nextIgnoreShouldChange = false;
         uptime = time;
         scheduled = false;
         beforeFrameCallback();
@@ -1251,6 +1253,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         let r0 = roots["0"];
         afterFrameCallback(r0 ? r0.c : null);
         lastFrameDuration = now() - renderFrameBegin;
+    }
+
+    var nextIgnoreShouldChange = false;
+    var ignoringShouldChange = false;
+
+    function ignoreShouldChange() {
+        nextIgnoreShouldChange = true;
+        invalidate();
     }
 
     function invalidate(ctx?: Object, deepness?: number) {
@@ -1507,6 +1517,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
+        ignoreShouldChange: ignoreShouldChange,
         invalidated: () => scheduled,
         preventDefault: preventDefault,
         vdomPath: vdomPath,

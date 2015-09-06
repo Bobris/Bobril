@@ -99,6 +99,7 @@ export declare function addEvent(name: string, priority: number, callback: (ev: 
 export declare function emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean;
 export declare function setBeforeFrame(callback: () => void): () => void;
 export declare function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void;
+export declare function ignoreShouldChange(): void;
 export declare function invalidate(ctx?: Object, deepness?: number): void;
 export declare function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string;
 export declare function removeRoot(id: string): void;
@@ -202,6 +203,7 @@ export interface IDndCtx {
     getData(type: string): any;
     enabledOperations: DndEnabledOps;
     operation: DndOp;
+    overNode: IBobrilCacheNode;
     local: boolean;
     ended: boolean;
     startX: number;
@@ -280,8 +282,9 @@ export declare function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], 
     [name: string]: any;
 }, nameHint?: string): IBobrilStyleDef;
 export declare function invalidateStyles(): void;
-export declare function sprite(url: string, color?: string, width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
+export declare function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
 export declare function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef;
+export declare function spritebc(color: () => string, width: number, height: number, left: number, top: number): IBobrilStyleDef;
 export declare function asset(path: string): string;
 export declare function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string;
 export declare function svgCircle(x: number, y: number, radius: number): string;

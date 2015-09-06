@@ -1,6 +1,6 @@
 {
   "name": "bobril",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "Component Oriented MVC Framework with virtual DOM and CSS",
   "main": "index.js",
   "typescript": {

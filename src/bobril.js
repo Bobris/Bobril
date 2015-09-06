@@ -606,7 +606,7 @@ b = (function (window, document) {
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(ctx, n, c))
+                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
                         return c;
                 ctx.data = n.data || {};
                 c.component = component;
@@ -1233,6 +1233,8 @@ b = (function (window, document) {
         renderFrameBegin = now();
         initEvents();
         frame++;
+        ignoringShouldChange = nextIgnoreShouldChange;
+        nextIgnoreShouldChange = false;
         uptime = time;
         scheduled = false;
         beforeFrameCallback();
@@ -1263,6 +1265,12 @@ b = (function (window, document) {
         var r0 = roots["0"];
         afterFrameCallback(r0 ? r0.c : null);
         lastFrameDuration = now() - renderFrameBegin;
+    }
+    var nextIgnoreShouldChange = false;
+    var ignoringShouldChange = false;
+    function ignoreShouldChange() {
+        nextIgnoreShouldChange = true;
+        invalidate();
     }
     function invalidate(ctx, deepness) {
         if (fullRecreateRequested)
@@ -1521,6 +1529,7 @@ b = (function (window, document) {
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
+        ignoreShouldChange: ignoreShouldChange,
         invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
         vdomPath: vdomPath,
