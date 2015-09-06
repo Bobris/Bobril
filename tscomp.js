@@ -87,7 +87,18 @@ function createCompilerHost(currentDirectory) {
 		getCurrentDirectory: function () { return currentDirectory; },
 		useCaseSensitiveFileNames: function () { return ts.sys.useCaseSensitiveFileNames; },
 		getCanonicalFileName: getCanonicalFileName,
-		getNewLine: function () { return '\n'; }
+		getNewLine: function () { return '\n'; },
+        fileExists: function(fileName) {
+			try {
+				getFileFromCache(fileName);
+				return true;
+			} catch (e) {
+			}
+			return false;
+		},
+        readFile: function(fileName) {
+			return getFileFromCache(filename).content;
+		}	
 	};
 }
 
@@ -95,10 +106,10 @@ function reportDiagnostic(diagnostic) {
 	var output = "";
 	if (diagnostic.file) {
 		var loc = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-		output += diagnostic.file.fileName + "(" + loc.line + "," + loc.character + "): ";
+		output += diagnostic.file.fileName + "(" + (loc.line+1) + "," + (loc.character+1) + "): ";
 	}
 	var category = ts.DiagnosticCategory[diagnostic.category].toLowerCase();
-	output += category + " TS" + diagnostic.code + ": " + ts.flattenDiagnosticMessageText(diagnostic.messageText) + ts.sys.newLine;
+	output += category + " TS" + diagnostic.code + ": " + ts.flattenDiagnosticMessageText(diagnostic.messageText, ts.sys.newLine) + ts.sys.newLine;
 	ts.sys.write(output);
 }
 
@@ -113,10 +124,11 @@ function typeScriptCompile(tsconfig, rebuild) {
 	var curDir = ts.sys.getCurrentDirectory();
 	if (!path.isAbsolute(tsconfig)) tsconfig = path.join(curDir, tsconfig);
 	curDir = path.dirname(tsconfig);
-	var tsconfigjson = ts.readConfigFile(tsconfig);
+	var tsconfigjson = ts.readConfigFile(tsconfig)['config'];
+	tsconfigjson["compilerOptions"]["moduleResolution"]="node";
 	tsconfigjson["compilerOptions"]["target"]="es5";
 	tsconfigjson["compilerOptions"]["module"]="commonjs";
-	var tscmd = ts.parseConfigFile(tsconfigjson, curDir);
+	var tscmd = ts.parseConfigFile(tsconfigjson, null, curDir);
 	if (tscmd.errors.length) {
 		reportDiagnostics(tscmd.errors);
 		return 1;

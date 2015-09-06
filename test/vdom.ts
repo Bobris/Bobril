@@ -1,5 +1,6 @@
 ﻿/// <reference path="jasmine.d.ts"/>
 /// <reference path="../src/bobril.d.ts"/>
+/// <reference path="../src/bobril.mouse.d.ts"/>
 
 function expectInsensitive(s1: string, s2: string) {
     s1 = s1.replace(/\s/g, "");

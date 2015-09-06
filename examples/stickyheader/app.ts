@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.scroll.d.ts"/>
 

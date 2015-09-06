@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.style.d.ts"/>
 var StyleThemingApp;
 (function (StyleThemingApp) {
@@ -44,7 +45,7 @@ var StyleThemingApp;
         }
     });
     function button(content, action) {
-        return b.style({ tag: "div", children: b.style({ tag: "div", children: content }, buttonInnerStyle), component: { onClick: action } }, buttonStyle);
+        return b.style({ tag: "div", children: b.style({ tag: "div", children: content }, buttonInnerStyle), component: { onClick: function () { action(); return true; } } }, buttonStyle);
     }
     b.init(function () {
         return [

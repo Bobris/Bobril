@@ -17,22 +17,15 @@
     "gulp-gh-pages": "*",
     "gulp-html-rebuild": "*",
     "gulp-if": "*",
-    "gulp-peg": "^0.1.2",
     "gulp-rename": "*",
     "gulp-uglify": "*",
     "karma": "*",
     "karma-coverage": "*",
     "karma-jasmine": "*",
     "karma-phantomjs-launcher": "*",
-    "pegjs": "^0.8.0",
     "rimraf": "*",
     "through2": "*",
     "typescript": "*",
     "uglifyjs": "*"
-  },
-  "dependencies": {
-    "intl": "^1.0.0-rc-4",
-    "intl-messageformat": "^1.1.0",
-    "intl-relativeformat": "^1.1.0"
   }
 }
