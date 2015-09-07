@@ -1,5 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.swipe.d.ts"/>
 var MouseApp;
 (function (MouseApp) {
     function d(style, content) {

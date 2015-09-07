@@ -1,5 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.swipe.d.ts"/>
 
 module MouseApp {
     function d(style: any, content: IBobrilChildren): IBobrilNode {

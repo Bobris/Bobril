@@ -23,6 +23,8 @@ interface IDndCtx {
     getData(type: string): any;
     enabledOperations: DndEnabledOps;
     operation: DndOp;
+    overNode: IBobrilCacheNode;
+    system: boolean;
     local: boolean;
     ended: boolean;
     // drag started at this pointer position

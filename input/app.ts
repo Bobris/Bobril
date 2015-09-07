@@ -1,4 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
+
 module InputApp {
     function h(tag: string, ...args: any[]) {
         return { tag: tag, children: args };

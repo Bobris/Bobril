@@ -333,22 +333,23 @@
     }
     function link(node, name, params) {
         node.data = node.data || {};
-        node.data.active = isActive(name, params);
-        node.data.url = urlOfRoute(name, params);
-        node.data.transition = createRedirectPush(name, params);
+        node.data.routeName = name;
+        node.data.routeParams = params;
         b.postEnhance(node, {
             render: function (ctx, me) {
+                var data = ctx.data;
                 me.attrs = me.attrs || {};
                 if (me.tag === "a") {
-                    me.attrs.href = ctx.data.url;
+                    me.attrs.href = urlOfRoute(data.routeName, data.routeParams);
                 }
                 me.className = me.className || "";
-                if (ctx.data.active) {
+                if (isActive(data.routeName, data.routeParams)) {
                     me.className += " active";
                 }
             },
             onClick: function (ctx) {
-                runTransition(ctx.data.transition);
+                var data = ctx.data;
+                runTransition(createRedirectPush(data.routeName, data.routeParams));
                 return true;
             }
         });

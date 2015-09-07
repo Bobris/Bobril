@@ -200,6 +200,7 @@ module DndApp {
             if (ctx.data.dnd) {
                 var dnd = ctx.data.dnd;
                 me.style.outline = "1px solid #f00";
+                me.style.userSelect = "none";
                 me.style.margin = 0;
                 me.style.left = dnd.deltaX;
                 me.style.top = dnd.deltaY;
@@ -240,6 +241,40 @@ module DndApp {
         return { component: NativeSourceComp, data: { nativeType, content } };
     }
 
+    var SvgSourceComp: IBobrilComponent = {
+        init(ctx: INativeSourceCtx) {
+            ctx.draggingId = 0;
+        },
+        render(ctx: INativeSourceCtx, me: IBobrilNode) {
+            me.tag = "path";
+            me.style = { cursor: 'move' };
+            me.attrs = { fill: '#111', stroke: '#0f0', 'stroke-width': '2', d: 'M10 10L90 10 50 90Z' };
+            if (ctx.draggingId > 0) {
+                me.attrs['fill'] = "#444";
+            }
+        },
+        onDragStart(ctx: INativeSourceCtx, dndCtx: IDndStartCtx): boolean {
+            // Do not allow to drag this item again if it is already dragged
+            if (ctx.draggingId > 0) return false;
+            ctx.draggingId = dndCtx.id;
+            dndCtx.addData('Text', 'Svg');
+            dndCtx.setEnabledOps(DndEnabledOps.MoveCopyLink);
+            dndCtx.setDragNodeView(dnd=> ({ component: NativeSourceComp, data: { nativeType: 'Text', dnd } }));
+            b.invalidate(ctx);
+            return true;
+        },
+        onDragEnd(ctx: INativeSourceCtx, dndCtx: IDndCtx): boolean {
+            if (ctx.draggingId == 0) return false;
+            ctx.draggingId = 0;
+            b.invalidate(ctx);
+            return false;
+        }
+    };
+
+    function svgSource() {
+        return { component: SvgSourceComp };
+    }
+
     interface IAnyTargetCtx extends IBobrilCtx {
         text: string;
     }
@@ -253,18 +288,19 @@ module DndApp {
             me.style = { display: "inline-block", position: "relative", left: 0, top: 0, margin: 5, padding: 20, border: "1px solid #444" };
             var dnds = b.getDnds();
             var isPossibleTarget = false;
+            var isSystem = false;
             for (let i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
                 if (dnd.ended) continue;
+                if (dnd.system) isSystem = true;
                 isPossibleTarget = true;
-                break;
             }
             if (isPossibleTarget) {
                 me.style.background = "#4f8";
             }
             me.children = {
                 tag: "div", style: { display: "inline-block", top: -me.style.top, position: "relative", minWidth: 200, minHeight: 40 },
-                children: ctx.text
+                children: [ctx.text, { tag:'br' }, dnds.length>0?dnds.length+(isSystem?" System":" Emulated"):'' ]
             };
         },
         onDragOver(ctx: IAnyTargetCtx, dndCtx: IDndOverCtx): boolean {
@@ -289,7 +325,7 @@ module DndApp {
             return false;
         },
         onDragEnd(ctx: IAnyTargetCtx, dndCtx: IDndCtx): boolean {
-            (<any>ctx).wasEnd=true;
+            (<any>ctx).wasEnd = true;
             b.invalidate(ctx);
             return false;
         }
@@ -306,12 +342,31 @@ module DndApp {
                 layoutPair(
                     progLangs.map(l=> progSource(l)),
                     progTarget({ test: l=> true, content: [{ tag: "div", children: "Any language" }, progTarget({ test: l=> l.gc, content: "Has GC" }), " ", progTarget({ test: l=> l.jit, content: "Has JIT" })] })
-                    ),
+                ),
                 layoutPair(
                     [nativeSource("Text", "Hello"), nativeSource("Url", "https://github.com/Bobris")],
                     anyTarget()
-                    ),
-                h("p", "Frame: " + b.frame() + " Last frame duration:" + b.lastFrameDuration())
+                ),
+                h("p", "Frame: " + b.frame() + " Last frame duration:" + b.lastFrameDuration()),
+                { tag: 'svg', attrs: { draggable: "true", width: '100px', height: '100px' }, children: svgSource() },
+                {
+                    tag: 'svg', style: { width: '100%', height: 80, background: 'lightblue' }, children: {
+                        tag: 'g', attrs: { draggable: true }, children: {
+                            tag: 'rect',
+                            attrs: {
+                                x: 10,
+                                y: 10,
+                                width: 50,
+                                height: 50
+                            },
+                            style: { stroke: 'black', strokeWidth: 1, fill: 'white' }
+                        }, component: {
+                            onDragStart(ctx: IBobrilCtx, dndCtx: IDndStartCtx): boolean {
+                                return true;
+                            }
+                        }
+                    }
+                }
             ]
         };
     });

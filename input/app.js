@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 var InputApp;
 (function (InputApp) {
     function h(tag) {
