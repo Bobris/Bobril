@@ -100,7 +100,8 @@ export declare function emitEvent(name: string, ev: any, target: Node, node: IBo
 export declare function setBeforeFrame(callback: () => void): () => void;
 export declare function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void;
 export declare function ignoreShouldChange(): void;
-export declare function invalidate(ctx?: Object, deepness?: number): void;
+export declare function setInvalidate(inv: (ctx?: Object, deepness?: number) => void): (ctx?: Object, deepness?: number) => void;
+export declare var invalidate: (ctx?: Object, deepness?: number) => void;
 export declare function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string;
 export declare function removeRoot(id: string): void;
 export declare function getRoots(): IBobrilRoots;
@@ -204,6 +205,7 @@ export interface IDndCtx {
     enabledOperations: DndEnabledOps;
     operation: DndOp;
     overNode: IBobrilCacheNode;
+    system: boolean;
     local: boolean;
     ended: boolean;
     startX: number;

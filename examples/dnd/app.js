@@ -258,19 +258,21 @@ var DndApp;
             me.style = { display: "inline-block", position: "relative", left: 0, top: 0, margin: 5, padding: 20, border: "1px solid #444" };
             var dnds = b.getDnds();
             var isPossibleTarget = false;
+            var isSystem = false;
             for (var i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
                 if (dnd.ended)
                     continue;
+                if (dnd.system)
+                    isSystem = true;
                 isPossibleTarget = true;
-                break;
             }
             if (isPossibleTarget) {
                 me.style.background = "#4f8";
             }
             me.children = {
                 tag: "div", style: { display: "inline-block", top: -me.style.top, position: "relative", minWidth: 200, minHeight: 40 },
-                children: ctx.text
+                children: [ctx.text, { tag: 'br' }, dnds.length > 0 ? dnds.length + (isSystem ? " System" : " Emulated") : '']
             };
         },
         onDragOver: function (ctx, dndCtx) {
@@ -310,7 +312,25 @@ var DndApp;
                 layoutPair(progLangs.map(function (l) { return progSource(l); }), progTarget({ test: function (l) { return true; }, content: [{ tag: "div", children: "Any language" }, progTarget({ test: function (l) { return l.gc; }, content: "Has GC" }), " ", progTarget({ test: function (l) { return l.jit; }, content: "Has JIT" })] })),
                 layoutPair([nativeSource("Text", "Hello"), nativeSource("Url", "https://github.com/Bobris")], anyTarget()),
                 h("p", "Frame: " + b.frame() + " Last frame duration:" + b.lastFrameDuration()),
-                { tag: 'svg', attrs: { draggable: "true", width: '100px', height: '100px' }, children: svgSource() }
+                { tag: 'svg', attrs: { draggable: "true", width: '100px', height: '100px' }, children: svgSource() },
+                {
+                    tag: 'svg', style: { width: '100%', height: 80, background: 'lightblue' }, children: {
+                        tag: 'g', attrs: { draggable: true }, children: {
+                            tag: 'rect',
+                            attrs: {
+                                x: 10,
+                                y: 10,
+                                width: 50,
+                                height: 50
+                            },
+                            style: { stroke: 'black', strokeWidth: 1, fill: 'white' }
+                        }, component: {
+                            onDragStart: function (ctx, dndCtx) {
+                                return true;
+                            }
+                        }
+                    }
+                }
             ]
         };
     });

@@ -589,7 +589,7 @@ function deref(n) {
 exports.deref = deref;
 // bobril-clouseau needs this
 if (!window.b)
-    window.b = { deref: deref };
+    window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
 function finishUpdateNode(n, c, component) {
     if (component) {
         if (component.postRender) {
@@ -1287,10 +1287,16 @@ var nextIgnoreShouldChange = false;
 var ignoringShouldChange = false;
 function ignoreShouldChange() {
     nextIgnoreShouldChange = true;
-    invalidate();
+    exports.invalidate();
 }
 exports.ignoreShouldChange = ignoreShouldChange;
-function invalidate(ctx, deepness) {
+function setInvalidate(inv) {
+    var prev = exports.invalidate;
+    exports.invalidate = inv;
+    return prev;
+}
+exports.setInvalidate = setInvalidate;
+exports.invalidate = function (ctx, deepness) {
     if (fullRecreateRequested)
         return;
     if (ctx != null) {
@@ -1312,12 +1318,11 @@ function invalidate(ctx, deepness) {
         return;
     scheduled = true;
     requestAnimationFrame(update);
-}
-exports.invalidate = invalidate;
+};
 function forceInvalidate() {
     if (!scheduled)
         fullRecreateRequested = false;
-    invalidate();
+    exports.invalidate();
 }
 var lastRootId = 0;
 function addRoot(factory, element, parent) {
@@ -1555,7 +1560,7 @@ var breaks = [
 ];
 function emitOnMediaChange() {
     media = null;
-    invalidate();
+    exports.invalidate();
     return false;
 }
 var events = ["resize", "orientationchange"];
@@ -2671,6 +2676,7 @@ var DndCtx = function (pointerId) {
     this.pointerid = pointerId;
     this.enabledOperations = 7 /* MoveCopyLink */;
     this.operation = 0 /* None */;
+    this.system = false;
     this.local = true;
     this.ended = false;
     this.overNode = null;
@@ -2739,7 +2745,7 @@ var DndRootComp = {
         me.children = res;
     },
     onDrag: function (ctx) {
-        invalidate(ctx);
+        exports.invalidate(ctx);
         return false;
     }
 };
@@ -2942,6 +2948,7 @@ function handleDragStart(ev, target, node) {
         }
     }
     dnd = new DndCtx(poid);
+    dnd.system = true;
     systemdnd = dnd;
     dnd.x = ev.clientX;
     dnd.y = ev.clientY;
@@ -3016,6 +3023,7 @@ function handleDragOver(ev, target, node) {
     var dnd = systemdnd;
     if (dnd == null) {
         dnd = new DndCtx(-1);
+        dnd.system = true;
         systemdnd = dnd;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
@@ -3129,7 +3137,7 @@ addEvent("dragenter", 5, justPreventDefault);
 addEvent("dragleave", 5, justPreventDefault);
 exports.getDnds = function () { return dnds; };
 function emitOnHashChange() {
-    invalidate();
+    exports.invalidate();
     return false;
 }
 addEvent("hashchange", 10, emitOnHashChange);
@@ -3530,7 +3538,7 @@ function doAction(transition) {
             pop();
             break;
     }
-    invalidate();
+    exports.invalidate();
 }
 function nextIteration() {
     while (true) {
@@ -3593,7 +3601,7 @@ function nextIteration() {
                 doAction(currentTransition);
             }
             else {
-                invalidate();
+                exports.invalidate();
             }
             currentTransition = null;
             return;
@@ -3892,7 +3900,7 @@ function styleDefEx(parent, style, pseudo, nameHint) {
 exports.styleDefEx = styleDefEx;
 function invalidateStyles() {
     rebuildStyles = true;
-    invalidate();
+    exports.invalidate();
 }
 exports.invalidateStyles = invalidateStyles;
 function updateSprite(spDef) {

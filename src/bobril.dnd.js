@@ -14,6 +14,7 @@
         this.enabledOperations = 7 /* MoveCopyLink */;
         this.operation = 0 /* None */;
         this.local = true;
+        this.system = false;
         this.ended = false;
         this.overNode = null;
         this.targetCtx = null;
@@ -284,6 +285,7 @@
             }
         }
         dnd = new DndCtx(poid);
+        dnd.system = true;
         systemdnd = dnd;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
@@ -358,6 +360,7 @@
         var dnd = systemdnd;
         if (dnd == null) {
             dnd = new DndCtx(-1);
+            dnd.system = true;
             systemdnd = dnd;
             dnd.x = ev.clientX;
             dnd.y = ev.clientY;

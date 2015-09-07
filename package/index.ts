@@ -1,8 +1,8 @@
 // Bobril.Core
 
-export type IBobrilChild = boolean|string|IBobrilNode;
-export type IBobrilChildren = IBobrilChild|IBobrilChild[];
-export type IBobrilCacheChildren = string|IBobrilCacheNode[];
+export type IBobrilChild = boolean | string | IBobrilNode;
+export type IBobrilChildren = IBobrilChild | IBobrilChild[];
+export type IBobrilCacheChildren = string | IBobrilCacheNode[];
 export type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
 export interface IBobrilRoot {
@@ -21,7 +21,7 @@ export type IBobrilRoots = { [id: string]: IBobrilRoot };
 export interface IBobrilAttributes {
     id?: string;
     href?: string;
-    value?: boolean|string|string[];
+    value?: boolean | string | string[];
     tabindex?: number;
     [name: string]: any;
 }
@@ -107,7 +107,7 @@ export interface IBobrilNode {
     style?: any;
     attrs?: IBobrilAttributes;
     children?: IBobrilChildren;
-    ref?: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void);
+    ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
     // set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway
     cfg?: any;
     component?: IBobrilComponent;
@@ -117,7 +117,7 @@ export interface IBobrilNode {
 }
 
 export interface IBobrilCacheNode extends IBobrilNode {
-    element?: Node|Node[];
+    element?: Node | Node[];
     parent?: IBobrilCacheNode;
     // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode
     ctx?: IBobrilCtx;
@@ -156,7 +156,7 @@ function isObject(value: any): boolean {
     return typeof value === "object";
 }
 
-export function flatten(a: any|any[]): any[] {
+export function flatten(a: any | any[]): any[] {
     if (!isArray(a)) {
         if (a == null || a === false || a === true)
             return [];
@@ -396,7 +396,7 @@ function findCfg(parent: IBobrilCacheNode): any {
     return cfg;
 }
 
-function setRef(ref: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
+function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
     if (ref == null) return;
     if (typeof ref === "function") {
         (<(node: IBobrilCacheNode) => void>ref)(value);
@@ -708,7 +708,7 @@ export function deref(n: Node): IBobrilCacheNode {
 }
 
 // bobril-clouseau needs this
-if (!(<any>window).b) (<any>window).b = { deref: deref };
+if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, setAfterFrame, setBeforeFrame, getDnds };
 
 function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent) {
     if (component) {
@@ -1397,7 +1397,13 @@ export function ignoreShouldChange() {
     invalidate();
 }
 
-export function invalidate(ctx?: Object, deepness?: number) {
+export function setInvalidate(inv: (ctx?: Object, deepness?: number) => void): (ctx?: Object, deepness?: number) => void {
+    let prev = invalidate;
+    invalidate = inv;
+    return prev;
+}
+
+export var invalidate = (ctx?: Object, deepness?: number) => {
     if (fullRecreateRequested)
         return;
     if (ctx != null) {
@@ -2875,6 +2881,7 @@ export interface IDndCtx {
     enabledOperations: DndEnabledOps;
     operation: DndOp;
     overNode: IBobrilCacheNode;
+    system: boolean;
     local: boolean;
     ended: boolean;
     // drag started at this pointer position
@@ -2913,6 +2920,7 @@ var DndCtx = function(pointerId: number) {
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
     this.operation = DndOp.None;
+    this.system = false;
     this.local = true;
     this.ended = false;
     this.overNode = null;
@@ -3193,6 +3201,7 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
         }
     }
     dnd = new (<any>DndCtx)(poid);
+    dnd.system = true;
     systemdnd = dnd;
     dnd.x = ev.clientX;
     dnd.y = ev.clientY;
@@ -3266,6 +3275,7 @@ function handleDragOver(ev: DragEvent, target: Node, node: IBobrilCacheNode): bo
     var dnd = systemdnd;
     if (dnd == null) {
         dnd = new (<any>DndCtx)(-1);
+        dnd.system = true;
         systemdnd = dnd;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
@@ -3734,7 +3744,7 @@ function registerRoutes(url: string, rs: Array<IRoute>): void {
     }
 }
 
-export function routes(rootroutes: IRoute|IRoute[]): void {
+export function routes(rootroutes: IRoute | IRoute[]): void {
     if (!isArray(rootroutes)) {
         rootroutes = <IRoute[]>[rootroutes];
     }
@@ -3861,7 +3871,7 @@ function nextIteration(): void {
             let fn = comp.canDeactivate;
             if (!fn) continue;
             let res = fn.call(comp, node.ctx, currentTransition);
-            (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
+            (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
                 if (resp === true) { }
                 else if (resp === false) {
                     currentTransition = null; nextTransition = null;
@@ -3925,7 +3935,7 @@ function nextIteration(): void {
             let fn = comp.canActivate;
             if (!fn) continue;
             let res = fn.call(comp, currentTransition);
-            (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
+            (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
                 if (resp === true) { }
                 else if (resp === false) {
                     currentTransition = null; nextTransition = null;
@@ -3983,7 +3993,7 @@ interface IDynamicSprite {
 
 interface IInternalStyle {
     name: string;
-    parent?: IBobrilStyleDef|IBobrilStyleDef[];
+    parent?: IBobrilStyleDef | IBobrilStyleDef[];
     style: any;
     inlStyle?: any;
     pseudo?: { [name: string]: string };
