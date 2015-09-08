@@ -205,6 +205,7 @@ export interface IDndCtx {
     enabledOperations: DndEnabledOps;
     operation: DndOp;
     overNode: IBobrilCacheNode;
+    cursor: string;
     system: boolean;
     local: boolean;
     ended: boolean;

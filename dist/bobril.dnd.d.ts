@@ -24,6 +24,8 @@ interface IDndCtx {
     enabledOperations: DndEnabledOps;
     operation: DndOp;
     overNode: IBobrilCacheNode;
+    // way to overrride mouse cursor, leave null to emulate dnd cursor
+    cursor: string;
     system: boolean;
     local: boolean;
     ended: boolean;
