@@ -2810,7 +2810,7 @@ function handlePointerDown(ev, target, node) {
     if (dnd && dnd.totalX == null) {
         dnd.cancelDnd();
     }
-    if (ev.button === 1) {
+    if (ev.button <= 1) {
         pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
     }
     return false;
@@ -2828,14 +2828,13 @@ function updateDndFromPointerEvent(dnd, ev) {
     dnd.ctrl = ev.ctrl;
     dnd.alt = ev.alt;
     dnd.meta = ev.meta;
-    return nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+    dnd.x = ev.x;
+    dnd.y = ev.y;
 }
 function handlePointerMove(ev, target, node) {
     var dnd = pointer2Dnd[ev.id];
     if (dnd && dnd.totalX == null) {
-        dnd.x = ev.x;
-        dnd.y = ev.y;
-        node = updateDndFromPointerEvent(dnd, ev);
+        updateDndFromPointerEvent(dnd, ev);
         dndmoved(node, dnd);
         return true;
     }
@@ -2851,9 +2850,7 @@ function handlePointerMove(ev, target, node) {
             dnd = new DndCtx(ev.id);
             dnd.startX = startX;
             dnd.startY = startY;
-            dnd.x = startX;
-            dnd.y = startY;
-            node = updateDndFromPointerEvent(dnd, ev);
+            updateDndFromPointerEvent(dnd, ev);
             var sourceCtx = bubble(node, "onDragStart", dnd);
             if (sourceCtx) {
                 var htmlNode = getDomNode(sourceCtx.me);
@@ -2880,9 +2877,7 @@ function handlePointerMove(ev, target, node) {
 function handlePointerUp(ev, target, node) {
     var dnd = pointer2Dnd[ev.id];
     if (dnd && dnd.totalX == null) {
-        dnd.x = ev.x;
-        dnd.y = ev.y;
-        node = updateDndFromPointerEvent(dnd, ev);
+        updateDndFromPointerEvent(dnd, ev);
         dndmoved(node, dnd);
         var t = dnd.targetCtx;
         if (t && bubble(t.me, "onDrop", dnd)) {

@@ -156,7 +156,7 @@
         if (dnd && dnd.totalX == null) {
             dnd.cancelDnd();
         }
-        if (ev.button === 1) {
+        if (ev.button <= 1) {
             pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
         }
         return false;
@@ -171,20 +171,19 @@
         b.broadcast("onDrag", dnd);
     }
 
-    function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent): IBobrilCacheNode {
+    function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent) {
         dnd.shift = ev.shift;
         dnd.ctrl = ev.ctrl;
         dnd.alt = ev.alt;
         dnd.meta = ev.meta;
-        return b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
+        dnd.x = ev.x;
+        dnd.y = ev.y;
     }
 
     function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            node = updateDndFromPointerEvent(dnd, ev);
+            updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             return true;
         } else if (dnd && dnd.totalX != null) {
@@ -199,9 +198,7 @@
                 dnd = new (<any>DndCtx)(ev.id);
                 dnd.startX = startX;
                 dnd.startY = startY;
-                dnd.x = startX;
-                dnd.y = startY;
-                node = updateDndFromPointerEvent(dnd, ev);
+                updateDndFromPointerEvent(dnd, ev);
                 var sourceCtx = b.bubble(node, "onDragStart", dnd);
                 if (sourceCtx) {
                     var htmlNode = b.getDomNode(sourceCtx.me);
@@ -228,9 +225,7 @@
     function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
         if (dnd && dnd.totalX == null) {
-            dnd.x = ev.x;
-            dnd.y = ev.y;
-            node = updateDndFromPointerEvent(dnd, ev);
+            updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             var t: IBobrilCtx = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
