@@ -26,12 +26,20 @@ interface IDndCtx {
     overNode: IBobrilCacheNode;
     // way to overrride mouse cursor, leave null to emulate dnd cursor
     cursor: string;
+    // dnd is wating for activation by moving atleast 10 pixels
+    beforeDrag: boolean;
     system: boolean;
     local: boolean;
     ended: boolean;
     // drag started at this pointer position
     startX: number;
     startY: number;
+    // distance moved - only increasing
+    totalX: number;
+    totalY: number;
+    // previous mouse/touch pointer position
+    lastX: number;
+    lastY: number;
     // actual mouse/touch pointer position
     x: number;
     y: number;
@@ -72,4 +80,5 @@ interface IBobrilComponent {
 
 interface IBobrilStatic {
     getDnds?(): IDndCtx[];
+    anyActiveDnd?(): IDndCtx;
 }

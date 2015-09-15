@@ -44,7 +44,7 @@ module DndApp {
         render(ctx: IProgLangSourceCtx, me: IBobrilNode) {
             me.tag = "div";
             me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
-            if (ctx.draggingId > 0) {
+            if (ctx.draggingId > 0 && b.anyActiveDnd()) {
                 me.style.background = "#444";
                 return;
             }
@@ -118,7 +118,7 @@ module DndApp {
             var isPositivePossibleTarget = false;
             for (let i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
-                if (dnd.ended) continue;
+                if (dnd.ended || dnd.beforeDrag) continue;
                 if (dnd.hasData("bobril/langprog")) {
                     isPossibleTarget = true;
                     var lang = dnd.getData("bobril/langprog");
@@ -193,7 +193,7 @@ module DndApp {
         render(ctx: INativeSourceCtx, me: IBobrilNode) {
             me.tag = "div";
             me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 60, height: 50, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
-            if (ctx.draggingId > 0) {
+            if (ctx.draggingId > 0 && b.anyActiveDnd()) {
                 me.style.background = "#444";
                 return;
             }
@@ -291,7 +291,7 @@ module DndApp {
             var isSystem = false;
             for (let i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
-                if (dnd.ended) continue;
+                if (dnd.ended || dnd.beforeDrag) continue;
                 if (dnd.system) isSystem = true;
                 isPossibleTarget = true;
             }

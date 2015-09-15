@@ -29,7 +29,7 @@ var DndApp;
         render: function (ctx, me) {
             me.tag = "div";
             me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 50, height: 40, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
-            if (ctx.draggingId > 0) {
+            if (ctx.draggingId > 0 && b.anyActiveDnd()) {
                 me.style.background = "#444";
                 return;
             }
@@ -92,7 +92,7 @@ var DndApp;
             var isPositivePossibleTarget = false;
             for (var i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
-                if (dnd.ended)
+                if (dnd.ended || dnd.beforeDrag)
                     continue;
                 if (dnd.hasData("bobril/langprog")) {
                     isPossibleTarget = true;
@@ -156,7 +156,7 @@ var DndApp;
         render: function (ctx, me) {
             me.tag = "div";
             me.style = { display: "inline-block", verticalAlign: "top", position: "relative", left: 0, top: 0, cursor: "move", margin: 5, width: 60, height: 50, padding: 10, userSelect: "none", border: "1px solid #444", background: "#eee" };
-            if (ctx.draggingId > 0) {
+            if (ctx.draggingId > 0 && b.anyActiveDnd()) {
                 me.style.background = "#444";
                 return;
             }
@@ -261,7 +261,7 @@ var DndApp;
             var isSystem = false;
             for (var i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
-                if (dnd.ended)
+                if (dnd.ended || dnd.beforeDrag)
                     continue;
                 if (dnd.system)
                     isSystem = true;

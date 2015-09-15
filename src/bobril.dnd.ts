@@ -10,12 +10,18 @@
     var rootId: string = null;
     var preventDefault = b.preventDefault;
     var bodyCursorBackup: string;
+    var userSelectBackup: string;
+    var shimedStyle = { userSelect: ''};
+    b.shimStyle(shimedStyle);
+    var shimedStyleKeys = Object.keys(shimedStyle);
+    var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length-1]; // renamed is last
 
     var DndCtx = function(pointerId: number) {
         this.id = ++lastDndId;
         this.pointerid = pointerId;
         this.enabledOperations = DndEnabledOps.MoveCopyLink;
         this.operation = DndOp.None;
+        this.beforeDrag = true;
         this.local = true;
         this.system = false;
         this.ended = false;
@@ -29,6 +35,10 @@
         this.y = 0;
         this.deltaX = 0;
         this.deltaY = 0;
+        this.totalX = 0;
+        this.totalY = 0;
+        this.lastX = 0;
+        this.lastY = 0;
         this.shift = false;
         this.ctrl = false;
         this.alt = false;
@@ -38,7 +48,10 @@
             pointer2Dnd[pointerId] = this;
         dnds.push(this);
         if (rootId == null) {
-            bodyCursorBackup = document.body.style.cursor;
+            let dbs = <any>document.body.style;
+            bodyCursorBackup = dbs.cursor;
+            userSelectBackup = dbs[userSelectPropName];
+            dbs[userSelectPropName] = 'none';
             rootId = b.addRoot(dndRootFactory);
         }
     };
@@ -56,6 +69,7 @@
         let cursor = "no-drop";
         if (dnds.length !== 0) {
             let dnd = dnds[0];
+            if (dnd.beforeDrag) return "";
             if (dnd.cursor != null) return dnd.cursor;
             if (dnd.system) return "";
             switch (dnd.operation) {
@@ -72,16 +86,17 @@
             var res: IBobrilNode[] = [];
             for (var i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
+                if (dnd.beforeDrag) continue;
                 if ((<any>dnd).dragView != null && (dnd.x != 0 || dnd.y != 0)) {
                     res.push({ key: "" + dnd.id, data: dnd, component: DndComp });
                 }
             }
             me.tag = "div";
             me.style = { position: "fixed", pointerEvents: "none", userSelect: "none", left: 0, top: 0, right: 0, bottom: 0 };
-            let bodyStyle = document.body.style;
+            let dbs = document.body.style;
             let cur = currentCursor();
-            if (cur && bodyStyle.cursor !== cur)
-                bodyStyle.cursor = cur;
+            if (cur && dbs.cursor !== cur)
+                dbs.cursor = cur;
             me.children = res;
         },
         onDrag(ctx: IBobrilCtx): boolean {
@@ -126,12 +141,12 @@
 
     dndProto.cancelDnd = function(): void {
         dndmoved(null, this);
-        this.ended = true;
-        b.broadcast("onDragEnd", this);
         this.destroy();
     }
 
     dndProto.destroy = function(): void {
+        this.ended = true;
+        b.broadcast("onDragEnd", this);
         delete pointer2Dnd[this.pointerid];
         for (var i = 0; i < dnds.length; i++) {
             if (dnds[i] === this) {
@@ -145,7 +160,9 @@
         if (dnds.length === 0) {
             b.removeRoot(rootId);
             rootId = null;
-            document.body.style.cursor = bodyCursorBackup;
+            let dbs = <any>document.body.style;
+            dbs.cursor = bodyCursorBackup;
+            dbs[userSelectPropName] = userSelectBackup;
         }
     }
 
@@ -153,11 +170,33 @@
 
     function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
+        if (dnd) {
             dnd.cancelDnd();
         }
         if (ev.button <= 1) {
-            pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
+            dnd = new (<any>DndCtx)(ev.id);
+            dnd.startX = ev.x;
+            dnd.startY = ev.y;
+            dnd.lastX = ev.x;
+            dnd.lastY = ev.y;
+            dnd.overNode = node;
+            updateDndFromPointerEvent(dnd, ev);
+            var sourceCtx = b.bubble(node, "onDragStart", dnd);
+            if (sourceCtx) {
+                var htmlNode = b.getDomNode(sourceCtx.me);
+                if (htmlNode == null) {
+                    dnd.destroy();
+                    return false;
+                }
+                var boundFn = (<Element>htmlNode).getBoundingClientRect;
+                if (boundFn) {
+                    var rect = boundFn.call(htmlNode);
+                    dnd.deltaX = rect.left - ev.x;
+                    dnd.deltaY = rect.top - ev.y;
+                }
+            } else {
+                dnd.destroy();
+            }
         }
         return false;
     }
@@ -182,72 +221,49 @@
 
     function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
-            updateDndFromPointerEvent(dnd, ev);
-            dndmoved(node, dnd);
-            return true;
-        } else if (dnd && dnd.totalX != null) {
-            dnd.totalX += Math.abs(ev.x - dnd.lastX);
-            dnd.totalY += Math.abs(ev.y - dnd.lastY);
-            dnd.lastX = ev.x;
-            dnd.lastY = ev.y;
-            if (dnd.totalX + dnd.totalY > 10) {
-                node = dnd.sourceNode;
-                var startX = dnd.startX;
-                var startY = dnd.startY;
-                dnd = new (<any>DndCtx)(ev.id);
-                dnd.startX = startX;
-                dnd.startY = startY;
-                updateDndFromPointerEvent(dnd, ev);
-                var sourceCtx = b.bubble(node, "onDragStart", dnd);
-                if (sourceCtx) {
-                    var htmlNode = b.getDomNode(sourceCtx.me);
-                    if (htmlNode == null) {
-                        dnd.destroy();
-                        return false;
-                    }
-                    var boundFn = (<Element>htmlNode).getBoundingClientRect;
-                    if (boundFn) {
-                        var rect = boundFn.call(htmlNode);
-                        dnd.deltaX = rect.left - startX;
-                        dnd.deltaY = rect.top - startY;
-                    }
-                    dndmoved(node, dnd);
-                    return true;
-                } else {
-                    dnd.destroy();
-                }
+        if (!dnd) return false;
+        dnd.totalX += Math.abs(ev.x - dnd.lastX);
+        dnd.totalY += Math.abs(ev.y - dnd.lastY);
+        if (dnd.beforeDrag) {
+            if (dnd.totalX + dnd.totalY <= 10) {
+                dnd.lastX = ev.x;
+                dnd.lastY = ev.y;
+                return false;
             }
+            dnd.beforeDrag = false;
         }
-        return false;
+        updateDndFromPointerEvent(dnd, ev);
+        dndmoved(node, dnd);
+        dnd.lastX = ev.x;
+        dnd.lastY = ev.y;
+        return true;
     }
 
     function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
+        if (!dnd) return false;
+        if (!dnd.beforeDrag) {
             updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             var t: IBobrilCtx = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
-                dnd.ended = true;
-                b.broadcast("onDragEnd", dnd);
                 dnd.destroy();
             } else {
                 dnd.cancelDnd();
             }
             return true;
-        } else if (dnd) {
-            delete pointer2Dnd[ev.id];
         }
+        dnd.destroy();
         return false;
     }
 
     function handlePointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
+        if (!dnd) return false;
+        if (!dnd.beforeDrag) {
             dnd.cancelDnd();
         } else {
-            delete pointer2Dnd[ev.id];
+            dnd.destroy();
         }
         return false;
     }
@@ -259,8 +275,12 @@
         dnd.meta = ev.metaKey;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
+        dnd.totalX += Math.abs(dnd.x - dnd.lastX);
+        dnd.totalY += Math.abs(dnd.y - dnd.lastY);
         var node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
         dndmoved(node, dnd);
+        dnd.lastX = dnd.x;
+        dnd.lastY = dnd.y;
     }
 
     var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
@@ -271,81 +291,81 @@
             (<any>dnd).destroy();
         }
         var activePointerIds = Object.keys(pointer2Dnd);
-        var startX = ev.clientX, startY = ev.clientY, poid = -1;
-        for (var i = 0; i < activePointerIds.length; i++) {
-            dnd = pointer2Dnd[activePointerIds[i]];
-            if ((<any>dnd).totalX != null) {
-                poid = +activePointerIds[i];
-                startX = dnd.startX;
-                startY = dnd.startY;
-                delete pointer2Dnd[poid];
-                break;
-            }
-        }
-        dnd = new (<any>DndCtx)(poid);
-        dnd.system = true;
-        systemdnd = dnd;
-        dnd.x = ev.clientX;
-        dnd.y = ev.clientY;
-        dnd.startX = startX;
-        dnd.startY = startY;
-        var sourceCtx = b.bubble(node, "onDragStart", dnd);
-        if (sourceCtx) {
-            var htmlNode = b.getDomNode(sourceCtx.me);
-            if (htmlNode == null) {
+        if (activePointerIds.length>0) {
+            dnd = pointer2Dnd[activePointerIds[0]];
+            dnd.system = true;
+            systemdnd = dnd;
+        } else {
+            var startX = ev.clientX, startY = ev.clientY;
+            dnd = new (<any>DndCtx)(-1);
+            dnd.system = true;
+            systemdnd = dnd;
+            dnd.x = startX;
+            dnd.y = startY;
+            dnd.lastX = startX;
+            dnd.lastY = startY;
+            dnd.startX = startX;
+            dnd.startY = startY;
+            var sourceCtx = b.bubble(node, "onDragStart", dnd);
+            if (sourceCtx) {
+                var htmlNode = b.getDomNode(sourceCtx.me);
+                if (htmlNode == null) {
+                    (<any>dnd).destroy();
+                    return false;
+                }
+                var boundFn = (<Element>htmlNode).getBoundingClientRect;
+                if (boundFn) {
+                    var rect = boundFn.call(htmlNode);
+                    dnd.deltaX = rect.left - startX;
+                    dnd.deltaY = rect.top - startY;
+                }
+            } else {
                 (<any>dnd).destroy();
                 return false;
             }
-            var boundFn = (<Element>htmlNode).getBoundingClientRect;
-            if (boundFn) {
-                var rect = boundFn.call(htmlNode);
-                dnd.deltaX = rect.left - startX;
-                dnd.deltaY = rect.top - startY;
-            }
-            var eff = effectAllowedTable[dnd.enabledOperations];
-            var dt = ev.dataTransfer;
-            dt.effectAllowed = eff;
-            if ((<any>dt).setDragImage) {
-                var div = document.createElement("div");
-                div.style.pointerEvents = "none";
-                (<any>dt).setDragImage(div, 0, 0);
-            } else {
-                // For IE10 and IE11 hack to hide default drag element
-                var style = (<HTMLElement>htmlNode).style;
-                var opacityBackup = style.opacity;
-                var widthBackup = style.width;
-                var heightBackup = style.height;
-                var paddingBackup = style.padding;
-                style.opacity = "0";
-                style.width = "0";
-                style.height = "0";
-                style.padding = "0";
-                window.setTimeout(() => {
-                    style.opacity = opacityBackup;
-                    style.width = widthBackup;
-                    style.height = heightBackup;
-                    style.padding = paddingBackup;
-                }, 0);
-            }
-            var datas = (<any>dnd).data;
-            var dataKeys = Object.keys(datas);
-            for (var i = 0; i < dataKeys.length; i++) {
-                try {
-                    var k = dataKeys[i];
-                    var d = datas[k];
-                    if (typeof d !== "string")
-                        d = JSON.stringify(d);
-                    ev.dataTransfer.setData(k, d);
-                }
-                catch (e) {
-                    if (DEBUG)
-                        if (window.console) console.log("Cannot set dnd data to " + dataKeys[i]);
-                }
-            }
-            updateFromNative(dnd, ev);
-        } else {
-            (<any>dnd).destroy();
         }
+        dnd.beforeDrag = false;
+        var eff = effectAllowedTable[dnd.enabledOperations];
+        var dt = ev.dataTransfer;
+        dt.effectAllowed = eff;
+        if ((<any>dt).setDragImage) {
+            var div = document.createElement("div");
+            div.style.pointerEvents = "none";
+            (<any>dt).setDragImage(div, 0, 0);
+        } else {
+            // For IE10 and IE11 hack to hide default drag element
+            var style = (<HTMLElement>ev.target).style;
+            var opacityBackup = style.opacity;
+            var widthBackup = style.width;
+            var heightBackup = style.height;
+            var paddingBackup = style.padding;
+            style.opacity = "0";
+            style.width = "0";
+            style.height = "0";
+            style.padding = "0";
+            window.setTimeout(() => {
+                style.opacity = opacityBackup;
+                style.width = widthBackup;
+                style.height = heightBackup;
+                style.padding = paddingBackup;
+            }, 0);
+        }
+        var datas = (<any>dnd).data;
+        var dataKeys = Object.keys(datas);
+        for (var i = 0; i < dataKeys.length; i++) {
+            try {
+                var k = dataKeys[i];
+                var d = datas[k];
+                if (typeof d !== "string")
+                    d = JSON.stringify(d);
+                ev.dataTransfer.setData(k, d);
+            }
+            catch (e) {
+                if (DEBUG)
+                    if (window.console) console.log("Cannot set dnd data to " + dataKeys[i]);
+            }
+        }
+        updateFromNative(dnd, ev);
         return false;
     }
 
@@ -410,8 +430,6 @@
 
     function handleDragEnd(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
         if (systemdnd != null) {
-            systemdnd.ended = true;
-            b.broadcast("onDragEnd", systemdnd);
             (<any>systemdnd).destroy();
         }
         return false;
@@ -441,8 +459,6 @@
         var t: IBobrilCtx = (<any>dnd).targetCtx;
         if (t && b.bubble(t.me, "onDrop", dnd)) {
             setDropEffect(ev, dnd.operation);
-            dnd.ended = true;
-            b.broadcast("onDragEnd", dnd);
             (<any>dnd).destroy();
             preventDefault(ev);
         } else {
@@ -456,11 +472,27 @@
         return true;
     }
 
+    function handleSelectStart(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+        if (dnds.length===0) return false;
+        preventDefault(ev);
+        return true;
+    }
+
+    function anyActiveDnd(): IDndCtx {
+        for (let i = 0; i < dnds.length; i++) {
+            let dnd=dnds[i];
+            if (dnd.beforeDrag) continue;
+            return dnd;
+        }
+        return null;
+    }
+
     var addEvent = b.addEvent;
     addEvent("!PointerDown", 4, handlePointerDown);
     addEvent("!PointerMove", 4, handlePointerMove);
     addEvent("!PointerUp", 4, handlePointerUp);
     addEvent("!PointerCancel", 4, handlePointerCancel);
+    addEvent("selectstart", 4, handleSelectStart);
 
     addEvent("dragstart", 5, handleDragStart);
     addEvent("dragover", 5, handleDragOver);
@@ -470,4 +502,6 @@
     addEvent("dragenter", 5, justPreventDefault);
     addEvent("dragleave", 5, justPreventDefault);
     b.getDnds = () => dnds;
+    b.anyActiveDnd = anyActiveDnd;
+
 })(b);

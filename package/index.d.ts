@@ -206,11 +206,16 @@ export interface IDndCtx {
     operation: DndOp;
     overNode: IBobrilCacheNode;
     cursor: string;
+    beforeDrag: boolean;
     system: boolean;
     local: boolean;
     ended: boolean;
     startX: number;
     startY: number;
+    totalX: number;
+    totalY: number;
+    lastX: number;
+    lastY: number;
     x: number;
     y: number;
     deltaX: number;
@@ -229,6 +234,7 @@ export interface IDndStartCtx {
 export interface IDndOverCtx extends IDndCtx {
     setOperation(operation: DndOp): void;
 }
+export declare function anyActiveDnd(): IDndCtx;
 export declare const getDnds: () => IDndCtx[];
 export interface Params {
     [name: string]: string;
