@@ -4,7 +4,7 @@ Bobril
 
 [![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Version 4.7.0
+Version 4.8.0
 
 Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework).
 Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE9. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).

@@ -26,11 +26,14 @@ interface IDndCtx {
     overNode: IBobrilCacheNode;
     // way to overrride mouse cursor, leave null to emulate dnd cursor
     cursor: string;
-    // dnd is wating for activation by moving atleast 10 pixels
+    // dnd is wating for activation by moving atleast distanceToStart pixels
+    started: boolean;
     beforeDrag: boolean;
     system: boolean;
     local: boolean;
     ended: boolean;
+    // default value is 10, but you can assign to this >=0 number in onDragStart
+    distanceToStart: number;    
     // drag started at this pointer position
     startX: number;
     startY: number;

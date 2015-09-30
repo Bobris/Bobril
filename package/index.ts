@@ -2883,11 +2883,14 @@ export interface IDndCtx {
     overNode: IBobrilCacheNode;
     // way to overrride mouse cursor, leave null to emulate dnd cursor
     cursor: string;
-    // dnd is wating for activation by moving atleast 10 pixels
+    // dnd is wating for activation by moving atleast distanceToStart pixels
+    started: boolean;
     beforeDrag: boolean;
     system: boolean;
     local: boolean;
     ended: boolean;
+    // default value is 10, but you can assign to this >=0 number in onDragStart
+    distanceToStart: number;    
     // drag started at this pointer position
     startX: number;
     startY: number;
@@ -2931,11 +2934,12 @@ shimStyle(shimedStyle);
 var shimedStyleKeys = Object.keys(shimedStyle);
 var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length-1]; // renamed is last
 
-var DndCtx = function(pointerId: number) {
+var DndCtx = function (pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
     this.operation = DndOp.None;
+    this.started = false;
     this.beforeDrag = true;
     this.local = true;
     this.system = false;
@@ -2946,6 +2950,7 @@ var DndCtx = function(pointerId: number) {
     this.dragView = null;
     this.startX = 0;
     this.startY = 0;
+    this.distanceToStart = 10;
     this.x = 0;
     this.y = 0;
     this.deltaX = 0;
@@ -3025,43 +3030,44 @@ function dndRootFactory(): IBobrilChildren {
 }
 
 var dndProto = DndCtx.prototype;
-dndProto.setOperation = function(operation: DndOp): void {
+dndProto.setOperation = function (operation: DndOp): void {
     this.operation = operation;
 }
 
-dndProto.setDragNodeView = function(view: (dnd: IDndCtx) => IBobrilNode): void {
+dndProto.setDragNodeView = function (view: (dnd: IDndCtx) => IBobrilNode): void {
     this.dragView = view;
 }
 
-dndProto.addData = function(type: string, data: any): boolean {
+dndProto.addData = function (type: string, data: any): boolean {
     this.data[type] = data;
     return true;
 }
 
-dndProto.listData = function(): string[] {
+dndProto.listData = function (): string[] {
     return Object.keys(this.data);
 }
 
-dndProto.hasData = function(type: string): boolean {
+dndProto.hasData = function (type: string): boolean {
     return this.data[type] !== undefined;
 }
 
-dndProto.getData = function(type: string): any {
+dndProto.getData = function (type: string): any {
     return this.data[type];
 }
 
-dndProto.setEnabledOps = function(ops: DndEnabledOps): void {
+dndProto.setEnabledOps = function (ops: DndEnabledOps): void {
     this.enabledOperations = ops;
 }
 
-dndProto.cancelDnd = function(): void {
+dndProto.cancelDnd = function (): void {
     dndmoved(null, this);
     this.destroy();
 }
 
-dndProto.destroy = function(): void {
+dndProto.destroy = function (): void {
     this.ended = true;
-    broadcast("onDragEnd", this);
+    if (this.started)
+        broadcast("onDragEnd", this);
     delete pointer2Dnd[this.pointerid];
     for (var i = 0; i < dnds.length; i++) {
         if (dnds[i] === this) {
@@ -3098,6 +3104,7 @@ function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
         updateDndFromPointerEvent(dnd, ev);
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
+            dnd.started = true;
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == null) {
                 dnd.destroy();
@@ -3108,6 +3115,10 @@ function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
                 var rect = boundFn.call(htmlNode);
                 dnd.deltaX = rect.left - ev.x;
                 dnd.deltaY = rect.top - ev.y;
+            }
+            if (dnd.distanceToStart <= 0) {
+                dnd.beforeDrag = false;
+                dndmoved(node, dnd);
             }
         } else {
             dnd.destroy();
@@ -3140,7 +3151,7 @@ function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
     dnd.totalX += Math.abs(ev.x - dnd.lastX);
     dnd.totalY += Math.abs(ev.y - dnd.lastY);
     if (dnd.beforeDrag) {
-        if (dnd.totalX + dnd.totalY <= 10) {
+        if (dnd.totalX + dnd.totalY <= dnd.distanceToStart) {
             dnd.lastX = ev.x;
             dnd.lastY = ev.y;
             return false;
@@ -3206,7 +3217,7 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
         (<any>dnd).destroy();
     }
     var activePointerIds = Object.keys(pointer2Dnd);
-    if (activePointerIds.length>0) {
+    if (activePointerIds.length > 0) {
         dnd = pointer2Dnd[activePointerIds[0]];
         dnd.system = true;
         systemdnd = dnd;
@@ -3223,6 +3234,7 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
         dnd.startY = startY;
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
+            dnd.started = true;
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == null) {
                 (<any>dnd).destroy();
@@ -3813,6 +3825,10 @@ export function isActive(name: string, params?: Params): boolean {
 export function urlOfRoute(name: string, params?: Params): string {
     if (isInApp(name)) {
         var r = nameRouteMap[name];
+        if (DEBUG) {
+            if (rootRoutes == null) throw Error('Cannot use urlOfRoute before defining routes');
+            if (r == null) throw Error('Route with name ' + name + ' if not defined in urlOfRoute');
+        }
         return "#" + injectParams(r.url, params);
     }
     return name;

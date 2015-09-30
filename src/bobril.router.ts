@@ -366,6 +366,10 @@ interface OutFindMatch {
     function urlOfRoute(name: string, params?: Params): string {
         if (isInApp(name)) {
             var r = nameRouteMap[name];
+            if (DEBUG) {
+                if (rootRoutes == null) throw Error('Cannot use urlOfRoute before defining routes');
+                if (r == null) throw Error('Route with name '+name+' if not defined in urlOfRoute');
+            }
             return "#" + injectParams(r.url, params);
         }
         return name;

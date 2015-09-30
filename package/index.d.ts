@@ -206,10 +206,12 @@ export interface IDndCtx {
     operation: DndOp;
     overNode: IBobrilCacheNode;
     cursor: string;
+    started: boolean;
     beforeDrag: boolean;
     system: boolean;
     local: boolean;
     ended: boolean;
+    distanceToStart: number;
     startX: number;
     startY: number;
     totalX: number;

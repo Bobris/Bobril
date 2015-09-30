@@ -19,6 +19,7 @@
         this.pointerid = pointerId;
         this.enabledOperations = 7 /* MoveCopyLink */;
         this.operation = 0 /* None */;
+        this.started = false;
         this.beforeDrag = true;
         this.local = true;
         this.system = false;
@@ -29,6 +30,7 @@
         this.dragView = null;
         this.startX = 0;
         this.startY = 0;
+        this.distanceToStart = 10;
         this.x = 0;
         this.y = 0;
         this.deltaX = 0;
@@ -141,7 +143,8 @@
     };
     dndProto.destroy = function () {
         this.ended = true;
-        b.broadcast("onDragEnd", this);
+        if (this.started)
+            b.broadcast("onDragEnd", this);
         delete pointer2Dnd[this.pointerid];
         for (var i = 0; i < dnds.length; i++) {
             if (dnds[i] === this) {
@@ -176,6 +179,7 @@
             updateDndFromPointerEvent(dnd, ev);
             var sourceCtx = b.bubble(node, "onDragStart", dnd);
             if (sourceCtx) {
+                dnd.started = true;
                 var htmlNode = b.getDomNode(sourceCtx.me);
                 if (htmlNode == null) {
                     dnd.destroy();
@@ -186,6 +190,10 @@
                     var rect = boundFn.call(htmlNode);
                     dnd.deltaX = rect.left - ev.x;
                     dnd.deltaY = rect.top - ev.y;
+                }
+                if (dnd.distanceToStart <= 0) {
+                    dnd.beforeDrag = false;
+                    dndmoved(node, dnd);
                 }
             }
             else {
@@ -217,7 +225,7 @@
         dnd.totalX += Math.abs(ev.x - dnd.lastX);
         dnd.totalY += Math.abs(ev.y - dnd.lastY);
         if (dnd.beforeDrag) {
-            if (dnd.totalX + dnd.totalY <= 10) {
+            if (dnd.totalX + dnd.totalY <= dnd.distanceToStart) {
                 dnd.lastX = ev.x;
                 dnd.lastY = ev.y;
                 return false;
@@ -300,6 +308,7 @@
             dnd.startY = startY;
             var sourceCtx = b.bubble(node, "onDragStart", dnd);
             if (sourceCtx) {
+                dnd.started = true;
                 var htmlNode = b.getDomNode(sourceCtx.me);
                 if (htmlNode == null) {
                     dnd.destroy();
