@@ -162,7 +162,7 @@ export function flatten(a: any | any[]): any[] {
             return [];
         return [a];
     }
-    a = a.split(0);
+    a = a.slice(0);
     let alen = a.length;
     for (let i = 0; i < alen;) {
         let item = a[i];
@@ -2963,10 +2963,13 @@ var DndCtx = function (pointerId: number) {
     this.ctrl = false;
     this.alt = false;
     this.meta = false;
-    this.data = Object.create(null);
+    this.data = newHashObj();
     if (pointerId >= 0)
         pointer2Dnd[pointerId] = this;
     dnds.push(this);
+};
+
+function lazyCreateRoot() {
     if (rootId == null) {
         let dbs = <any>document.body.style;
         bodyCursorBackup = dbs.cursor;
@@ -2974,7 +2977,7 @@ var DndCtx = function (pointerId: number) {
         dbs[userSelectPropName] = 'none';
         rootId = addRoot(dndRootFactory);
     }
-};
+}
 
 var DndComp: IBobrilComponent = {
     render(ctx: IBobrilCtx, me: IBobrilNode) {
@@ -3078,7 +3081,7 @@ dndProto.destroy = function (): void {
     if (systemdnd === this) {
         systemdnd = null;
     }
-    if (dnds.length === 0) {
+    if (dnds.length === 0 && rootId != null) {
         removeRoot(rootId);
         rootId = null;
         let dbs = <any>document.body.style;
@@ -3087,7 +3090,7 @@ dndProto.destroy = function (): void {
     }
 }
 
-var pointer2Dnd = Object.create(null);
+var pointer2Dnd = newHashObj();
 
 function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
@@ -3104,12 +3107,12 @@ function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
         updateDndFromPointerEvent(dnd, ev);
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
-            dnd.started = true;
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == null) {
                 dnd.destroy();
                 return false;
             }
+            dnd.started = true;
             var boundFn = (<Element>htmlNode).getBoundingClientRect;
             if (boundFn) {
                 var rect = boundFn.call(htmlNode);
@@ -3120,6 +3123,7 @@ function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
                 dnd.beforeDrag = false;
                 dndmoved(node, dnd);
             }
+            lazyCreateRoot();
         } else {
             dnd.destroy();
         }
@@ -3234,18 +3238,19 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
         dnd.startY = startY;
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
-            dnd.started = true;
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == null) {
                 (<any>dnd).destroy();
                 return false;
             }
+            dnd.started = true;
             var boundFn = (<Element>htmlNode).getBoundingClientRect;
             if (boundFn) {
                 var rect = boundFn.call(htmlNode);
                 dnd.deltaX = rect.left - startX;
                 dnd.deltaY = rect.top - startY;
             }
+            lazyCreateRoot();
         } else {
             (<any>dnd).destroy();
             return false;
@@ -3668,7 +3673,7 @@ let futureRoutes: IRoute[];
 let activeParams: Params = newHashObj();
 let nodesArray: IBobrilCacheNode[] = [];
 let setterOfNodesArray: ((node: IBobrilCacheNode) => void)[] = [];
-const urlRegex = /\:|\//g;
+const urlRegex = /.*(?:\:|\/).*/;
 
 function isInApp(name: string): boolean {
     return !urlRegex.test(name);

@@ -23,7 +23,7 @@ function flatten(a) {
             return [];
         return [a];
     }
-    a = a.split(0);
+    a = a.slice(0);
     var alen = a.length;
     for (var i_1 = 0; i_1 < alen;) {
         var item = a[i_1];
@@ -2706,10 +2706,12 @@ var DndCtx = function (pointerId) {
     this.ctrl = false;
     this.alt = false;
     this.meta = false;
-    this.data = Object.create(null);
+    this.data = newHashObj();
     if (pointerId >= 0)
         pointer2Dnd[pointerId] = this;
     dnds.push(this);
+};
+function lazyCreateRoot() {
     if (rootId == null) {
         var dbs = document.body.style;
         bodyCursorBackup = dbs.cursor;
@@ -2717,7 +2719,7 @@ var DndCtx = function (pointerId) {
         dbs[userSelectPropName] = 'none';
         rootId = addRoot(dndRootFactory);
     }
-};
+}
 var DndComp = {
     render: function (ctx, me) {
         var dnd = ctx.data;
@@ -2818,7 +2820,7 @@ dndProto.destroy = function () {
     if (systemdnd === this) {
         systemdnd = null;
     }
-    if (dnds.length === 0) {
+    if (dnds.length === 0 && rootId != null) {
         removeRoot(rootId);
         rootId = null;
         var dbs = document.body.style;
@@ -2826,7 +2828,7 @@ dndProto.destroy = function () {
         dbs[userSelectPropName] = userSelectBackup;
     }
 };
-var pointer2Dnd = Object.create(null);
+var pointer2Dnd = newHashObj();
 function handlePointerDown(ev, target, node) {
     var dnd = pointer2Dnd[ev.id];
     if (dnd) {
@@ -2842,12 +2844,12 @@ function handlePointerDown(ev, target, node) {
         updateDndFromPointerEvent(dnd, ev);
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
-            dnd.started = true;
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == null) {
                 dnd.destroy();
                 return false;
             }
+            dnd.started = true;
             var boundFn = htmlNode.getBoundingClientRect;
             if (boundFn) {
                 var rect = boundFn.call(htmlNode);
@@ -2858,6 +2860,7 @@ function handlePointerDown(ev, target, node) {
                 dnd.beforeDrag = false;
                 dndmoved(node, dnd);
             }
+            lazyCreateRoot();
         }
         else {
             dnd.destroy();
@@ -2971,18 +2974,19 @@ function handleDragStart(ev, target, node) {
         dnd.startY = startY;
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
-            dnd.started = true;
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == null) {
                 dnd.destroy();
                 return false;
             }
+            dnd.started = true;
             var boundFn = htmlNode.getBoundingClientRect;
             if (boundFn) {
                 var rect = boundFn.call(htmlNode);
                 dnd.deltaX = rect.left - startX;
                 dnd.deltaY = rect.top - startY;
             }
+            lazyCreateRoot();
         }
         else {
             dnd.destroy();
@@ -3337,7 +3341,7 @@ var futureRoutes;
 var activeParams = newHashObj();
 var nodesArray = [];
 var setterOfNodesArray = [];
-var urlRegex = /\:|\//g;
+var urlRegex = /.*(?:\:|\/).*/;
 function isInApp(name) {
     return !urlRegex.test(name);
 }

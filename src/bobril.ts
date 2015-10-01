@@ -31,7 +31,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 return [];
             return [a];
         }
-        a = a.split(0);
+        a = a.slice(0);
         let alen = a.length;
         for (let i = 0; i < alen;) {
             let item = a[i];

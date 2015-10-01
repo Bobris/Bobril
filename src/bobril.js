@@ -23,7 +23,7 @@ b = (function (window, document) {
                 return [];
             return [a];
         }
-        a = a.split(0);
+        a = a.slice(0);
         var alen = a.length;
         for (var i = 0; i < alen;) {
             var item = a[i];

@@ -49,6 +49,9 @@
         if (pointerId >= 0)
             pointer2Dnd[pointerId] = this;
         dnds.push(this);
+    };
+
+    function lazyCreateRoot() {
         if (rootId == null) {
             let dbs = <any>document.body.style;
             bodyCursorBackup = dbs.cursor;
@@ -56,7 +59,7 @@
             dbs[userSelectPropName] = 'none';
             rootId = b.addRoot(dndRootFactory);
         }
-    };
+    }
 
     var DndComp: IBobrilComponent = {
         render(ctx: IBobrilCtx, me: IBobrilNode) {
@@ -160,7 +163,7 @@
         if (systemdnd === this) {
             systemdnd = null;
         }
-        if (dnds.length === 0) {
+        if (dnds.length === 0 && rootId != null) {
             b.removeRoot(rootId);
             rootId = null;
             let dbs = <any>document.body.style;
@@ -186,12 +189,12 @@
             updateDndFromPointerEvent(dnd, ev);
             var sourceCtx = b.bubble(node, "onDragStart", dnd);
             if (sourceCtx) {
-                dnd.started = true;
                 var htmlNode = b.getDomNode(sourceCtx.me);
                 if (htmlNode == null) {
                     dnd.destroy();
                     return false;
                 }
+                dnd.started = true;
                 var boundFn = (<Element>htmlNode).getBoundingClientRect;
                 if (boundFn) {
                     var rect = boundFn.call(htmlNode);
@@ -202,6 +205,7 @@
                     dnd.beforeDrag = false;
                     dndmoved(node, dnd);
                 }
+                lazyCreateRoot();
             } else {
                 dnd.destroy();
             }
@@ -316,18 +320,19 @@
             dnd.startY = startY;
             var sourceCtx = b.bubble(node, "onDragStart", dnd);
             if (sourceCtx) {
-                dnd.started = true;
                 var htmlNode = b.getDomNode(sourceCtx.me);
                 if (htmlNode == null) {
                     (<any>dnd).destroy();
                     return false;
                 }
+                dnd.started = true;
                 var boundFn = (<Element>htmlNode).getBoundingClientRect;
                 if (boundFn) {
                     var rect = boundFn.call(htmlNode);
                     dnd.deltaX = rect.left - startX;
                     dnd.deltaY = rect.top - startY;
                 }
+                lazyCreateRoot();
             } else {
                 (<any>dnd).destroy();
                 return false;
