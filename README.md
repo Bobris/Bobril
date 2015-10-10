@@ -14,6 +14,10 @@ If you need compatibility with IE8 look at 2.x branch.
 
 Examples: http://bobris.github.io/Bobril/
 
+Getting started video [cz]: 
+
+[![Getting started video](http://img.youtube.com/vi/iU8_5aKHURM/default.jpg)](http://www.youtube.com/watch?v=iU8_5aKHURM)
+
 See it in vdom-benchmarks: http://vdom-benchmark.github.io/vdom-benchmark/
 
 Documentation: https://github.com/Bobris/Bobril/blob/master/src/bobril.md
