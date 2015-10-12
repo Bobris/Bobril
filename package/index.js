@@ -2918,6 +2918,7 @@ function handlePointerUp(ev, target, node) {
         else {
             dnd.cancelDnd();
         }
+        exports.ignoreClick(ev.x, ev.y);
         return true;
     }
     dnd.destroy();

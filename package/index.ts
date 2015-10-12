@@ -3181,6 +3181,7 @@ function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCac
         } else {
             dnd.cancelDnd();
         }
+		ignoreClick(ev.x, ev.y);
         return true;
     }
     dnd.destroy();

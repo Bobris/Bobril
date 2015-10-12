@@ -263,6 +263,7 @@
             } else {
                 dnd.cancelDnd();
             }
+			b.ignoreClick(ev.x, ev.y);
             return true;
         }
         dnd.destroy();
