@@ -707,9 +707,6 @@ export function deref(n: Node): IBobrilCacheNode {
     return s[s.length - 1];
 }
 
-// bobril-clouseau needs this
-if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, setAfterFrame, setBeforeFrame, getDnds };
-
 function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent) {
     if (component) {
         if (component.postRender) {
@@ -4502,3 +4499,6 @@ export function createDerivedComponent<TData>(original: (data: any, children?: I
     const merged = mergeComponents(originalComponent, after);
     return createVirtualComponent<TData>(merged);
 }
+
+// bobril-clouseau needs this
+if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, setAfterFrame, setBeforeFrame, getDnds };

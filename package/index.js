@@ -586,9 +586,6 @@ function deref(n) {
     return s[s.length - 1];
 }
 exports.deref = deref;
-// bobril-clouseau needs this
-if (!window.b)
-    window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
 function finishUpdateNode(n, c, component) {
     if (component) {
         if (component.postRender) {
@@ -4186,3 +4183,6 @@ function createDerivedComponent(original, after) {
     return createVirtualComponent(merged);
 }
 exports.createDerivedComponent = createDerivedComponent;
+// bobril-clouseau needs this
+if (!window.b)
+    window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
