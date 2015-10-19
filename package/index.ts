@@ -132,7 +132,7 @@ export interface IBobrilCtx {
     refs?: { [name: string]: IBobrilCacheNode };
 }
 
-var DEBUG: boolean;
+declare var DEBUG: boolean;
 if (typeof DEBUG === "undefined") DEBUG = true;
 
 function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
