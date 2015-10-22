@@ -558,4 +558,7 @@ interface OutFindMatch {
     b.createBackTransition = createBackTransition;
     b.runTransition = runTransition;
     b.link = link;
+    b.getRoutes = () => rootRoutes;
+    b.getActiveRoutes = () => activeRoutes;
+    b.getActiveParams = () => activeParams;
 })(b, window);

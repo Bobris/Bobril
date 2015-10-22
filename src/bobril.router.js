@@ -529,4 +529,7 @@
     b.createBackTransition = createBackTransition;
     b.runTransition = runTransition;
     b.link = link;
+    b.getRoutes = function () { return rootRoutes; };
+    b.getActiveRoutes = function () { return activeRoutes; };
+    b.getActiveParams = function () { return activeParams; };
 })(b, window);

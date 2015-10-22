@@ -3694,6 +3694,18 @@ function runTransition(transition) {
     nextIteration();
 }
 exports.runTransition = runTransition;
+function getRoutes() {
+    return rootRoutes;
+}
+exports.getRoutes = getRoutes;
+function getActiveRoutes() {
+    return activeRoutes;
+}
+exports.getActiveRoutes = getActiveRoutes;
+function getActiveParams() {
+    return activeParams;
+}
+exports.getActiveParams = getActiveParams;
 var allStyles = newHashObj();
 var allSprites = newHashObj();
 var allNameHints = newHashObj();

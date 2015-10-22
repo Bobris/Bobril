@@ -4007,6 +4007,18 @@ export function runTransition(transition: IRouteTransition): void {
     nextIteration();
 }
 
+export function getRoutes() {
+    return rootRoutes;
+}
+
+export function getActiveRoutes() {
+    return activeRoutes;
+}
+
+export function getActiveParams() {
+    return activeParams;
+}
+
 // Bobril.Style
 
 // definition for Bobril defined class

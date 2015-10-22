@@ -282,6 +282,9 @@ export declare function createRedirectPush(name: string, params?: Params): IRout
 export declare function createRedirectReplace(name: string, params?: Params): IRouteTransition;
 export declare function createBackTransition(): IRouteTransition;
 export declare function runTransition(transition: IRouteTransition): void;
+export declare function getRoutes(): IRoute[];
+export declare function getActiveRoutes(): IRoute[];
+export declare function getActiveParams(): Params;
 export declare type IBobrilStyleDef = string;
 export declare type IBobrilStyle = Object | IBobrilStyleDef | boolean;
 export declare type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
