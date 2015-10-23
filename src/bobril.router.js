@@ -427,7 +427,8 @@
                         nextTransition = resp;
                     }
                     nextIteration();
-                }).catch(console.log.bind(console));
+                }).catch(function (err) { if (typeof console !== "undefined" && console.log)
+                    console.log(err); });
                 return;
             }
             else if (transitionState == activeRoutes.length) {
@@ -503,7 +504,8 @@
                         nextTransition = resp;
                     }
                     nextIteration();
-                }).catch(console.log.bind(console));
+                }).catch(function (err) { if (typeof console !== "undefined" && console.log)
+                    console.log(err); });
                 return;
             }
         }

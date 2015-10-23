@@ -3926,7 +3926,7 @@ function nextIteration(): void {
                     nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
-            }).catch(console.log.bind(console));
+            }).catch((err) => { if (typeof console!=="undefined" && console.log) console.log(err); });
             return;
         } else if (transitionState == activeRoutes.length) {
             if (nextTransition) {
@@ -3990,7 +3990,7 @@ function nextIteration(): void {
                     nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
-            }).catch(console.log.bind(console));
+            }).catch((err) => { if (typeof console!=="undefined" && console.log) console.log(err); });
             return;
         }
     }
