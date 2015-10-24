@@ -129,8 +129,13 @@ interface IInternalStyle {
                 let name = ss.name;
                 let style = Object.create(null);
                 let flattenPseudo = Object.create(null);
-                flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
-                flattenStyle(style, flattenPseudo, ss.style, undefined);
+                let sspseudo = ss.pseudo;
+                let ssstyle = ss.style;
+                if (typeof ssstyle==="function" && ssstyle.length===0) {
+                    [ssstyle, sspseudo] = ssstyle();
+                }
+                flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
+                flattenStyle(style, flattenPseudo, ssstyle, undefined);
                 var extractedInlStyle: any = null;
                 if (style["pointerEvents"]) {
                     extractedInlStyle = Object.create(null);

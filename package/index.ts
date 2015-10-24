@@ -3928,7 +3928,7 @@ function nextIteration(): void {
                     nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
-            }).catch((err) => { if (typeof console!=="undefined" && console.log) console.log(err); });
+            }).catch((err:any) => { if (typeof console!=="undefined" && console.log) console.log(err); });
             return;
         } else if (transitionState == activeRoutes.length) {
             if (nextTransition) {
@@ -3992,7 +3992,7 @@ function nextIteration(): void {
                     nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
-            }).catch((err) => { if (typeof console!=="undefined" && console.log) console.log(err); });
+            }).catch((err:any) => { if (typeof console!=="undefined" && console.log) console.log(err); });
             return;
         }
     }
@@ -4157,8 +4157,13 @@ function beforeFrame() {
             let name = ss.name;
             let style = newHashObj();
             let flattenPseudo = newHashObj();
-            flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
-            flattenStyle(style, flattenPseudo, ss.style, undefined);
+            let sspseudo = ss.pseudo;
+            let ssstyle = ss.style;
+            if (typeof ssstyle==="function" && ssstyle.length===0) {
+                [ssstyle, sspseudo] = ssstyle();
+            }
+            flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
+            flattenStyle(style, flattenPseudo, ssstyle, undefined);
             var extractedInlStyle: any = null;
             if (style["pointerEvents"]) {
                 extractedInlStyle = newHashObj();

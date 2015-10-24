@@ -103,8 +103,13 @@
                 var name_1 = ss.name;
                 var style_1 = Object.create(null);
                 var flattenPseudo = Object.create(null);
-                flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
-                flattenStyle(style_1, flattenPseudo, ss.style, undefined);
+                var sspseudo = ss.pseudo;
+                var ssstyle = ss.style;
+                if (typeof ssstyle === "function" && ssstyle.length === 0) {
+                    _a = ssstyle(), ssstyle = _a[0], sspseudo = _a[1];
+                }
+                flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
+                flattenStyle(style_1, flattenPseudo, ssstyle, undefined);
                 var extractedInlStyle = null;
                 if (style_1["pointerEvents"]) {
                     extractedInlStyle = Object.create(null);
@@ -148,6 +153,7 @@
             rebuildStyles = false;
         }
         chainedBeforeFrame();
+        var _a;
     }
     function style(node) {
         var styles = [];
