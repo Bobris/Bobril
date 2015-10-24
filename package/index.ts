@@ -3906,6 +3906,8 @@ function doAction(transition: IRouteTransition) {
     invalidate();
 }
 
+declare var Promise: any;
+
 function nextIteration(): void {
     while (true) {
         if (transitionState >= 0 && transitionState < activeRoutes.length) {
@@ -4513,4 +4515,4 @@ export function createDerivedComponent<TData>(original: (data: any, children?: I
 }
 
 // bobril-clouseau needs this
-if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, setAfterFrame, setBeforeFrame, getDnds };
+if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, invalidateStyles, ignoreShouldChange, setAfterFrame, setBeforeFrame, getDnds };

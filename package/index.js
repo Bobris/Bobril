@@ -4199,4 +4199,4 @@ function createDerivedComponent(original, after) {
 exports.createDerivedComponent = createDerivedComponent;
 // bobril-clouseau needs this
 if (!window.b)
-    window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
+    window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, invalidateStyles: invalidateStyles, ignoreShouldChange: ignoreShouldChange, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
