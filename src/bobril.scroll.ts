@@ -30,8 +30,8 @@
         }
 	}
 
-    var isHtml = /^(?:html)$/i;
-    var isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
+    const isHtml = /^(?:html)$/i;
+    const isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
 // inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js
     function isScrollable(el: Element): [boolean, boolean] {
         var styles:any = window.getComputedStyle(el);
