@@ -1886,6 +1886,10 @@ export const asap = (() => {
             });
         };
 
+        Promise.prototype['catch'] = function(onRejected?: any) {
+			return this.then(undefined, onRejected);
+		};
+
         (<any>Promise).all = function() {
             var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
 
