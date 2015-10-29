@@ -132,6 +132,10 @@ export interface IBobrilCtx {
     refs?: { [name: string]: IBobrilCacheNode };
 }
 
+export interface IBobrilScroll {
+    node: IBobrilCacheNode;    
+}
+
 declare var DEBUG: boolean;
 if (typeof DEBUG === "undefined") DEBUG = true;
 
@@ -2805,11 +2809,14 @@ export function focus(node: IBobrilCacheNode): boolean {
 }
 
 // Bobril.Scroll
-let callbacks: Array<() => void> = [];
+var callbacks: Array<(info: IBobrilScroll) => void> = [];
 
-function emitOnScroll() {
+function emitOnScroll(ev: Event, target: Node, node: IBobrilCacheNode) {
+    let info: IBobrilScroll = {
+        node
+    };
     for (var i = 0; i < callbacks.length; i++) {
-        callbacks[i]();
+        callbacks[i](info);
     }
     return false;
 }
@@ -2817,11 +2824,11 @@ function emitOnScroll() {
 // capturing event to hear everything
 addEvent("^scroll", 10, emitOnScroll);
 
-export function addOnScroll(callback: () => void): void {
+export function addOnScroll(callback: (info?: IBobrilScroll) => void): void {
     callbacks.push(callback);
 }
 
-export function removeOnScroll(callback: () => void): void {
+export function removeOnScroll(callback: (info?: IBobrilScroll) => void): void {
     for (var i = 0; i < callbacks.length; i++) {
         if (callbacks[i] === callback) {
             callbacks.splice(i, 1);
@@ -2834,8 +2841,8 @@ const isHtml = /^(?:html)$/i;
 const isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
 // inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js
 export function isScrollable(el: Element): [boolean, boolean] {
-    var styles: any = window.getComputedStyle(el);
-    var res: [boolean, boolean] = [true, true];
+    var styles:any = window.getComputedStyle(el);
+    var res:[boolean, boolean] = [true, true];
     if (!isHtml.test(el.nodeName)) {
         res[0] = isScrollOrAuto.test(styles.overflowX);
         res[1] = isScrollOrAuto.test(styles.overflowY);

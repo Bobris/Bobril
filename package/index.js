@@ -2621,9 +2621,12 @@ function focus(node) {
 exports.focus = focus;
 // Bobril.Scroll
 var callbacks = [];
-function emitOnScroll() {
+function emitOnScroll(ev, target, node) {
+    var info = {
+        node: node
+    };
     for (var i = 0; i < callbacks.length; i++) {
-        callbacks[i]();
+        callbacks[i](info);
     }
     return false;
 }

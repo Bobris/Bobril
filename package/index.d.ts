@@ -84,6 +84,9 @@ export interface IBobrilCtx {
         [name: string]: IBobrilCacheNode;
     };
 }
+export interface IBobrilScroll {
+    node: IBobrilCacheNode;
+}
 export declare function flatten(a: any | any[]): any[];
 export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void;
 export declare function ieVersion(): any;
@@ -177,8 +180,8 @@ export declare const firstPointerDownId: () => number;
 export declare const ignoreClick: (x: number, y: number) => void;
 export declare function focused(): IBobrilCacheNode;
 export declare function focus(node: IBobrilCacheNode): boolean;
-export declare function addOnScroll(callback: () => void): void;
-export declare function removeOnScroll(callback: () => void): void;
+export declare function addOnScroll(callback: (info?: IBobrilScroll) => void): void;
+export declare function removeOnScroll(callback: (info?: IBobrilScroll) => void): void;
 export declare function isScrollable(el: Element): [boolean, boolean];
 export declare function getWindowScroll(): [number, number];
 export declare const enum DndOp {
