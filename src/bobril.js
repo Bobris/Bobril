@@ -1543,6 +1543,7 @@ b = (function (window, document) {
         postEnhance: postEnhance,
         cloneNode: cloneNode,
         shimStyle: shimStyle,
-        flatten: flatten
+        flatten: flatten,
+        mergeComponents: mergeComponents
     };
 })(window, document);

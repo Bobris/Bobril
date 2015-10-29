@@ -1404,7 +1404,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var emptyObject = {};
 
-    function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent) {
+    function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent {
         var res = Object.create(c1);
         for (var i in c2) {
             if (!(i in <any>emptyObject)) {
@@ -1531,6 +1531,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         postEnhance: postEnhance,
         cloneNode: cloneNode,
         shimStyle: shimStyle,
-        flatten: flatten
+        flatten: flatten,
+		mergeComponents: mergeComponents
     };
 })(window, document);
