@@ -227,8 +227,7 @@ export interface IDndCtx {
     alt: boolean;
     meta: boolean;
 }
-export interface IDndStartCtx {
-    id: number;
+export interface IDndStartCtx extends IDndCtx {
     addData(type: string, data: any): boolean;
     setEnabledOps(ops: DndEnabledOps): void;
     setDragNodeView(view: (dnd: IDndCtx) => IBobrilNode): void;

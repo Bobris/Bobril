@@ -55,8 +55,7 @@ interface IDndCtx {
     meta: boolean;
 }
 
-interface IDndStartCtx {
-    id: number;
+interface IDndStartCtx extends IDndCtx {
     addData(type: string, data: any): boolean;
     setEnabledOps(ops: DndEnabledOps): void;
     setDragNodeView(view: (dnd:IDndCtx) => IBobrilNode): void;
