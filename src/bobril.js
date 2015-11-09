@@ -577,9 +577,13 @@ b = (function (window, document) {
     }
     function getCacheNode(n) {
         var s = vdomPath(n);
+        var currentNode = null;
         if (s.length == 0)
-            return null;
-        return s[s.length - 1];
+            return currentNode;
+        while (currentNode === null && s.length > 0) {
+            currentNode = s.pop();
+        }
+        return currentNode;
     }
     function finishUpdateNode(n, c, component) {
         if (component) {

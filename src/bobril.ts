@@ -572,8 +572,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     function getCacheNode(n: Node): IBobrilCacheNode {
         var s = vdomPath(n);
-        if (s.length == 0) return null;
-        return s[s.length - 1];
+        var currentNode: IBobrilNode = null;
+        if (s.length == 0) return currentNode;
+        while (currentNode === null && s.length > 0) {
+            currentNode = s.pop();
+        }
+        return currentNode;
     }
 
     function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent) {
