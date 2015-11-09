@@ -576,12 +576,10 @@ b = (function (window, document) {
         return res;
     }
     function getCacheNode(n) {
-        var s = vdomPath(n);
+        var p = vdomPath(n);
         var currentNode = null;
-        if (s.length == 0)
-            return currentNode;
-        while (currentNode === null && s.length > 0) {
-            currentNode = s.pop();
+        while (currentNode === null && p.length > 0) {
+            currentNode = p.pop();
         }
         return currentNode;
     }
