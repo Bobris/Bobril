@@ -615,10 +615,12 @@ b = (function (window, document) {
         return res;
     }
     function getCacheNode(n) {
-        var s = vdomPath(n);
-        if (s.length == 0)
-            return null;
-        return s[s.length - 1];
+        var p = vdomPath(n);
+        var currentNode = null;
+        while (currentNode === null && p.length > 0) {
+            currentNode = p.pop();
+        }
+        return currentNode;
     }
     function finishUpdateNode(n, c, component) {
         if (component) {
