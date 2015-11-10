@@ -3385,13 +3385,17 @@ function rootNodeFactory() {
         }
     }
     if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
+        programPath = browserPath;
         currentTransition.inApp = true;
         if (currentTransition.name == null && matches.length > 0) {
             currentTransition.name = matches[0].name;
             currentTransition.params = out.p;
             nextIteration();
+            if (currentTransition != null)
+                return null;
         }
-        return null;
+        else
+            return null;
     }
     if (currentTransition == null) {
         activeRoutes = matches;
@@ -3599,6 +3603,8 @@ function nextIteration() {
             if (!fn)
                 continue;
             var res = fn.call(comp, node.ctx, currentTransition);
+            if (res === true)
+                continue;
             Promise.resolve(res).then(function (resp) {
                 if (resp === true) { }
                 else if (resp === false) {
@@ -3676,6 +3682,8 @@ function nextIteration() {
             if (!fn)
                 continue;
             var res = fn.call(comp, currentTransition);
+            if (res === true)
+                continue;
             Promise.resolve(res).then(function (resp) {
                 if (resp === true) { }
                 else if (resp === false) {

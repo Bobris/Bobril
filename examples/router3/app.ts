@@ -67,6 +67,18 @@ module RouterApp {
         }
     }
 
+    var Page2: IBobrilComponent = {
+        id: "Page2",
+        canActivate: checkAuthorization,
+        render(ctx: any, me: IBobrilNode) {
+            me.tag = "div";
+            me.children = [h("h3", "Page2")];
+        },
+        destroy(ctx: any, me: IBobrilNode) {
+            clearInterval(ctx.timer);
+        }
+    }
+
     interface IPageLoginCtx extends IBobrilCtx {
         loginInProgress: boolean;
     }
@@ -105,6 +117,7 @@ module RouterApp {
                 h("h1", "Router sample with login"),
                 h("ul",
                     h("li", b.link(h("a", "Page 1 - needs to be logged in"), "page1")),
+                    h("li", b.link(h("a", "Page 2 - needs to be logged in"), "page2")),
                     h("li", b.link(h("a", "Login"), "login")),
                     h("li", b.link(h("a", "Bobril - external link"), "https://github.com/bobris/bobril"))),
                 me.data.activeRouteHandler()
@@ -114,6 +127,7 @@ module RouterApp {
 
     b.routes(b.route({ name: "root", url: "/", handler: App }, [
         b.route({ name: "page1", handler: Page1 }),
+        b.route({ name: "page2", handler: Page2 }),
         b.route({ name: "login", handler: PageLogin })
     ]));
 }

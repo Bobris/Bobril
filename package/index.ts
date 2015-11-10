@@ -3725,13 +3725,16 @@ function rootNodeFactory(): IBobrilNode {
         }
     }
     if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
+        programPath = browserPath;
         currentTransition.inApp = true;
         if (currentTransition.name == null && matches.length > 0) {
             currentTransition.name = matches[0].name;
             currentTransition.params = out.p;
             nextIteration();
-        }
-        return null;
+            if (currentTransition != null)
+                return null;
+        } else
+            return null;
     }
     if (currentTransition == null) {
         activeRoutes = matches;
@@ -3932,6 +3935,8 @@ function nextIteration(): void {
             let fn = comp.canDeactivate;
             if (!fn) continue;
             let res = fn.call(comp, node.ctx, currentTransition);
+            if (res === true)
+                continue;
             (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
                 if (resp === true) { }
                 else if (resp === false) {
@@ -3996,6 +4001,8 @@ function nextIteration(): void {
             let fn = comp.canActivate;
             if (!fn) continue;
             let res = fn.call(comp, currentTransition);
+            if (res === true)
+                continue;
             (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
                 if (resp === true) { }
                 else if (resp === false) {
