@@ -2,9 +2,12 @@
 /// <reference path="bobril.scroll.d.ts"/>
 (function (b, window) {
     var callbacks = [];
-    function emitOnScroll() {
+    function emitOnScroll(ev, target, node) {
+        var info = {
+            node: node
+        };
         for (var i = 0; i < callbacks.length; i++) {
-            callbacks[i]();
+            callbacks[i](info);
         }
         return false;
     }
@@ -37,8 +40,8 @@
     }
     // returns standart X,Y order
     function getWindowScroll() {
-        var top = window.pageYOffset;
         var left = window.pageXOffset;
+        var top = window.pageYOffset;
         return [left, top];
     }
     b.addOnScroll = addOnScroll;

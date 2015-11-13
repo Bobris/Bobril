@@ -31,7 +31,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 return [];
             return [a];
         }
-        a = a.split(0);
+        a = a.slice(0);
         let alen = a.length;
         for (let i = 0; i < alen;) {
             let item = a[i];
@@ -571,9 +571,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function getCacheNode(n: Node): IBobrilCacheNode {
-        var s = vdomPath(n);
-        if (s.length == 0) return null;
-        return s[s.length - 1];
+        var p = vdomPath(n);
+        var currentNode: IBobrilCacheNode = null;
+        while (currentNode === null && p.length > 0) {
+            currentNode = p.pop();
+        }
+        return currentNode;
     }
 
     function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent) {
@@ -1404,7 +1407,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var emptyObject = {};
 
-    function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent) {
+    function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent {
         var res = Object.create(c1);
         for (var i in c2) {
             if (!(i in <any>emptyObject)) {
@@ -1531,6 +1534,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         postEnhance: postEnhance,
         cloneNode: cloneNode,
         shimStyle: shimStyle,
-        flatten: flatten
+        flatten: flatten,
+		mergeComponents: mergeComponents
     };
 })(window, document);

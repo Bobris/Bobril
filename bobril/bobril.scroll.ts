@@ -2,11 +2,14 @@
 /// <reference path="bobril.scroll.d.ts"/>
 
 ((b: IBobrilStatic, window: Window) => {
-    var callbacks: Array<() => void> = [];
+    var callbacks: Array<(info: IBobrilScroll) => void> = [];
 
-    function emitOnScroll() {
+    function emitOnScroll(ev: Event, target: Node, node: IBobrilCacheNode) {
+        let info: IBobrilScroll = {
+            node
+        };
         for (var i = 0; i < callbacks.length; i++) {
-            callbacks[i]();
+            callbacks[i](info);
         }
         return false;
     }
@@ -14,11 +17,11 @@
     // capturing event to hear everything
     b.addEvent("^scroll", 10, emitOnScroll);
 
-    function addOnScroll(callback: () => void): void {
+    function addOnScroll(callback: (info?: IBobrilScroll) => void): void {
         callbacks.push(callback);
     }
 
-    function removeOnScroll(callback: () => void): void {
+    function removeOnScroll(callback: (info?: IBobrilScroll) => void): void {
         for (var i = 0; i < callbacks.length; i++) {
             if (callbacks[i] === callback) {
                 callbacks.splice(i, 1);
@@ -27,8 +30,8 @@
         }
 	}
 
-    var isHtml = /^(?:html)$/i;
-    var isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
+    const isHtml = /^(?:html)$/i;
+    const isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
 // inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js
     function isScrollable(el: Element): [boolean, boolean] {
         var styles:any = window.getComputedStyle(el);
@@ -44,8 +47,8 @@
 
     // returns standart X,Y order
     function getWindowScroll(): [number, number] {
-        var top = window.pageYOffset;
         var left = window.pageXOffset;
+        var top = window.pageYOffset;
         return [left, top];
     }
 

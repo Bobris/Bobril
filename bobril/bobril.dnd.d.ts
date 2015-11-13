@@ -24,12 +24,25 @@ interface IDndCtx {
     enabledOperations: DndEnabledOps;
     operation: DndOp;
     overNode: IBobrilCacheNode;
+    // way to overrride mouse cursor, leave null to emulate dnd cursor
+    cursor: string;
+    // dnd is wating for activation by moving atleast distanceToStart pixels
+    started: boolean;
+    beforeDrag: boolean;
     system: boolean;
     local: boolean;
     ended: boolean;
+    // default value is 10, but you can assign to this >=0 number in onDragStart
+    distanceToStart: number;    
     // drag started at this pointer position
     startX: number;
     startY: number;
+    // distance moved - only increasing
+    totalX: number;
+    totalY: number;
+    // previous mouse/touch pointer position
+    lastX: number;
+    lastY: number;
     // actual mouse/touch pointer position
     x: number;
     y: number;
@@ -42,8 +55,7 @@ interface IDndCtx {
     meta: boolean;
 }
 
-interface IDndStartCtx {
-    id: number;
+interface IDndStartCtx extends IDndCtx {
     addData(type: string, data: any): boolean;
     setEnabledOps(ops: DndEnabledOps): void;
     setDragNodeView(view: (dnd:IDndCtx) => IBobrilNode): void;
@@ -70,4 +82,5 @@ interface IBobrilComponent {
 
 interface IBobrilStatic {
     getDnds?(): IDndCtx[];
+    anyActiveDnd?(): IDndCtx;
 }

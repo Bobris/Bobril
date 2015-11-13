@@ -8,23 +8,37 @@
     var systemdnd = null;
     var rootId = null;
     var preventDefault = b.preventDefault;
+    var bodyCursorBackup;
+    var userSelectBackup;
+    var shimedStyle = { userSelect: '' };
+    b.shimStyle(shimedStyle);
+    var shimedStyleKeys = Object.keys(shimedStyle);
+    var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
     var DndCtx = function (pointerId) {
         this.id = ++lastDndId;
         this.pointerid = pointerId;
         this.enabledOperations = 7 /* MoveCopyLink */;
         this.operation = 0 /* None */;
+        this.started = false;
+        this.beforeDrag = true;
         this.local = true;
         this.system = false;
         this.ended = false;
+        this.cursor = null;
         this.overNode = null;
         this.targetCtx = null;
         this.dragView = null;
         this.startX = 0;
         this.startY = 0;
+        this.distanceToStart = 10;
         this.x = 0;
         this.y = 0;
         this.deltaX = 0;
         this.deltaY = 0;
+        this.totalX = 0;
+        this.totalY = 0;
+        this.lastX = 0;
+        this.lastY = 0;
         this.shift = false;
         this.ctrl = false;
         this.alt = false;
@@ -33,22 +47,35 @@
         if (pointerId >= 0)
             pointer2Dnd[pointerId] = this;
         dnds.push(this);
+    };
+    function lazyCreateRoot() {
         if (rootId == null) {
+            var dbs = document.body.style;
+            bodyCursorBackup = dbs.cursor;
+            userSelectBackup = dbs[userSelectPropName];
+            dbs[userSelectPropName] = 'none';
             rootId = b.addRoot(dndRootFactory);
         }
-    };
+    }
     var DndComp = {
         render: function (ctx, me) {
             var dnd = ctx.data;
             me.tag = "div";
-            me.style = { position: "absolute", userSelect: "none", pointerEvents: "none", left: dnd.x, top: dnd.y };
+            me.style = { position: "absolute", left: dnd.x, top: dnd.y };
             me.children = dnd.dragView(dnd);
         }
     };
     function currentCursor() {
         var cursor = "no-drop";
-        if (dnds.length !== 0)
-            switch (dnds[0].operation) {
+        if (dnds.length !== 0) {
+            var dnd = dnds[0];
+            if (dnd.beforeDrag)
+                return "";
+            if (dnd.cursor != null)
+                return dnd.cursor;
+            if (dnd.system)
+                return "";
+            switch (dnd.operation) {
                 case 3 /* Move */:
                     cursor = 'move';
                     break;
@@ -59,6 +86,7 @@
                     cursor = 'copy';
                     break;
             }
+        }
         return cursor;
     }
     var DndRootComp = {
@@ -66,19 +94,18 @@
             var res = [];
             for (var i = 0; i < dnds.length; i++) {
                 var dnd = dnds[i];
+                if (dnd.beforeDrag)
+                    continue;
                 if (dnd.dragView != null && (dnd.x != 0 || dnd.y != 0)) {
                     res.push({ key: "" + dnd.id, data: dnd, component: DndComp });
                 }
             }
             me.tag = "div";
-            me.style = { position: "fixed", userSelect: "none", left: 0, top: 0, right: 0, bottom: 0 };
-            if (systemdnd != null) {
-                me.style.pointerEvents = "none";
-            }
-            else {
-                me.style.pointerEvents = "all";
-                me.style.cursor = currentCursor();
-            }
+            me.style = { position: "fixed", pointerEvents: "none", userSelect: "none", left: 0, top: 0, right: 0, bottom: 0 };
+            var dbs = document.body.style;
+            var cur = currentCursor();
+            if (cur && dbs.cursor !== cur)
+                dbs.cursor = cur;
             me.children = res;
         },
         onDrag: function (ctx) {
@@ -114,11 +141,12 @@
     };
     dndProto.cancelDnd = function () {
         dndmoved(null, this);
-        this.ended = true;
-        b.broadcast("onDragEnd", this);
         this.destroy();
     };
     dndProto.destroy = function () {
+        this.ended = true;
+        if (this.started)
+            b.broadcast("onDragEnd", this);
         delete pointer2Dnd[this.pointerid];
         for (var i = 0; i < dnds.length; i++) {
             if (dnds[i] === this) {
@@ -129,19 +157,51 @@
         if (systemdnd === this) {
             systemdnd = null;
         }
-        if (dnds.length === 0) {
+        if (dnds.length === 0 && rootId != null) {
             b.removeRoot(rootId);
             rootId = null;
+            var dbs = document.body.style;
+            dbs.cursor = bodyCursorBackup;
+            dbs[userSelectPropName] = userSelectBackup;
         }
     };
     var pointer2Dnd = Object.create(null);
     function handlePointerDown(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
+        if (dnd) {
             dnd.cancelDnd();
         }
-        if (ev.button === 1) {
-            pointer2Dnd[ev.id] = { lastX: ev.x, lastY: ev.y, totalX: 0, totalY: 0, startX: ev.x, startY: ev.y, sourceNode: node };
+        if (ev.button <= 1) {
+            dnd = new DndCtx(ev.id);
+            dnd.startX = ev.x;
+            dnd.startY = ev.y;
+            dnd.lastX = ev.x;
+            dnd.lastY = ev.y;
+            dnd.overNode = node;
+            updateDndFromPointerEvent(dnd, ev);
+            var sourceCtx = b.bubble(node, "onDragStart", dnd);
+            if (sourceCtx) {
+                var htmlNode = b.getDomNode(sourceCtx.me);
+                if (htmlNode == null) {
+                    dnd.destroy();
+                    return false;
+                }
+                dnd.started = true;
+                var boundFn = htmlNode.getBoundingClientRect;
+                if (boundFn) {
+                    var rect = boundFn.call(htmlNode);
+                    dnd.deltaX = rect.left - ev.x;
+                    dnd.deltaY = rect.top - ev.y;
+                }
+                if (dnd.distanceToStart <= 0) {
+                    dnd.beforeDrag = false;
+                    dndmoved(node, dnd);
+                }
+                lazyCreateRoot();
+            }
+            else {
+                dnd.destroy();
+            }
         }
         return false;
     }
@@ -153,14 +213,6 @@
         }
         b.broadcast("onDrag", dnd);
     }
-    function safelySetRootPointerEventsNone() {
-        if (rootId == null)
-            return;
-        var c = b.getRoots()[rootId].c;
-        if (c.length === 0)
-            return;
-        c[0].style.pointerEvents = 'none';
-    }
     function updateDndFromPointerEvent(dnd, ev) {
         dnd.shift = ev.shift;
         dnd.ctrl = ev.ctrl;
@@ -168,90 +220,56 @@
         dnd.meta = ev.meta;
         dnd.x = ev.x;
         dnd.y = ev.y;
-        safelySetRootPointerEventsNone();
-        var bodyStyle = document.body.style;
-        var cursorBackup;
-        if (systemdnd == null) {
-            cursorBackup = bodyStyle.cursor;
-            bodyStyle.cursor = currentCursor();
-        }
-        var node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
-        if (systemdnd == null) {
-            bodyStyle.cursor = cursorBackup;
-        }
-        return node;
     }
     function handlePointerMove(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
-            node = updateDndFromPointerEvent(dnd, ev);
-            dndmoved(node, dnd);
-            return true;
-        }
-        else if (dnd && dnd.totalX != null) {
-            dnd.totalX += Math.abs(ev.x - dnd.lastX);
-            dnd.totalY += Math.abs(ev.y - dnd.lastY);
-            dnd.lastX = ev.x;
-            dnd.lastY = ev.y;
-            if (dnd.totalX + dnd.totalY > 10) {
-                node = dnd.sourceNode;
-                var startX = dnd.startX;
-                var startY = dnd.startY;
-                dnd = new DndCtx(ev.id);
-                dnd.startX = startX;
-                dnd.startY = startY;
-                node = updateDndFromPointerEvent(dnd, ev);
-                var sourceCtx = b.bubble(node, "onDragStart", dnd);
-                if (sourceCtx) {
-                    var htmlNode = b.getDomNode(sourceCtx.me);
-                    if (htmlNode == null) {
-                        dnd.destroy();
-                        return false;
-                    }
-                    var boundFn = htmlNode.getBoundingClientRect;
-                    if (boundFn) {
-                        var rect = boundFn.call(htmlNode);
-                        dnd.deltaX = rect.left - startX;
-                        dnd.deltaY = rect.top - startY;
-                    }
-                    dndmoved(node, dnd);
-                    return true;
-                }
-                else {
-                    dnd.destroy();
-                }
+        if (!dnd)
+            return false;
+        dnd.totalX += Math.abs(ev.x - dnd.lastX);
+        dnd.totalY += Math.abs(ev.y - dnd.lastY);
+        if (dnd.beforeDrag) {
+            if (dnd.totalX + dnd.totalY <= dnd.distanceToStart) {
+                dnd.lastX = ev.x;
+                dnd.lastY = ev.y;
+                return false;
             }
+            dnd.beforeDrag = false;
         }
-        return false;
+        updateDndFromPointerEvent(dnd, ev);
+        dndmoved(node, dnd);
+        dnd.lastX = ev.x;
+        dnd.lastY = ev.y;
+        return true;
     }
     function handlePointerUp(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
-            node = updateDndFromPointerEvent(dnd, ev);
+        if (!dnd)
+            return false;
+        if (!dnd.beforeDrag) {
+            updateDndFromPointerEvent(dnd, ev);
             dndmoved(node, dnd);
             var t = dnd.targetCtx;
             if (t && b.bubble(t.me, "onDrop", dnd)) {
-                dnd.ended = true;
-                b.broadcast("onDragEnd", dnd);
                 dnd.destroy();
             }
             else {
                 dnd.cancelDnd();
             }
+            b.ignoreClick(ev.x, ev.y);
             return true;
         }
-        else if (dnd) {
-            delete pointer2Dnd[ev.id];
-        }
+        dnd.destroy();
         return false;
     }
     function handlePointerCancel(ev, target, node) {
         var dnd = pointer2Dnd[ev.id];
-        if (dnd && dnd.totalX == null) {
+        if (!dnd)
+            return false;
+        if (!dnd.beforeDrag) {
             dnd.cancelDnd();
         }
         else {
-            delete pointer2Dnd[ev.id];
+            dnd.destroy();
         }
         return false;
     }
@@ -262,9 +280,12 @@
         dnd.meta = ev.metaKey;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
-        safelySetRootPointerEventsNone();
+        dnd.totalX += Math.abs(dnd.x - dnd.lastX);
+        dnd.totalY += Math.abs(dnd.y - dnd.lastY);
         var node = b.nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
         dndmoved(node, dnd);
+        dnd.lastX = dnd.x;
+        dnd.lastY = dnd.y;
     }
     var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
     function handleDragStart(ev, target, node) {
@@ -273,84 +294,87 @@
             dnd.destroy();
         }
         var activePointerIds = Object.keys(pointer2Dnd);
-        var startX = ev.clientX, startY = ev.clientY, poid = -1;
-        for (var i = 0; i < activePointerIds.length; i++) {
-            dnd = pointer2Dnd[activePointerIds[i]];
-            if (dnd.totalX != null) {
-                poid = +activePointerIds[i];
-                startX = dnd.startX;
-                startY = dnd.startY;
-                delete pointer2Dnd[poid];
-                break;
-            }
+        if (activePointerIds.length > 0) {
+            dnd = pointer2Dnd[activePointerIds[0]];
+            dnd.system = true;
+            systemdnd = dnd;
         }
-        dnd = new DndCtx(poid);
-        dnd.system = true;
-        systemdnd = dnd;
-        dnd.x = ev.clientX;
-        dnd.y = ev.clientY;
-        dnd.startX = startX;
-        dnd.startY = startY;
-        var sourceCtx = b.bubble(node, "onDragStart", dnd);
-        if (sourceCtx) {
-            var htmlNode = b.getDomNode(sourceCtx.me);
-            if (htmlNode == null) {
+        else {
+            var startX = ev.clientX, startY = ev.clientY;
+            dnd = new DndCtx(-1);
+            dnd.system = true;
+            systemdnd = dnd;
+            dnd.x = startX;
+            dnd.y = startY;
+            dnd.lastX = startX;
+            dnd.lastY = startY;
+            dnd.startX = startX;
+            dnd.startY = startY;
+            var sourceCtx = b.bubble(node, "onDragStart", dnd);
+            if (sourceCtx) {
+                var htmlNode = b.getDomNode(sourceCtx.me);
+                if (htmlNode == null) {
+                    dnd.destroy();
+                    return false;
+                }
+                dnd.started = true;
+                var boundFn = htmlNode.getBoundingClientRect;
+                if (boundFn) {
+                    var rect = boundFn.call(htmlNode);
+                    dnd.deltaX = rect.left - startX;
+                    dnd.deltaY = rect.top - startY;
+                }
+                lazyCreateRoot();
+            }
+            else {
                 dnd.destroy();
                 return false;
             }
-            var boundFn = htmlNode.getBoundingClientRect;
-            if (boundFn) {
-                var rect = boundFn.call(htmlNode);
-                dnd.deltaX = rect.left - startX;
-                dnd.deltaY = rect.top - startY;
-            }
-            var eff = effectAllowedTable[dnd.enabledOperations];
-            var dt = ev.dataTransfer;
-            dt.effectAllowed = eff;
-            if (dt.setDragImage) {
-                var div = document.createElement("div");
-                div.style.pointerEvents = "none";
-                dt.setDragImage(div, 0, 0);
-            }
-            else {
-                // For IE10 and IE11 hack to hide default drag element
-                var style = htmlNode.style;
-                var opacityBackup = style.opacity;
-                var widthBackup = style.width;
-                var heightBackup = style.height;
-                var paddingBackup = style.padding;
-                style.opacity = "0";
-                style.width = "0";
-                style.height = "0";
-                style.padding = "0";
-                window.setTimeout(function () {
-                    style.opacity = opacityBackup;
-                    style.width = widthBackup;
-                    style.height = heightBackup;
-                    style.padding = paddingBackup;
-                }, 0);
-            }
-            var datas = dnd.data;
-            var dataKeys = Object.keys(datas);
-            for (var i = 0; i < dataKeys.length; i++) {
-                try {
-                    var k = dataKeys[i];
-                    var d = datas[k];
-                    if (typeof d !== "string")
-                        d = JSON.stringify(d);
-                    ev.dataTransfer.setData(k, d);
-                }
-                catch (e) {
-                    if (DEBUG)
-                        if (window.console)
-                            console.log("Cannot set dnd data to " + dataKeys[i]);
-                }
-            }
-            updateFromNative(dnd, ev);
+        }
+        dnd.beforeDrag = false;
+        var eff = effectAllowedTable[dnd.enabledOperations];
+        var dt = ev.dataTransfer;
+        dt.effectAllowed = eff;
+        if (dt.setDragImage) {
+            var div = document.createElement("div");
+            div.style.pointerEvents = "none";
+            dt.setDragImage(div, 0, 0);
         }
         else {
-            dnd.destroy();
+            // For IE10 and IE11 hack to hide default drag element
+            var style = ev.target.style;
+            var opacityBackup = style.opacity;
+            var widthBackup = style.width;
+            var heightBackup = style.height;
+            var paddingBackup = style.padding;
+            style.opacity = "0";
+            style.width = "0";
+            style.height = "0";
+            style.padding = "0";
+            window.setTimeout(function () {
+                style.opacity = opacityBackup;
+                style.width = widthBackup;
+                style.height = heightBackup;
+                style.padding = paddingBackup;
+            }, 0);
         }
+        var datas = dnd.data;
+        var dataKeys = Object.keys(datas);
+        for (var i = 0; i < dataKeys.length; i++) {
+            try {
+                var k = dataKeys[i];
+                var d = datas[k];
+                if (typeof d !== "string")
+                    d = JSON.stringify(d);
+                ev.dataTransfer.setData(k, d);
+            }
+            catch (e) {
+                if (DEBUG)
+                    if (window.console)
+                        console.log("Cannot set dnd data to " + dataKeys[i]);
+            }
+        }
+        updateFromNative(dnd, ev);
         return false;
     }
     function setDropEffect(ev, op) {
@@ -416,8 +440,6 @@
     }
     function handleDragEnd(ev, target, node) {
         if (systemdnd != null) {
-            systemdnd.ended = true;
-            b.broadcast("onDragEnd", systemdnd);
             systemdnd.destroy();
         }
         return false;
@@ -447,8 +469,6 @@
         var t = dnd.targetCtx;
         if (t && b.bubble(t.me, "onDrop", dnd)) {
             setDropEffect(ev, dnd.operation);
-            dnd.ended = true;
-            b.broadcast("onDragEnd", dnd);
             dnd.destroy();
             preventDefault(ev);
         }
@@ -461,11 +481,27 @@
         preventDefault(ev);
         return true;
     }
+    function handleSelectStart(ev, target, node) {
+        if (dnds.length === 0)
+            return false;
+        preventDefault(ev);
+        return true;
+    }
+    function anyActiveDnd() {
+        for (var i = 0; i < dnds.length; i++) {
+            var dnd = dnds[i];
+            if (dnd.beforeDrag)
+                continue;
+            return dnd;
+        }
+        return null;
+    }
     var addEvent = b.addEvent;
     addEvent("!PointerDown", 4, handlePointerDown);
     addEvent("!PointerMove", 4, handlePointerMove);
     addEvent("!PointerUp", 4, handlePointerUp);
     addEvent("!PointerCancel", 4, handlePointerCancel);
+    addEvent("selectstart", 4, handleSelectStart);
     addEvent("dragstart", 5, handleDragStart);
     addEvent("dragover", 5, handleDragOver);
     addEvent("dragend", 5, handleDragEnd);
@@ -474,4 +510,5 @@
     addEvent("dragenter", 5, justPreventDefault);
     addEvent("dragleave", 5, justPreventDefault);
     b.getDnds = function () { return dnds; };
+    b.anyActiveDnd = anyActiveDnd;
 })(b);

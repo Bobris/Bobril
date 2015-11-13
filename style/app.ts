@@ -9,6 +9,7 @@ module StyleApp {
     var icon = b.sprite("light.png");
     var iconShine = b.sprite("light.png", "#80ff80");
     var iconOff = b.sprite("light.png", "#e03030");
+    var iconTran = b.sprite("light.png", "rgba(80,40,40,0.3)");
     var leftfloat = b.styleDef([{ cssFloat: "left" }, { width: 50, height: 30 }]);
     var par1 = b.styleDef({ fontFamily: "Arial", fontSize: 10, margin: 5 });
     var par2 = b.styleDef({ fontFamily: "TimesNewRoman", fontSize: 20, margin: 5 });
@@ -26,6 +27,7 @@ module StyleApp {
                     b.style({ tag: "div", children: "Red text with border" }, redWithBorder),
                     b.style({ tag: "div" }, inline, icon),
                     b.style({ tag: "div" }, inline, biggerMargin, icon),
+                    b.style({ tag: "div" }, inline, iconTran),
                     b.style({ tag: "div", component: { onClick: () => { l = !l; b.invalidate(); return true; } } }, inline, l && iconShine, l || iconOff),
                     b.style({ tag: "div", children: "float" }, leftfloat),
                     b.style({ tag: "div", children: "float2" }, leftfloat)]

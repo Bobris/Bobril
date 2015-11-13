@@ -99,6 +99,8 @@ interface IBobrilStatic {
     shimStyle(style: any): void;
     // flatten array or wrap by array as needed - removing null, undefined, false, true - always returning new array
     flatten(a:any|any[]): any[];
+	// merged component mothods calls methods from c1 and if they don't return trueish value it continue with calling c2 method
+    mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent;
 }
 
 interface IBobrilAttributes {

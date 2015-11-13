@@ -247,18 +247,21 @@ interface OutFindMatch {
             transitionState = -1;
             programPath = browserPath;
         } else {
-            if (!currentTransition && matches.length>0 && browserPath!=programPath) {
-                runTransition(createRedirectPush(matches[0].name,out.p));
+            if (!currentTransition && matches.length > 0 && browserPath != programPath) {
+                runTransition(createRedirectPush(matches[0].name, out.p));
             }
         }
         if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
+            programPath = browserPath;
             currentTransition.inApp = true;
             if (currentTransition.name == null && matches.length > 0) {
                 currentTransition.name = matches[0].name;
                 currentTransition.params = out.p;
                 nextIteration();
-            }
-            return null;
+                if (currentTransition != null)
+                    return null;
+            } else
+                return null;
         }
         if (currentTransition == null) {
             activeRoutes = matches;
@@ -304,7 +307,7 @@ interface OutFindMatch {
             var r = rs[i];
             var u = url;
             var name = r.name;
-            if (!name && url==="/") {
+            if (!name && url === "/") {
                 name = "root";
                 r.name = name;
                 nameRouteMap[name] = r;
@@ -366,6 +369,10 @@ interface OutFindMatch {
     function urlOfRoute(name: string, params?: Params): string {
         if (isInApp(name)) {
             var r = nameRouteMap[name];
+            if (DEBUG) {
+                if (rootRoutes == null) throw Error('Cannot use urlOfRoute before defining routes');
+                if (r == null) throw Error('Route with name ' + name + ' if not defined in urlOfRoute');
+            }
             return "#" + injectParams(r.url, params);
         }
         return name;
@@ -453,7 +460,7 @@ interface OutFindMatch {
                 let fn = comp.canDeactivate;
                 if (!fn) continue;
                 let res = fn.call(comp, node.ctx, currentTransition);
-                (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
+                (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
                     if (resp === true) { }
                     else if (resp === false) {
                         currentTransition = null; nextTransition = null;
@@ -462,7 +469,7 @@ interface OutFindMatch {
                         nextTransition = <IRouteTransition>resp;
                     }
                     nextIteration();
-                }).catch(console.log.bind(console));
+                }).catch((err:any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
                 return;
             } else if (transitionState == activeRoutes.length) {
                 if (nextTransition) {
@@ -474,7 +481,8 @@ interface OutFindMatch {
                 }
                 transitionState = -1;
                 if (!currentTransition.inApp || currentTransition.type === RouteTransitionType.Pop) {
-                    doAction(currentTransition);
+                    let tr = currentTransition; if (!currentTransition.inApp) currentTransition = null;
+                    doAction(tr);
                     return;
                 }
             } else if (transitionState === -1) {
@@ -491,7 +499,8 @@ interface OutFindMatch {
                     continue;
                 }
                 if (currentTransition.type !== RouteTransitionType.Pop) {
-                    doAction(currentTransition);
+                    let tr = currentTransition; currentTransition = null;
+                    doAction(tr);
                 } else {
                     b.invalidate();
                 }
@@ -517,7 +526,9 @@ interface OutFindMatch {
                 let fn = comp.canActivate;
                 if (!fn) continue;
                 let res = fn.call(comp, currentTransition);
-                (<any>Promise).resolve(res).then((resp: boolean|IRouteTransition) => {
+                if (res === true)
+                    continue;
+                (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
                     if (resp === true) { }
                     else if (resp === false) {
                         currentTransition = null; nextTransition = null;
@@ -526,7 +537,7 @@ interface OutFindMatch {
                         nextTransition = <IRouteTransition>resp;
                     }
                     nextIteration();
-                }).catch(console.log.bind(console));
+                }).catch((err:any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
                 return;
             }
         }
@@ -554,4 +565,7 @@ interface OutFindMatch {
     b.createBackTransition = createBackTransition;
     b.runTransition = runTransition;
     b.link = link;
+    b.getRoutes = () => rootRoutes;
+    b.getActiveRoutes = () => activeRoutes;
+    b.getActiveParams = () => activeParams;
 })(b, window);

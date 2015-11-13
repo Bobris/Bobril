@@ -13,6 +13,9 @@
     createBackTransition?(): IRouteTransition;
     runTransition?(transition: IRouteTransition): void;
     link?(node: IBobrilNode, name: string, params?: Params): IBobrilNode;
+    getRoutes?(): IRoute[];
+    getActiveRoutes?(): IRoute[];
+    getActiveParams?(): Params;
 }
 
 interface Params {

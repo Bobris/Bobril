@@ -171,6 +171,9 @@
                 handle.call(me, [onFulfilled, onRejected, resolve, reject]);
             });
         };
+        Promise.prototype['catch'] = function (onRejected) {
+            return this.then(undefined, onRejected);
+        };
         Promise.all = function () {
             var args = [].slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
             return new Promise(function (resolve, reject) {

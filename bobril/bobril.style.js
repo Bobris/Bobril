@@ -103,8 +103,13 @@
                 var name_1 = ss.name;
                 var style_1 = Object.create(null);
                 var flattenPseudo = Object.create(null);
-                flattenStyle(undefined, flattenPseudo, undefined, ss.pseudo);
-                flattenStyle(style_1, flattenPseudo, ss.style, undefined);
+                var sspseudo = ss.pseudo;
+                var ssstyle = ss.style;
+                if (typeof ssstyle === "function" && ssstyle.length === 0) {
+                    _a = ssstyle(), ssstyle = _a[0], sspseudo = _a[1];
+                }
+                flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
+                flattenStyle(style_1, flattenPseudo, ssstyle, undefined);
                 var extractedInlStyle = null;
                 if (style_1["pointerEvents"]) {
                     extractedInlStyle = Object.create(null);
@@ -148,6 +153,7 @@
             rebuildStyles = false;
         }
         chainedBeforeFrame();
+        var _a;
     }
     function style(node) {
         var styles = [];
@@ -168,7 +174,7 @@
                 continue;
             }
             var s = ca[i];
-            if (s == null || typeof s === "boolean") {
+            if (s == null || typeof s === "boolean" || s === '') {
             }
             else if (typeof s === "string") {
                 var sd = allStyles[s];
@@ -255,6 +261,7 @@
     function emptyStyleDef(url) {
         return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
     }
+    var rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
     function recolorAndClip(image, colorStr, width, height, left, top) {
         var canvas = document.createElement("canvas");
         canvas.width = width;
@@ -263,16 +270,50 @@
         ctx.drawImage(image, -left, -top);
         var imgdata = ctx.getImageData(0, 0, width, height);
         var imgd = imgdata.data;
-        var cred = parseInt(colorStr.substr(1, 2), 16);
-        var cgreen = parseInt(colorStr.substr(3, 2), 16);
-        var cblue = parseInt(colorStr.substr(5, 2), 16);
-        for (var i = 0; i < imgd.length; i += 4) {
-            // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
-            var red = imgd[i];
-            if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
-                imgd[i] = cred;
-                imgd[i + 1] = cgreen;
-                imgd[i + 2] = cblue;
+        var rgba = rgbaRegex.exec(colorStr);
+        var cred, cgreen, cblue, calpha;
+        if (rgba) {
+            cred = parseInt(rgba[1], 10);
+            cgreen = parseInt(rgba[2], 10);
+            cblue = parseInt(rgba[3], 10);
+            calpha = Math.round(parseFloat(rgba[4]) * 255);
+        }
+        else {
+            cred = parseInt(colorStr.substr(1, 2), 16);
+            cgreen = parseInt(colorStr.substr(3, 2), 16);
+            cblue = parseInt(colorStr.substr(5, 2), 16);
+            calpha = parseInt(colorStr.substr(7, 2), 16) || 0xff;
+        }
+        if (calpha === 0xff) {
+            for (var i = 0; i < imgd.length; i += 4) {
+                // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
+                var red = imgd[i];
+                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
+                    imgd[i] = cred;
+                    imgd[i + 1] = cgreen;
+                    imgd[i + 2] = cblue;
+                }
+            }
+        }
+        else {
+            for (var i = 0; i < imgd.length; i += 4) {
+                var red = imgd[i];
+                var alpha = imgd[i + 3];
+                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || alpha < 0xff && red > 0x70)) {
+                    if (alpha === 0xff) {
+                        imgd[i] = cred;
+                        imgd[i + 1] = cgreen;
+                        imgd[i + 2] = cblue;
+                        imgd[i + 3] = calpha;
+                    }
+                    else {
+                        alpha = alpha * (1.0 / 255);
+                        imgd[i] = Math.round(cred * alpha);
+                        imgd[i + 1] = Math.round(cgreen * alpha);
+                        imgd[i + 2] = Math.round(cblue * alpha);
+                        imgd[i + 3] = Math.round(calpha * alpha);
+                    }
+                }
             }
         }
         ctx.putImageData(imgdata, 0, 0);
