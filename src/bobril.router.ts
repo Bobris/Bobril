@@ -481,7 +481,8 @@ interface OutFindMatch {
                 }
                 transitionState = -1;
                 if (!currentTransition.inApp || currentTransition.type === RouteTransitionType.Pop) {
-                    doAction(currentTransition);
+                    let tr = currentTransition; if (!currentTransition.inApp) currentTransition = null;
+                    doAction(tr);
                     return;
                 }
             } else if (transitionState === -1) {
@@ -498,7 +499,8 @@ interface OutFindMatch {
                     continue;
                 }
                 if (currentTransition.type !== RouteTransitionType.Pop) {
-                    doAction(currentTransition);
+                    let tr = currentTransition; currentTransition = null;
+                    doAction(tr);
                 } else {
                     b.invalidate();
                 }

@@ -3630,7 +3630,10 @@ function nextIteration() {
             }
             transitionState = -1;
             if (!currentTransition.inApp || currentTransition.type === 2 /* Pop */) {
-                doAction(currentTransition);
+                var tr = currentTransition;
+                if (!currentTransition.inApp)
+                    currentTransition = null;
+                doAction(tr);
                 return;
             }
         }
@@ -3650,7 +3653,9 @@ function nextIteration() {
                 continue;
             }
             if (currentTransition.type !== 2 /* Pop */) {
-                doAction(currentTransition);
+                var tr = currentTransition;
+                currentTransition = null;
+                doAction(tr);
             }
             else {
                 exports.invalidate();

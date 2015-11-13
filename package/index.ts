@@ -3958,7 +3958,8 @@ function nextIteration(): void {
             }
             transitionState = -1;
             if (!currentTransition.inApp || currentTransition.type === RouteTransitionType.Pop) {
-                doAction(currentTransition);
+                let tr = currentTransition; if (!currentTransition.inApp) currentTransition = null;
+                doAction(tr);
                 return;
             }
         } else if (transitionState === -1) {
@@ -3975,7 +3976,8 @@ function nextIteration(): void {
                 continue;
             }
             if (currentTransition.type !== RouteTransitionType.Pop) {
-                doAction(currentTransition);
+                let tr = currentTransition; currentTransition = null;
+                doAction(tr);
             } else {
                 invalidate();
             }
