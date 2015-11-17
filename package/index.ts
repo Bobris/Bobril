@@ -3472,6 +3472,7 @@ export interface IRouteTransition {
     type: RouteTransitionType;
     name: string;
     params: Params;
+    distance?: number;
 }
 
 export type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
@@ -3524,9 +3525,9 @@ function replace(path: string, inapp: boolean) {
     }
 }
 
-function pop() {
-    myAppHistoryDeepness--;
-    window.history.back();
+function pop(distance: number) {
+    myAppHistoryDeepness -= distance;
+    window.history.go(-distance);
 }
 
 let rootRoutes: IRoute[];
@@ -3894,12 +3895,14 @@ export function createRedirectReplace(name: string, params?: Params): IRouteTran
     }
 }
 
-export function createBackTransition(): IRouteTransition {
+export function createBackTransition(distance?: number): IRouteTransition {
+    distance = distance || 1;
     return {
-        inApp: myAppHistoryDeepness > 0,
+        inApp: myAppHistoryDeepness >= distance,
         type: RouteTransitionType.Pop,
         name: null,
-        params: {}
+        params: {},
+        distance
     }
 }
 
@@ -3916,7 +3919,7 @@ function doAction(transition: IRouteTransition) {
             replace(urlOfRoute(transition.name, transition.params), transition.inApp);
             break;
         case RouteTransitionType.Pop:
-            pop();
+            pop(transition.distance);
             break;
     }
     invalidate();

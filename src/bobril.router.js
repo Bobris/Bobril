@@ -30,9 +30,9 @@
             l.replace(path);
         }
     }
-    function pop() {
-        myAppHistoryDeepness--;
-        window.history.back();
+    function pop(distance) {
+        myAppHistoryDeepness -= distance;
+        window.history.go(-distance);
     }
     var rootRoutes;
     var nameRouteMap = {};
@@ -381,12 +381,14 @@
             params: params || {}
         };
     }
-    function createBackTransition() {
+    function createBackTransition(distance) {
+        distance = distance || 1;
         return {
-            inApp: myAppHistoryDeepness > 0,
+            inApp: myAppHistoryDeepness >= distance,
             type: 2 /* Pop */,
             name: null,
-            params: {}
+            params: {},
+            distance: distance
         };
     }
     var currentTransition = null;
@@ -401,7 +403,7 @@
                 replace(urlOfRoute(transition.name, transition.params), transition.inApp);
                 break;
             case 2 /* Pop */:
-                pop();
+                pop(transition.distance);
                 break;
         }
         b.invalidate();

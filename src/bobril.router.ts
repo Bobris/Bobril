@@ -51,9 +51,9 @@ interface OutFindMatch {
         }
     }
 
-    function pop() {
-        myAppHistoryDeepness--;
-        window.history.back();
+    function pop(distance: number) {
+        myAppHistoryDeepness -= distance;
+        window.history.go(-distance);
     }
 
     var rootRoutes: IRoute[];
@@ -421,12 +421,14 @@ interface OutFindMatch {
         }
     }
 
-    function createBackTransition(): IRouteTransition {
+    function createBackTransition(distance?: number): IRouteTransition {
+        distance = distance || 1;
         return {
-            inApp: myAppHistoryDeepness > 0,
+            inApp: myAppHistoryDeepness >= distance,
             type: RouteTransitionType.Pop,
             name: null,
-            params: {}
+            params: {},
+            distance
         }
     }
 
@@ -443,7 +445,7 @@ interface OutFindMatch {
                 replace(urlOfRoute(transition.name, transition.params), transition.inApp);
                 break;
             case RouteTransitionType.Pop:
-                pop();
+                pop(transition.distance);
                 break;
         }
         b.invalidate();

@@ -3203,9 +3203,9 @@ function replace(path, inapp) {
         l.replace(path);
     }
 }
-function pop() {
-    myAppHistoryDeepness--;
-    window.history.back();
+function pop(distance) {
+    myAppHistoryDeepness -= distance;
+    window.history.go(-distance);
 }
 var rootRoutes;
 var nameRouteMap = {};
@@ -3563,12 +3563,14 @@ function createRedirectReplace(name, params) {
     };
 }
 exports.createRedirectReplace = createRedirectReplace;
-function createBackTransition() {
+function createBackTransition(distance) {
+    distance = distance || 1;
     return {
-        inApp: myAppHistoryDeepness > 0,
+        inApp: myAppHistoryDeepness >= distance,
         type: 2 /* Pop */,
         name: null,
-        params: {}
+        params: {},
+        distance: distance
     };
 }
 exports.createBackTransition = createBackTransition;
@@ -3584,7 +3586,7 @@ function doAction(transition) {
             replace(urlOfRoute(transition.name, transition.params), transition.inApp);
             break;
         case 2 /* Pop */:
-            pop();
+            pop(transition.distance);
             break;
     }
     exports.invalidate();
