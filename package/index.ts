@@ -513,7 +513,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: 
         }
         return c;
     } else if (inSvg || tag === "svg") {
-        el = <HTMLElement>document.createElementNS("http://www.w3.org/2000/svg", tag);
+        el = <any>document.createElementNS("http://www.w3.org/2000/svg", tag);
         inSvg = true;
     } else if (!el) {
         el = createElement(tag);
@@ -4078,6 +4078,7 @@ interface IDynamicSprite {
 
 interface IInternalStyle {
     name: string;
+    realname: string;
     parent?: IBobrilStyleDef | IBobrilStyleDef[];
     style: any;
     inlStyle?: any;
@@ -4180,13 +4181,18 @@ function beforeFrame() {
             var ss = allStyles[key];
             let parent = ss.parent;
             let name = ss.name;
-            let style = newHashObj();
-            let flattenPseudo = newHashObj();
             let sspseudo = ss.pseudo;
             let ssstyle = ss.style;
             if (typeof ssstyle==="function" && ssstyle.length===0) {
                 [ssstyle, sspseudo] = ssstyle();
             }
+            if (typeof ssstyle==="string" && sspseudo==null) {
+                ss.realname = ssstyle;
+                continue;
+            }
+            ss.realname = name;
+            let style = newHashObj();
+            let flattenPseudo = newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
             flattenStyle(style, flattenPseudo, ssstyle, undefined);
             var extractedInlStyle: any = null;
@@ -4252,7 +4258,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             // skip
         } else if (typeof s === "string") {
             var sd = allStyles[s];
-            if (className == null) className = sd.name; else className = className + " " + sd.name;
+            if (className == null) className = sd.realname; else className = className + " " + sd.realname;
             var inls = sd.inlStyle;
             if (inls) {
                 inlineStyle = assign(inlineStyle, inls);
@@ -4308,7 +4314,7 @@ export function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], style: a
     } else {
         nameHint = "b-" + globalCounter++;
     }
-    allStyles[nameHint] = { name: nameHint, parent, style, inlStyle: null, pseudo };
+    allStyles[nameHint] = { name: nameHint, realname: nameHint, parent, style, inlStyle: null, pseudo };
     invalidateStyles();
     return nameHint;
 }

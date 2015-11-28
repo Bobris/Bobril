@@ -3831,13 +3831,18 @@ function beforeFrame() {
             var ss = allStyles[key];
             var parent_1 = ss.parent;
             var name_1 = ss.name;
-            var style_1 = newHashObj();
-            var flattenPseudo = newHashObj();
             var sspseudo = ss.pseudo;
             var ssstyle = ss.style;
             if (typeof ssstyle === "function" && ssstyle.length === 0) {
                 _a = ssstyle(), ssstyle = _a[0], sspseudo = _a[1];
             }
+            if (typeof ssstyle === "string" && sspseudo == null) {
+                ss.realname = ssstyle;
+                continue;
+            }
+            ss.realname = name_1;
+            var style_1 = newHashObj();
+            var flattenPseudo = newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
             flattenStyle(style_1, flattenPseudo, ssstyle, undefined);
             var extractedInlStyle = null;
@@ -3909,9 +3914,9 @@ function style(node) {
         else if (typeof s === "string") {
             var sd = allStyles[s];
             if (className == null)
-                className = sd.name;
+                className = sd.realname;
             else
-                className = className + " " + sd.name;
+                className = className + " " + sd.realname;
             var inls = sd.inlStyle;
             if (inls) {
                 inlineStyle = assign(inlineStyle, inls);
@@ -3973,7 +3978,7 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     else {
         nameHint = "b-" + globalCounter++;
     }
-    allStyles[nameHint] = { name: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
+    allStyles[nameHint] = { name: nameHint, realname: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
     invalidateStyles();
     return nameHint;
 }
