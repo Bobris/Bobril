@@ -571,11 +571,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function getCacheNode(n: Node): IBobrilCacheNode {
-        var s = vdomPath(n);
-        var currentNode: IBobrilNode = null;
-        if (s.length == 0) return currentNode;
-        while (currentNode === null && s.length > 0) {
-            currentNode = s.pop();
+        var p = vdomPath(n);
+        var currentNode: IBobrilCacheNode = null;
+        while (currentNode === null && p.length > 0) {
+            currentNode = p.pop();
         }
         return currentNode;
     }

@@ -580,10 +580,12 @@ function vdomPath(n) {
 }
 exports.vdomPath = vdomPath;
 function deref(n) {
-    var s = vdomPath(n);
-    if (s.length == 0)
-        return null;
-    return s[s.length - 1];
+    var p = vdomPath(n);
+    var currentNode = null;
+    while (currentNode === null && p.length > 0) {
+        currentNode = p.pop();
+    }
+    return currentNode;
 }
 exports.deref = deref;
 function finishUpdateNode(n, c, component) {
@@ -3201,9 +3203,9 @@ function replace(path, inapp) {
         l.replace(path);
     }
 }
-function pop() {
-    myAppHistoryDeepness--;
-    window.history.back();
+function pop(distance) {
+    myAppHistoryDeepness -= distance;
+    window.history.go(-distance);
 }
 var rootRoutes;
 var nameRouteMap = {};
@@ -3383,13 +3385,17 @@ function rootNodeFactory() {
         }
     }
     if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
+        programPath = browserPath;
         currentTransition.inApp = true;
         if (currentTransition.name == null && matches.length > 0) {
             currentTransition.name = matches[0].name;
             currentTransition.params = out.p;
             nextIteration();
+            if (currentTransition != null)
+                return null;
         }
-        return null;
+        else
+            return null;
     }
     if (currentTransition == null) {
         activeRoutes = matches;
@@ -3557,12 +3563,14 @@ function createRedirectReplace(name, params) {
     };
 }
 exports.createRedirectReplace = createRedirectReplace;
-function createBackTransition() {
+function createBackTransition(distance) {
+    distance = distance || 1;
     return {
-        inApp: myAppHistoryDeepness > 0,
+        inApp: myAppHistoryDeepness >= distance,
         type: 2 /* Pop */,
         name: null,
-        params: {}
+        params: {},
+        distance: distance
     };
 }
 exports.createBackTransition = createBackTransition;
@@ -3578,7 +3586,7 @@ function doAction(transition) {
             replace(urlOfRoute(transition.name, transition.params), transition.inApp);
             break;
         case 2 /* Pop */:
-            pop();
+            pop(transition.distance);
             break;
     }
     exports.invalidate();
@@ -3597,6 +3605,8 @@ function nextIteration() {
             if (!fn)
                 continue;
             var res = fn.call(comp, node.ctx, currentTransition);
+            if (res === true)
+                continue;
             Promise.resolve(res).then(function (resp) {
                 if (resp === true) { }
                 else if (resp === false) {
@@ -3622,7 +3632,10 @@ function nextIteration() {
             }
             transitionState = -1;
             if (!currentTransition.inApp || currentTransition.type === 2 /* Pop */) {
-                doAction(currentTransition);
+                var tr = currentTransition;
+                if (!currentTransition.inApp)
+                    currentTransition = null;
+                doAction(tr);
                 return;
             }
         }
@@ -3642,7 +3655,9 @@ function nextIteration() {
                 continue;
             }
             if (currentTransition.type !== 2 /* Pop */) {
-                doAction(currentTransition);
+                var tr = currentTransition;
+                currentTransition = null;
+                doAction(tr);
             }
             else {
                 exports.invalidate();
@@ -3674,6 +3689,8 @@ function nextIteration() {
             if (!fn)
                 continue;
             var res = fn.call(comp, currentTransition);
+            if (res === true)
+                continue;
             Promise.resolve(res).then(function (resp) {
                 if (resp === true) { }
                 else if (resp === false) {
@@ -3814,13 +3831,18 @@ function beforeFrame() {
             var ss = allStyles[key];
             var parent_1 = ss.parent;
             var name_1 = ss.name;
-            var style_1 = newHashObj();
-            var flattenPseudo = newHashObj();
             var sspseudo = ss.pseudo;
             var ssstyle = ss.style;
             if (typeof ssstyle === "function" && ssstyle.length === 0) {
                 _a = ssstyle(), ssstyle = _a[0], sspseudo = _a[1];
             }
+            if (typeof ssstyle === "string" && sspseudo == null) {
+                ss.realname = ssstyle;
+                continue;
+            }
+            ss.realname = name_1;
+            var style_1 = newHashObj();
+            var flattenPseudo = newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
             flattenStyle(style_1, flattenPseudo, ssstyle, undefined);
             var extractedInlStyle = null;
@@ -3892,9 +3914,9 @@ function style(node) {
         else if (typeof s === "string") {
             var sd = allStyles[s];
             if (className == null)
-                className = sd.name;
+                className = sd.realname;
             else
-                className = className + " " + sd.name;
+                className = className + " " + sd.realname;
             var inls = sd.inlStyle;
             if (inls) {
                 inlineStyle = assign(inlineStyle, inls);
@@ -3956,7 +3978,7 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     else {
         nameHint = "b-" + globalCounter++;
     }
-    allStyles[nameHint] = { name: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
+    allStyles[nameHint] = { name: nameHint, realname: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
     invalidateStyles();
     return nameHint;
 }

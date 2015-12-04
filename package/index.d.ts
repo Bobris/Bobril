@@ -263,6 +263,7 @@ export interface IRouteTransition {
     type: RouteTransitionType;
     name: string;
     params: Params;
+    distance?: number;
 }
 export declare type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
 export declare type IRouteHandler = IBobrilComponent | ((data: any) => IBobrilNode);
@@ -282,7 +283,7 @@ export declare function urlOfRoute(name: string, params?: Params): string;
 export declare function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode;
 export declare function createRedirectPush(name: string, params?: Params): IRouteTransition;
 export declare function createRedirectReplace(name: string, params?: Params): IRouteTransition;
-export declare function createBackTransition(): IRouteTransition;
+export declare function createBackTransition(distance?: number): IRouteTransition;
 export declare function runTransition(transition: IRouteTransition): void;
 export declare function getRoutes(): IRoute[];
 export declare function getActiveRoutes(): IRoute[];
