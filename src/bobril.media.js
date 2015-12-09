@@ -22,9 +22,8 @@
         return breaks;
     }
     var viewport = window.document.documentElement;
-    var firstRun = true;
     var isAndroid = /Android/i.test(navigator.userAgent);
-    var weirdPortrait = false; // Some android devices provide reverted orientation
+    var weirdPortrait; // Some android devices provide reverted orientation
     function getMedia() {
         if (media == null) {
             var w = viewport.clientWidth;
@@ -34,13 +33,13 @@
             if (o == null)
                 o = (p ? 0 : 90);
             if (isAndroid) {
-                if (firstRun) {
-                    if ((Math.abs(o) % 180 === 90) === p)
-                        weirdPortrait = true;
-                    firstRun = false;
+                // without this keyboard change screen rotation because h or w changes
+                var op = Math.abs(o) % 180 === 90;
+                if (weirdPortrait == null) {
+                    weirdPortrait = op === p;
                 }
                 else {
-                    p = (Math.abs(o) % 180 === 90) === weirdPortrait;
+                    p = op === weirdPortrait;
                 }
             }
             var device = 0;

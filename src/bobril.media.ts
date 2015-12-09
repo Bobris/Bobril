@@ -27,9 +27,8 @@
     }
 
     var viewport = window.document.documentElement;
-    var firstRun = true;
     var isAndroid = /Android/i.test(navigator.userAgent);
-    var weirdPortrait = false;  // Some android devices provide reverted orientation
+    var weirdPortrait:boolean;  // Some android devices provide reverted orientation
 
     function getMedia(): IBobrilMedia {
         if (media == null) {
@@ -38,12 +37,13 @@
             var o: any = (<any>window).orientation;
             var p = h >= w;
             if (o == null) o = (p ? 0 : 90);
-            if (isAndroid)  {
-                if (firstRun) {
-                    if ((Math.abs(o) % 180 === 90) === p) weirdPortrait = true;
-                    firstRun = false;
+            if (isAndroid) {
+                // without this keyboard change screen rotation because h or w changes
+                let op = Math.abs(o) % 180 === 90;
+                if (weirdPortrait==null) {
+                    weirdPortrait = op === p;
                 } else {
-                    p = (Math.abs(o) % 180 === 90) === weirdPortrait;
+                    p = op === weirdPortrait;
                 }
             }
             var device = 0;

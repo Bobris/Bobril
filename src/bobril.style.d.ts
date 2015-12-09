@@ -5,7 +5,7 @@ declare type IBobrilStyle = Object | IBobrilStyleDef | boolean;
 // place inline styles at end for optimal speed
 declare type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
 
-﻿interface IBobrilStatic {
+interface IBobrilStatic {
     // apply style to node, you can apply style only once to each node, you should not touch className, or style members before or after
     style?(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode;
     // declare new style think of it as class inside css, pseudo classes modifiers (hover,focus) pass in "pseudo" parameter
