@@ -2,7 +2,11 @@
 /// <reference path="bobril.router.d.ts"/>
 /// <reference path="bobril.promise.d.ts"/>
 (function (b, window) {
+    var waitingForPopHashChange = -1;
     function emitOnHashChange() {
+        if (waitingForPopHashChange >= 0)
+            clearTimeout(waitingForPopHashChange);
+        waitingForPopHashChange = -1;
         b.invalidate();
         return false;
     }
@@ -32,6 +36,7 @@
     }
     function pop(distance) {
         myAppHistoryDeepness -= distance;
+        waitingForPopHashChange = setTimeout(emitOnHashChange, 50);
         window.history.go(-distance);
     }
     var rootRoutes;
@@ -194,6 +199,8 @@
     }
     var firstRouting = true;
     function rootNodeFactory() {
+        if (waitingForPopHashChange >= 0)
+            return undefined;
         var browserPath = window.location.hash;
         var path = browserPath.substr(1);
         if (!isAbsolute(path))
@@ -219,10 +226,10 @@
                 currentTransition.params = out.p;
                 nextIteration();
                 if (currentTransition != null)
-                    return null;
+                    return undefined;
             }
             else
-                return null;
+                return undefined;
         }
         if (currentTransition == null) {
             activeRoutes = matches;

@@ -20,6 +20,7 @@ declare type IBobrilRoots = { [id: string]: IBobrilRoot };
 
 interface IBobrilStatic {
     // main function to specify factory function to update html body or element passed as parameter
+    // when factory function return undefined current repaint is ended and vdom is not touched
     // this basicaly overwrite root with id "0"
     init(factory: () => IBobrilChildren, element?: HTMLElement): void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop

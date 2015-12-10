@@ -1380,6 +1380,8 @@ function update(time: number) {
         if (insertBefore != null) insertBefore = insertBefore.nextSibling;
         if (fullRefresh) {
             var newChildren = r.f();
+            if (newChildren === undefined)
+                break;
             r.e = r.e || document.body;
             r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
         }
@@ -3505,7 +3507,11 @@ interface OutFindMatch {
     p: Params
 }
 
+var waitingForPopHashChange = -1;
+
 function emitOnHashChange() {
+    if (waitingForPopHashChange >= 0) clearTimeout(waitingForPopHashChange);
+    waitingForPopHashChange = -1;
     invalidate();
     return false;
 }
@@ -3538,6 +3544,7 @@ function replace(path: string, inapp: boolean) {
 
 function pop(distance: number) {
     myAppHistoryDeepness -= distance;
+    waitingForPopHashChange = setTimeout(emitOnHashChange, 50);
     window.history.go(-distance);
 }
 
@@ -3721,6 +3728,8 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode) => void {
 
 var firstRouting = true;
 function rootNodeFactory(): IBobrilNode {
+    if (waitingForPopHashChange >= 0)
+        return undefined;
     let browserPath = window.location.hash;
     let path = browserPath.substr(1);
     if (!isAbsolute(path)) path = "/" + path;
@@ -3744,9 +3753,9 @@ function rootNodeFactory(): IBobrilNode {
             currentTransition.params = out.p;
             nextIteration();
             if (currentTransition != null)
-                return null;
+                return undefined;
         } else
-            return null;
+            return undefined;
     }
     if (currentTransition == null) {
         activeRoutes = matches;

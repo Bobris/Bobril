@@ -25,7 +25,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return typeof value === "object";
     }
 
-    function flatten(a: any|any[]): any[] {
+    function flatten(a: any | any[]): any[] {
         if (!isArray(a)) {
             if (a == null || a === false || a === true)
                 return [];
@@ -265,7 +265,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return cfg;
     }
 
-    function setRef(ref: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
+    function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
         if (ref == null) return;
         if (typeof ref === "function") {
             (<(node: IBobrilCacheNode) => void>ref)(value);
@@ -1245,6 +1245,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (insertBefore != null) insertBefore = insertBefore.nextSibling;
             if (fullRefresh) {
                 var newChildren = r.f();
+                if (newChildren === undefined)
+                    break;
                 r.e = r.e || document.body;
                 r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
             }
@@ -1535,6 +1537,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         cloneNode: cloneNode,
         shimStyle: shimStyle,
         flatten: flatten,
-		mergeComponents: mergeComponents
+        mergeComponents: mergeComponents
     };
 })(window, document);

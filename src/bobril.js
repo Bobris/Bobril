@@ -1256,6 +1256,8 @@ b = (function (window, document) {
                 insertBefore = insertBefore.nextSibling;
             if (fullRefresh) {
                 var newChildren = r.f();
+                if (newChildren === undefined)
+                    break;
                 r.e = r.e || document.body;
                 r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
             }

@@ -1269,6 +1269,8 @@ function update(time) {
             insertBefore = insertBefore.nextSibling;
         if (fullRefresh) {
             var newChildren = r.f();
+            if (newChildren === undefined)
+                break;
             r.e = r.e || document.body;
             r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
         }
@@ -3187,7 +3189,11 @@ addEvent("drop", 5, handleDrop);
 addEvent("dragenter", 5, justPreventDefault);
 addEvent("dragleave", 5, justPreventDefault);
 exports.getDnds = function () { return dnds; };
+var waitingForPopHashChange = -1;
 function emitOnHashChange() {
+    if (waitingForPopHashChange >= 0)
+        clearTimeout(waitingForPopHashChange);
+    waitingForPopHashChange = -1;
     exports.invalidate();
     return false;
 }
@@ -3217,6 +3223,7 @@ function replace(path, inapp) {
 }
 function pop(distance) {
     myAppHistoryDeepness -= distance;
+    waitingForPopHashChange = setTimeout(emitOnHashChange, 50);
     window.history.go(-distance);
 }
 var rootRoutes;
@@ -3379,6 +3386,8 @@ function getSetterOfNodesArray(idx) {
 }
 var firstRouting = true;
 function rootNodeFactory() {
+    if (waitingForPopHashChange >= 0)
+        return undefined;
     var browserPath = window.location.hash;
     var path = browserPath.substr(1);
     if (!isAbsolute(path))
@@ -3404,10 +3413,10 @@ function rootNodeFactory() {
             currentTransition.params = out.p;
             nextIteration();
             if (currentTransition != null)
-                return null;
+                return undefined;
         }
         else
-            return null;
+            return undefined;
     }
     if (currentTransition == null) {
         activeRoutes = matches;
