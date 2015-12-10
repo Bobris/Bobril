@@ -66,6 +66,8 @@ export interface IBobrilComponent {
     onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseEnter?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseLeave?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
+    onMouseIn?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
+    onMouseOut?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseMove?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onPointerDown?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
     onPointerMove?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
@@ -2534,9 +2536,17 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
         common++;
 
-    var i = prevMousePath.length;
     var n: IBobrilCacheNode;
     var c: IBobrilComponent;
+    var i = prevMousePath.length;
+    if (i > 0) {
+        n = prevMousePath[i - 1];
+        if (n) {
+            c = n.component;
+            if (c && c.onMouseOut)
+                c.onMouseOut(n.ctx, ev);
+        }
+    }
     while (i > common) {
         i--;
         n = prevMousePath[i];
@@ -2556,6 +2566,14 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         i++;
     }
     prevMousePath = toPath;
+    if (i > 0) {
+        n = prevMousePath[i - 1];
+        if (n) {
+            c = n.component;
+            if (c && c.onMouseIn)
+                c.onMouseIn(n.ctx, ev);
+        }
+    }
     return false;
 };
 

@@ -31,6 +31,8 @@ interface IBobrilComponent {
     onMouseOver? (ctx: Object, event: IBobrilMouseEvent): boolean;
     onMouseEnter? (ctx: Object, event: IBobrilMouseEvent): void;
     onMouseLeave? (ctx: Object, event: IBobrilMouseEvent): void;
+    onMouseIn? (ctx: Object, event: IBobrilMouseEvent): void;
+    onMouseOut? (ctx: Object, event: IBobrilMouseEvent): void;
     onMouseMove? (ctx: Object, event: IBobrilMouseEvent): boolean;
     onPointerDown? (ctx: Object, event: IBobrilPointerEvent): boolean;
     onPointerMove? (ctx: Object, event: IBobrilPointerEvent): boolean;

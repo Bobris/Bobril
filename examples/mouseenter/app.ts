@@ -45,7 +45,7 @@ module MouseEnterLeaveApp {
             me.style = constructOuterStyle(ctx.backColor);
             me.children = {
                 tag: "span",
-                children: "Inner Span",
+                children: (ctx.data.trackInner ? "Tracked" : "Untracked") + " Inner Span Enter/Leave",
                 style: constructInnerStyle("#B3C9DF")
             };
 
@@ -59,6 +59,53 @@ module MouseEnterLeaveApp {
         },
 
         onMouseLeave(ctx: ITrackClickCtx): void {
+            ctx.backColor = mouseLeave;
+            b.invalidate();
+        }
+    }
+
+    var TrackInnerEvents2: IBobrilComponent = {
+        init(ctx: ITrackClickCtx, me: IBobrilNode) {
+            ctx.backColor = "#B3C9DF";
+        },
+
+        render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+            me.style = constructInnerStyle(ctx.backColor);
+        },
+
+        onMouseIn(ctx: ITrackClickCtx): void {
+            ctx.backColor = mouseEnter;
+            b.invalidate();
+        },
+
+        onMouseOut(ctx: ITrackClickCtx): void {
+            ctx.backColor = mouseLeave;
+            b.invalidate();
+        }
+    }
+
+    var TrackEvents2: IBobrilComponent = {
+        init(ctx: ITrackClickCtx, me: IBobrilNode) {
+            ctx.backColor = "#F0F0F0";
+        },
+
+        render(ctx: ITrackClickCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
+            me.tag = "div";
+            me.style = constructOuterStyle(ctx.backColor);
+            me.children = {
+                tag: "span",
+                children: "Inner Span In/Out",
+                style: constructInnerStyle("#B3C9DF"),
+                component: TrackInnerEvents2
+            };
+        },
+
+        onMouseIn(ctx: ITrackClickCtx): void {
+            ctx.backColor = mouseEnter;
+            b.invalidate();
+        },
+
+        onMouseOut(ctx: ITrackClickCtx): void {
             ctx.backColor = mouseLeave;
             b.invalidate();
         }
@@ -81,13 +128,12 @@ module MouseEnterLeaveApp {
             backgroundColor: backColor,
             border: "1px solid #6492BF",
             color: "#FFFFFF",
-            height: "100px",
-            left: "62px",
-            lineHeight: "98px",
+            height: 90,
+            left: 62,
             position: "absolute",
-            textAlign: "center",
-            top: "62px",
-            width: "100px"
+            padding: 5,
+            top: 62,
+            width: 90
         }
     }
 
@@ -95,13 +141,13 @@ module MouseEnterLeaveApp {
         return [
             {
                 tag: "div",
-                style: { height: "20px", width: "100px", backgroundColor: mouseEnter },
-                children: "Mouse enter"
+                style: { height: "20px", width: "150px", backgroundColor: mouseEnter },
+                children: "Mouse enter / in"
             },
             {
                 tag: "div",
-                style: { height: "20px", width: "100px", backgroundColor: mouseLeave },
-                children: "Mouse leave"
+                style: { height: "20px", width: "150px", backgroundColor: mouseLeave },
+                children: "Mouse leave / out"
             },
             {
                 component: TrackEvents,
@@ -114,6 +160,9 @@ module MouseEnterLeaveApp {
                 data: {
                     trackInner: true
                 }
+            },
+            {
+                component: TrackEvents2
             }
         ];
     });

@@ -42,6 +42,8 @@ export interface IBobrilComponent {
     onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseEnter?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseLeave?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
+    onMouseIn?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
+    onMouseOut?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseMove?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onPointerDown?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
     onPointerMove?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;

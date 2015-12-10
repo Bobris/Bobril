@@ -150,9 +150,9 @@ const enum Consts {
             let button = ev.button + 1;
             let type = type2Bobril(ev.pointerType);
             let buttons = ev.buttons;
-            if (button===0 && type===BobrilPointerType.Mouse && buttons) {
+            if (button === 0 && type === BobrilPointerType.Mouse && buttons) {
                 button = 1;
-                while (!(buttons&1)) { buttons=buttons>>1; button++; }
+                while (!(buttons & 1)) { buttons = buttons >> 1; button++; }
             }
             var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (b.emitEvent("!" + name, param, target, node)) {
@@ -262,9 +262,17 @@ const enum Consts {
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
             common++;
 
-        var i = prevMousePath.length;
         var n: IBobrilCacheNode;
         var c: IBobrilComponent;
+        var i = prevMousePath.length;
+        if (i > 0) {
+            n = prevMousePath[i - 1];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseOut)
+                    c.onMouseOut(n.ctx, ev);
+            }
+        }
         while (i > common) {
             i--;
             n = prevMousePath[i];
@@ -284,6 +292,14 @@ const enum Consts {
             i++;
         }
         prevMousePath = toPath;
+        if (i > 0) {
+            n = prevMousePath[i - 1];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseIn)
+                    c.onMouseIn(n.ctx, ev);
+            }
+        }
         return false;
     };
 

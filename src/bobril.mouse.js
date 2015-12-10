@@ -232,9 +232,17 @@
         var common = 0;
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
             common++;
-        var i = prevMousePath.length;
         var n;
         var c;
+        var i = prevMousePath.length;
+        if (i > 0) {
+            n = prevMousePath[i - 1];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseOut)
+                    c.onMouseOut(n.ctx, ev);
+            }
+        }
         while (i > common) {
             i--;
             n = prevMousePath[i];
@@ -254,6 +262,14 @@
             i++;
         }
         prevMousePath = toPath;
+        if (i > 0) {
+            n = prevMousePath[i - 1];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseIn)
+                    c.onMouseIn(n.ctx, ev);
+            }
+        }
         return false;
     }
     ;
