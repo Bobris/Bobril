@@ -2544,6 +2544,39 @@ addEvent5("selectstart", handleSelectStart);
 // click must have higher priority over onchange detection
 addEvent5("click", createHandler(onClickText));
 addEvent5("dblclick", createHandler("onDoubleClick"));
+var wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
+function handleMouseWheel(ev, target, node) {
+    if (hasPointerEventsNoneB(node)) {
+        var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+        target = fixed[0];
+        node = fixed[1];
+    }
+    var button = ev.button + 1;
+    var buttons = ev.buttons;
+    if (button === 0 && buttons) {
+        button = 1;
+        while (!(buttons & 1)) {
+            buttons = buttons >> 1;
+            button++;
+        }
+    }
+    var dx = 0, dy;
+    if (wheelSupport == "mousewheel") {
+        dy = -1 / 40 * ev.wheelDelta;
+        ev.wheelDeltaX && (dx = -1 / 40 * ev.wheelDeltaX);
+    }
+    else {
+        dx = ev.deltaX;
+        dy = ev.deltaY;
+    }
+    var param = { dx: dx, dy: dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+    if (invokeMouseOwner("onMouseWheel", param) || bubble(node, "onMouseWheel", param)) {
+        preventDefault(ev);
+        return true;
+    }
+    return false;
+}
+addEvent5(wheelSupport, handleMouseWheel);
 exports.pointersDownCount = function () { return Object.keys(pointersDown).length; };
 exports.firstPointerDownId = function () { return firstPointerDown; };
 exports.ignoreClick = function (x, y) {

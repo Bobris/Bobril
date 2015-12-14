@@ -45,6 +45,7 @@ export interface IBobrilComponent {
     onMouseIn?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseOut?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseMove?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onMouseWheel?(ctx: IBobrilCtx, event: IBobrilMouseWheelEvent): boolean;
     onPointerDown?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
     onPointerMove?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
     onPointerUp?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
@@ -171,6 +172,10 @@ export declare const enum BobrilPointerType {
 export interface IBobrilPointerEvent extends IBobrilMouseEvent {
     id: number;
     type: BobrilPointerType;
+}
+export interface IBobrilMouseWheelEvent extends IBobrilMouseEvent {
+    dx: number;
+    dy: number;
 }
 export declare function isMouseOwner(ctx: any): boolean;
 export declare function isMouseOwnerEvent(): boolean;

@@ -457,6 +457,36 @@ const enum Consts {
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
 
+    let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
+    function handleMouseWheel(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            target = fixed[0];
+            node = fixed[1];
+        }
+        let button = ev.button + 1;
+        let buttons = ev.buttons;
+        if (button === 0 && buttons) {
+            button = 1;
+            while (!(buttons & 1)) { buttons = buttons >> 1; button++; }
+        }
+        let dx = 0, dy: number;
+        if (wheelSupport == "mousewheel") {
+            dy = - 1 / 40 * ev.wheelDelta;
+            ev.wheelDeltaX && (dx = - 1 / 40 * ev.wheelDeltaX);
+        } else {
+            dx = ev.deltaX;
+            dy = ev.deltaY;
+        }
+        var param: IBobrilMouseWheelEvent = { dx, dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        if (invokeMouseOwner("onMouseWheel", param) || b.bubble(node, "onMouseWheel", param)) {
+            preventDefault(ev);
+            return true;
+        }
+        return false;
+    }
+    addEvent5(wheelSupport, handleMouseWheel);
+
     b.pointersDownCount = () => Object.keys(pointersDown).length;
     b.firstPointerDownId = () => firstPointerDown;
     b.ignoreClick = (x: number, y: number) => {
