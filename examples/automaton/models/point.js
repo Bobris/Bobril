@@ -23,7 +23,7 @@ var Automata;
                 return this.x + ',' + this.y;
             };
             return Point;
-        })();
+        }());
         Models.Point = Point;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));

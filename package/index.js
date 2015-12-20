@@ -1,4 +1,5 @@
 // Bobril.Core
+"use strict";
 if (typeof DEBUG === "undefined")
     DEBUG = true;
 function assert(shoudBeTrue, messageIfFalse) {

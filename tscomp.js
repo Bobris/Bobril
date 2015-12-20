@@ -97,7 +97,7 @@ function createCompilerHost(currentDirectory) {
 			return false;
 		},
         readFile: function(fileName) {
-			return getFileFromCache(filename).content;
+			return getFileFromCache(fileName).content;
 		}	
 	};
 }
@@ -124,11 +124,11 @@ function typeScriptCompile(tsconfig, rebuild) {
 	var curDir = ts.sys.getCurrentDirectory();
 	if (!path.isAbsolute(tsconfig)) tsconfig = path.join(curDir, tsconfig);
 	curDir = path.dirname(tsconfig);
-	var tsconfigjson = ts.readConfigFile(tsconfig)['config'];
+	var tsconfigjson = ts.readConfigFile(tsconfig,function(fn) { return ts.sys.readFile(fn, 'utf-8') })['config'];
 	tsconfigjson["compilerOptions"]["moduleResolution"]="node";
 	tsconfigjson["compilerOptions"]["target"]="es5";
 	tsconfigjson["compilerOptions"]["module"]="commonjs";
-	var tscmd = ts.parseConfigFile(tsconfigjson, null, curDir);
+	var tscmd = ts.parseJsonConfigFileContent(tsconfigjson, null, curDir);
 	if (tscmd.errors.length) {
 		reportDiagnostics(tscmd.errors);
 		return 1;

@@ -37,7 +37,7 @@ var TestComponent = (function () {
         this.actions += "d:" + me.data.name + ";";
     };
     return TestComponent;
-})();
+}());
 describe("livecycle", function () {
     it("createNodeCallsInitAndPostInit", function () {
         var c = new TestComponent();

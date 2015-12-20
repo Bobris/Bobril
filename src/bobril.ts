@@ -378,7 +378,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
             return c;
         } else if (inSvg || tag === "svg") {
-            el = <HTMLElement>document.createElementNS("http://www.w3.org/2000/svg", tag);
+            el = <any>document.createElementNS("http://www.w3.org/2000/svg", tag);
             inSvg = true;
         } else if (!el) {
             el = createElement(tag);

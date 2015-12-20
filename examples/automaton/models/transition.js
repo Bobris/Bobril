@@ -68,7 +68,7 @@ var Automata;
                 }
             };
             return Transition;
-        })();
+        }());
         Models.Transition = Transition;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));

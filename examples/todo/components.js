@@ -362,6 +362,6 @@ var TodoApp;
             return false;
         };
         return KeyDownUpHandler;
-    })();
+    }());
     TodoApp.KeyDownUpHandler = KeyDownUpHandler;
 })(TodoApp || (TodoApp = {}));

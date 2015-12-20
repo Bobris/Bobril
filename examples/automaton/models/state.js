@@ -12,7 +12,7 @@ var Automata;
                 this.point.setCoords(x, y);
             };
             return State;
-        })();
+        }());
         Models.State = State;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));

@@ -13,7 +13,7 @@ var TodoApp;
             this.name = name;
         };
         return Task;
-    })();
+    }());
     TodoApp.Task = Task;
     var Tasks = (function () {
         function Tasks() {
@@ -126,6 +126,6 @@ var TodoApp;
             }
         };
         return Tasks;
-    })();
+    }());
     TodoApp.Tasks = Tasks;
 })(TodoApp || (TodoApp = {}));
