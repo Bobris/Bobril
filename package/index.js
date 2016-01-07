@@ -614,8 +614,11 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
+                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                    if (isArray(c.children))
+                        selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
                     return c;
+                }
             ctx.data = n.data || {};
             c.component = component;
             if (component.render) {
@@ -4278,8 +4281,11 @@ function styledDiv(children) {
 exports.styledDiv = styledDiv;
 function createVirtualComponent(component) {
     return function (data, children) {
-        if (children !== undefined)
+        if (children !== undefined) {
+            if (data == null)
+                data = {};
             data.children = children;
+        }
         return { data: data, component: component };
     };
 }
@@ -4296,14 +4302,17 @@ function createComponent(component) {
         component.render = function (ctx, me) { me.tag = 'div'; };
     }
     return function (data, children) {
-        if (children !== undefined)
+        if (children !== undefined) {
+            if (data == null)
+                data = {};
             data.children = children;
+        }
         return { data: data, component: component };
     };
 }
 exports.createComponent = createComponent;
 function createDerivedComponent(original, after) {
-    var originalComponent = original({}).component;
+    var originalComponent = original().component;
     var merged = mergeComponents(originalComponent, after);
     return createVirtualComponent(merged);
 }

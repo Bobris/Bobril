@@ -136,7 +136,7 @@ export interface IBobrilCtx {
 }
 
 export interface IBobrilScroll {
-    node: IBobrilCacheNode;    
+    node: IBobrilCacheNode;
 }
 
 declare var DEBUG: boolean;
@@ -742,8 +742,11 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
+                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                    if (isArray(c.children))
+                        selectedUpdate(<IBobrilCacheNode[]>c.children, <Element>c.element || createInto, c.element != null ? null : createBefore);
                     return c;
+                }
             (<any>ctx).data = n.data || {};
             c.component = component;
             if (component.render) {
@@ -1694,7 +1697,7 @@ export function accDeviceBreaks(newBreaks?: number[][]): number[][] {
 
 var viewport = window.document.documentElement;
 var isAndroid = /Android/i.test(navigator.userAgent);
-var weirdPortrait:boolean;  // Some android devices provide reverted orientation
+var weirdPortrait: boolean;  // Some android devices provide reverted orientation
 
 export function getMedia(): IBobrilMedia {
     if (media == null) {
@@ -1706,7 +1709,7 @@ export function getMedia(): IBobrilMedia {
         if (isAndroid) {
             // without this keyboard change screen rotation because h or w changes
             let op = Math.abs(o) % 180 === 90;
-            if (weirdPortrait==null) {
+            if (weirdPortrait == null) {
                 weirdPortrait = op === p;
             } else {
                 p = op === weirdPortrait;
@@ -1908,8 +1911,8 @@ if (!(<any>window).Promise) {
         };
 
         Promise.prototype['catch'] = function(onRejected?: any) {
-			return this.then(undefined, onRejected);
-		};
+            return this.then(undefined, onRejected);
+        };
 
         (<any>Promise).all = function() {
             var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
@@ -1969,7 +1972,7 @@ if (!(<any>window).Promise) {
 // Bobril.StyleShim
 
 if (ieVersion() === 9) {
-    (()=>{
+    (() => {
         function addFilter(s: any, v: string) {
             if (s.zoom == null) s.zoom = "1";
             var f = s.filter;
@@ -1994,31 +1997,31 @@ if (ieVersion() === 9) {
             }
             s[oldName] = "none";
             addFilter(s, "progid:DXImageTransform.Microsoft.gradient(startColorstr='" + color1 + "',endColorstr='" + color2 + "', gradientType='" + dir + "')");
-        }); 
+        });
     })();
 } else {
-    (()=>{
+    (() => {
         var teststyle = document.createElement("div").style;
         teststyle.cssText = "background:-webkit-linear-gradient(top,red,red)";
         if (teststyle.background.length > 0) {
-            (()=>{
-            var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/ig;
-            var revdirs = { top: "bottom", bottom: "top", left: "right", right: "left" };
-            function gradientWebkitter(style: any, value: any, name: string) {
-                if (startsWithGradient.test(value)) {
-                    var pos = (<string>value).indexOf("(to ");
-                    if (pos > 0) {
-                        pos += 4;
-                        var posend = (<string>value).indexOf(",", pos);
-                        var dir = (<string>value).slice(pos, posend);
-                        dir = dir.split(" ").map(v=> (<any>revdirs)[v] || v).join(" ");
-                        value = (<string>value).slice(0, pos - 3) + dir + (<string>value).slice(posend);
+            (() => {
+                var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/ig;
+                var revdirs = { top: "bottom", bottom: "top", left: "right", right: "left" };
+                function gradientWebkitter(style: any, value: any, name: string) {
+                    if (startsWithGradient.test(value)) {
+                        var pos = (<string>value).indexOf("(to ");
+                        if (pos > 0) {
+                            pos += 4;
+                            var posend = (<string>value).indexOf(",", pos);
+                            var dir = (<string>value).slice(pos, posend);
+                            dir = dir.split(" ").map(v => (<any>revdirs)[v] || v).join(" ");
+                            value = (<string>value).slice(0, pos - 3) + dir + (<string>value).slice(posend);
+                        }
+                        value = "-webkit-" + value;
                     }
-                    value = "-webkit-" + value;
-                }
-                style[name] = value;
-            };
-            setStyleShim("background", gradientWebkitter);
+                    style[name] = value;
+                };
+                setStyleShim("background", gradientWebkitter);
             })();
         }
     })();
@@ -2914,8 +2917,8 @@ const isHtml = /^(?:html)$/i;
 const isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
 // inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js
 export function isScrollable(el: Element): [boolean, boolean] {
-    var styles:any = window.getComputedStyle(el);
-    var res:[boolean, boolean] = [true, true];
+    var styles: any = window.getComputedStyle(el);
+    var res: [boolean, boolean] = [true, true];
     if (!isHtml.test(el.nodeName)) {
         res[0] = isScrollOrAuto.test(styles.overflowX);
         res[1] = isScrollOrAuto.test(styles.overflowY);
@@ -3007,12 +3010,12 @@ var systemdnd: IDndCtx = null;
 var rootId: string = null;
 var bodyCursorBackup: string;
 var userSelectBackup: string;
-var shimedStyle = { userSelect: ''};
+var shimedStyle = { userSelect: '' };
 shimStyle(shimedStyle);
 var shimedStyleKeys = Object.keys(shimedStyle);
-var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length-1]; // renamed is last
+var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 
-var DndCtx = function (pointerId: number) {
+var DndCtx = function(pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -3111,41 +3114,41 @@ function dndRootFactory(): IBobrilChildren {
 }
 
 var dndProto = DndCtx.prototype;
-dndProto.setOperation = function (operation: DndOp): void {
+dndProto.setOperation = function(operation: DndOp): void {
     this.operation = operation;
 }
 
-dndProto.setDragNodeView = function (view: (dnd: IDndCtx) => IBobrilNode): void {
+dndProto.setDragNodeView = function(view: (dnd: IDndCtx) => IBobrilNode): void {
     this.dragView = view;
 }
 
-dndProto.addData = function (type: string, data: any): boolean {
+dndProto.addData = function(type: string, data: any): boolean {
     this.data[type] = data;
     return true;
 }
 
-dndProto.listData = function (): string[] {
+dndProto.listData = function(): string[] {
     return Object.keys(this.data);
 }
 
-dndProto.hasData = function (type: string): boolean {
+dndProto.hasData = function(type: string): boolean {
     return this.data[type] !== undefined;
 }
 
-dndProto.getData = function (type: string): any {
+dndProto.getData = function(type: string): any {
     return this.data[type];
 }
 
-dndProto.setEnabledOps = function (ops: DndEnabledOps): void {
+dndProto.setEnabledOps = function(ops: DndEnabledOps): void {
     this.enabledOperations = ops;
 }
 
-dndProto.cancelDnd = function (): void {
+dndProto.cancelDnd = function(): void {
     dndmoved(null, this);
     this.destroy();
 }
 
-dndProto.destroy = function (): void {
+dndProto.destroy = function(): void {
     this.ended = true;
     if (this.started)
         broadcast("onDragEnd", this);
@@ -3259,7 +3262,7 @@ function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCac
         } else {
             dnd.cancelDnd();
         }
-		ignoreClick(ev.x, ev.y);
+        ignoreClick(ev.x, ev.y);
         return true;
     }
     dnd.destroy();
@@ -3484,14 +3487,14 @@ function justPreventDefault(ev: any, target: Node, node: IBobrilCacheNode): bool
 }
 
 function handleDndSelectStart(ev: any, target: Node, node: IBobrilCacheNode): boolean {
-    if (dnds.length===0) return false;
+    if (dnds.length === 0) return false;
     preventDefault(ev);
     return true;
 }
 
 export function anyActiveDnd(): IDndCtx {
     for (let i = 0; i < dnds.length; i++) {
-        let dnd=dnds[i];
+        let dnd = dnds[i];
         if (dnd.beforeDrag) continue;
         return dnd;
     }
@@ -4026,7 +4029,7 @@ function nextIteration(): void {
                     nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
-            }).catch((err:any) => { if (typeof console!=="undefined" && console.log) console.log(err); });
+            }).catch((err: any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
             return;
         } else if (transitionState == activeRoutes.length) {
             if (nextTransition) {
@@ -4094,7 +4097,7 @@ function nextIteration(): void {
                     nextTransition = <IRouteTransition>resp;
                 }
                 nextIteration();
-            }).catch((err:any) => { if (typeof console!=="undefined" && console.log) console.log(err); });
+            }).catch((err: any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
             return;
         }
     }
@@ -4260,10 +4263,10 @@ function beforeFrame() {
             let name = ss.name;
             let sspseudo = ss.pseudo;
             let ssstyle = ss.style;
-            if (typeof ssstyle==="function" && ssstyle.length===0) {
+            if (typeof ssstyle === "function" && ssstyle.length === 0) {
                 [ssstyle, sspseudo] = ssstyle();
             }
-            if (typeof ssstyle==="string" && sspseudo==null) {
+            if (typeof ssstyle === "string" && sspseudo == null) {
                 ss.realname = ssstyle;
                 continue;
             }
@@ -4598,14 +4601,17 @@ export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilN
     return style({ tag: 'div', children }, styles);
 }
 
-export function createVirtualComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
-    return (data: TData, children?: IBobrilChildren): IBobrilNode => {
-        if (children !== undefined) (<any>data).children = children;
+export function createVirtualComponent<TData>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
+        if (children !== undefined) {
+            if (data == null) data = <any>{};
+            (<any>data).children = children;
+        }
         return { data, component: component };
     };
 }
 
-export function createComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
+export function createComponent<TData extends Object>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
     const originalRender = component.render;
     if (originalRender) {
         component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
@@ -4615,14 +4621,17 @@ export function createComponent<TData>(component: IBobrilComponent): (data: TDat
     } else {
         component.render = (ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
     }
-    return (data: TData, children?: IBobrilChildren): IBobrilNode => {
-        if (children !== undefined) (<any>data).children = children;
+    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
+        if (children !== undefined) {
+            if (data == null) data = <any>{};
+            (<any>data).children = children;
+        }
         return { data, component: component };
     };
 }
 
-export function createDerivedComponent<TData>(original: (data: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
-    const originalComponent = original({}).component;
+export function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+    const originalComponent = original().component;
     const merged = mergeComponents(originalComponent, after);
     return createVirtualComponent<TData>(merged);
 }

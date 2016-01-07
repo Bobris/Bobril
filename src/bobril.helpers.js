@@ -14,8 +14,11 @@
     }
     function createVirtualComponent(component) {
         return function (data, children) {
-            if (children !== undefined)
+            if (children !== undefined) {
+                if (data == null)
+                    data = {};
                 data.children = children;
+            }
             return { data: data, component: component };
         };
     }
@@ -31,13 +34,16 @@
             component.render = function (ctx, me) { me.tag = 'div'; };
         }
         return function (data, children) {
-            if (children !== undefined)
+            if (children !== undefined) {
+                if (data == null)
+                    data = {};
                 data.children = children;
+            }
             return { data: data, component: component };
         };
     }
     function createDerivedComponent(original, after) {
-        var originalComponent = original({}).component;
+        var originalComponent = original().component;
         var merged = b.mergeComponents(originalComponent, after);
         return createVirtualComponent(merged);
     }

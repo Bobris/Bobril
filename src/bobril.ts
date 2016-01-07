@@ -604,8 +604,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
+                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                        if (isArray(c.children))
+                            selectedUpdate(<IBobrilCacheNode[]>c.children, <Element>c.element || createInto, c.element != null ? null : createBefore);
                         return c;
+                    }
                 (<any>ctx).data = n.data || {};
                 c.component = component;
                 if (component.render) {

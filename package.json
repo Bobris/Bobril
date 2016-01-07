@@ -4,7 +4,7 @@
   "description": "Component Oriented MVC Framework with virtual DOM",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node node_modules/karma/bin/karma start debugkarma.conf.js"
   },
   "author": "Boris Letocha",
   "license": "MIT",

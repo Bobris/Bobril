@@ -608,8 +608,11 @@ b = (function (window, document) {
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
+                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                        if (isArray(c.children))
+                            selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
                         return c;
+                    }
                 ctx.data = n.data || {};
                 c.component = component;
                 if (component.render) {
