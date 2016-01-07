@@ -1251,9 +1251,10 @@ var lastFrameDurationMs = 0;
 var renderFrameBegin = 0;
 
 var regEvents: { [name: string]: Array<(ev: any, target: Node, node: IBobrilCacheNode) => boolean> } = {};
-var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean }> } = {};
+var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean }> };
 
 export function addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void {
+    if (registryEvents == null) registryEvents = {};
     var list = registryEvents[name] || [];
     list.push({ priority: priority, callback: callback });
     registryEvents[name] = list;
@@ -1285,12 +1286,9 @@ function addListener(el: EventTarget, name: string) {
     el.addEventListener(eventName, enhanceEvent, capture);
 }
 
-var eventsCaptured = false;
-
 function initEvents() {
-    if (eventsCaptured)
+    if (registryEvents == null)
         return;
-    eventsCaptured = true;
     var eventNames = Object.keys(registryEvents);
     for (var j = 0; j < eventNames.length; j++) {
         var eventName = eventNames[j];

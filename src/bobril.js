@@ -1128,8 +1128,10 @@ b = (function (window, document) {
     var lastFrameDuration = 0;
     var renderFrameBegin = 0;
     var regEvents = {};
-    var registryEvents = {};
+    var registryEvents;
     function addEvent(name, priority, callback) {
+        if (registryEvents == null)
+            registryEvents = {};
         var list = registryEvents[name] || [];
         list.push({ priority: priority, callback: callback });
         registryEvents[name] = list;
@@ -1161,11 +1163,9 @@ b = (function (window, document) {
             el = window;
         el.addEventListener(eventName, enhanceEvent, capture);
     }
-    var eventsCaptured = false;
     function initEvents() {
-        if (eventsCaptured)
+        if (registryEvents == null)
             return;
-        eventsCaptured = true;
         var eventNames = Object.keys(registryEvents);
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
