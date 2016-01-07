@@ -165,11 +165,38 @@ describe("livecycle", function () {
             setTimeout(function () {
                 c.actions = "";
                 b.invalidate(c.contexts["2"]);
-                setTimeout(function () {
+                b.setAfterFrame(function () {
                     expect(c.actions).toBe("sc:2;ru:2;U:2;pu:2;");
+                    b.setAfterFrame(function () { });
                     done();
-                }, 100);
+                });
             }, 0);
+            return vdom;
+        });
+    });
+    it("InvalidateUpdatesOnlyChildEventhoughParentIsNotChanged", function (done) {
+        var c = new TestComponent();
+        var state = 0;
+        var vdom = [{
+                tag: "div", component: c, data: { name: "1", change: false }, children: {
+                    component: c, data: { name: "2", change: true, setme: { tag: "div" } }
+                }
+            }];
+        var once = true;
+        b.init(function () {
+            if (once) {
+                once = false;
+                setTimeout(function () {
+                    c.actions = "";
+                    b.invalidate(c.contexts["2"]);
+                    b.invalidate();
+                    b.setAfterFrame(function () {
+                        b.setAfterFrame(function () { });
+                        expect(c.actions).toBe("sc:1;sc:2;ru:2;U:2;pu:2;");
+                        done();
+                    });
+                }, 0);
+            }
             return vdom;
         });
     });

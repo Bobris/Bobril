@@ -180,11 +180,40 @@ describe("livecycle", () => {
             setTimeout(() => {
                 c.actions = "";
                 b.invalidate(c.contexts["2"]);
-                setTimeout(() => {
+                b.setAfterFrame(() => {
                     expect(c.actions).toBe("sc:2;ru:2;U:2;pu:2;");
+                    b.setAfterFrame(() => { });
                     done();
-                }, 100);
+                });
             }, 0);
+            return vdom;
+        });
+    });
+
+    it("InvalidateUpdatesOnlyChildEventhoughParentIsNotChanged", (done) => {
+        var c = new TestComponent();
+        var state = 0;
+        var vdom = [{
+            tag: "div", component: c, data: { name: "1", change: false }, children:
+            {
+                component: c, data: { name: "2", change: true, setme: { tag: "div" } }
+            }
+        }];
+        let once = true;
+        b.init(() => {
+            if (once) {
+                once = false;
+                setTimeout(() => {
+                    c.actions = "";
+                    b.invalidate(c.contexts["2"]);
+                    b.invalidate();
+                    b.setAfterFrame(() => {
+                        b.setAfterFrame(() => { });
+                        expect(c.actions).toBe("sc:1;sc:2;ru:2;U:2;pu:2;");
+                        done();
+                    });
+                }, 0);
+            }
             return vdom;
         });
     });
