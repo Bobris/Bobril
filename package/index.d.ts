@@ -62,7 +62,7 @@ export interface IBobrilComponent {
     canActivate?(transition: IRouteTransition): IRouteCanResult;
     canDeactivate?(ctx: IBobrilCtx, transition: IRouteTransition): IRouteCanResult;
 }
-export interface IBobrilNode {
+export interface IBobrilNodeCommon {
     tag?: string;
     key?: string;
     className?: string;
@@ -74,7 +74,17 @@ export interface IBobrilNode {
     component?: IBobrilComponent;
     data?: any;
 }
-export interface IBobrilCacheNode extends IBobrilNode {
+export interface IBobrilNodeWithTag extends IBobrilNodeCommon {
+    tag: string;
+}
+export interface IBobrilNodeWithComponent extends IBobrilNodeCommon {
+    component: IBobrilComponent;
+}
+export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
+    children: IBobrilChildren;
+}
+export declare type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;
+export interface IBobrilCacheNode extends IBobrilNodeCommon {
     element?: Node | Node[];
     parent?: IBobrilCacheNode;
     ctx?: IBobrilCtx;

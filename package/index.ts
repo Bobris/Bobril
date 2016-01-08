@@ -102,8 +102,8 @@ export interface IBobrilComponent {
     canDeactivate?(ctx: IBobrilCtx, transition: IRouteTransition): IRouteCanResult;
 }
 
-// new node should atleast have tag or component member
-export interface IBobrilNode {
+// new node should atleast have tag or component or children member
+export interface IBobrilNodeCommon {
     tag?: string;
     key?: string;
     className?: string;
@@ -119,7 +119,21 @@ export interface IBobrilNode {
     data?: any;
 }
 
-export interface IBobrilCacheNode extends IBobrilNode {
+export interface IBobrilNodeWithTag extends IBobrilNodeCommon {
+    tag: string;
+}
+
+export interface IBobrilNodeWithComponent extends IBobrilNodeCommon {
+    component: IBobrilComponent;
+}
+
+export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
+    children: IBobrilChildren;
+}
+
+export type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;   
+
+export interface IBobrilCacheNode extends IBobrilNodeCommon {
     element?: Node | Node[];
     parent?: IBobrilCacheNode;
     // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode
