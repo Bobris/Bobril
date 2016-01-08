@@ -48,6 +48,6 @@ var GameOfLifeApp;
             ];
         };
         return GameController;
-    })();
+    }());
     GameOfLifeApp.GameController = GameController;
 })(GameOfLifeApp || (GameOfLifeApp = {}));

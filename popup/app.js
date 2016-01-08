@@ -1,10 +1,3 @@
-/// <reference path="../../src/bobril.d.ts"/>
-/// <reference path="../../src/bobril.onchange.d.ts"/>
-/// <reference path="../../src/bobril.mouse.d.ts"/>
-/// <reference path="../../src/bobril.onkey.d.ts"/>
-/// <reference path="../../src/bobril.focus.d.ts"/>
-/// <reference path="../../src/bobril.media.d.ts"/>
-/// <reference path="../../src/bobril.promise.d.ts"/>
 var PopupApp;
 (function (PopupApp) {
     function d(style, content) {

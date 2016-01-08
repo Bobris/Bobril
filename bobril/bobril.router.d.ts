@@ -10,7 +10,8 @@
     urlOfRoute?(name: string, params?: Params): string;
     createRedirectReplace?(name: string, params?: Params): IRouteTransition;
     createRedirectPush?(name: string, params?: Params): IRouteTransition;
-    createBackTransition?(): IRouteTransition;
+    // default back distance is 1 of course, pass 2 if you want to do back twice.
+    createBackTransition?(distance?: number): IRouteTransition;
     runTransition?(transition: IRouteTransition): void;
     link?(node: IBobrilNode, name: string, params?: Params): IBobrilNode;
     getRoutes?(): IRoute[];
@@ -37,6 +38,7 @@ interface IRouteTransition {
     type: RouteTransitionType;
     name: string;
     params: Params;
+    distance?: number;
 }
 
 declare type IRouteCanResult = boolean | Promise<boolean> | IRouteTransition | Promise<IRouteTransition>;

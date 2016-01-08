@@ -20,6 +20,7 @@ declare type IBobrilRoots = { [id: string]: IBobrilRoot };
 
 interface IBobrilStatic {
     // main function to specify factory function to update html body or element passed as parameter
+    // when factory function return undefined current repaint is ended and vdom is not touched
     // this basicaly overwrite root with id "0"
     init(factory: () => IBobrilChildren, element?: HTMLElement): void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
@@ -137,15 +138,15 @@ interface IBobrilComponent {
     shouldStopBroadcast?(ctx: IBobrilCtx, name: string, param: Object): boolean;
 }
 
-// new node should atleast have tag or component member
-interface IBobrilNode {
+// new node should atleast have tag or component or children member
+export interface IBobrilNodeCommon {
     tag?: string;
     key?: string;
     className?: string;
     style?: any;
     attrs?: IBobrilAttributes;
     children?: IBobrilChildren;
-    ref?: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void);
+    ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
     // set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway
     cfg?: any;
     component?: IBobrilComponent;
@@ -154,7 +155,21 @@ interface IBobrilNode {
     data?: any;
 }
 
-interface IBobrilCacheNode extends IBobrilNode {
+export interface IBobrilNodeWithTag extends IBobrilNodeCommon {
+    tag: string;
+}
+
+export interface IBobrilNodeWithComponent extends IBobrilNodeCommon {
+    component: IBobrilComponent;
+}
+
+export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
+    children: IBobrilChildren;
+}
+
+export type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;   
+
+interface IBobrilCacheNode extends IBobrilNodeCommon {
     element?: Node|Node[];
     parent?: IBobrilCacheNode;
     // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode

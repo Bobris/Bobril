@@ -38,7 +38,7 @@ var HanoiApp;
             };
         };
         return Plate;
-    })();
+    }());
     var Stand = (function () {
         function Stand(x, height) {
             this.x = x;
@@ -66,14 +66,14 @@ var HanoiApp;
             };
         };
         return Stand;
-    })();
+    }());
     var Move = (function () {
         function Move(from, to) {
             this.from = from;
             this.to = to;
         }
         return Move;
-    })();
+    }());
     var Tower = (function () {
         function Tower(width, height, platesCount, platesColor) {
             this.width = width;
@@ -125,7 +125,7 @@ var HanoiApp;
             };
         };
         return Tower;
-    })();
+    }());
     var TowerControler = (function () {
         function TowerControler() {
         }
@@ -154,7 +154,7 @@ var HanoiApp;
                 ];
         };
         return TowerControler;
-    })();
+    }());
     b.init(function () {
         b.invalidate();
         return [

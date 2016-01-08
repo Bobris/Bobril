@@ -22,6 +22,11 @@ interface IBobrilPointerEvent extends IBobrilMouseEvent {
     type: BobrilPointerType;
 }
 
+interface IBobrilMouseWheelEvent extends IBobrilMouseEvent {
+    dx: number;
+    dy: number;
+}
+
 interface IBobrilComponent {
     // called on input element after click
     onClick? (ctx: Object, event: IBobrilMouseEvent): boolean
@@ -31,7 +36,10 @@ interface IBobrilComponent {
     onMouseOver? (ctx: Object, event: IBobrilMouseEvent): boolean;
     onMouseEnter? (ctx: Object, event: IBobrilMouseEvent): void;
     onMouseLeave? (ctx: Object, event: IBobrilMouseEvent): void;
+    onMouseIn? (ctx: Object, event: IBobrilMouseEvent): void;
+    onMouseOut? (ctx: Object, event: IBobrilMouseEvent): void;
     onMouseMove? (ctx: Object, event: IBobrilMouseEvent): boolean;
+    onMouseWheel? (ctx: Object, event: IBobrilMouseWheelEvent): boolean;
     onPointerDown? (ctx: Object, event: IBobrilPointerEvent): boolean;
     onPointerMove? (ctx: Object, event: IBobrilPointerEvent): boolean;
     onPointerUp? (ctx: Object, event: IBobrilPointerEvent): boolean;

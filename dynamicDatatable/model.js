@@ -11,7 +11,7 @@ var DynamicDataTableApp;
             this.sortOrder = sortOrder;
         }
         return SortModel;
-    })();
+    }());
     DynamicDataTableApp.SortModel = SortModel;
     var DynamicDatatableModel = (function () {
         function DynamicDatatableModel(tableHeader, tableContent, numberOfRecordsPerPage) {
@@ -54,7 +54,7 @@ var DynamicDataTableApp;
             });
         };
         return DynamicDatatableModel;
-    })();
+    }());
     DynamicDataTableApp.DynamicDatatableModel = DynamicDatatableModel;
     var PaginatorModel = (function () {
         function PaginatorModel(numberOfRecordsPerPage, countOfRecords) {
@@ -93,5 +93,5 @@ var DynamicDataTableApp;
             return Math.ceil(this.countOfRecords / this.numberOfRecordsPerPage);
         };
         return PaginatorModel;
-    })();
+    }());
 })(DynamicDataTableApp || (DynamicDataTableApp = {}));

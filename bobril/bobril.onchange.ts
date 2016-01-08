@@ -49,7 +49,7 @@
         var isMultiSelect = isSelect && (<HTMLSelectElement>el).multiple;
         var emitDiff = false;
         if (isMultiSelect) {
-            var options = (<HTMLSelectElement>el).options;
+            var options = <HTMLSelectElement>(<HTMLSelectElement>el).options;
             var currentMulti = selectedArray(options);
             if (!stringArrayEqual(newValue, currentMulti)) {
                 if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue) || !stringArrayEqual(newValue, (<any>node.ctx)[bvalue])) {
@@ -125,7 +125,7 @@
         var isSelect = tagName === "SELECT";
         var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
         if (isMultiSelect) {
-            var vs = selectedArray((<HTMLSelectElement>target).options);
+            var vs = selectedArray(<HTMLSelectElement>(<HTMLSelectElement>target).options);
             if (!stringArrayEqual((<any>ctx)[bvalue], vs)) {
                 (<any>ctx)[bvalue] = vs;
                 c.onChange(ctx, vs);

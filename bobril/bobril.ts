@@ -25,7 +25,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return typeof value === "object";
     }
 
-    function flatten(a: any|any[]): any[] {
+    function flatten(a: any | any[]): any[] {
         if (!isArray(a)) {
             if (a == null || a === false || a === true)
                 return [];
@@ -265,7 +265,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return cfg;
     }
 
-    function setRef(ref: [IBobrilCtx, string]| ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
+    function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
         if (ref == null) return;
         if (typeof ref === "function") {
             (<(node: IBobrilCacheNode) => void>ref)(value);
@@ -378,7 +378,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
             return c;
         } else if (inSvg || tag === "svg") {
-            el = <HTMLElement>document.createElementNS("http://www.w3.org/2000/svg", tag);
+            el = <any>document.createElementNS("http://www.w3.org/2000/svg", tag);
             inSvg = true;
         } else if (!el) {
             el = createElement(tag);
@@ -604,8 +604,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
+                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                        if (isArray(c.children))
+                            selectedUpdate(<IBobrilCacheNode[]>c.children, <Element>c.element || createInto, c.element != null ? null : createBefore);
                         return c;
+                    }
                 (<any>ctx).data = n.data || {};
                 c.component = component;
                 if (component.render) {
@@ -1113,9 +1116,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var renderFrameBegin = 0;
 
     var regEvents: { [name: string]: Array<(ev: any, target: Node, node: IBobrilCacheNode) => boolean> } = {};
-    var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean }> } = {};
+    var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean }> };
 
     function addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void {
+        if (registryEvents == null) registryEvents = {};
         var list = registryEvents[name] || [];
         list.push({ priority: priority, callback: callback });
         registryEvents[name] = list;
@@ -1147,12 +1151,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         el.addEventListener(eventName, enhanceEvent, capture);
     }
 
-    var eventsCaptured = false;
-
     function initEvents() {
-        if (eventsCaptured)
+        if (registryEvents == null)
             return;
-        eventsCaptured = true;
         var eventNames = Object.keys(registryEvents);
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
@@ -1245,6 +1246,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (insertBefore != null) insertBefore = insertBefore.nextSibling;
             if (fullRefresh) {
                 var newChildren = r.f();
+                if (newChildren === undefined)
+                    break;
                 r.e = r.e || document.body;
                 r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
             }
@@ -1535,6 +1538,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         cloneNode: cloneNode,
         shimStyle: shimStyle,
         flatten: flatten,
-		mergeComponents: mergeComponents
+        mergeComponents: mergeComponents
     };
 })(window, document);

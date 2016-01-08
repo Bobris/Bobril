@@ -29,7 +29,7 @@ var MouseEnterLeaveApp;
             me.style = constructOuterStyle(ctx.backColor);
             me.children = {
                 tag: "span",
-                children: "Inner Span",
+                children: (ctx.data.trackInner ? "Tracked" : "Untracked") + " Inner Span Enter/Leave",
                 style: constructInnerStyle("#B3C9DF")
             };
             if (ctx.data.trackInner)
@@ -40,6 +40,45 @@ var MouseEnterLeaveApp;
             b.invalidate();
         },
         onMouseLeave: function (ctx) {
+            ctx.backColor = mouseLeave;
+            b.invalidate();
+        }
+    };
+    var TrackInnerEvents2 = {
+        init: function (ctx, me) {
+            ctx.backColor = "#B3C9DF";
+        },
+        render: function (ctx, me, oldMe) {
+            me.style = constructInnerStyle(ctx.backColor);
+        },
+        onMouseIn: function (ctx) {
+            ctx.backColor = mouseEnter;
+            b.invalidate();
+        },
+        onMouseOut: function (ctx) {
+            ctx.backColor = mouseLeave;
+            b.invalidate();
+        }
+    };
+    var TrackEvents2 = {
+        init: function (ctx, me) {
+            ctx.backColor = "#F0F0F0";
+        },
+        render: function (ctx, me, oldMe) {
+            me.tag = "div";
+            me.style = constructOuterStyle(ctx.backColor);
+            me.children = {
+                tag: "span",
+                children: "Inner Span In/Out",
+                style: constructInnerStyle("#B3C9DF"),
+                component: TrackInnerEvents2
+            };
+        },
+        onMouseIn: function (ctx) {
+            ctx.backColor = mouseEnter;
+            b.invalidate();
+        },
+        onMouseOut: function (ctx) {
             ctx.backColor = mouseLeave;
             b.invalidate();
         }
@@ -60,26 +99,25 @@ var MouseEnterLeaveApp;
             backgroundColor: backColor,
             border: "1px solid #6492BF",
             color: "#FFFFFF",
-            height: "100px",
-            left: "62px",
-            lineHeight: "98px",
+            height: 90,
+            left: 62,
             position: "absolute",
-            textAlign: "center",
-            top: "62px",
-            width: "100px"
+            padding: 5,
+            top: 62,
+            width: 90
         };
     }
     b.init(function () {
         return [
             {
                 tag: "div",
-                style: { height: "20px", width: "100px", backgroundColor: mouseEnter },
-                children: "Mouse enter"
+                style: { height: "20px", width: "150px", backgroundColor: mouseEnter },
+                children: "Mouse enter / in"
             },
             {
                 tag: "div",
-                style: { height: "20px", width: "100px", backgroundColor: mouseLeave },
-                children: "Mouse leave"
+                style: { height: "20px", width: "150px", backgroundColor: mouseLeave },
+                children: "Mouse leave / out"
             },
             {
                 component: TrackEvents,
@@ -92,6 +130,9 @@ var MouseEnterLeaveApp;
                 data: {
                     trackInner: true
                 }
+            },
+            {
+                component: TrackEvents2
             }
         ];
     });

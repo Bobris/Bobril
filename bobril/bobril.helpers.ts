@@ -12,14 +12,17 @@ function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
     return b.style({ tag: 'div', children }, styles);
 }
 
-function createVirtualComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
-    return (data: TData, children?: IBobrilChildren): IBobrilNode => {
-        if (children !== undefined) (<any>data).children = children;
+function createVirtualComponent<TData>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
+        if (children !== undefined) {
+            if (data == null) data = <any>{};
+            (<any>data).children = children;
+        }
         return { data, component: component };
     };
 }
 
-function createComponent<TData>(component: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
+function createComponent<TData>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
     const originalRender = component.render;
     if (originalRender) {
         component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
@@ -29,14 +32,17 @@ function createComponent<TData>(component: IBobrilComponent): (data: TData, chil
     } else {
         component.render = (ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
     }
-    return (data: TData, children?: IBobrilChildren): IBobrilNode => {
-        if (children !== undefined) (<any>data).children = children;
+    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
+        if (children !== undefined) {
+            if (data == null) data = <any>{};
+            (<any>data).children = children;
+        }
         return { data, component: component };
     };
 }
 
-function createDerivedComponent<TData>(original: (data: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data: TData, children?: IBobrilChildren) => IBobrilNode {
-    const originalComponent = original({}).component;
+function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+    const originalComponent = original().component;
     const merged = b.mergeComponents(originalComponent, after);
     return createVirtualComponent<TData>(merged);
 }

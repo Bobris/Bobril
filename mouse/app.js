@@ -64,6 +64,10 @@ var MouseApp;
         onSwipeRight: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return ctx.data.stopPropagation;
+        },
+        onMouseWheel: function (ctx, event) {
+            ctx.data.onAdd(new EventWheelWrapper(event, "Wheel"));
+            return ctx.data.stopPropagation;
         }
     };
     function e(ev) {
@@ -81,7 +85,17 @@ var MouseApp;
             return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
         };
         return EventWrapper;
-    })();
+    }());
+    var EventWheelWrapper = (function () {
+        function EventWheelWrapper(ev, eventName) {
+            this.ev = ev;
+            this.eventName = eventName;
+        }
+        EventWheelWrapper.prototype.toString = function () {
+            return this.eventName + " dx: " + this.ev.dx + " dy: " + this.ev.dy + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
+        };
+        return EventWheelWrapper;
+    }());
     var TextEvent = (function () {
         function TextEvent(eventName) {
             this.eventName = eventName;
@@ -90,7 +104,7 @@ var MouseApp;
             return this.eventName;
         };
         return TextEvent;
-    })();
+    }());
     var events = [];
     function addEvent(ev) {
         events.push(ev);

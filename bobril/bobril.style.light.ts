@@ -1,27 +1,6 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.style.d.ts"/>
 
-interface ISprite {
-    styleid: IBobrilStyleDef;
-    url: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
-}
-
-interface IDynamicSprite {
-    styleid: IBobrilStyleDef;
-    color: () => string;
-    url: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
-    lastColor: string;
-    lastUrl: string;
-}
-
 interface IInternalStyle {
     name: string;
     realname: string;
@@ -33,9 +12,7 @@ interface IInternalStyle {
 
 ((b: IBobrilStatic, document: Document) => {
     var allStyles: { [id: string]: IInternalStyle } = Object.create(null);
-    var allSprites: { [key: string]: ISprite } = Object.create(null);
     var allNameHints: { [name: string]: boolean } = Object.create(null);
-    var dynamicSprites: IDynamicSprite[] = [];
     var imageCache: { [url: string]: HTMLImageElement } = Object.create(null);
     var rebuildStyles = false;
     var htmlStyle: HTMLStyleElement = null;
@@ -109,20 +86,6 @@ interface IInternalStyle {
 
     function beforeFrame() {
         if (rebuildStyles) {
-            for (let i = 0; i < dynamicSprites.length; i++) {
-                let dynSprite = dynamicSprites[i];
-                let image = imageCache[dynSprite.url];
-                if (image == null) continue;
-                let colorStr = dynSprite.color();
-                if (colorStr !== dynSprite.lastColor) {
-                    dynSprite.lastColor = colorStr;
-                    if (dynSprite.width == null) dynSprite.width = image.width;
-                    if (dynSprite.height == null) dynSprite.height = image.height;
-                    let lastUrl = recolorAndClip(image, colorStr, dynSprite.width, dynSprite.height, dynSprite.left, dynSprite.top);
-                    var stDef = allStyles[dynSprite.styleid];
-                    stDef.style = { backgroundImage: `url(${lastUrl})`, width: dynSprite.width, height: dynSprite.height };
-                }
-            }
             var stylestr = "";
             for (var key in allStyles) {
                 var ss = allStyles[key];
@@ -271,140 +234,12 @@ interface IInternalStyle {
         b.invalidate();
     }
 
-    function updateSprite(spDef: ISprite): void {
-        var stDef = allStyles[spDef.styleid];
-        var style: any = { backgroundImage: `url(${spDef.url})`, width: spDef.width, height: spDef.height };
-        if (spDef.left || spDef.top) {
-            style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
-        }
-        stDef.style = style;
-        invalidateStyles();
-    }
-
     function emptyStyleDef(url: string): IBobrilStyleDef {
         return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
-    }
-
-    const rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
-
-    function recolorAndClip(image: HTMLImageElement, colorStr: string, width: number, height: number, left: number, top: number): string {
-        var canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        var ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
-        ctx.drawImage(image, -left, -top);
-        var imgdata = ctx.getImageData(0, 0, width, height);
-        var imgd = imgdata.data;
-        let rgba = rgbaRegex.exec(colorStr);
-        let cred: number, cgreen: number, cblue: number, calpha: number;
-        if (rgba) {
-            cred = parseInt(rgba[1], 10);
-            cgreen = parseInt(rgba[2], 10);
-            cblue = parseInt(rgba[3], 10);
-            calpha = Math.round(parseFloat(rgba[4]) * 255);
-        } else {
-            cred = parseInt(colorStr.substr(1, 2), 16);
-            cgreen = parseInt(colorStr.substr(3, 2), 16);
-            cblue = parseInt(colorStr.substr(5, 2), 16);
-            calpha = parseInt(colorStr.substr(7, 2), 16) || 0xff;
-        }
-        if (calpha === 0xff) {
-            for (var i = 0; i < imgd.length; i += 4) {
-                // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
-                let red = imgd[i];
-                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
-                    imgd[i] = cred; imgd[i + 1] = cgreen; imgd[i + 2] = cblue;
-                }
-            }
-        } else {
-            for (var i = 0; i < imgd.length; i += 4) {
-                let red = imgd[i];
-                let alpha = imgd[i + 3];
-                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || alpha < 0xff && red > 0x70)) {
-                    if (alpha === 0xff) {
-                        imgd[i] = cred; imgd[i + 1] = cgreen; imgd[i + 2] = cblue; imgd[i + 3] = calpha;
-                    } else {
-                        alpha = alpha * (1.0 / 255);
-                        imgd[i] = Math.round(cred * alpha);
-                        imgd[i + 1] = Math.round(cgreen * alpha);
-                        imgd[i + 2] = Math.round(cblue * alpha);
-                        imgd[i + 3] = Math.round(calpha * alpha);
-                    }
-                }
-            }
-        }
-        ctx.putImageData(imgdata, 0, 0);
-        return canvas.toDataURL();
-    }
-
-    function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
-        left = left || 0;
-        top = top || 0;
-        if (typeof color === 'function') {
-            var styleid = emptyStyleDef(url);
-            dynamicSprites.push({
-                styleid, color, url, width, height, left, top, lastColor: '', lastUrl: ''
-            });
-            if (imageCache[url] === undefined) {
-                imageCache[url] = null;
-                var image = new Image();
-                image.addEventListener("load", () => {
-                    imageCache[url] = image;
-                    invalidateStyles();
-                });
-                image.src = url;
-            }
-            return styleid;
-        }
-        var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
-        var spDef = allSprites[key];
-        if (spDef) return spDef.styleid;
-        var styleid = emptyStyleDef(url);
-        spDef = { styleid, url, width, height, left, top };
-
-        if (width == null || height == null || color != null) {
-            var image = new Image();
-            image.addEventListener("load", () => {
-                if (spDef.width == null) spDef.width = image.width;
-                if (spDef.height == null) spDef.height = image.height;
-                if (color != null) {
-                    spDef.url = recolorAndClip(image, <string>color, spDef.width, spDef.height, spDef.left, spDef.top);
-                    spDef.left = 0;
-                    spDef.top = 0;
-                }
-                updateSprite(spDef);
-            });
-            image.src = url;
-        } else {
-            updateSprite(spDef);
-        }
-        allSprites[key] = spDef;
-        return styleid;
-    }
-
-    var bundlePath = 'bundle.png';
-
-    function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
-        let url = bundlePath;
-        var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
-        var spDef = allSprites[key];
-        if (spDef) return spDef.styleid;
-        var styleid = styleDef({ width: 0, height: 0 });
-        spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
-        updateSprite(spDef);
-        allSprites[key] = spDef;
-        return styleid;
-    }
-
-    function spritebc(color: () => string, width: number, height: number, left: number, top: number): IBobrilStyleDef {
-        return sprite(bundlePath, color, width, height, left, top);
     }
 
     b.style = style;
     b.styleDef = styleDef;
     b.styleDefEx = styleDefEx;
-    b.sprite = sprite;
-    b.spriteb = spriteb;
-    b.spritebc = spritebc;
     b.invalidateStyles = invalidateStyles;
 })(b, document);

@@ -20,7 +20,11 @@ interface OutFindMatch {
 }
 
 ((b: IBobrilStatic, window: Window) => {
+    var waitingForPopHashChange = -1;
+
     function emitOnHashChange() {
+        if (waitingForPopHashChange >= 0) clearTimeout(waitingForPopHashChange);
+        waitingForPopHashChange = -1;
         b.invalidate();
         return false;
     }
@@ -51,9 +55,10 @@ interface OutFindMatch {
         }
     }
 
-    function pop() {
-        myAppHistoryDeepness--;
-        window.history.back();
+    function pop(distance: number) {
+        myAppHistoryDeepness -= distance;
+        waitingForPopHashChange = setTimeout(emitOnHashChange, 50);
+        window.history.go(-distance);
     }
 
     var rootRoutes: IRoute[];
@@ -236,6 +241,8 @@ interface OutFindMatch {
 
     var firstRouting = true;
     function rootNodeFactory(): IBobrilNode {
+        if (waitingForPopHashChange >= 0)
+            return undefined;
         let browserPath = window.location.hash;
         let path = browserPath.substr(1);
         if (!isAbsolute(path)) path = "/" + path;
@@ -259,9 +266,9 @@ interface OutFindMatch {
                 currentTransition.params = out.p;
                 nextIteration();
                 if (currentTransition != null)
-                    return null;
+                    return undefined;
             } else
-                return null;
+                return undefined;
         }
         if (currentTransition == null) {
             activeRoutes = matches;
@@ -421,12 +428,14 @@ interface OutFindMatch {
         }
     }
 
-    function createBackTransition(): IRouteTransition {
+    function createBackTransition(distance?: number): IRouteTransition {
+        distance = distance || 1;
         return {
-            inApp: myAppHistoryDeepness > 0,
+            inApp: myAppHistoryDeepness >= distance,
             type: RouteTransitionType.Pop,
             name: null,
-            params: {}
+            params: {},
+            distance
         }
     }
 
@@ -443,7 +452,7 @@ interface OutFindMatch {
                 replace(urlOfRoute(transition.name, transition.params), transition.inApp);
                 break;
             case RouteTransitionType.Pop:
-                pop();
+                pop(transition.distance);
                 break;
         }
         b.invalidate();
@@ -469,7 +478,7 @@ interface OutFindMatch {
                         nextTransition = <IRouteTransition>resp;
                     }
                     nextIteration();
-                }).catch((err:any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
+                }).catch((err: any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
                 return;
             } else if (transitionState == activeRoutes.length) {
                 if (nextTransition) {
@@ -537,7 +546,7 @@ interface OutFindMatch {
                         nextTransition = <IRouteTransition>resp;
                     }
                     nextIteration();
-                }).catch((err:any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
+                }).catch((err: any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
                 return;
             }
         }

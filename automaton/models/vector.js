@@ -17,7 +17,7 @@ var Automata;
                 return this.x + ',' + this.y;
             };
             return Vector;
-        })();
+        }());
         Models.Vector = Vector;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));

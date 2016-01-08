@@ -78,7 +78,7 @@ var GameApp;
             };
         };
         return Player;
-    })();
+    }());
     var ShootParticle = (function () {
         function ShootParticle(x, y, vx, vy) {
             this.x = x + vx;
@@ -105,7 +105,7 @@ var GameApp;
             };
         };
         return ShootParticle;
-    })();
+    }());
     var player = new Player();
     var shootParticles = [];
     var GameControler = {

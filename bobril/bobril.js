@@ -608,8 +608,11 @@ b = (function (window, document) {
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange)
+                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                        if (isArray(c.children))
+                            selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
                         return c;
+                    }
                 ctx.data = n.data || {};
                 c.component = component;
                 if (component.render) {
@@ -1128,8 +1131,10 @@ b = (function (window, document) {
     var lastFrameDuration = 0;
     var renderFrameBegin = 0;
     var regEvents = {};
-    var registryEvents = {};
+    var registryEvents;
     function addEvent(name, priority, callback) {
+        if (registryEvents == null)
+            registryEvents = {};
         var list = registryEvents[name] || [];
         list.push({ priority: priority, callback: callback });
         registryEvents[name] = list;
@@ -1161,11 +1166,9 @@ b = (function (window, document) {
             el = window;
         el.addEventListener(eventName, enhanceEvent, capture);
     }
-    var eventsCaptured = false;
     function initEvents() {
-        if (eventsCaptured)
+        if (registryEvents == null)
             return;
-        eventsCaptured = true;
         var eventNames = Object.keys(registryEvents);
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
@@ -1256,6 +1259,8 @@ b = (function (window, document) {
                 insertBefore = insertBefore.nextSibling;
             if (fullRefresh) {
                 var newChildren = r.f();
+                if (newChildren === undefined)
+                    break;
                 r.e = r.e || document.body;
                 r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
             }

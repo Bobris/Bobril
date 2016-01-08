@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 /// <reference path="../../src/bobril.promise.d.ts"/>
 /// <reference path="../../src/bobril.onchange.d.ts"/>
@@ -110,6 +111,10 @@ module RouterApp {
         }
     }
 
+    function onClick(content: IBobrilChildren, action:()=>void): IBobrilNode {
+        return { children: content, component: { onClick() { action(); return true; }}};
+    }
+    
     var App: IBobrilComponent = {
         render(ctx: any, me: IBobrilNode) {
             me.tag = "div";
@@ -119,7 +124,9 @@ module RouterApp {
                     h("li", b.link(h("a", "Page 1 - needs to be logged in"), "page1")),
                     h("li", b.link(h("a", "Page 2 - needs to be logged in"), "page2")),
                     h("li", b.link(h("a", "Login"), "login")),
-                    h("li", b.link(h("a", "Bobril - external link"), "https://github.com/bobris/bobril"))),
+                    h("li", b.link(h("a", "Bobril - external link"), "https://github.com/bobris/bobril")),
+                    h("li", onClick(h("u", "Single Back"), ()=>b.runTransition(b.createBackTransition()))),
+                    h("li", onClick(h("u", "Double Back"), ()=>b.runTransition(b.createBackTransition(2))))),
                 me.data.activeRouteHandler()
             ];
         }

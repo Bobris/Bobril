@@ -1,5 +1,3 @@
-/// <reference path="button.ts" />
-/// <reference path="spinner.ts" />
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     var GameControlPanel = (function () {
@@ -47,6 +45,6 @@ var GameOfLifeApp;
             ];
         };
         return GameControlPanel;
-    })();
+    }());
     GameOfLifeApp.GameControlPanel = GameControlPanel;
 })(GameOfLifeApp || (GameOfLifeApp = {}));

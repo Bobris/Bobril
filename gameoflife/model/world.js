@@ -62,6 +62,6 @@ var GameOfLifeApp;
             this.lifeCells = nextGenerationLifeCell;
         };
         return World;
-    })();
+    }());
     GameOfLifeApp.World = World;
 })(GameOfLifeApp || (GameOfLifeApp = {}));

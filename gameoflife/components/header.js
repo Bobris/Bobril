@@ -1,4 +1,3 @@
-/// <reference path="../../../src/bobril.d.ts"/>
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     (function (HeaderLevel) {
@@ -25,6 +24,6 @@ var GameOfLifeApp;
             me.children = ctx.data.content;
         };
         return Header;
-    })();
+    }());
     GameOfLifeApp.Header = Header;
 })(GameOfLifeApp || (GameOfLifeApp = {}));

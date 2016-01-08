@@ -73,7 +73,7 @@ var Automata;
                 state.point = toPoint;
             };
             return Automaton;
-        })();
+        }());
         Models.Automaton = Automaton;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));

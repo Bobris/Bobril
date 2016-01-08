@@ -83,6 +83,11 @@ module MouseApp {
         onSwipeRight(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return ctx.data.stopPropagation;
+        },
+        
+        onMouseWheel(ctx: ITrackClickCtx, event: IBobrilMouseWheelEvent): boolean {
+            ctx.data.onAdd(new EventWheelWrapper(event, "Wheel"));
+            return ctx.data.stopPropagation;
         }
     }
 
@@ -102,6 +107,14 @@ module MouseApp {
 
         toString(): string {
             return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
+        }
+    }
+
+    class EventWheelWrapper implements IEvent {
+        constructor(private ev: IBobrilMouseWheelEvent, private eventName: string) { }
+
+        toString(): string {
+            return this.eventName +" dx: "+this.ev.dx+" dy: "+this.ev.dy+ " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
         }
     }
 
