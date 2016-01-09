@@ -21,7 +21,7 @@ module GameOfLifeApp{
 
         static render(ctx: ICanvasCtx, me: IBobrilNode){
             me.tag = 'div';
-            me.children = [
+            me.children = <any>[
                 {
                     component : b.vg,
                     data : { width : ctx.data.width, height : ctx.data.height },

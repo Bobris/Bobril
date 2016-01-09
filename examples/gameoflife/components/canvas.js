@@ -1,3 +1,6 @@
+/// <reference path="../../../src/bobril.d.ts"/>
+/// <reference path="../../../src/bobril.vg.d.ts" />
+/// <reference path="../model/cell.ts" />
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     var Canvas = (function () {

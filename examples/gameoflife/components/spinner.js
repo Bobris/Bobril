@@ -1,3 +1,4 @@
+/// <reference path="button.ts" />
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     var Spinner = (function () {

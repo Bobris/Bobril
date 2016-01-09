@@ -58,7 +58,7 @@ var OnKeyApp;
         return [
             {
                 tag: "div",
-                attrs: { tabindex: "0" },
+                attrs: { tabindex: 0 },
                 data: { onAdd: addEvent },
                 component: TrackKeys,
                 children: [

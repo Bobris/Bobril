@@ -1,3 +1,4 @@
+/// <reference path="../../../src/bobril.d.ts"/>
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     (function (HeaderLevel) {

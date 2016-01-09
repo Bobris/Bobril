@@ -105,6 +105,7 @@ module RouterApp {
                             }
                             b.runTransition(tr);
                         }, 3000);
+                        return true;
                     }
                 }
             }];

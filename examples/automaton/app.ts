@@ -16,7 +16,7 @@ module Automata {
     automaton.addTransition(automaton.states[4], automaton.states[1], new Models.Point(330, 100));
     automaton.addTransition(automaton.states[4], automaton.states[4], new Models.Point(510, 150));
 
-    b.init((): IBobrilNode => [
+    b.init((): IBobrilChildren => [
         {
             tag: 'h2',
             children: 'Automaton (Bobril Demo)'

@@ -32,10 +32,10 @@ module FreeDrawApp {
             function drawPointer(p: IPointer) {
                 var time = now - p.timedown;
                 if (time < 500) {
-                    ch.push({ key: p.gid + "a", data: { path: ["circle", p.startx, p.starty, 50 - time * 0.09], stroke: "#ff8080", strokeWidth: 3 } });
+                    ch.push(<any>{ key: p.gid + "a", data: { path: ["circle", p.startx, p.starty, 50 - time * 0.09], stroke: "#ff8080", strokeWidth: 3 } });
                     b.invalidate();
                 }
-                ch.push({ key: p.gid, data: { path: p.path, stroke: "#202060", strokeWidth: 5 } });
+                ch.push(<any>{ key: p.gid, data: { path: p.path, stroke: "#202060", strokeWidth: 5 } });
             }
             for (var i = 0; i < ctx.retained.length; i++) {
                 drawPointer(ctx.retained[i]);

@@ -1,4 +1,5 @@
 ﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.vg.d.ts"/>
@@ -165,7 +166,7 @@ module TeamRolePoll {
     }
 
     function createBar(value: number): IBobrilNode {
-        return {
+        return <any>{
             component: b.vg,
             data: { width: "150px", height: "30px" },
             children: [

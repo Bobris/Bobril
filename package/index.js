@@ -1,5 +1,6 @@
 // Bobril.Core
 "use strict";
+;
 if (typeof DEBUG === "undefined")
     DEBUG = true;
 function assert(shoudBeTrue, messageIfFalse) {
@@ -622,7 +623,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             ctx.data = n.data || {};
             c.component = component;
             if (component.render) {
-                n = assign({}, n); // need to clone me because it should not be modified for next updates
+                n = exports.assign({}, n); // need to clone me because it should not be modified for next updates
                 component.render(ctx, n, c);
             }
             c.cfg = n.cfg;
@@ -821,29 +822,34 @@ function updateChildren(element, newChildren, cachedChildren, parentNode, create
             element.removeChild(element.firstChild);
         cachedChildren = [];
     }
-    newChildren = newChildren.slice(0);
-    var newLength = newChildren.length;
-    var cachedLength = cachedChildren.length;
+    var newCh = newChildren;
+    newCh = newCh.slice(0);
+    var newLength = newCh.length;
     var newIndex;
     for (newIndex = 0; newIndex < newLength;) {
-        var item = newChildren[newIndex];
+        var item = newCh[newIndex];
         if (isArray(item)) {
-            newChildren.splice.apply(newChildren, [newIndex, 1].concat(item));
-            newLength = newChildren.length;
+            newCh.splice.apply(newCh, [newIndex, 1].concat(item));
+            newLength = newCh.length;
             continue;
         }
         item = normalizeNode(item);
         if (item == null) {
-            newChildren.splice(newIndex, 1);
+            newCh.splice(newIndex, 1);
             newLength--;
             continue;
         }
-        newChildren[newIndex] = item;
+        newCh[newIndex] = item;
         newIndex++;
     }
-    var newEnd = newLength;
+    return updateChildrenCore(element, newCh, cachedChildren, parentNode, createBefore, deepness);
+}
+exports.updateChildren = updateChildren;
+function updateChildrenCore(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
+    var newEnd = newChildren.length;
+    var cachedLength = cachedChildren.length;
     var cachedEnd = cachedLength;
-    newIndex = 0;
+    var newIndex = 0;
     var cachedIndex = 0;
     while (newIndex < newEnd && cachedIndex < cachedEnd) {
         if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
@@ -1108,7 +1114,6 @@ function updateChildren(element, newChildren, cachedChildren, parentNode, create
     }
     return cachedChildren;
 }
-exports.updateChildren = updateChildren;
 var hasNativeRaf = false;
 var nativeRaf = window.requestAnimationFrame;
 if (nativeRaf) {
@@ -1412,9 +1417,6 @@ function broadcastEventToNode(node, name, param) {
                 return res;
         }
     }
-    else {
-        return broadcastEventToNode(ch, name, param);
-    }
 }
 function broadcast(name, param) {
     var k = Object.keys(roots);
@@ -1484,28 +1486,30 @@ function postEnhance(node, methods) {
     return node;
 }
 exports.postEnhance = postEnhance;
-function assign(target) {
-    var sources = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        sources[_i - 1] = arguments[_i];
-    }
-    if (target == null)
-        target = {};
-    var totalArgs = arguments.length;
-    for (var i_3 = 1; i_3 < totalArgs; i_3++) {
-        var source = arguments[i_3];
-        if (source == null)
-            continue;
-        var keys = Object.keys(source);
-        var totalKeys = keys.length;
-        for (var j_1 = 0; j_1 < totalKeys; j_1++) {
-            var key = keys[j_1];
-            target[key] = source[key];
+if (Object.assign == null) {
+    Object.assign = function assign(target) {
+        var sources = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            sources[_i - 1] = arguments[_i];
         }
-    }
-    return target;
+        if (target == null)
+            throw new TypeError('Target in assign cannot be undefined or null');
+        var totalArgs = arguments.length;
+        for (var i_3 = 1; i_3 < totalArgs; i_3++) {
+            var source = arguments[i_3];
+            if (source == null)
+                continue;
+            var keys = Object.keys(source);
+            var totalKeys = keys.length;
+            for (var j_1 = 0; j_1 < totalKeys; j_1++) {
+                var key = keys[j_1];
+                target[key] = source[key];
+            }
+        }
+        return target;
+    };
 }
-exports.assign = assign;
+exports.assign = Object.assign;
 function preventDefault(event) {
     var pd = event.preventDefault;
     if (pd)
@@ -1528,12 +1532,12 @@ function cloneNodeArray(a) {
     return a;
 }
 function cloneNode(node) {
-    var r = assign({}, node);
+    var r = exports.assign({}, node);
     if (r.attrs) {
-        r.attrs = assign({}, r.attrs);
+        r.attrs = exports.assign({}, r.attrs);
     }
     if (isObject(r.style)) {
-        r.style = assign({}, r.style);
+        r.style = exports.assign({}, r.style);
     }
     var ch = r.children;
     if (ch) {
@@ -2691,7 +2695,7 @@ function focus(node) {
         }
         return false;
     }
-    return focus(children);
+    return false;
 }
 exports.focus = focus;
 // Bobril.Scroll
@@ -3490,7 +3494,7 @@ function rootNodeFactory() {
         (function (fninner, r, routeParams, i) {
             fn = function (otherdata) {
                 var data = r.data || {};
-                assign(data, otherdata);
+                exports.assign(data, otherdata);
                 data.activeRouteHandler = fninner;
                 data.routeParams = routeParams;
                 var handler = r.handler;
@@ -3999,7 +4003,7 @@ function style(node) {
                 className = className + " " + sd.realname;
             var inls = sd.inlStyle;
             if (inls) {
-                inlineStyle = assign(inlineStyle, inls);
+                inlineStyle = exports.assign(inlineStyle, inls);
             }
         }
         else if (isArray(s)) {
@@ -4014,7 +4018,7 @@ function style(node) {
             continue;
         }
         else {
-            inlineStyle = assign(inlineStyle, s);
+            inlineStyle = exports.assign(inlineStyle, s);
         }
         i++;
     }

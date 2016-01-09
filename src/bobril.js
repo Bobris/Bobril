@@ -598,7 +598,7 @@ b = (function (window, document) {
         var bigChange = false;
         var ctx = c.ctx;
         if (component && ctx != null) {
-            if (ctx[ctxInvalidated] === frame) {
+            if (ctx[ctxInvalidated] === frameCounter) {
                 deepness = Math.max(deepness, ctx[ctxDeepness]);
             }
             if (component.id !== c.component.id) {
@@ -714,11 +714,11 @@ b = (function (window, document) {
             parEl = createInto;
         else
             parEl = parEl.parentNode;
-        var r = createNode(n, c.parent, parEl, findFirstNode(c));
+        var r = createNode(n, c.parent, parEl, getDomNode(c));
         removeNode(c);
         return r;
     }
-    function findFirstNode(c) {
+    function getDomNode(c) {
         var el = c.element;
         if (el != null) {
             if (isArray(el))
@@ -729,7 +729,7 @@ b = (function (window, document) {
         if (!isArray(ch))
             return null;
         for (var i = 0; i < ch.length; i++) {
-            el = findFirstNode(ch[i]);
+            el = getDomNode(ch[i]);
             if (el)
                 return el;
         }
@@ -740,7 +740,7 @@ b = (function (window, document) {
             var ai = a[i];
             if (ai == null)
                 continue;
-            var n = findFirstNode(ai);
+            var n = getDomNode(ai);
             if (n != null)
                 return n;
         }
@@ -785,7 +785,7 @@ b = (function (window, document) {
     function reorderInUpdateChildren(cachedChildren, cachedIndex, cachedLength, createBefore, element) {
         var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
         var cur = cachedChildren[cachedIndex];
-        var what = findFirstNode(cur);
+        var what = getDomNode(cur);
         if (what != null && what !== before) {
             reorderInUpdateChildrenRec(cur, element, before);
         }
@@ -793,7 +793,7 @@ b = (function (window, document) {
     function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness) {
         var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
         var cur = cachedChildren[cachedIndex];
-        var what = findFirstNode(cur);
+        var what = getDomNode(cur);
         if (what != null && what !== before) {
             reorderInUpdateChildrenRec(cur, element, before);
         }
@@ -812,29 +812,33 @@ b = (function (window, document) {
                 element.removeChild(element.firstChild);
             cachedChildren = [];
         }
-        newChildren = newChildren.slice(0);
-        var newLength = newChildren.length;
-        var cachedLength = cachedChildren.length;
+        var newCh = newChildren;
+        newCh = newCh.slice(0);
+        var newLength = newCh.length;
         var newIndex;
         for (newIndex = 0; newIndex < newLength;) {
-            var item = newChildren[newIndex];
+            var item = newCh[newIndex];
             if (isArray(item)) {
-                newChildren.splice.apply(newChildren, [newIndex, 1].concat(item));
-                newLength = newChildren.length;
+                newCh.splice.apply(newCh, [newIndex, 1].concat(item));
+                newLength = newCh.length;
                 continue;
             }
             item = normalizeNode(item);
             if (item == null) {
-                newChildren.splice(newIndex, 1);
+                newCh.splice(newIndex, 1);
                 newLength--;
                 continue;
             }
-            newChildren[newIndex] = item;
+            newCh[newIndex] = item;
             newIndex++;
         }
-        var newEnd = newLength;
+        return updateChildrenCore(element, newCh, cachedChildren, parentNode, createBefore, deepness);
+    }
+    function updateChildrenCore(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
+        var newEnd = newChildren.length;
+        var cachedLength = cachedChildren.length;
         var cachedEnd = cachedLength;
-        newIndex = 0;
+        var newIndex = 0;
         var cachedIndex = 0;
         while (newIndex < newEnd && cachedIndex < cachedEnd) {
             if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
@@ -1127,7 +1131,7 @@ b = (function (window, document) {
     var fullRecreateRequested = true;
     var scheduled = false;
     var uptime = 0;
-    var frame = 0;
+    var frameCounter = 0;
     var lastFrameDuration = 0;
     var renderFrameBegin = 0;
     var regEvents = {};
@@ -1187,7 +1191,7 @@ b = (function (window, document) {
         for (var i = 0; i < len; i++) {
             var node = cache[i];
             var ctx = node.ctx;
-            if (ctx != null && ctx[ctxInvalidated] === frame) {
+            if (ctx != null && ctx[ctxInvalidated] === frameCounter) {
                 var cloned = { data: ctx.data, component: node.component };
                 cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness]);
             }
@@ -1237,7 +1241,7 @@ b = (function (window, document) {
     function update(time) {
         renderFrameBegin = now();
         initEvents();
-        frame++;
+        frameCounter++;
         ignoringShouldChange = nextIgnoreShouldChange;
         nextIgnoreShouldChange = false;
         uptime = time;
@@ -1285,8 +1289,8 @@ b = (function (window, document) {
         if (ctx != null) {
             if (deepness == undefined)
                 deepness = 1e6;
-            if (ctx[ctxInvalidated] !== frame + 1) {
-                ctx[ctxInvalidated] = frame + 1;
+            if (ctx[ctxInvalidated] !== frameCounter + 1) {
+                ctx[ctxInvalidated] = frameCounter + 1;
                 ctx[ctxDeepness] = deepness;
             }
             else {
@@ -1385,9 +1389,7 @@ b = (function (window, document) {
                     return res;
             }
         }
-        else {
-            return broadcastEventToNode(ch, name, param);
-        }
+        return null;
     }
     function broadcastEvent(name, param) {
         var k = Object.keys(roots);
@@ -1532,7 +1534,7 @@ b = (function (window, document) {
         uptime: function () { return uptime; },
         lastFrameDuration: function () { return lastFrameDuration; },
         now: now,
-        frame: function () { return frame; },
+        frame: function () { return frameCounter; },
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
@@ -1540,7 +1542,7 @@ b = (function (window, document) {
         invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
         vdomPath: vdomPath,
-        getDomNode: findFirstNode,
+        getDomNode: getDomNode,
         deref: getCacheNode,
         addEvent: addEvent,
         emitEvent: emitEvent,

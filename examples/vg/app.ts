@@ -23,7 +23,7 @@ module VgApp {
         var sline = ["M", 500 + deltax, 100 + deltay, "L", posx, posy, "C",
             posx, posy + 20, posx - 10, posy + 10, posx - 10, posy + 30, "L", posx + 10, posy + 30, "C",
             posx + 10, posy + 10, posx, posy + 20, posx, posy];
-        return [
+        return <any>[
             h("h1", "Vector Graphic Bobril sample"),
             {
                 component: b.vg,

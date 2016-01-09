@@ -1,5 +1,7 @@
 export declare type IBobrilChild = boolean | string | IBobrilNode;
-export declare type IBobrilChildren = IBobrilChild | IBobrilChild[];
+export declare type IBobrilChildren = IBobrilChild | IBobrilChildArray;
+export interface IBobrilChildArray extends Array<IBobrilChildren> {
+}
 export declare type IBobrilCacheChildren = string | IBobrilCacheNode[];
 export declare type IBobrilShimStyleMapping = {
     [name: string]: (style: any, value: any, oldName: string) => void;
@@ -84,10 +86,20 @@ export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
     children: IBobrilChildren;
 }
 export declare type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;
-export interface IBobrilCacheNode extends IBobrilNodeCommon {
-    element?: Node | Node[];
-    parent?: IBobrilCacheNode;
-    ctx?: IBobrilCtx;
+export interface IBobrilCacheNode {
+    tag: string;
+    key: string;
+    className: string;
+    style: any;
+    attrs: IBobrilAttributes;
+    children: IBobrilCacheChildren;
+    ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
+    cfg: any;
+    component: IBobrilComponent;
+    data: any;
+    element: Node | Node[];
+    parent: IBobrilCacheNode;
+    ctx: IBobrilCtx;
 }
 export interface IBobrilCtx {
     data?: any;
@@ -103,13 +115,13 @@ export interface IBobrilScroll {
 export declare function flatten(a: any | any[]): any[];
 export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void;
 export declare function ieVersion(): any;
-export declare function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: Element, createBefore: Node): IBobrilCacheNode;
+export declare function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode;
 export declare function vdomPath(n: Node): IBobrilCacheNode[];
 export declare function deref(n: Node): IBobrilCacheNode;
 export declare function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node, deepness: number): IBobrilCacheNode;
 export declare function getDomNode(c: IBobrilCacheNode): Node;
 export declare function callPostCallbacks(): void;
-export declare function updateChildren(element: Element, newChildren: any, cachedChildren: any, parentNode: IBobrilNode, createBefore: Node, deepness: number): IBobrilCacheNode[];
+export declare function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode, createBefore: Node, deepness: number): IBobrilCacheNode[];
 export declare const now: () => number;
 export declare function addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void;
 export declare function emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean;
@@ -127,7 +139,12 @@ export declare function bubble(node: IBobrilCacheNode, name: string, param: any)
 export declare function broadcast(name: string, param: any): IBobrilCtx;
 export declare function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
 export declare function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
-export declare function assign(target: Object, ...sources: Object[]): Object;
+export declare let assign: {
+    <T, U>(target: T, source: U): T & U;
+    <T, U, V>(target: T, source1: U, source2: V): T & U & V;
+    <T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
+    (target: any, ...sources: any[]): any;
+};
 export declare function preventDefault(event: Event): void;
 export declare function cloneNode(node: IBobrilNode): IBobrilNode;
 export declare function setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;

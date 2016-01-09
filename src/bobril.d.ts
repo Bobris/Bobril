@@ -1,8 +1,10 @@
 declare var b: IBobrilStatic;
 
-declare type IBobrilChild = boolean|string|IBobrilNode;
-declare type IBobrilChildren = IBobrilChild|IBobrilChild[];
-declare type IBobrilCacheChildren = string|IBobrilCacheNode[];
+declare type IBobrilChild = boolean | string | IBobrilNode;
+declare type IBobrilChildren = IBobrilChild | IBobrilChildArray;
+interface IBobrilChildArray extends Array<IBobrilChildren> {
+}
+declare type IBobrilCacheChildren = string | IBobrilCacheNode[]; 
 declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
 interface IBobrilRoot {
@@ -21,7 +23,7 @@ declare type IBobrilRoots = { [id: string]: IBobrilRoot };
 interface IBobrilStatic {
     // main function to specify factory function to update html body or element passed as parameter
     // when factory function return undefined current repaint is ended and vdom is not touched
-    // this basicaly overwrite root with id "0"
+    // this basically overwrite root with id "0"
     init(factory: () => IBobrilChildren, element?: HTMLElement): void;
     // recreate whole vdom in next frame, next invalidates before next frame are noop
     // you can pass just some ctx of some component and only that instance and its children to deepness nesting will be rerendered
@@ -30,7 +32,7 @@ interface IBobrilStatic {
     // if deepness is not specified infinite deepness is implied
     invalidate(ctx?: Object, deepness?: number): void;
     // next render it will ignore results of shouldChange and always render.
-    // Usefull if you have some rarely changed thing like UI language which you don't want to compare in every shouldChange
+    // Useful if you have some rarely changed thing like UI language which you don't want to compare in every shouldChange
     // it will call invalidate() for you, so you don't need to.
     ignoreShouldChange(): void;
     // When you need to know if next frame/update is already scheduled
@@ -61,8 +63,8 @@ interface IBobrilStatic {
     // Set callback before init passes callback to continue with initialization
     setBeforeInit(callback: (cb: () => void) => void): void;
     // shim for [].isArray
-    isArray(a: any): boolean;
-    // time in miliseconds from start only use from roots factory function
+    isArray(a: any): a is any[];
+    // time in milliseconds from start only use from roots factory function
     uptime(): number;
     // shim for Date.now()
     now(): number;
@@ -100,7 +102,7 @@ interface IBobrilStatic {
     shimStyle(style: any): void;
     // flatten array or wrap by array as needed - removing null, undefined, false, true - always returning new array
     flatten(a:any|any[]): any[];
-	// merged component mothods calls methods from c1 and if they don't return trueish value it continue with calling c2 method
+	// merged component methods calls methods from c1 and if they don't return trueish value it continue with calling c2 method
     mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent;
 }
 
@@ -139,7 +141,7 @@ interface IBobrilComponent {
 }
 
 // new node should atleast have tag or component or children member
-export interface IBobrilNodeCommon {
+interface IBobrilNodeCommon {
     tag?: string;
     key?: string;
     className?: string;
@@ -155,25 +157,34 @@ export interface IBobrilNodeCommon {
     data?: any;
 }
 
-export interface IBobrilNodeWithTag extends IBobrilNodeCommon {
+interface IBobrilNodeWithTag extends IBobrilNodeCommon {
     tag: string;
 }
 
-export interface IBobrilNodeWithComponent extends IBobrilNodeCommon {
+interface IBobrilNodeWithComponent extends IBobrilNodeCommon {
     component: IBobrilComponent;
 }
 
-export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
+interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
     children: IBobrilChildren;
 }
 
-export type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;   
+type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;   
 
-interface IBobrilCacheNode extends IBobrilNodeCommon {
-    element?: Node|Node[];
-    parent?: IBobrilCacheNode;
-    // context which is something like state in React expect data member which is like props in React and me member which points back to IBobrilCacheNode
-    ctx?: IBobrilCtx;
+interface IBobrilCacheNode {
+    tag: string;
+    key: string;
+    className: string;
+    style: any;
+    attrs: IBobrilAttributes;
+    children: IBobrilCacheChildren;
+    ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
+    cfg: any;
+    component: IBobrilComponent;
+    data: any;
+    element: Node | Node[];
+    parent: IBobrilCacheNode;
+    ctx: IBobrilCtx;
 }
 
 interface IBobrilCtx {

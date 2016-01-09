@@ -1,4 +1,5 @@
 ﻿/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 
 module AlmHours {
     function h(tag: string, ...args: any[]) {
@@ -216,7 +217,7 @@ module AlmHours {
     }
 
     var OnChangeComponent: IBobrilComponent = {
-        onChange(dtx: IOnChangeCtx, v: any): void {
+        onChange(dtx: IOnChangeCtx, v: any) {
             dtx.data.onChange(v);
         }
     }

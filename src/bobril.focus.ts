@@ -3,7 +3,7 @@
 
 ((b: IBobrilStatic) => {
     var currentActiveElement: Element = null;
-    var currentFocusedNode: IBobrilNode = null;
+    var currentFocusedNode: IBobrilCacheNode = null;
     var nodestack: IBobrilCacheNode[] = [];
 
     function emitOnFocusChange(): void {
@@ -95,13 +95,13 @@
         }
         var children = node.children;
         if (b.isArray(children)) {
-            for (var i = 0; i < (<IBobrilChild[]>children).length; i++) {
-                if (focus((<IBobrilChild[]>children)[i]))
+            for (var i = 0; i < children.length; i++) {
+                if (focus(children[i]))
                     return true;
             }
             return false;
         }
-        return focus(children);
+        return false;
     }
 
     b.focused = focused;

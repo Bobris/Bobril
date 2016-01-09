@@ -84,28 +84,28 @@ var DynamicDataTableApp;
             ];
         }
     };
+    function createHeader(ctx) {
+        var headerNodes = [];
+        for (var i = 0; i < ctx.data.header.length; i++) {
+            var headerColumn = {
+                component: TableHeaderColumn,
+                data: {
+                    columnName: ctx.data.header[i],
+                    columnIndex: i,
+                    sort: function (columnIndex, sortOrder) {
+                        ctx.data.sort(columnIndex, sortOrder);
+                    },
+                    sortInformation: ctx.data.sortInformation
+                }
+            };
+            headerNodes.push(headerColumn);
+        }
+        return headerNodes;
+    }
     var TableHeader = {
         render: function (ctx, me) {
             me.tag = "thead";
-            me.children = h("tr", this.createHeader(ctx));
-        },
-        createHeader: function (ctx) {
-            var headerNodes = [];
-            for (var i = 0; i < ctx.data.header.length; i++) {
-                var headerColumn = {
-                    component: TableHeaderColumn,
-                    data: {
-                        columnName: ctx.data.header[i],
-                        columnIndex: i,
-                        sort: function (columnIndex, sortOrder) {
-                            ctx.data.sort(columnIndex, sortOrder);
-                        },
-                        sortInformation: ctx.data.sortInformation
-                    }
-                };
-                headerNodes.push(headerColumn);
-            }
-            return headerNodes;
+            me.children = h("tr", createHeader(ctx));
         }
     };
     var TableHeaderColumn = {
@@ -139,96 +139,96 @@ var DynamicDataTableApp;
             return true;
         }
     };
+    function getRecordsForCurrentPage(tableRows, currentPage, numberOfRecordsPerPage) {
+        var displayedRecords = [];
+        var startIndex = ((currentPage - 1) * numberOfRecordsPerPage);
+        var stopIndex = startIndex + numberOfRecordsPerPage;
+        for (var i = startIndex; i < stopIndex; i++) {
+            if (i >= tableRows.length) {
+                break;
+            }
+            displayedRecords.push(tableRows[i]);
+        }
+        return displayedRecords;
+    }
+    function generateTableRows(tableRows) {
+        var bodyNodes = [];
+        for (var i = 0; i < tableRows.length; i++) {
+            var rowNode = h("tr", generateTableRow(tableRows[i]));
+            bodyNodes.push(rowNode);
+        }
+        return bodyNodes;
+    }
+    function generateTableRow(tableRow) {
+        var columnNodes = [];
+        for (var i = 0; i < tableRow.length; i++) {
+            columnNodes.push(h("td", tableRow[i]));
+        }
+        return columnNodes;
+    }
     var TableBody = {
         render: function (ctx, me, oldMe) {
             me.tag = "tbody";
-            var currentlyDisplayedRecords = this.getRecordsForCurrentPage(ctx.data.tableBody, ctx.data.currentPage, ctx.data.numberOfRecordsPerPage);
-            me.children = this.generateTableRows(currentlyDisplayedRecords);
-        },
-        getRecordsForCurrentPage: function (tableRows, currentPage, numberOfRecordsPerPage) {
-            var displayedRecords = [];
-            var startIndex = ((currentPage - 1) * numberOfRecordsPerPage);
-            var stopIndex = startIndex + numberOfRecordsPerPage;
-            for (var i = startIndex; i < stopIndex; i++) {
-                if (i >= tableRows.length) {
-                    break;
-                }
-                displayedRecords.push(tableRows[i]);
-            }
-            return displayedRecords;
-        },
-        generateTableRows: function (tableRows) {
-            var bodyNodes = [];
-            for (var i = 0; i < tableRows.length; i++) {
-                var rowNode = h("tr", this.generateTableRow(tableRows[i]));
-                bodyNodes.push(rowNode);
-            }
-            return bodyNodes;
-        },
-        generateTableRow: function (tableRow) {
-            var columnNodes = [];
-            for (var i = 0; i < tableRow.length; i++) {
-                columnNodes.push(h("td", tableRow[i]));
-            }
-            return columnNodes;
+            var currentlyDisplayedRecords = getRecordsForCurrentPage(ctx.data.tableBody, ctx.data.currentPage, ctx.data.numberOfRecordsPerPage);
+            me.children = generateTableRows(currentlyDisplayedRecords);
         }
     };
+    function generatePages(ctx) {
+        var pages = [];
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler: function () {
+                    ctx.data.goToFirstPage();
+                },
+                text: "<<"
+            }
+        });
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler: function () {
+                    ctx.data.goToPreviousPage();
+                },
+                text: "<"
+            }
+        });
+        var countOfPages = Math.ceil(ctx.data.countOfRecords / ctx.data.numberOfRecordsPerPage);
+        for (var i = 1; i <= countOfPages; i++) {
+            pages.push({
+                component: PaginatorButton, data: {
+                    pageNumber: i,
+                    text: i.toString(),
+                    currentPage: ctx.data.currentPage,
+                    onPageClickHandler: function (pageNumber) {
+                        ctx.data.onPageChange(pageNumber);
+                    }
+                }
+            });
+        }
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler: function () {
+                    ctx.data.goToNextPage();
+                },
+                className: "btn",
+                text: ">"
+            }
+        });
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler: function () {
+                    ctx.data.goToLastPage();
+                },
+                className: "btn",
+                text: ">>"
+            }
+        });
+        return pages;
+    }
     var Paginator = {
         render: function (ctx, me, oldMe) {
             me.tag = "ul";
             me.className = "pagination";
-            me.children = this.generatePages(ctx);
-        },
-        generatePages: function (ctx) {
-            var pages = [];
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler: function () {
-                        ctx.data.goToFirstPage();
-                    },
-                    text: "<<"
-                }
-            });
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler: function () {
-                        ctx.data.goToPreviousPage();
-                    },
-                    text: "<"
-                }
-            });
-            var countOfPages = Math.ceil(ctx.data.countOfRecords / ctx.data.numberOfRecordsPerPage);
-            for (var i = 1; i <= countOfPages; i++) {
-                pages.push({
-                    component: PaginatorButton, data: {
-                        pageNumber: i,
-                        text: i.toString(),
-                        currentPage: ctx.data.currentPage,
-                        onPageClickHandler: function (pageNumber) {
-                            ctx.data.onPageChange(pageNumber);
-                        }
-                    }
-                });
-            }
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler: function () {
-                        ctx.data.goToNextPage();
-                    },
-                    className: "btn",
-                    text: ">"
-                }
-            });
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler: function () {
-                        ctx.data.goToLastPage();
-                    },
-                    className: "btn",
-                    text: ">>"
-                }
-            });
-            return pages;
+            me.children = generatePages(ctx);
         }
     };
     var PaginatorButton = {

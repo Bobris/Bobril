@@ -1,3 +1,5 @@
+/// <reference path="../../../src/bobril.d.ts"/>
+/// <reference path="../../../src/bobril.mouse.d.ts"/>
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
     var ButtonComponent = {

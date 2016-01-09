@@ -57,78 +57,103 @@ var TodoApp;
             me.children = "todos";
         }
     };
+    function createInputElement(ctx) {
+        return {
+            tag: "input",
+            className: "task-name",
+            attrs: {
+                placeholder: "What needs to be done?",
+                value: ctx.newTaskName
+            },
+            component: {
+                onKeyUp: function (ctx, event) {
+                    var handler = new KeyDownUpHandler();
+                    return handler.handleEcsEnter(event, function () {
+                        // cancel the task adding controls (i.e. clear the input)
+                        ctx.newTaskName = "";
+                        b.invalidate();
+                        return true;
+                    }, function () {
+                        ctx.newTaskName = ctx.newTaskName.trim();
+                        if (ctx.newTaskName) {
+                            ctx.data.addNewTask(ctx.newTaskName);
+                            b.invalidate();
+                            ctx.newTaskName = "";
+                        }
+                        return true;
+                    });
+                },
+                onChange: function (ctx, value) {
+                    ctx.newTaskName = value;
+                    return true;
+                },
+                postInitDom: function (ctx, me, element) {
+                    element.focus();
+                }
+            },
+            data: ctx.data
+        };
+    }
+    function createSetAllCheckboxElement(ctx) {
+        return {
+            tag: "input",
+            className: "set-all-tasks",
+            attrs: {
+                type: "checkbox",
+                value: ctx.data.isWholeListCompleted
+            },
+            component: {
+                onChange: function (ctx, value) {
+                    if (value) {
+                        ctx.data.markAllTasksAsCompleted();
+                    }
+                    else {
+                        ctx.data.markAllTasksAsActive();
+                    }
+                    b.invalidate();
+                }
+            },
+            data: {
+                markAllTasksAsCompleted: ctx.data.markAllTasksAsCompleted,
+                markAllTasksAsActive: ctx.data.markAllTasksAsActive
+            }
+        };
+    }
     var TaskCreate = {
         render: function (ctx, me) {
             ctx.newTaskName = ctx.newTaskName || "";
             me.tag = "div";
             me.className = "input-wrapper";
             me.children = [
-                this.createInputElement(ctx),
-                this.createSetAllCheckboxElement(ctx)
+                createInputElement(ctx),
+                createSetAllCheckboxElement(ctx)
             ];
-        },
-        createInputElement: function (ctx) {
-            return {
-                tag: "input",
-                className: "task-name",
-                attrs: {
-                    placeholder: "What needs to be done?",
-                    value: ctx.newTaskName
-                },
-                component: {
-                    onKeyUp: function (ctx, event) {
-                        var handler = new KeyDownUpHandler();
-                        return handler.handleEcsEnter(event, function () {
-                            // cancel the task adding controls (i.e. clear the input)
-                            ctx.newTaskName = "";
-                            b.invalidate();
-                            return true;
-                        }, function () {
-                            ctx.newTaskName = ctx.newTaskName.trim();
-                            if (ctx.newTaskName) {
-                                ctx.data.addNewTask(ctx.newTaskName);
-                                b.invalidate();
-                                ctx.newTaskName = "";
-                            }
-                            return true;
-                        });
-                    },
-                    onChange: function (ctx, value) {
-                        ctx.newTaskName = value;
-                    },
-                    postInitDom: function (ctx, me, element) {
-                        element.focus();
-                    }
-                },
-                data: ctx.data
-            };
-        },
-        createSetAllCheckboxElement: function (ctx) {
-            return {
-                tag: "input",
-                className: "set-all-tasks",
-                attrs: {
-                    type: "checkbox",
-                    value: ctx.data.isWholeListCompleted
-                },
-                component: {
-                    onChange: function (ctx, value) {
-                        if (value) {
-                            ctx.data.markAllTasksAsCompleted();
-                        }
-                        else {
-                            ctx.data.markAllTasksAsActive();
-                        }
-                        b.invalidate();
-                    }
-                },
-                data: {
-                    markAllTasksAsCompleted: ctx.data.markAllTasksAsCompleted,
-                    markAllTasksAsActive: ctx.data.markAllTasksAsActive
-                }
-            };
         }
     };
+    function createTaskElements(ctx) {
+        var res = [];
+        var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
+        var tasks = ctx.data.tasks;
+        for (var i = 0; i < taskItems.length; i++) {
+            var task = taskItems[i];
+            res.push({
+                component: TodoApp.TaskItem,
+                data: {
+                    id: task.id,
+                    name: task.name,
+                    completed: task.completed,
+                    justEditing: task.id === ctx.editingTaskId,
+                    cancelNewValue: function () { ctx.editingTaskId = -1; },
+                    saveNewValue: function (taskId, value) { tasks.setTaskName(taskId, value); ctx.editingTaskId = -1; },
+                    markTaskAsCompleted: function (taskId) { tasks.markTaskAsCompleted(taskId); },
+                    markTaskAsActive: function (taskId) { tasks.markTaskAsActive(taskId); },
+                    setEditingMode: function (taskId) { ctx.editingTaskId = taskId; },
+                    removeTask: function (taskId) { tasks.removeTask(taskId); }
+                }
+            });
+        }
+        return res;
+    }
     var TaskList = {
         init: function (ctx, me) {
             ctx.editingTaskId = -1;
@@ -136,31 +161,7 @@ var TodoApp;
         render: function (ctx, me) {
             me.tag = "ul";
             me.className = "todo-list";
-            me.children = this.createTaskElements(ctx);
-        },
-        createTaskElements: function (ctx) {
-            var res = [];
-            var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
-            var tasks = ctx.data.tasks;
-            for (var i = 0; i < taskItems.length; i++) {
-                var task = taskItems[i];
-                res.push({
-                    component: TodoApp.TaskItem,
-                    data: {
-                        id: task.id,
-                        name: task.name,
-                        completed: task.completed,
-                        justEditing: task.id === ctx.editingTaskId,
-                        cancelNewValue: function () { ctx.editingTaskId = -1; },
-                        saveNewValue: function (taskId, value) { tasks.setTaskName(taskId, value); ctx.editingTaskId = -1; },
-                        markTaskAsCompleted: function (taskId) { tasks.markTaskAsCompleted(taskId); },
-                        markTaskAsActive: function (taskId) { tasks.markTaskAsActive(taskId); },
-                        setEditingMode: function (taskId) { ctx.editingTaskId = taskId; },
-                        removeTask: function (taskId) { tasks.removeTask(taskId); }
-                    }
-                });
-            }
-            return res;
+            me.children = createTaskElements(ctx);
         }
     };
     TodoApp.TaskItem = {
@@ -283,16 +284,58 @@ var TodoApp;
                 },
                 onChange: function (ctx, value) {
                     ctx.newValue = value;
-                },
-                data: ctx.data
+                }
             };
         }
     };
+    function createItemsLeftInfo(ctx) {
+        var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
+        var text = itemsLeftCount === 1
+            ? itemsLeftCount + " item left"
+            : itemsLeftCount + " items left";
+        return {
+            tag: "div",
+            className: "items-left-info",
+            children: text
+        };
+    }
+    function createFilterButtons() {
+        return {
+            tag: "div",
+            className: "filter",
+            children: [
+                b.link({ tag: "a", children: "All" }, "all"),
+                b.link({ tag: "a", children: "Active" }, "active"),
+                b.link({ tag: "a", children: "Completed" }, "completed")
+            ]
+        };
+    }
+    function createClearCompleted(ctx) {
+        var numberOfCompletedTasks = ctx.data.completedTasksCount;
+        var text = "Clear completed (" + numberOfCompletedTasks + ")";
+        var className = "clear-completed-button";
+        if (numberOfCompletedTasks < 1) {
+            className += " hidden";
+        }
+        return {
+            tag: "div",
+            className: className,
+            children: text,
+            component: {
+                onClick: function (ctx) {
+                    ctx.data.removeCompletedTasks();
+                    b.invalidate();
+                    return true;
+                }
+            },
+            data: ctx.data
+        };
+    }
     var Footer = {
         render: function (ctx, me) {
-            var itemsLeftInfo = this.createItemsLeftInfo(ctx);
-            var filterButtons = this.createFilterButtons();
-            var clearAllButton = this.createClearCompleted(ctx);
+            var itemsLeftInfo = createItemsLeftInfo(ctx);
+            var filterButtons = createFilterButtons();
+            var clearAllButton = createClearCompleted(ctx);
             me.tag = "div";
             me.className = "footer";
             me.children = [
@@ -304,49 +347,6 @@ var TodoApp;
                     className: "cleaner"
                 }
             ];
-        },
-        createItemsLeftInfo: function (ctx) {
-            var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
-            var text = itemsLeftCount === 1
-                ? itemsLeftCount + " item left"
-                : itemsLeftCount + " items left";
-            return {
-                tag: "div",
-                className: "items-left-info",
-                children: text
-            };
-        },
-        createFilterButtons: function () {
-            return {
-                tag: "div",
-                className: "filter",
-                children: [
-                    b.link({ tag: "a", children: "All" }, "all"),
-                    b.link({ tag: "a", children: "Active" }, "active"),
-                    b.link({ tag: "a", children: "Completed" }, "completed")
-                ]
-            };
-        },
-        createClearCompleted: function (ctx) {
-            var numberOfCompletedTasks = ctx.data.completedTasksCount;
-            var text = "Clear completed (" + numberOfCompletedTasks + ")";
-            var className = "clear-completed-button";
-            if (numberOfCompletedTasks < 1) {
-                className += " hidden";
-            }
-            return {
-                tag: "div",
-                className: className,
-                children: text,
-                component: {
-                    onClick: function (ctx) {
-                        ctx.data.removeCompletedTasks();
-                        b.invalidate();
-                        return true;
-                    }
-                },
-                data: ctx.data
-            };
         }
     };
     var KeyDownUpHandler = (function () {

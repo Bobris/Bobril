@@ -107,31 +107,30 @@ module DynamicDataTableApp {
         data: ITableHeaderData;
     }
 
+    function createHeader(ctx: ITableHeaderCtx): IBobrilNode[] {
+        var headerNodes: Array<IBobrilNode> = [];
+        for (var i = 0; i < ctx.data.header.length; i++) {
+            var headerColumn = {
+                component: TableHeaderColumn,
+                data: {
+                    columnName: ctx.data.header[i],
+                    columnIndex: i,
+                    sort(columnIndex: number, sortOrder: SortOrder) {
+                        ctx.data.sort(columnIndex, sortOrder);
+                    },
+                    sortInformation: ctx.data.sortInformation
+                }
+            };
+            headerNodes.push(headerColumn);
+        }
+        return headerNodes;
+    }
+
     var TableHeader: IBobrilComponent = {
         render(ctx: ITableHeaderCtx, me: IBobrilNode): void {
             me.tag = "thead";
-            me.children = h("tr", this.createHeader(ctx));
-        },
-
-        createHeader(ctx: ITableHeaderCtx): IBobrilNode[] {
-            var headerNodes: Array<IBobrilNode> = [];
-            for (var i = 0; i < ctx.data.header.length; i++) {
-                var headerColumn = {
-                    component: TableHeaderColumn,
-                    data: {
-                        columnName: ctx.data.header[i],
-                        columnIndex: i,
-                        sort(columnIndex: number, sortOrder: SortOrder) {
-                            ctx.data.sort(columnIndex, sortOrder);
-                        },
-                        sortInformation: ctx.data.sortInformation
-                    }
-                };
-                headerNodes.push(headerColumn);
-            }
-            return headerNodes;
+            me.children = h("tr", createHeader(ctx));
         }
-
     }
 
     interface ITableHeaderColumnData {
@@ -185,42 +184,41 @@ module DynamicDataTableApp {
         data: ITableBodyData;
     }
 
-    var TableBody: IBobrilComponent = {
+    function getRecordsForCurrentPage(tableRows: Array<Object>, currentPage: number, numberOfRecordsPerPage: number): Array<any> {
+        var displayedRecords: Array<any> = [];
+        var startIndex = ((currentPage - 1) * numberOfRecordsPerPage);
+        var stopIndex = startIndex + numberOfRecordsPerPage;
+        for (var i = startIndex; i < stopIndex; i++) {
+            if (i >= tableRows.length) {
+                break;
+            }
+            displayedRecords.push(tableRows[i]);
+        }
+        return displayedRecords;
+    }
 
+    function generateTableRows(tableRows: Array<any[]>): IBobrilNode[] {
+        var bodyNodes: Array<IBobrilNode> = [];
+        for (var i = 0; i < tableRows.length; i++) {
+            var rowNode = h("tr", generateTableRow(tableRows[i]))
+            bodyNodes.push(rowNode);
+        }
+        return bodyNodes;
+    }
+
+    function generateTableRow(tableRow: Array<any>): IBobrilNode[] {
+        var columnNodes: Array<IBobrilNode> = [];
+        for (var i = 0; i < tableRow.length; i++) {
+            columnNodes.push(h("td", tableRow[i]));
+        }
+        return columnNodes;
+    }
+
+    var TableBody: IBobrilComponent = {
         render(ctx: ITableBodyCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             me.tag = "tbody";
-            var currentlyDisplayedRecords = this.getRecordsForCurrentPage(ctx.data.tableBody, ctx.data.currentPage, ctx.data.numberOfRecordsPerPage);
-            me.children = this.generateTableRows(currentlyDisplayedRecords);
-        },
-
-        getRecordsForCurrentPage(tableRows: Array<Object>, currentPage: number, numberOfRecordsPerPage: number): Array<any> {
-            var displayedRecords: Array<any> = [];
-            var startIndex = ((currentPage - 1) * numberOfRecordsPerPage);
-            var stopIndex = startIndex + numberOfRecordsPerPage;
-            for (var i = startIndex; i < stopIndex; i++) {
-                if (i >= tableRows.length) {
-                    break;
-                }
-                displayedRecords.push(tableRows[i]);
-            }
-            return displayedRecords;
-        },
-
-        generateTableRows(tableRows: Array<Object>): IBobrilNode[] {
-            var bodyNodes: Array<IBobrilNode> = [];
-            for (var i = 0; i < tableRows.length; i++) {
-                var rowNode = h("tr", this.generateTableRow(tableRows[i]))
-                bodyNodes.push(rowNode);
-            }
-            return bodyNodes;
-        },
-
-        generateTableRow(tableRow: Array<any>): IBobrilNode[] {
-            var columnNodes: Array<IBobrilNode> = [];
-            for (var i = 0; i < tableRow.length; i++) {
-                columnNodes.push(h("td", tableRow[i]));
-            }
-            return columnNodes;
+            var currentlyDisplayedRecords = getRecordsForCurrentPage(ctx.data.tableBody, ctx.data.currentPage, ctx.data.numberOfRecordsPerPage);
+            me.children = generateTableRows(currentlyDisplayedRecords);
         }
     }
 
@@ -240,65 +238,64 @@ module DynamicDataTableApp {
         data: IPaginatorData;
     }
 
+    function generatePages(ctx: IPaginatorCtx): IBobrilNode[] {
+        var pages: Array<IBobrilNode> = [];
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler() {
+                    ctx.data.goToFirstPage();
+                },
+                text: "<<"
+            }
+        });
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler() {
+                    ctx.data.goToPreviousPage();
+                },
+                text: "<"
+            }
+        });
+        var countOfPages = Math.ceil(ctx.data.countOfRecords / ctx.data.numberOfRecordsPerPage);
+        for (var i = 1; i <= countOfPages; i++) {
+            pages.push({
+                component: PaginatorButton, data: {
+                    pageNumber: i,
+                    text: i.toString(),
+                    currentPage: ctx.data.currentPage,
+                    onPageClickHandler(pageNumber: number) {
+                        ctx.data.onPageChange(pageNumber);
+                    }
+                }
+            });
+        }
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler() {
+                    ctx.data.goToNextPage();
+                },
+                className: "btn",
+                text: ">"
+            }
+        });
+        pages.push({
+            component: PaginatorButton, data: {
+                onClickHandler() {
+                    ctx.data.goToLastPage();
+                },
+                className: "btn",
+                text: ">>"
+            }
+        });
+        return pages;
+    }
+
     var Paginator: IBobrilComponent = {
         render(ctx: IPaginatorCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void {
             me.tag = "ul";
             me.className = "pagination";
-            me.children = this.generatePages(ctx);
-        },
-
-        generatePages(ctx: IPaginatorCtx): IBobrilNode[] {
-            var pages: Array<IBobrilNode> = [];
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler() {
-                        ctx.data.goToFirstPage();
-                    },
-                    text: "<<"
-                }
-            });
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler() {
-                        ctx.data.goToPreviousPage();
-                    },
-                    text: "<"
-                }
-            });
-            var countOfPages = Math.ceil(ctx.data.countOfRecords / ctx.data.numberOfRecordsPerPage);
-            for (var i = 1; i <= countOfPages; i++) {
-                pages.push({
-                    component: PaginatorButton, data: {
-                        pageNumber: i,
-                        text: i.toString(),
-                        currentPage: ctx.data.currentPage,
-                        onPageClickHandler(pageNumber: number) {
-                            ctx.data.onPageChange(pageNumber);
-                        }
-                    }
-                });
-            }
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler() {
-                        ctx.data.goToNextPage();
-                    },
-                    className: "btn",
-                    text: ">"
-                }
-            });
-            pages.push({
-                component: PaginatorButton, data: {
-                    onClickHandler() {
-                        ctx.data.goToLastPage();
-                    },
-                    className: "btn",
-                    text: ">>"
-                }
-            });
-            return pages;
+            me.children = generatePages(ctx);
         }
-
     }
 
     interface IPaginatorButtonData {

@@ -88,11 +88,11 @@ describe("createNode", () => {
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div><span>ok</span></div>");
     });
     it("empty virtual node",()=>{
-        var r = b.createNode({ tag: "div", children: {} }, null, document.createElement("div"), null);
+        var r = b.createNode({ tag: "div", children: <any>{} }, null, document.createElement("div"), null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div></div>");
     });
     it("more empty virtual nodes",()=>{
-        var r = b.createNode({ tag: "div", children: [ { children:[] }, "ok", {} ] }, null, document.createElement("div"), null);
+        var r = b.createNode({ tag: "div", children: [ { children:[] }, "ok", <any>{} ] }, null, document.createElement("div"), null);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>ok</div>");
     });
 });
@@ -136,7 +136,7 @@ describe("updateNode", () => {
     });
     it("more empty virtual nodes",()=>{
         var scope = document.createElement("div");
-        var r = b.createNode({ tag: "div", children: [ { children:[] }, "ok", {} ] }, null, scope, null);
+        var r = b.createNode({ tag: "div", children: [ { children:[] }, "ok", <any>{} ] }, null, scope, null);
         r = b.updateNode({ tag: "div", children: [ { children:"o" }, "k", { tag:"span", children:"!" } ] }, r, scope, null, 1e6);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>ok<span>!</span></div>");
     });

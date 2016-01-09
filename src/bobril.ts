@@ -280,7 +280,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         refs[(<[IBobrilCtx, string]>ref)[1]] = value;
     }
 
-    function createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: Element, createBefore: Node): IBobrilCacheNode {
+    function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode {
         var c = <IBobrilCacheNode>{ // This makes CacheNode just one object class = fast
             tag: n.tag,
             key: n.key,
@@ -422,24 +422,24 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 }
                 return;
             }
-            ch = [ch];
+            ch = <any>[ch];
         }
-        ch = (<IBobrilNode[]>ch).slice(0);
-        var i = 0, l = (<IBobrilNode[]>ch).length;
+        ch = (<any[]>ch).slice(0);
+        var i = 0, l = (<any[]>ch).length;
         while (i < l) {
-            var item = (<IBobrilNode[]>ch)[i];
+            var item = (<any[]>ch)[i];
             if (isArray(item)) {
-                (<IBobrilNode[]>ch).splice.apply(ch, (<any>[i, 1]).concat(item));
-                l = (<IBobrilNode[]>ch).length;
+                (<IBobrilCacheNode[]>ch).splice.apply(ch, (<any>[i, 1]).concat(item));
+                l = (<IBobrilCacheNode[]>ch).length;
                 continue;
             }
             item = normalizeNode(item);
             if (item == null) {
-                (<IBobrilNode[]>ch).splice(i, 1);
+                (<any[]>ch).splice(i, 1);
                 l--;
                 continue;
             }
-            (<IBobrilNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
+            (<IBobrilCacheNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
             i++;
         }
         c.children = ch;
@@ -447,13 +447,13 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     function destroyNode(c: IBobrilCacheNode) {
         setRef(c.ref, null);
-        var ch = c.children;
+        let ch = c.children;
         if (isArray(ch)) {
-            for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
-                destroyNode((<IBobrilCacheNode[]>ch)[i]);
+            for (var i = 0, l = ch.length; i < l; i++) {
+                destroyNode(ch[i]);
             }
         }
-        var component = c.component;
+        let component = c.component;
         if (component) {
             if (component.destroy)
                 component.destroy(c.ctx, c, <HTMLElement>c.element);
@@ -595,7 +595,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var bigChange = false;
         var ctx = c.ctx;
         if (component && ctx != null) {
-            if ((<any>ctx)[ctxInvalidated] === frame) {
+            if ((<any>ctx)[ctxInvalidated] === frameCounter) {
                 deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
             }
             if (component.id !== c.component.id) {
@@ -612,7 +612,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 (<any>ctx).data = n.data || {};
                 c.component = component;
                 if (component.render) {
-                    n = assign({}, n); // need to clone me because it should not be modified for next updates
+                    n = <IBobrilNode>assign({}, n); // need to clone me because it should not be modified for next updates
                     component.render(ctx, n, c);
                 }
                 c.cfg = n.cfg;
@@ -697,12 +697,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var parEl = c.element;
         if (isArray(parEl)) parEl = (<Node[]>parEl)[0];
         if (parEl == null) parEl = createInto; else parEl = (<Node>parEl).parentNode;
-        var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, findFirstNode(c));
+        var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c));
         removeNode(c);
         return r;
     }
 
-    function findFirstNode(c: IBobrilCacheNode): Node {
+    function getDomNode(c: IBobrilCacheNode): Node {
         var el = c.element;
         if (el != null) {
             if (isArray(el)) return (<Node[]>el)[0];
@@ -711,7 +711,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var ch = c.children;
         if (!isArray(ch)) return null;
         for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-            el = findFirstNode((<IBobrilCacheNode[]>ch)[i]);
+            el = getDomNode((<IBobrilCacheNode[]>ch)[i]);
             if (el) return <Node>el;
         }
         return null;
@@ -721,7 +721,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         while (++i < len) {
             var ai = a[i];
             if (ai == null) continue;
-            var n = findFirstNode(ai);
+            var n = getDomNode(ai);
             if (n != null) return n;
         }
         return def;
@@ -767,7 +767,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function reorderInUpdateChildren(cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node, element: Element) {
         var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
         var cur = cachedChildren[cachedIndex];
-        var what = findFirstNode(cur);
+        var what = getDomNode(cur);
         if (what != null && what !== before) {
             reorderInUpdateChildrenRec(cur, element, before);
         }
@@ -776,47 +776,52 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function reorderAndUpdateNodeInUpdateChildren(newNode: IBobrilNode, cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node, element: Element, deepness: number) {
         var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
         var cur = cachedChildren[cachedIndex];
-        var what = findFirstNode(cur);
+        var what = getDomNode(cur);
         if (what != null && what !== before) {
             reorderInUpdateChildrenRec(cur, element, before);
         }
         cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
     }
 
-    function updateChildren(element: Element, newChildren: any, cachedChildren: any, parentNode: IBobrilNode, createBefore: Node, deepness: number): IBobrilCacheNode[] {
+    function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode, createBefore: Node, deepness: number): IBobrilCacheNode[] {
         if (newChildren == null) newChildren = <IBobrilNode[]>[];
         if (!isArray(newChildren)) {
             newChildren = [newChildren];
         }
-        if (cachedChildren == null) cachedChildren = <IBobrilCacheNode>[];
+        if (cachedChildren == null) cachedChildren = [];
         if (!isArray(cachedChildren)) {
             if (element.firstChild) element.removeChild(element.firstChild);
             cachedChildren = <any>[];
         }
-        newChildren = newChildren.slice(0);
-        var newLength = newChildren.length;
-        var cachedLength = cachedChildren.length;
+        let newCh = <IBobrilChildArray>newChildren;
+        newCh = newCh.slice(0);
+        var newLength = newCh.length;
         var newIndex: number;
         for (newIndex = 0; newIndex < newLength;) {
-            var item = newChildren[newIndex];
+            var item = newCh[newIndex];
             if (isArray(item)) {
-                newChildren.splice.apply(newChildren, [newIndex, 1].concat(item));
-                newLength = newChildren.length;
+                newCh.splice.apply(newCh, [newIndex, 1].concat(<any>item));
+                newLength = newCh.length;
                 continue;
             }
             item = normalizeNode(item);
             if (item == null) {
-                newChildren.splice(newIndex, 1);
+                newCh.splice(newIndex, 1);
                 newLength--;
                 continue;
             }
-            newChildren[newIndex] = item;
+            newCh[newIndex] = item;
             newIndex++;
         }
-        var newEnd = newLength;
-        var cachedEnd = cachedLength;
-        newIndex = 0;
-        var cachedIndex = 0;
+        return updateChildrenCore(element, <IBobrilNode[]>newCh, <IBobrilCacheNode[]>cachedChildren, parentNode, createBefore, deepness);
+    }
+
+    function updateChildrenCore(element: Element, newChildren: IBobrilNode[], cachedChildren: IBobrilCacheNode[], parentNode: IBobrilCacheNode, createBefore: Node, deepness: number): IBobrilCacheNode[] {
+        let newEnd = newChildren.length;
+        var cachedLength = cachedChildren.length;
+        let cachedEnd = cachedLength;
+        let newIndex = 0;
+        let cachedIndex = 0;
         while (newIndex < newEnd && cachedIndex < cachedEnd) {
             if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
                 updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
@@ -1111,7 +1116,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var fullRecreateRequested = true;
     var scheduled = false;
     var uptime = 0;
-    var frame = 0;
+    var frameCounter = 0;
     var lastFrameDuration = 0;
     var renderFrameBegin = 0;
 
@@ -1173,7 +1178,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         for (var i = 0; i < len; i++) {
             var node = cache[i];
             var ctx = node.ctx;
-            if (ctx != null && (<any>ctx)[ctxInvalidated] === frame) {
+            if (ctx != null && (<any>ctx)[ctxInvalidated] === frameCounter) {
                 var cloned: IBobrilNode = { data: ctx.data, component: node.component };
                 cache[i] = updateNode(cloned, node, element, createBefore, (<any>ctx)[ctxDeepness]);
             } else if (isArray(node.children)) {
@@ -1226,7 +1231,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function update(time: number) {
         renderFrameBegin = now();
         initEvents();
-        frame++;
+        frameCounter++;
         ignoringShouldChange = nextIgnoreShouldChange;
         nextIgnoreShouldChange = false;
         uptime = time;
@@ -1274,8 +1279,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             return;
         if (ctx != null) {
             if (deepness == undefined) deepness = 1e6;
-            if ((<any>ctx)[ctxInvalidated] !== frame + 1) {
-                (<any>ctx)[ctxInvalidated] = frame + 1;
+            if ((<any>ctx)[ctxInvalidated] !== frameCounter + 1) {
+                (<any>ctx)[ctxInvalidated] = frameCounter + 1;
                 (<any>ctx)[ctxDeepness] = deepness;
             } else {
                 if (deepness > (<any>ctx)[ctxDeepness])
@@ -1380,9 +1385,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 if (res != null)
                     return res;
             }
-        } else {
-            return broadcastEventToNode(ch, name, param);
         }
+        return null;
     }
 
     function broadcastEvent(name: string, param: any): IBobrilCtx {
@@ -1474,9 +1478,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         for (var i = 0; i < a.length; i++) {
             var n = a[i];
             if (isArray(n)) {
-                a[i] = cloneNodeArray(<IBobrilChild[]>n);
+                a[i] = <any>cloneNodeArray(<any>n);
             } else if (isObject(n)) {
-                a[i] = cloneNode(n);
+                a[i] = cloneNode(<IBobrilNode>n);
             }
         }
         return a;
@@ -1495,7 +1499,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (isArray(ch)) {
                 r.children = cloneNodeArray(<IBobrilChild[]>ch);
             } else if (isObject(ch)) {
-                r.children = cloneNode(ch);
+                r.children = cloneNode(<IBobrilNode>ch);
             }
         }
         return r;
@@ -1519,7 +1523,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         uptime: () => uptime,
         lastFrameDuration: () => lastFrameDuration,
         now: now,
-        frame: () => frame,
+        frame: () => frameCounter,
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
@@ -1527,7 +1531,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         invalidated: () => scheduled,
         preventDefault: preventDefault,
         vdomPath: vdomPath,
-        getDomNode: findFirstNode,
+        getDomNode: getDomNode,
         deref: getCacheNode,
         addEvent: addEvent,
         emitEvent: emitEvent,

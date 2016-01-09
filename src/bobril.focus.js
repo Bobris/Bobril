@@ -97,7 +97,7 @@
             }
             return false;
         }
-        return focus(children);
+        return false;
     }
     b.focused = focused;
     b.focus = focus;

@@ -1,5 +1,5 @@
 module Automata.Components.Help {
-    function getHelp(caption: string, text: string): IBobrilNode {
+    function getHelp(caption: string, text: string): IBobrilChildren {
         return [
             {
                 tag: 'div',

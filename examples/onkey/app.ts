@@ -2,7 +2,7 @@
 /// <reference path="../../src/bobril.onkey.d.ts"/>
 
 module OnKeyApp {
-    function h(tag: string, ...args: any[]) {
+    function h(tag: string, ...args: any[]): IBobrilNode {
         return { tag: tag, children: args };
     }
 
@@ -72,7 +72,7 @@ module OnKeyApp {
         return [
             {
                 tag: "div",
-                attrs: { tabindex: "0" },
+                attrs: { tabindex: 0 },
                 data: { onAdd: addEvent },
                 component: TrackKeys,
                 children: [
