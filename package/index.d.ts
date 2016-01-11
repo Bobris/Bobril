@@ -112,6 +112,12 @@ export interface IBobrilCtx {
 export interface IBobrilScroll {
     node: IBobrilCacheNode;
 }
+export declare let assign: {
+    <T, U>(target: T, source: U): T & U;
+    <T, U, V>(target: T, source1: U, source2: V): T & U & V;
+    <T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
+    (target: any, ...sources: any[]): any;
+};
 export declare function flatten(a: any | any[]): any[];
 export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void;
 export declare function ieVersion(): any;
@@ -139,12 +145,6 @@ export declare function bubble(node: IBobrilCacheNode, name: string, param: any)
 export declare function broadcast(name: string, param: any): IBobrilCtx;
 export declare function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
 export declare function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
-export declare let assign: {
-    <T, U>(target: T, source: U): T & U;
-    <T, U, V>(target: T, source1: U, source2: V): T & U & V;
-    <T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
-    (target: any, ...sources: any[]): any;
-};
 export declare function preventDefault(event: Event): void;
 export declare function cloneNode(node: IBobrilNode): IBobrilNode;
 export declare function setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;
@@ -334,6 +334,7 @@ export declare function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], 
 }, nameHint?: string): IBobrilStyleDef;
 export declare function invalidateStyles(): void;
 export declare function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
+export declare function setBundlePngPath(path: string): void;
 export declare function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef;
 export declare function spritebc(color: () => string, width: number, height: number, left: number, top: number): IBobrilStyleDef;
 export declare function asset(path: string): string;

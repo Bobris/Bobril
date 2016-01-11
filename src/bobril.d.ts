@@ -74,7 +74,7 @@ interface IBobrilStatic {
     lastFrameDuration(): number;
     // returns IE version 8 - 11, for other browsers returns undefined
     ieVersion(): number;
-    // shalows copy all own members from source to target returns target, source could be null, if target is null then it is create empty
+    // shalows copy all own members from source to target returns target, source could be null, target cannot be null = exactly same semantic as Object.assign
     assign(target: Object, ...sources: Object[]): Object;
     // shim for Event.preventDefault()
     preventDefault(event: Event): void;
@@ -169,7 +169,7 @@ interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
     children: IBobrilChildren;
 }
 
-type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;   
+declare type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;   
 
 interface IBobrilCacheNode {
     tag: string;

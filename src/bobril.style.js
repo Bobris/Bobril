@@ -1,6 +1,6 @@
 /// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.style.d.ts"/>
-(function (b, document) {
+(function (b, window, document) {
     var allStyles = Object.create(null);
     var allSprites = Object.create(null);
     var allNameHints = Object.create(null);
@@ -189,6 +189,8 @@
                     className = className + " " + sd.realname;
                 var inls = sd.inlStyle;
                 if (inls) {
+                    if (inlineStyle == null)
+                        inlineStyle = {};
                     inlineStyle = b.assign(inlineStyle, inls);
                 }
             }
@@ -204,6 +206,8 @@
                 continue;
             }
             else {
+                if (inlineStyle == null)
+                    inlineStyle = {};
                 inlineStyle = b.assign(inlineStyle, s);
             }
             i++;
@@ -371,7 +375,10 @@
         allSprites[key] = spDef;
         return styleid;
     }
-    var bundlePath = 'bundle.png';
+    var bundlePath = window['bobrilBPath'] || 'bundle.png';
+    function setBundlePngPath(path) {
+        bundlePath = path;
+    }
     function spriteb(width, height, left, top) {
         var url = bundlePath;
         var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
@@ -394,4 +401,5 @@
     b.spriteb = spriteb;
     b.spritebc = spritebc;
     b.invalidateStyles = invalidateStyles;
-})(b, document);
+    b.setBundlePngPath = setBundlePngPath;
+})(b, window, document);

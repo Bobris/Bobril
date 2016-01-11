@@ -24,4 +24,6 @@ interface IBobrilStatic {
     spritebc?(color: ()=>string, width: number, height: number, left: number, top: number): IBobrilStyleDef;
     // rebuilds all styles before next frame, it also calls Bobril invalidate
     invalidateStyles?(): void;
+    // allows to define path to bundle.png
+    setBundlePngPath?(path: string): void;
 }

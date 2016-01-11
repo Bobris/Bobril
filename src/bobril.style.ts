@@ -31,7 +31,7 @@ interface IInternalStyle {
     pseudo?: { [name: string]: string };
 }
 
-((b: IBobrilStatic, document: Document) => {
+((b: IBobrilStatic, window: Window, document: Document) => {
     var allStyles: { [id: string]: IInternalStyle } = Object.create(null);
     var allSprites: { [key: string]: ISprite } = Object.create(null);
     var allNameHints: { [name: string]: boolean } = Object.create(null);
@@ -130,10 +130,10 @@ interface IInternalStyle {
                 let name = ss.name;
                 let sspseudo = ss.pseudo;
                 let ssstyle = ss.style;
-                if (typeof ssstyle==="function" && ssstyle.length===0) {
+                if (typeof ssstyle === "function" && ssstyle.length === 0) {
                     [ssstyle, sspseudo] = ssstyle();
                 }
-                if (typeof ssstyle==="string" && sspseudo==null) {
+                if (typeof ssstyle === "string" && sspseudo == null) {
                     ss.realname = ssstyle;
                     continue;
                 }
@@ -208,6 +208,7 @@ interface IInternalStyle {
                 if (className == null) className = sd.realname; else className = className + " " + sd.realname;
                 var inls = sd.inlStyle;
                 if (inls) {
+                    if (inlineStyle == null) inlineStyle = {};
                     inlineStyle = b.assign(inlineStyle, inls);
                 }
             } else if (b.isArray(s)) {
@@ -218,6 +219,7 @@ interface IInternalStyle {
                 ca = <IBobrilStyles[]>s; i = 0;
                 continue;
             } else {
+                if (inlineStyle == null) inlineStyle = {};
                 inlineStyle = b.assign(inlineStyle, s);
             }
             i++;
@@ -382,7 +384,11 @@ interface IInternalStyle {
         return styleid;
     }
 
-    var bundlePath = 'bundle.png';
+    var bundlePath = (<any>window)['bobrilBPath'] || 'bundle.png';
+
+    function setBundlePngPath(path: string): void {
+        bundlePath = path;
+    }
 
     function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
         let url = bundlePath;
@@ -407,4 +413,5 @@ interface IInternalStyle {
     b.spriteb = spriteb;
     b.spritebc = spritebc;
     b.invalidateStyles = invalidateStyles;
-})(b, document);
+    b.setBundlePngPath = setBundlePngPath;
+})(b, window, document);

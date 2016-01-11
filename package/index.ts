@@ -187,6 +187,26 @@ function isObject(value: any): boolean {
     return typeof value === "object";
 }
 
+if (Object.assign == null) {
+    Object.assign = function assign(target: Object, ...sources: Object[]): Object {
+        if (target == null) throw new TypeError('Target in assign cannot be undefined or null');
+        let totalArgs = arguments.length;
+        for (let i = 1; i < totalArgs; i++) {
+            let source = arguments[i];
+            if (source == null) continue;
+            let keys = Object.keys(source);
+            let totalKeys = keys.length;
+            for (let j = 0; j < totalKeys; j++) {
+                let key = keys[j];
+                (<any>target)[key] = (<any>source)[key];
+            }
+        }
+        return target;
+    }
+}
+
+export let assign = Object.assign;
+
 export function flatten(a: any | any[]): any[] {
     if (!isArray(a)) {
         if (a == null || a === false || a === true)
@@ -1618,26 +1638,6 @@ export function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobr
     node.component = mergeComponents(comp, methods);
     return node;
 }
-
-if (Object.assign == null) {
-    Object.assign = function assign(target: Object, ...sources: Object[]): Object {
-        if (target == null) throw new TypeError('Target in assign cannot be undefined or null');
-        let totalArgs = arguments.length;
-        for (let i = 1; i < totalArgs; i++) {
-            let source = arguments[i];
-            if (source == null) continue;
-            let keys = Object.keys(source);
-            let totalKeys = keys.length;
-            for (let j = 0; j < totalKeys; j++) {
-                let key = keys[j];
-                (<any>target)[key] = (<any>source)[key];
-            }
-        }
-        return target;
-    }
-}
-
-export let assign = Object.assign;
 
 export function preventDefault(event: Event) {
     var pd = event.preventDefault;
@@ -4372,6 +4372,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             if (className == null) className = sd.realname; else className = className + " " + sd.realname;
             var inls = sd.inlStyle;
             if (inls) {
+                if (inlineStyle == null) inlineStyle = {};
                 inlineStyle = assign(inlineStyle, inls);
             }
         } else if (isArray(s)) {
@@ -4382,6 +4383,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             ca = <IBobrilStyles[]>s; i = 0;
             continue;
         } else {
+            if (inlineStyle == null) inlineStyle = {};
             inlineStyle = assign(inlineStyle, s);
         }
         i++;
@@ -4546,7 +4548,11 @@ export function sprite(url: string, color?: string | (() => string), width?: num
     return styleid;
 }
 
-var bundlePath = 'bundle.png';
+var bundlePath = window['bobrilBPath'] || 'bundle.png';
+
+export function setBundlePngPath(path: string) {
+    bundlePath = path;
+}
 
 export function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
     let url = bundlePath;

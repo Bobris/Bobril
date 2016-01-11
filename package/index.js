@@ -18,6 +18,30 @@ var hasTextContent = "textContent" in createTextNode("");
 function isObject(value) {
     return typeof value === "object";
 }
+if (Object.assign == null) {
+    Object.assign = function assign(target) {
+        var sources = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            sources[_i - 1] = arguments[_i];
+        }
+        if (target == null)
+            throw new TypeError('Target in assign cannot be undefined or null');
+        var totalArgs = arguments.length;
+        for (var i_1 = 1; i_1 < totalArgs; i_1++) {
+            var source = arguments[i_1];
+            if (source == null)
+                continue;
+            var keys = Object.keys(source);
+            var totalKeys = keys.length;
+            for (var j_1 = 0; j_1 < totalKeys; j_1++) {
+                var key = keys[j_1];
+                target[key] = source[key];
+            }
+        }
+        return target;
+    };
+}
+exports.assign = Object.assign;
 function flatten(a) {
     if (!isArray(a)) {
         if (a == null || a === false || a === true)
@@ -26,19 +50,19 @@ function flatten(a) {
     }
     a = a.slice(0);
     var alen = a.length;
-    for (var i_1 = 0; i_1 < alen;) {
-        var item = a[i_1];
+    for (var i_2 = 0; i_2 < alen;) {
+        var item = a[i_2];
         if (isArray(item)) {
-            a.splice.apply(a, [i_1, 1].concat(item));
+            a.splice.apply(a, [i_2, 1].concat(item));
             alen = a.length;
             continue;
         }
         if (item == null || item === false || item === true) {
-            a.splice(i_1, 1);
+            a.splice(i_2, 1);
             alen--;
             continue;
         }
-        i_1++;
+        i_2++;
     }
     return a;
 }
@@ -471,8 +495,8 @@ function removeNodeRecursive(c) {
     if (isArray(el)) {
         var pa = el[0].parentNode;
         if (pa) {
-            for (var i_2 = 0; i_2 < el.length; i_2++) {
-                pa.removeChild(el[i_2]);
+            for (var i_3 = 0; i_3 < el.length; i_3++) {
+                pa.removeChild(el[i_3]);
             }
         }
     }
@@ -1486,30 +1510,6 @@ function postEnhance(node, methods) {
     return node;
 }
 exports.postEnhance = postEnhance;
-if (Object.assign == null) {
-    Object.assign = function assign(target) {
-        var sources = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            sources[_i - 1] = arguments[_i];
-        }
-        if (target == null)
-            throw new TypeError('Target in assign cannot be undefined or null');
-        var totalArgs = arguments.length;
-        for (var i_3 = 1; i_3 < totalArgs; i_3++) {
-            var source = arguments[i_3];
-            if (source == null)
-                continue;
-            var keys = Object.keys(source);
-            var totalKeys = keys.length;
-            for (var j_1 = 0; j_1 < totalKeys; j_1++) {
-                var key = keys[j_1];
-                target[key] = source[key];
-            }
-        }
-        return target;
-    };
-}
-exports.assign = Object.assign;
 function preventDefault(event) {
     var pd = event.preventDefault;
     if (pd)
@@ -4003,6 +4003,8 @@ function style(node) {
                 className = className + " " + sd.realname;
             var inls = sd.inlStyle;
             if (inls) {
+                if (inlineStyle == null)
+                    inlineStyle = {};
                 inlineStyle = exports.assign(inlineStyle, inls);
             }
         }
@@ -4018,6 +4020,8 @@ function style(node) {
             continue;
         }
         else {
+            if (inlineStyle == null)
+                inlineStyle = {};
             inlineStyle = exports.assign(inlineStyle, s);
         }
         i++;
@@ -4190,7 +4194,11 @@ function sprite(url, color, width, height, left, top) {
     return styleid;
 }
 exports.sprite = sprite;
-var bundlePath = 'bundle.png';
+var bundlePath = window['bobrilBPath'] || 'bundle.png';
+function setBundlePngPath(path) {
+    bundlePath = path;
+}
+exports.setBundlePngPath = setBundlePngPath;
 function spriteb(width, height, left, top) {
     var url = bundlePath;
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
