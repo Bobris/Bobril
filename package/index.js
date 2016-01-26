@@ -2356,11 +2356,18 @@ var firstPointerDownTime = 0;
 var firstPointerDownX = 0;
 var firstPointerDownY = 0;
 var tapCanceled = false;
+var lastMouseEv = null;
 function diffLess(n1, n2, diff) {
     return Math.abs(n1 - n2) < diff;
 }
 var prevMousePath = [];
+function revalidateMouseIn() {
+    if (lastMouseEv)
+        mouseEnterAndLeave(lastMouseEv);
+}
+exports.revalidateMouseIn = revalidateMouseIn;
 function mouseEnterAndLeave(ev) {
+    lastMouseEv = ev;
     var t = document.elementFromPoint(ev.x, ev.y);
     var toPath = vdomPath(t);
     var node = toPath.length == 0 ? null : toPath[toPath.length - 1];

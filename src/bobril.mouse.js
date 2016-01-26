@@ -215,11 +215,17 @@
     var firstPointerDownY = 0;
     var tapCanceled = false;
     var now = b.now;
+    var lastMouseEv = null;
     function diffLess(n1, n2, diff) {
         return Math.abs(n1 - n2) < diff;
     }
     var prevMousePath = [];
+    function revalidateMouseIn() {
+        if (lastMouseEv)
+            mouseEnterAndLeave(lastMouseEv);
+    }
     function mouseEnterAndLeave(ev) {
+        lastMouseEv = ev;
         var t = document.elementFromPoint(ev.x, ev.y);
         var toPath = b.vdomPath(t);
         var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
@@ -460,4 +466,5 @@
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
     b.nodeOnPoint = nodeOnPoint;
+    b.revalidateMouseIn = revalidateMouseIn;
 })(b, window, document);

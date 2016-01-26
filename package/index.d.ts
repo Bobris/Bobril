@@ -208,6 +208,7 @@ export declare function isMouseOwner(ctx: any): boolean;
 export declare function isMouseOwnerEvent(): boolean;
 export declare function registerMouseOwner(ctx: any): void;
 export declare function releaseMouseOwner(): void;
+export declare function revalidateMouseIn(): void;
 export declare function nodeOnPoint(x: number, y: number): IBobrilCacheNode;
 export declare const pointersDownCount: () => number;
 export declare const firstPointerDownId: () => number;

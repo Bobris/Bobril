@@ -239,6 +239,7 @@ const enum Consts {
     var firstPointerDownY = 0;
     var tapCanceled = false;
     var now = b.now;
+    var lastMouseEv: IBobrilPointerEvent = null;
 
     function diffLess(n1: number, n2: number, diff: number) {
         return Math.abs(n1 - n2) < diff;
@@ -246,7 +247,13 @@ const enum Consts {
 
     var prevMousePath: IBobrilCacheNode[] = [];
 
+    function revalidateMouseIn() {
+        if (lastMouseEv)
+            mouseEnterAndLeave(lastMouseEv);        
+    }
+    
     function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
+        lastMouseEv = ev;
         var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
         var toPath = b.vdomPath(t);
         var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
@@ -499,4 +506,5 @@ const enum Consts {
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
     b.nodeOnPoint = nodeOnPoint;
+    b.revalidateMouseIn = revalidateMouseIn;
 })(b, window, document);

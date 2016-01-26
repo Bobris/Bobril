@@ -2556,6 +2556,7 @@ var firstPointerDownTime = 0;
 var firstPointerDownX = 0;
 var firstPointerDownY = 0;
 var tapCanceled = false;
+var lastMouseEv: IBobrilPointerEvent = null;
 
 function diffLess(n1: number, n2: number, diff: number) {
     return Math.abs(n1 - n2) < diff;
@@ -2563,7 +2564,13 @@ function diffLess(n1: number, n2: number, diff: number) {
 
 var prevMousePath: IBobrilCacheNode[] = [];
 
+export function revalidateMouseIn() {
+    if (lastMouseEv)
+        mouseEnterAndLeave(lastMouseEv);        
+}
+
 function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
+    lastMouseEv = ev;
     var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
     var toPath = vdomPath(t);
     var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
