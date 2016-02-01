@@ -166,6 +166,8 @@ export interface IBobrilScroll {
 declare var DEBUG: boolean;
 if (typeof DEBUG === "undefined") DEBUG = true;
 
+// PureFuncs: assert, isArray, isObject, flatten
+
 function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
     if (DEBUG && !shoudBeTrue)
         throw Error(messageIfFalse || "assertion failed");
@@ -752,6 +754,7 @@ export function vdomPath(n: Node): IBobrilCacheNode[] {
     return res;
 }
 
+// PureFuncs: deref, getDomNode
 export function deref(n: Node): IBobrilCacheNode {
     var p = vdomPath(n);
     var currentNode: IBobrilCacheNode = null;
@@ -1678,6 +1681,8 @@ export function cloneNode(node: IBobrilNode): IBobrilNode {
 
 export function setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void) { mapping[name] = action; }
 
+// PureFuncs: uptime, lastFrameDuration, frame, invalidated
+
 export function uptime() { return uptimeMs; }
 
 export function lastFrameDuration() { return lastFrameDurationMs; }
@@ -2335,6 +2340,8 @@ const enum Consts {
 let ownerCtx: any = null;
 let invokingOwner: boolean;
 const onClickText = "onClick";
+
+// PureFuncs: isMouseOwner, isMouseOwnerEvent
 
 export function isMouseOwner(ctx: any): boolean {
     return ownerCtx === ctx;
@@ -4419,6 +4426,8 @@ function inlineStyleToCssDeclaration(style: any): string {
     return res;
 }
 
+// PureFuncs: styleDef, styleDefEx, sprite, spriteb, spritebc, asset
+
 export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     return styleDefEx(null, style, pseudo, nameHint);
 }
@@ -4640,6 +4649,8 @@ export function withKey(node: IBobrilNode, key: string): IBobrilNode {
     node.key = key;
     return node;
 }
+
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent
 
 export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
     return style({ tag: 'div', children }, styles);

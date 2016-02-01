@@ -3,6 +3,7 @@
 ;
 if (typeof DEBUG === "undefined")
     DEBUG = true;
+// PureFuncs: assert, isArray, isObject, flatten
 function assert(shoudBeTrue, messageIfFalse) {
     if (DEBUG && !shoudBeTrue)
         throw Error(messageIfFalse || "assertion failed");
@@ -605,6 +606,7 @@ function vdomPath(n) {
     return res;
 }
 exports.vdomPath = vdomPath;
+// PureFuncs: deref, getDomNode
 function deref(n) {
     var p = vdomPath(n);
     var currentNode = null;
@@ -1553,6 +1555,7 @@ function cloneNode(node) {
 exports.cloneNode = cloneNode;
 function setStyleShim(name, action) { mapping[name] = action; }
 exports.setStyleShim = setStyleShim;
+// PureFuncs: uptime, lastFrameDuration, frame, invalidated
 function uptime() { return uptimeMs; }
 exports.uptime = uptime;
 function lastFrameDuration() { return lastFrameDurationMs; }
@@ -2144,6 +2147,7 @@ addEvent("keypress", 50, emitOnKeyPress);
 var ownerCtx = null;
 var invokingOwner;
 var onClickText = "onClick";
+// PureFuncs: isMouseOwner, isMouseOwnerEvent
 function isMouseOwner(ctx) {
     return ownerCtx === ctx;
 }
@@ -4056,6 +4060,7 @@ function inlineStyleToCssDeclaration(style) {
     res = res.slice(0, -1);
     return res;
 }
+// PureFuncs: styleDef, styleDefEx, sprite, spriteb, spritebc, asset
 function styleDef(style, pseudo, nameHint) {
     return styleDefEx(null, style, pseudo, nameHint);
 }
@@ -4290,6 +4295,7 @@ function withKey(node, key) {
     return node;
 }
 exports.withKey = withKey;
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent
 function styledDiv(children) {
     var styles = [];
     for (var _i = 1; _i < arguments.length; _i++) {
