@@ -4215,6 +4215,7 @@ var allSprites: { [key: string]: ISprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
 var dynamicSprites: IDynamicSprite[] = [];
 var imageCache: { [url: string]: HTMLImageElement } = newHashObj();
+var injectedCss = "";
 var rebuildStyles = false;
 var htmlStyle: HTMLStyleElement = null;
 var globalCounter: number = 0;
@@ -4301,7 +4302,7 @@ function beforeFrame() {
                 stDef.style = { backgroundImage: `url(${lastUrl})`, width: dynSprite.width, height: dynSprite.height };
             }
         }
-        var stylestr = "";
+        var stylestr = injectedCss;
         for (var key in allStyles) {
             var ss = allStyles[key];
             let parent = ss.parent;
@@ -4584,6 +4585,11 @@ export function spriteb(width: number, height: number, left: number, top: number
 
 export function spritebc(color: () => string, width: number, height: number, left: number, top: number): IBobrilStyleDef {
     return sprite(bundlePath, color, width, height, left, top);
+}
+
+export function injectCss(css: string): void {
+    injectedCss += css;
+    invalidateStyles();
 }
 
 export function asset(path: string): string {

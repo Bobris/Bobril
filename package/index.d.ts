@@ -338,6 +338,7 @@ export declare function sprite(url: string, color?: string | (() => string), wid
 export declare function setBundlePngPath(path: string): void;
 export declare function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef;
 export declare function spritebc(color: () => string, width: number, height: number, left: number, top: number): IBobrilStyleDef;
+export declare function injectCss(css: string): void;
 export declare function asset(path: string): string;
 export declare function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string;
 export declare function svgCircle(x: number, y: number, radius: number): string;

@@ -3831,6 +3831,7 @@ var allSprites = newHashObj();
 var allNameHints = newHashObj();
 var dynamicSprites = [];
 var imageCache = newHashObj();
+var injectedCss = "";
 var rebuildStyles = false;
 var htmlStyle = null;
 var globalCounter = 0;
@@ -3921,7 +3922,7 @@ function beforeFrame() {
                 stDef.style = { backgroundImage: "url(" + lastUrl + ")", width: dynSprite.width, height: dynSprite.height };
             }
         }
-        var stylestr = "";
+        var stylestr = injectedCss;
         for (var key in allStyles) {
             var ss = allStyles[key];
             var parent_1 = ss.parent;
@@ -4228,6 +4229,11 @@ function spritebc(color, width, height, left, top) {
     return sprite(bundlePath, color, width, height, left, top);
 }
 exports.spritebc = spritebc;
+function injectCss(css) {
+    injectedCss += css;
+    invalidateStyles();
+}
+exports.injectCss = injectCss;
 function asset(path) {
     return path;
 }

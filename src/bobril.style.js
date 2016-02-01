@@ -6,6 +6,7 @@
     var allNameHints = Object.create(null);
     var dynamicSprites = [];
     var imageCache = Object.create(null);
+    var injectedCss = "";
     var rebuildStyles = false;
     var htmlStyle = null;
     var globalCounter = 0;
@@ -96,7 +97,7 @@
                     stDef.style = { backgroundImage: "url(" + lastUrl + ")", width: dynSprite.width, height: dynSprite.height };
                 }
             }
-            var stylestr = "";
+            var stylestr = injectedCss;
             for (var key in allStyles) {
                 var ss = allStyles[key];
                 var parent_1 = ss.parent;
@@ -394,6 +395,10 @@
     function spritebc(color, width, height, left, top) {
         return sprite(bundlePath, color, width, height, left, top);
     }
+    function injectCss(css) {
+        injectedCss += css;
+        invalidateStyles();
+    }
     b.style = style;
     b.styleDef = styleDef;
     b.styleDefEx = styleDefEx;
@@ -402,4 +407,5 @@
     b.spritebc = spritebc;
     b.invalidateStyles = invalidateStyles;
     b.setBundlePngPath = setBundlePngPath;
+    b.injectCss = injectCss;
 })(b, window, document);

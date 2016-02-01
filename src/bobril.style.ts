@@ -37,6 +37,7 @@ interface IInternalStyle {
     var allNameHints: { [name: string]: boolean } = Object.create(null);
     var dynamicSprites: IDynamicSprite[] = [];
     var imageCache: { [url: string]: HTMLImageElement } = Object.create(null);
+    var injectedCss = "";
     var rebuildStyles = false;
     var htmlStyle: HTMLStyleElement = null;
     var globalCounter: number = 0;
@@ -123,7 +124,7 @@ interface IInternalStyle {
                     stDef.style = { backgroundImage: `url(${lastUrl})`, width: dynSprite.width, height: dynSprite.height };
                 }
             }
-            var stylestr = "";
+            var stylestr = injectedCss;
             for (var key in allStyles) {
                 var ss = allStyles[key];
                 let parent = ss.parent;
@@ -406,6 +407,11 @@ interface IInternalStyle {
         return sprite(bundlePath, color, width, height, left, top);
     }
 
+    function injectCss(css: string): void {
+        injectedCss += css;
+        invalidateStyles();
+    }
+
     b.style = style;
     b.styleDef = styleDef;
     b.styleDefEx = styleDefEx;
@@ -414,4 +420,5 @@ interface IInternalStyle {
     b.spritebc = spritebc;
     b.invalidateStyles = invalidateStyles;
     b.setBundlePngPath = setBundlePngPath;
+    b.injectCss = injectCss;
 })(b, window, document);
