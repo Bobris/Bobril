@@ -4,9 +4,7 @@ Bobril
 
 [![npm version](https://badge.fury.io/js/bobril.svg)](https://badge.fury.io/js/bobril)
 
-[![Join the chat at https://gitter.im/Bobris/Bobril](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Bobris/Bobril?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (size, more complete framework).
+Component oriented framework inspired by ReactJs (Virtual DOM, components with state) and Mithril (small size, more complete framework).
 Easy automatic generation of code and its speed has higher priority over simplicity. Basically Bobril has most interesting features from ReactJs plus is faster, more complete, smaller, more polyfills for IE9. Isomorphic JavaScript is not implemented because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript).
 Because it is already used in Production code, further development must not broke any functionality. Any new feature must be optional or its perceived value to minified size ratio must be high enough.
 
@@ -28,6 +26,8 @@ Chrome plugin to help you to inspect running Bobril application: https://chrome.
 If you want to speed up your Angular app use: https://github.com/karasek/ngBobril
 
 Flux implementation for Bobril is here: https://github.com/karelsteinmetz/bobflux
+
+Bobril Material Icons: https://github.com/bobril/bobril-m-icons
 
 Available in npm as bundle of most interesting and useful plugins
 
