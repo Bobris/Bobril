@@ -1,6 +1,6 @@
 ﻿interface ISelectionChangeEvent {
-    startPosition: number;
-    endPosition: number;
+    startPosition?: number;
+    endPosition?: number;
 }
 
 interface ICaretPositionChangeEvent {

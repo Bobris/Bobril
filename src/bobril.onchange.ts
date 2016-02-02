@@ -179,6 +179,16 @@
             if (c.onSelectionChange || c.onCaretPositionChange) {
                 var sStart = (<HTMLInputElement>target).selectionStart;
                 var sEnd = (<HTMLInputElement>target).selectionEnd;
+                if (c.onCaretPositionChange) {
+                    var caretPosition = (<ModernHTMLInputElement>target).selectionDirection && (<ModernHTMLInputElement>target).selectionDirection === "backward" ? sStart : sEnd;
+                    if ((<any>ctx)[bCaretPosition] !== caretPosition) {
+                        (<any>ctx)[bCaretPosition] = caretPosition;
+                        c.onCaretPositionChange(ctx, { position: caretPosition });
+                    }
+                }
+                if (sStart === sEnd) {
+                    sStart = sEnd = undefined;
+                }
                 if (c.onSelectionChange) {
                     if ((<any>ctx)[bSelectionStart] !== sStart || (<any>ctx)[bSelectionEnd] !== sEnd) {
                         (<any>ctx)[bSelectionStart] = sStart;
@@ -189,15 +199,7 @@
                         });
                     }
                 }
-                if (c.onCaretPositionChange) {
-                    var caretPosition = (<ModernHTMLInputElement>target).selectionDirection && (<ModernHTMLInputElement>target).selectionDirection === "backward" ? sStart : sEnd;
-                    if ((<any>ctx)[bCaretPosition] !== caretPosition) {
-                        (<any>ctx)[bCaretPosition] = caretPosition;
-                        c.onCaretPositionChange(ctx, { position: caretPosition });
-                    }
-                }
             }  
-
         }
         return false;
     }
