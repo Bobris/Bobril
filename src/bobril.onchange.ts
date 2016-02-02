@@ -3,7 +3,14 @@
 
 ((b: IBobrilStatic) => {
     var bvalue = "b$value";
+    var bSelectionStart = "b$selectionStart";
+    var bSelectionEnd = "b$selectionEnd";
+    var bCaretPosition = "b$caretPosition";
     var tvalue = "value";
+
+    interface ModernHTMLInputElement extends HTMLInputElement {
+        selectionDirection: string;
+    }
 
     function isCheckboxlike(el: HTMLInputElement) {
         var t = el.type;
@@ -118,19 +125,19 @@
         var c = node.component;
         if (!c)
             return false;
-        if (!c.onChange)
+        if (!c.onChange && !c.onSelectionChange && !c.onCaretPositionChange)
             return false;
         var ctx = node.ctx;
         var tagName = (<Element>target).tagName;
         var isSelect = tagName === "SELECT";
         var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
-        if (isMultiSelect) {
+        if (c.onChange && isMultiSelect) {
             var vs = selectedArray(<HTMLSelectElement>(<HTMLSelectElement>target).options);
             if (!stringArrayEqual((<any>ctx)[bvalue], vs)) {
                 (<any>ctx)[bvalue] = vs;
                 c.onChange(ctx, vs);
             }
-        } else if (isCheckboxlike(<HTMLInputElement>target)) {
+        } else if (c.onChange && isCheckboxlike(<HTMLInputElement>target)) {
             // Postpone change event so onClick will be processed before it
             if (ev && ev.type === "change") {
                 setTimeout(() => {
@@ -162,11 +169,37 @@
                 }
             }
         } else {
-            var v = (<HTMLInputElement>target).value;
-            if ((<any>ctx)[bvalue] !== v) {
-                (<any>ctx)[bvalue] = v;
-                c.onChange(ctx, v);
+            if(c.onChange) {
+                var v = (<HTMLInputElement>target).value;
+                if((<any>ctx)[bvalue] !== v) {
+                    (<any>ctx)[bvalue] = v;
+                    c.onChange(ctx, v);
+                }
             }
+            if (c.onSelectionChange || c.onCaretPositionChange) {
+                var sStart = (<HTMLInputElement>target).selectionStart;
+                var sEnd = (<HTMLInputElement>target).selectionEnd;
+                if (c.onCaretPositionChange) {
+                    var caretPosition = (<ModernHTMLInputElement>target).selectionDirection && (<ModernHTMLInputElement>target).selectionDirection === "backward" ? sStart : sEnd;
+                    if ((<any>ctx)[bCaretPosition] !== caretPosition) {
+                        (<any>ctx)[bCaretPosition] = caretPosition;
+                        c.onCaretPositionChange(ctx, { position: caretPosition });
+                    }
+                }
+                if (sStart === sEnd) {
+                    sStart = sEnd = undefined;
+                }
+                if (c.onSelectionChange) {
+                    if ((<any>ctx)[bSelectionStart] !== sStart || (<any>ctx)[bSelectionEnd] !== sEnd) {
+                        (<any>ctx)[bSelectionStart] = sStart;
+                        (<any>ctx)[bSelectionEnd] = sEnd;
+                        c.onSelectionChange(ctx, {
+                            startPosition: sStart,
+                            endPosition: sEnd
+                        });
+                    }
+                }
+            }  
         }
         return false;
     }
