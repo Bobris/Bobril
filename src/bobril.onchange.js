@@ -188,12 +188,22 @@
             if (hasOnSelectionChange) {
                 var sStart = target.selectionStart;
                 var sEnd = target.selectionEnd;
-                if (target.selectionDirection === "backward") {
+                var sDir = target.selectionDirection;
+                var swap = false;
+                var oStart = ctx[bSelectionStart];
+                if (sDir == null) {
+                    if (sEnd === oStart)
+                        swap = true;
+                }
+                else if (sDir === "backward") {
+                    swap = true;
+                }
+                if (swap) {
                     var s = sStart;
                     sStart = sEnd;
                     sEnd = s;
                 }
-                if (ctx[bSelectionStart] !== sStart || ctx[bSelectionEnd] !== sEnd) {
+                if (oStart !== sStart || ctx[bSelectionEnd] !== sEnd) {
                     ctx[bSelectionStart] = sStart;
                     ctx[bSelectionEnd] = sEnd;
                     c.onSelectionChange(ctx, {

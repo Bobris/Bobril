@@ -1,6 +1,6 @@
 ﻿interface ISelectionChangeEvent {
     startPosition: number;
-    // endPosition tries to be also caret position (does not work on any IE or Edge 12)
+    // endPosition tries to be also caret position (On IE it is just estimated)
     endPosition: number;
 }
 

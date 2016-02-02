@@ -1916,6 +1916,8 @@ else {
 }
 // Bobril.OnChange
 var bvalue = "b$value";
+var bSelectionStart = "b$selStart";
+var bSelectionEnd = "b$selEnd";
 var tvalue = "value";
 function isCheckboxlike(el) {
     var t = el.type;
@@ -2038,20 +2040,22 @@ function emitOnChange(ev, target, node) {
     var c = node.component;
     if (!c)
         return false;
-    if (!c.onChange)
+    var hasOnChange = c.onChange != null;
+    var hasOnSelectionChange = c.onSelectionChange != null;
+    if (!hasOnChange && !hasOnSelectionChange)
         return false;
     var ctx = node.ctx;
     var tagName = target.tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && target.multiple;
-    if (isMultiSelect) {
+    if (hasOnChange && isMultiSelect) {
         var vs = selectedArray(target.options);
         if (!stringArrayEqual(ctx[bvalue], vs)) {
             ctx[bvalue] = vs;
             c.onChange(ctx, vs);
         }
     }
-    else if (isCheckboxlike(target)) {
+    else if (hasOnChange && isCheckboxlike(target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(function () {
@@ -2088,10 +2092,39 @@ function emitOnChange(ev, target, node) {
         }
     }
     else {
-        var v = target.value;
-        if (ctx[bvalue] !== v) {
-            ctx[bvalue] = v;
-            c.onChange(ctx, v);
+        if (hasOnChange) {
+            var v = target.value;
+            if (ctx[bvalue] !== v) {
+                ctx[bvalue] = v;
+                c.onChange(ctx, v);
+            }
+        }
+        if (hasOnSelectionChange) {
+            var sStart = target.selectionStart;
+            var sEnd = target.selectionEnd;
+            var sDir = target.selectionDirection;
+            var swap = false;
+            var oStart = ctx[bSelectionStart];
+            if (sDir == null) {
+                if (sEnd === oStart)
+                    swap = true;
+            }
+            else if (sDir === "backward") {
+                swap = true;
+            }
+            if (swap) {
+                var s = sStart;
+                sStart = sEnd;
+                sEnd = s;
+            }
+            if (oStart !== sStart || ctx[bSelectionEnd] !== sEnd) {
+                ctx[bSelectionStart] = sStart;
+                ctx[bSelectionEnd] = sEnd;
+                c.onSelectionChange(ctx, {
+                    startPosition: sStart,
+                    endPosition: sEnd
+                });
+            }
         }
     }
     return false;

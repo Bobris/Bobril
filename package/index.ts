@@ -54,6 +54,8 @@ export interface IBobrilComponent {
 
     // called on input element after any change with new value (string|boolean)
     onChange?(ctx: IBobrilCtx, value: any): void;
+    // called on string input element when selection or caret position changes
+    onSelectionChange?(ctx: IBobrilCtx, event: ISelectionChangeEvent): void;
 
     onKeyDown?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
     onKeyUp?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
@@ -161,6 +163,12 @@ export interface IBobrilCtx {
 
 export interface IBobrilScroll {
     node: IBobrilCacheNode;
+}
+
+export interface ISelectionChangeEvent {
+    startPosition: number;
+    // endPosition tries to be also caret position (does not work on any IE or Edge 12)
+    endPosition: number;
 }
 
 declare var DEBUG: boolean;
@@ -2066,6 +2074,8 @@ if (ieVersion() === 9) {
 // Bobril.OnChange
 
 var bvalue = "b$value";
+var bSelectionStart = "b$selStart";
+var bSelectionEnd = "b$selEnd";
 var tvalue = "value";
 
 function isCheckboxlike(el: HTMLInputElement) {
@@ -2181,19 +2191,21 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
     var c = node.component;
     if (!c)
         return false;
-    if (!c.onChange)
+    const hasOnChange = c.onChange != null;
+    const hasOnSelectionChange = c.onSelectionChange != null;
+    if (!hasOnChange && !hasOnSelectionChange)
         return false;
     var ctx = node.ctx;
     var tagName = (<Element>target).tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
-    if (isMultiSelect) {
+    if (hasOnChange && isMultiSelect) {
         var vs = selectedArray(<HTMLSelectElement>(<HTMLSelectElement>target).options);
         if (!stringArrayEqual((<any>ctx)[bvalue], vs)) {
             (<any>ctx)[bvalue] = vs;
             c.onChange(ctx, vs);
         }
-    } else if (isCheckboxlike(<HTMLInputElement>target)) {
+    } else if (hasOnChange && isCheckboxlike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(() => {
@@ -2225,10 +2237,35 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
             }
         }
     } else {
-        var v = (<HTMLInputElement>target).value;
-        if ((<any>ctx)[bvalue] !== v) {
-            (<any>ctx)[bvalue] = v;
-            c.onChange(ctx, v);
+        if (hasOnChange) {
+            var v = (<HTMLInputElement>target).value;
+            if ((<any>ctx)[bvalue] !== v) {
+                (<any>ctx)[bvalue] = v;
+                c.onChange(ctx, v);
+            }
+        }
+        if (hasOnSelectionChange) {
+            let sStart = (<HTMLInputElement>target).selectionStart;
+            let sEnd = (<HTMLInputElement>target).selectionEnd;
+            let sDir = (<any>target).selectionDirection;
+            let swap = false;
+            let oStart = (<any>ctx)[bSelectionStart];
+            if (sDir == null) {
+                if (sEnd === oStart) swap = true;
+            } else if (sDir === "backward") {
+                swap = true;
+            }
+            if (swap) {
+                let s = sStart; sStart = sEnd; sEnd = s;
+            }
+            if (oStart !== sStart || (<any>ctx)[bSelectionEnd] !== sEnd) {
+                (<any>ctx)[bSelectionStart] = sStart;
+                (<any>ctx)[bSelectionEnd] = sEnd;
+                c.onSelectionChange(ctx, {
+                    startPosition: sStart,
+                    endPosition: sEnd
+                });
+            }
         }
     }
     return false;

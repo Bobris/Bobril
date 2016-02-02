@@ -87,9 +87,17 @@ module InputApp {
         data: IOnChangeData;
     }
 
+    var selectionStart: number = -1;
+    var selectionEnd: number = -1;
+
     var OnChangeComponent: IBobrilComponent = {
         onChange(ctx: IOnChangeCtx, v: any): void {
             ctx.data.onChange(v);
+        },
+        onSelectionChange(ctx: IBobrilCtx, event: ISelectionChangeEvent): void {
+            selectionStart = event.startPosition;
+            selectionEnd = event.endPosition;
+            b.invalidate();
         }
     }
 
@@ -161,7 +169,7 @@ module InputApp {
                 h("label", radiobox("g1", radio1, setRadio1), "Radio 1"),
                 h("label", radiobox("g1", radio2, setRadio2), "Radio 2"),
                 h("p", "Radio1: ", radio1 ? <any>"Yes" : "No", " Radio2: ", radio2 ? <any>"Yes" : "No"),
-                h("p", "Frame: " + frame)
+                h("p", "Frame: " + frame + " Selection:" + selectionStart + " - " + selectionEnd)
             ], [
                     layoutPair([
                         combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])

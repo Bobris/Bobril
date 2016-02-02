@@ -34,6 +34,7 @@ export interface IBobrilComponent {
     shouldStopBubble?(ctx: IBobrilCtx, name: string, param: Object): boolean;
     shouldStopBroadcast?(ctx: IBobrilCtx, name: string, param: Object): boolean;
     onChange?(ctx: IBobrilCtx, value: any): void;
+    onSelectionChange?(ctx: IBobrilCtx, event: ISelectionChangeEvent): void;
     onKeyDown?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
     onKeyUp?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
     onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
@@ -111,6 +112,10 @@ export interface IBobrilCtx {
 }
 export interface IBobrilScroll {
     node: IBobrilCacheNode;
+}
+export interface ISelectionChangeEvent {
+    startPosition: number;
+    endPosition: number;
 }
 export declare let assign: {
     <T, U>(target: T, source: U): T & U;

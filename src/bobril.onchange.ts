@@ -7,10 +7,6 @@
     var bSelectionEnd = "b$selEnd";
     var tvalue = "value";
 
-    interface ModernHTMLInputElement extends HTMLInputElement {
-        selectionDirection: string;
-    }
-
     function isCheckboxlike(el: HTMLInputElement) {
         var t = el.type;
         return t === "checkbox" || t === "radio";
@@ -180,10 +176,18 @@
             if (hasOnSelectionChange) {
                 let sStart = (<HTMLInputElement>target).selectionStart;
                 let sEnd = (<HTMLInputElement>target).selectionEnd;
-                if ((<ModernHTMLInputElement>target).selectionDirection === "backward") {
+                let sDir = (<any>target).selectionDirection;
+                let swap = false;
+                let oStart = (<any>ctx)[bSelectionStart];
+                if (sDir == null) {
+                    if (sEnd === oStart) swap = true;
+                } else if (sDir === "backward") {
+                    swap = true;
+                }
+                if (swap) {
                     let s = sStart; sStart = sEnd; sEnd = s;
                 }
-                if ((<any>ctx)[bSelectionStart] !== sStart || (<any>ctx)[bSelectionEnd] !== sEnd) {
+                if (oStart !== sStart || (<any>ctx)[bSelectionEnd] !== sEnd) {
                     (<any>ctx)[bSelectionStart] = sStart;
                     (<any>ctx)[bSelectionEnd] = sEnd;
                     c.onSelectionChange(ctx, {
