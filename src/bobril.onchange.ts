@@ -187,21 +187,44 @@
                 if (swap) {
                     let s = sStart; sStart = sEnd; sEnd = s;
                 }
-                if (oStart !== sStart || (<any>ctx)[bSelectionEnd] !== sEnd) {
-                    (<any>ctx)[bSelectionStart] = sStart;
-                    (<any>ctx)[bSelectionEnd] = sEnd;
-                    c.onSelectionChange(ctx, {
-                        startPosition: sStart,
-                        endPosition: sEnd
-                    });
-                }
+                emitOnSelectionChange(node, sStart, sEnd);
             }
         }
         return false;
     }
 
+    function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: number) {
+        let c = node.component;
+        let ctx = node.ctx;
+        if (c && ((<any>ctx)[bSelectionStart] !== start || (<any>ctx)[bSelectionEnd] !== end)) {
+            (<any>ctx)[bSelectionStart] = start;
+            (<any>ctx)[bSelectionEnd] = end;
+            c.onSelectionChange(ctx, {
+                startPosition: start,
+                endPosition: end
+            });
+        }
+    }
+
+    function select(node: IBobrilCacheNode, start: number, end = start): void {
+        (<any>node.element).setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
+        emitOnSelectionChange(node, start, end);
+    }
+
+    function emitOnMouseChange(ev: Event, target: Node, node: IBobrilCacheNode): boolean {
+        let f = b.focused && b.focused();
+        if (f) emitOnChange(ev, <Node>f.element, f);
+        return false;
+    }
+    
     // click here must have lower priority (higher number) over mouse handlers
     var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 10, emitOnChange);
+
+    var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
+    for (var i = 0; i < mouseEvents.length; i++)
+        b.addEvent(mouseEvents[i], 2, emitOnMouseChange);
+
+    b.select = select;
 })(b);

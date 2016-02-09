@@ -177,6 +177,7 @@ export interface Thenable<R> {
     then<U>(onFulfilled?: (value: R) => U | Thenable<U>, onRejected?: (error: any) => void): Thenable<U>;
 }
 export declare const asap: (callback: () => void) => void;
+export declare function select(node: IBobrilCacheNode, start: number, end?: number): void;
 export interface IKeyDownUpEvent {
     shift: boolean;
     ctrl: boolean;
@@ -220,7 +221,6 @@ export declare const firstPointerDownId: () => number;
 export declare const ignoreClick: (x: number, y: number) => void;
 export declare function focused(): IBobrilCacheNode;
 export declare function focus(node: IBobrilCacheNode): boolean;
-export declare function select(node: IBobrilCacheNode, start: number, end?: number): boolean;
 export declare function addOnScroll(callback: (info?: IBobrilScroll) => void): void;
 export declare function removeOnScroll(callback: (info?: IBobrilScroll) => void): void;
 export declare function isScrollable(el: Element): [boolean, boolean];

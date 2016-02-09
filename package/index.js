@@ -2117,22 +2117,42 @@ function emitOnChange(ev, target, node) {
                 sStart = sEnd;
                 sEnd = s;
             }
-            if (oStart !== sStart || ctx[bSelectionEnd] !== sEnd) {
-                ctx[bSelectionStart] = sStart;
-                ctx[bSelectionEnd] = sEnd;
-                c.onSelectionChange(ctx, {
-                    startPosition: sStart,
-                    endPosition: sEnd
-                });
-            }
+            emitOnSelectionChange(node, sStart, sEnd);
         }
     }
+    return false;
+}
+function emitOnSelectionChange(node, start, end) {
+    var c = node.component;
+    var ctx = node.ctx;
+    if (c && (ctx[bSelectionStart] !== start || ctx[bSelectionEnd] !== end)) {
+        ctx[bSelectionStart] = start;
+        ctx[bSelectionEnd] = end;
+        c.onSelectionChange(ctx, {
+            startPosition: start,
+            endPosition: end
+        });
+    }
+}
+function select(node, start, end) {
+    if (end === void 0) { end = start; }
+    node.element.setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
+    emitOnSelectionChange(node, start, end);
+}
+exports.select = select;
+function emitOnMouseChange(ev, target, node) {
+    var f = focused();
+    if (f)
+        emitOnChange(ev, f.element, f);
     return false;
 }
 // click here must have lower priority (higher number) over mouse handlers
 var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
 for (var i = 0; i < events.length; i++)
     addEvent(events[i], 10, emitOnChange);
+var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
+for (var i = 0; i < mouseEvents.length; i++)
+    addEvent(mouseEvents[i], 2, emitOnMouseChange);
 function buildParam(ev) {
     return {
         shift: ev.shiftKey,
@@ -2708,28 +2728,8 @@ function focused() {
     return currentFocusedNode;
 }
 exports.focused = focused;
-function focusAction(node, element) {
-    element.focus();
-    emitOnFocusChange();
-}
-var focusableTag = /^input$|^select$|^textarea$|^button$/g;
+var focusableTag = /^input$|^select$|^textarea$|^button$/;
 function focus(node) {
-    return callElementAction(node, selectableTag, focusAction);
-}
-exports.focus = focus;
-var selectableTag = /^input$|^textarea$/g;
-function select(node, start, end) {
-    if (end === void 0) { end = start; }
-    return callElementAction(node, selectableTag, function (node, element) {
-        element.setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
-        var c = node.component;
-        if (c && c.onSelectionChange) {
-            c.onSelectionChange(node.ctx, { startPosition: start, endPosition: end });
-        }
-    });
-}
-exports.select = select;
-function callElementAction(node, tags, action) {
     if (node == null)
         return false;
     if (typeof node === "string")
@@ -2744,21 +2744,24 @@ function callElementAction(node, tags, action) {
     var attrs = node.attrs;
     if (attrs != null) {
         var ti = attrs.tabindex || attrs.tabIndex; // < tabIndex is here because of backward compatibility
-        if (ti !== undefined || tags.test(node.tag)) {
+        if (ti !== undefined || focusableTag.test(node.tag)) {
             var el = node.element;
-            action(node, el);
+            el.focus();
+            emitOnFocusChange();
             return true;
         }
     }
     var children = node.children;
     if (isArray(children)) {
-        for (var i_4 = 0; i_4 < children.length; i_4++) {
-            if (callElementAction(children[i_4], tags, action))
+        for (var i = 0; i < children.length; i++) {
+            if (focus(children[i]))
                 return true;
         }
+        return false;
     }
     return false;
 }
+exports.focus = focus;
 // Bobril.Scroll
 var callbacks = [];
 function emitOnScroll(ev, target, node) {
@@ -3256,8 +3259,8 @@ function handleDrop(ev, target, node) {
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer;
-        for (var i_5 = 0; i_5 < dataKeys.length; i_5++) {
-            var k = dataKeys[i_5];
+        for (var i_4 = 0; i_4 < dataKeys.length; i_4++) {
+            var k = dataKeys[i_4];
             var d;
             if (k === "Files") {
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
@@ -3291,8 +3294,8 @@ function handleDndSelectStart(ev, target, node) {
     return true;
 }
 function anyActiveDnd() {
-    for (var i_6 = 0; i_6 < dnds.length; i_6++) {
-        var dnd = dnds[i_6];
+    for (var i_5 = 0; i_5 < dnds.length; i_5++) {
+        var dnd = dnds[i_5];
         if (dnd.beforeDrag)
             continue;
         return dnd;
@@ -3899,11 +3902,11 @@ function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
         if (isArray(parent)) {
-            for (var i_7 = 0; i_7 < parent.length; i_7++) {
-                if (i_7 > 0) {
+            for (var i_6 = 0; i_6 < parent.length; i_6++) {
+                if (i_6 > 0) {
                     result += ",";
                 }
-                result += "." + buildCssSubRule(parent[i_7]) + "." + name;
+                result += "." + buildCssSubRule(parent[i_6]) + "." + name;
             }
         }
         else {
@@ -3927,8 +3930,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         style(cur, curPseudo);
     }
     else if (isArray(style)) {
-        for (var i_8 = 0; i_8 < style.length; i_8++) {
-            flattenStyle(cur, curPseudo, style[i_8], undefined);
+        for (var i_7 = 0; i_7 < style.length; i_7++) {
+            flattenStyle(cur, curPseudo, style[i_7], undefined);
         }
     }
     else if (typeof style === "object") {
@@ -3955,8 +3958,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
 }
 function beforeFrame() {
     if (rebuildStyles) {
-        for (var i_9 = 0; i_9 < dynamicSprites.length; i_9++) {
-            var dynSprite = dynamicSprites[i_9];
+        for (var i_8 = 0; i_8 < dynamicSprites.length; i_8++) {
+            var dynSprite = dynamicSprites[i_8];
             var image = imageCache[dynSprite.url];
             if (image == null)
                 continue;

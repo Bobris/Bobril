@@ -26,6 +26,7 @@ var InputApp;
     // Model
     var frame = 0;
     var value = "Change this";
+    var firstInput = null;
     function setValue(v) {
         value = v;
         b.invalidate();
@@ -33,6 +34,8 @@ var InputApp;
     var checked = false;
     function setChecked(v) {
         checked = v;
+        if (v)
+            b.select(firstInput, 5, 3);
         b.invalidate();
     }
     var radio1 = false;
@@ -126,12 +129,16 @@ var InputApp;
             component: OnChangeComponent
         };
     }
+    function withRef(node, setter) {
+        node.ref = setter;
+        return node;
+    }
     b.init(function () {
         frame++;
         return [
             h("h1", "Input Bobril sample"),
             layoutPair([
-                textInput(value, setValue),
+                withRef(textInput(value, setValue), function (n) { return firstInput = n; }),
                 h("p", "Entered: ", value),
                 h("label", checkbox(checked, setChecked), "Checkbox"),
                 h("p", "Checked: ", checked ? "Yes" : "No"),

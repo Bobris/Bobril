@@ -66,26 +66,8 @@
     function focused() {
         return currentFocusedNode;
     }
-    function focusAction(node, element) {
-        element.focus();
-        emitOnFocusChange();
-    }
-    var focusableTag = /^input$|^select$|^textarea$|^button$/g;
+    var focusableTag = /^input$|^select$|^textarea$|^button$/;
     function focus(node) {
-        return callElementAction(node, selectableTag, focusAction);
-    }
-    var selectableTag = /^input$|^textarea$/g;
-    function select(node, start, end) {
-        if (end === void 0) { end = start; }
-        return callElementAction(node, selectableTag, function (node, element) {
-            element.setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
-            var c = node.component;
-            if (c && c.onSelectionChange) {
-                c.onSelectionChange(node.ctx, { startPosition: start, endPosition: end });
-            }
-        });
-    }
-    function callElementAction(node, tags, action) {
         if (node == null)
             return false;
         if (typeof node === "string")
@@ -100,22 +82,22 @@
         var attrs = node.attrs;
         if (attrs != null) {
             var ti = attrs.tabindex || attrs.tabIndex; // < tabIndex is here because of backward compatibility
-            if (ti !== undefined || tags.test(node.tag)) {
+            if (ti !== undefined || focusableTag.test(node.tag)) {
                 var el = node.element;
-                action(node, el);
+                el.focus();
+                emitOnFocusChange();
                 return true;
             }
         }
         var children = node.children;
         if (b.isArray(children)) {
-            for (var i_1 = 0; i_1 < children.length; i_1++) {
-                if (callElementAction(children[i_1], tags, action))
+            for (var i = 0; i < children.length; i++) {
+                if (focus(children[i]))
                     return true;
             }
-            return false;
         }
+        return false;
     }
     b.focused = focused;
     b.focus = focus;
-    b.select = select;
 })(b);

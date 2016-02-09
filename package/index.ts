@@ -2258,16 +2258,33 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
             if (swap) {
                 let s = sStart; sStart = sEnd; sEnd = s;
             }
-            if (oStart !== sStart || (<any>ctx)[bSelectionEnd] !== sEnd) {
-                (<any>ctx)[bSelectionStart] = sStart;
-                (<any>ctx)[bSelectionEnd] = sEnd;
-                c.onSelectionChange(ctx, {
-                    startPosition: sStart,
-                    endPosition: sEnd
-                });
-            }
+            emitOnSelectionChange(node, sStart, sEnd);
         }
     }
+    return false;
+}
+
+function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: number) {
+    let c = node.component;
+    let ctx = node.ctx;
+    if (c && ((<any>ctx)[bSelectionStart] !== start || (<any>ctx)[bSelectionEnd] !== end)) {
+        (<any>ctx)[bSelectionStart] = start;
+        (<any>ctx)[bSelectionEnd] = end;
+        c.onSelectionChange(ctx, {
+            startPosition: start,
+            endPosition: end
+        });
+    }
+}
+
+export function select(node: IBobrilCacheNode, start: number, end = start): void {
+    (<any>node.element).setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
+    emitOnSelectionChange(node, start, end);
+}
+
+function emitOnMouseChange(ev: Event, target: Node, node: IBobrilCacheNode): boolean {
+    let f = focused();
+    if (f) emitOnChange(ev, <Node>f.element, f);
     return false;
 }
 
@@ -2275,6 +2292,10 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
 var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
 for (var i = 0; i < events.length; i++)
     addEvent(events[i], 10, emitOnChange);
+
+var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
+for (var i = 0; i < mouseEvents.length; i++)
+    addEvent(mouseEvents[i], 2, emitOnMouseChange);
 
 // Bobril.OnKey
 
@@ -2610,7 +2631,7 @@ var prevMousePath: IBobrilCacheNode[] = [];
 
 export function revalidateMouseIn() {
     if (lastMouseEv)
-        mouseEnterAndLeave(lastMouseEv);
+        mouseEnterAndLeave(lastMouseEv);        
 }
 
 function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
@@ -2934,53 +2955,34 @@ export function focused(): IBobrilCacheNode {
     return currentFocusedNode;
 }
 
-function focusAction(node: IBobrilCacheNode, element: HTMLElement) {
-    element.focus();
-    emitOnFocusChange();
-}
-
-var focusableTag = /^input$|^select$|^textarea$|^button$/g;
+const focusableTag = /^input$|^select$|^textarea$|^button$/;
 export function focus(node: IBobrilCacheNode): boolean {
-    return callElementAction(node, selectableTag, focusAction);
-}
-
-const selectableTag = /^input$|^textarea$/g;
-export function select(node: IBobrilCacheNode, start: number, end = start): boolean {
-    return callElementAction(node, selectableTag,
-        (node: IBobrilCacheNode, element: HTMLElement) => {
-            (<any>element).setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
-            let c = node.component;
-            if (c && c.onSelectionChange) {
-                c.onSelectionChange(node.ctx, { startPosition: start, endPosition: end });
-            }
-        });
-}
-
-function callElementAction(node: IBobrilCacheNode, tags: RegExp, action: (node: IBobrilCacheNode, element: HTMLElement) => void): boolean {
     if (node == null) return false;
     if (typeof node === "string") return false;
-    let style = node.style;
+    var style = node.style;
     if (style != null) {
         if (style.visibility === "hidden")
             return false;
         if (style.display === "none")
             return false;
     }
-    let attrs = node.attrs;
+    var attrs = node.attrs;
     if (attrs != null) {
         var ti = attrs.tabindex || (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
-        if (ti !== undefined || tags.test(node.tag)) {
+        if (ti !== undefined || focusableTag.test(node.tag)) {
             var el = node.element;
-            action(node, <HTMLElement>el);
+            (<HTMLElement>el).focus();
+            emitOnFocusChange();
             return true;
         }
     }
-    let children = node.children;
+    var children = node.children;
     if (isArray(children)) {
-        for (let i = 0; i < (<IBobrilCacheNode[]>children).length; i++) {
-            if (callElementAction((<IBobrilCacheNode[]>children)[i], tags, action))
+        for (var i = 0; i < children.length; i++) {
+            if (focus(children[i]))
                 return true;
         }
+        return false;
     }
     return false;
 }

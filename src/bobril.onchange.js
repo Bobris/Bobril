@@ -203,20 +203,40 @@
                     sStart = sEnd;
                     sEnd = s;
                 }
-                if (oStart !== sStart || ctx[bSelectionEnd] !== sEnd) {
-                    ctx[bSelectionStart] = sStart;
-                    ctx[bSelectionEnd] = sEnd;
-                    c.onSelectionChange(ctx, {
-                        startPosition: sStart,
-                        endPosition: sEnd
-                    });
-                }
+                emitOnSelectionChange(node, sStart, sEnd);
             }
         }
+        return false;
+    }
+    function emitOnSelectionChange(node, start, end) {
+        var c = node.component;
+        var ctx = node.ctx;
+        if (c && (ctx[bSelectionStart] !== start || ctx[bSelectionEnd] !== end)) {
+            ctx[bSelectionStart] = start;
+            ctx[bSelectionEnd] = end;
+            c.onSelectionChange(ctx, {
+                startPosition: start,
+                endPosition: end
+            });
+        }
+    }
+    function select(node, start, end) {
+        if (end === void 0) { end = start; }
+        node.element.setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
+        emitOnSelectionChange(node, start, end);
+    }
+    function emitOnMouseChange(ev, target, node) {
+        var f = b.focused && b.focused();
+        if (f)
+            emitOnChange(ev, f.element, f);
         return false;
     }
     // click here must have lower priority (higher number) over mouse handlers
     var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 10, emitOnChange);
+    var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
+    for (var i = 0; i < mouseEvents.length; i++)
+        b.addEvent(mouseEvents[i], 2, emitOnMouseChange);
+    b.select = select;
 })(b);

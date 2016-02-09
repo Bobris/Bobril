@@ -6,7 +6,7 @@ module InputApp {
         return { tag: tag, children: args };
     }
 
-    function layoutPair(left: any, right: any, leftWidth = "50%"): IBobrilNode {
+    function layoutPair(left: IBobrilChildren, right: IBobrilChildren, leftWidth = "50%"): IBobrilNode {
         return {
             tag: "div",
             style: { display: "table", width: "100%" },
@@ -24,6 +24,7 @@ module InputApp {
     // Model
     var frame = 0;
     var value = "Change this";
+    let firstInput: IBobrilCacheNode = null;
 
     function setValue(v: string) {
         value = v;
@@ -34,6 +35,7 @@ module InputApp {
 
     function setChecked(v: boolean) {
         checked = v;
+        if (v) b.select(firstInput, 5, 3);
         b.invalidate();
     }
 
@@ -157,12 +159,17 @@ module InputApp {
         }
     }
 
+    function withRef(node: IBobrilNode, setter: (node: IBobrilCacheNode) => void) {
+        node.ref = setter;
+        return node;
+    }
+
     b.init(() => {
         frame++;
         return [
             h("h1", "Input Bobril sample"),
             layoutPair([
-                textInput(value, setValue),
+                withRef(textInput(value, setValue), (n) => firstInput = n),
                 h("p", "Entered: ", value),
                 h("label", checkbox(checked, setChecked), "Checkbox"),
                 h("p", "Checked: ", checked ? <any>"Yes" : "No"),
