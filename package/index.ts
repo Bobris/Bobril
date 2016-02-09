@@ -2610,7 +2610,7 @@ var prevMousePath: IBobrilCacheNode[] = [];
 
 export function revalidateMouseIn() {
     if (lastMouseEv)
-        mouseEnterAndLeave(lastMouseEv);        
+        mouseEnterAndLeave(lastMouseEv);
 }
 
 function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
@@ -2934,34 +2934,53 @@ export function focused(): IBobrilCacheNode {
     return currentFocusedNode;
 }
 
-const focusableTag = /^input$|^select$|^textarea$|^button$/;
+function focusAction(node: IBobrilCacheNode, element: HTMLElement) {
+    element.focus();
+    emitOnFocusChange();
+}
+
+var focusableTag = /^input$|^select$|^textarea$|^button$/g;
 export function focus(node: IBobrilCacheNode): boolean {
+    return callElementAction(node, selectableTag, focusAction);
+}
+
+const selectableTag = /^input$|^textarea$/g;
+export function select(node: IBobrilCacheNode, start: number, end = start): boolean {
+    return callElementAction(node, selectableTag,
+        (node: IBobrilCacheNode, element: HTMLElement) => {
+            (<any>element).setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
+            let c = node.component;
+            if (c && c.onSelectionChange) {
+                c.onSelectionChange(node.ctx, { startPosition: start, endPosition: end });
+            }
+        });
+}
+
+function callElementAction(node: IBobrilCacheNode, tags: RegExp, action: (node: IBobrilCacheNode, element: HTMLElement) => void): boolean {
     if (node == null) return false;
     if (typeof node === "string") return false;
-    var style = node.style;
+    let style = node.style;
     if (style != null) {
         if (style.visibility === "hidden")
             return false;
         if (style.display === "none")
             return false;
     }
-    var attrs = node.attrs;
+    let attrs = node.attrs;
     if (attrs != null) {
         var ti = attrs.tabindex || (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
-        if (ti !== undefined || focusableTag.test(node.tag)) {
+        if (ti !== undefined || tags.test(node.tag)) {
             var el = node.element;
-            (<HTMLElement>el).focus();
-            emitOnFocusChange();
+            action(node, <HTMLElement>el);
             return true;
         }
     }
-    var children = node.children;
+    let children = node.children;
     if (isArray(children)) {
-        for (var i = 0; i < children.length; i++) {
-            if (focus(children[i]))
+        for (let i = 0; i < (<IBobrilCacheNode[]>children).length; i++) {
+            if (callElementAction((<IBobrilCacheNode[]>children)[i], tags, action))
                 return true;
         }
-        return false;
     }
     return false;
 }

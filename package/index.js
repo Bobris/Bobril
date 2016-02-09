@@ -2708,8 +2708,28 @@ function focused() {
     return currentFocusedNode;
 }
 exports.focused = focused;
-var focusableTag = /^input$|^select$|^textarea$|^button$/;
+function focusAction(node, element) {
+    element.focus();
+    emitOnFocusChange();
+}
+var focusableTag = /^input$|^select$|^textarea$|^button$/g;
 function focus(node) {
+    return callElementAction(node, selectableTag, focusAction);
+}
+exports.focus = focus;
+var selectableTag = /^input$|^textarea$/g;
+function select(node, start, end) {
+    if (end === void 0) { end = start; }
+    return callElementAction(node, selectableTag, function (node, element) {
+        element.setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
+        var c = node.component;
+        if (c && c.onSelectionChange) {
+            c.onSelectionChange(node.ctx, { startPosition: start, endPosition: end });
+        }
+    });
+}
+exports.select = select;
+function callElementAction(node, tags, action) {
     if (node == null)
         return false;
     if (typeof node === "string")
@@ -2724,24 +2744,21 @@ function focus(node) {
     var attrs = node.attrs;
     if (attrs != null) {
         var ti = attrs.tabindex || attrs.tabIndex; // < tabIndex is here because of backward compatibility
-        if (ti !== undefined || focusableTag.test(node.tag)) {
+        if (ti !== undefined || tags.test(node.tag)) {
             var el = node.element;
-            el.focus();
-            emitOnFocusChange();
+            action(node, el);
             return true;
         }
     }
     var children = node.children;
     if (isArray(children)) {
-        for (var i = 0; i < children.length; i++) {
-            if (focus(children[i]))
+        for (var i_4 = 0; i_4 < children.length; i_4++) {
+            if (callElementAction(children[i_4], tags, action))
                 return true;
         }
-        return false;
     }
     return false;
 }
-exports.focus = focus;
 // Bobril.Scroll
 var callbacks = [];
 function emitOnScroll(ev, target, node) {
@@ -3239,8 +3256,8 @@ function handleDrop(ev, target, node) {
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer;
-        for (var i_4 = 0; i_4 < dataKeys.length; i_4++) {
-            var k = dataKeys[i_4];
+        for (var i_5 = 0; i_5 < dataKeys.length; i_5++) {
+            var k = dataKeys[i_5];
             var d;
             if (k === "Files") {
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
@@ -3274,8 +3291,8 @@ function handleDndSelectStart(ev, target, node) {
     return true;
 }
 function anyActiveDnd() {
-    for (var i_5 = 0; i_5 < dnds.length; i_5++) {
-        var dnd = dnds[i_5];
+    for (var i_6 = 0; i_6 < dnds.length; i_6++) {
+        var dnd = dnds[i_6];
         if (dnd.beforeDrag)
             continue;
         return dnd;
@@ -3882,11 +3899,11 @@ function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
         if (isArray(parent)) {
-            for (var i_6 = 0; i_6 < parent.length; i_6++) {
-                if (i_6 > 0) {
+            for (var i_7 = 0; i_7 < parent.length; i_7++) {
+                if (i_7 > 0) {
                     result += ",";
                 }
-                result += "." + buildCssSubRule(parent[i_6]) + "." + name;
+                result += "." + buildCssSubRule(parent[i_7]) + "." + name;
             }
         }
         else {
@@ -3910,8 +3927,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         style(cur, curPseudo);
     }
     else if (isArray(style)) {
-        for (var i_7 = 0; i_7 < style.length; i_7++) {
-            flattenStyle(cur, curPseudo, style[i_7], undefined);
+        for (var i_8 = 0; i_8 < style.length; i_8++) {
+            flattenStyle(cur, curPseudo, style[i_8], undefined);
         }
     }
     else if (typeof style === "object") {
@@ -3938,8 +3955,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
 }
 function beforeFrame() {
     if (rebuildStyles) {
-        for (var i_8 = 0; i_8 < dynamicSprites.length; i_8++) {
-            var dynSprite = dynamicSprites[i_8];
+        for (var i_9 = 0; i_9 < dynamicSprites.length; i_9++) {
+            var dynSprite = dynamicSprites[i_9];
             var image = imageCache[dynSprite.url];
             if (image == null)
                 continue;

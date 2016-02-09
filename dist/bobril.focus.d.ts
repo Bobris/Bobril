@@ -3,6 +3,8 @@ interface IBobrilStatic {
     focused? (): IBobrilCacheNode;
     // set focus to first focusable node in parameter usually should be called from postInitDom method, return true is such node found
     focus? (node: IBobrilCacheNode): boolean;
+    // set text selection to first selectable node in parameter usually should be called from postInitDom method, return true is such node found
+    select? (node: IBobrilCacheNode, start: number, end?: number): boolean;
 }
 
 interface IBobrilComponent {
