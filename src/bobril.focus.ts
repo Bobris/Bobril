@@ -80,8 +80,7 @@
     function emitOnSelectionChange(node: IBobrilCacheNode, s: ISelectionData) : void {
         let c = node.component;
         if (c && c.onSelectionChange) {
-            let sEnd: number;
-            let sStart: number;
+            let sStart: number, sEnd: number;            
             if (s.direction === 'backward') {
                 sStart = s.end; sEnd = s.start;
             } else {
