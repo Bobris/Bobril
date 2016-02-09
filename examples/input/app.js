@@ -1,5 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.onchange.d.ts"/>
+/// <reference path="../../src/bobril.focus.d.ts"/>
 var InputApp;
 (function (InputApp) {
     function h(tag) {
@@ -34,8 +35,10 @@ var InputApp;
     var checked = false;
     function setChecked(v) {
         checked = v;
-        if (v)
+        if (v) {
             b.select(firstInput, 5, 3);
+            b.focus(firstInput);
+        }
         b.invalidate();
     }
     var radio1 = false;

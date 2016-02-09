@@ -1,5 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
 /// <reference path="../../src/bobril.onchange.d.ts"/>
+/// <reference path="../../src/bobril.focus.d.ts"/>
 
 module InputApp {
     function h(tag: string, ...args: any[]) {
@@ -35,7 +36,10 @@ module InputApp {
 
     function setChecked(v: boolean) {
         checked = v;
-        if (v) b.select(firstInput, 5, 3);
+        if (v) {
+            b.select(firstInput, 5, 3);
+            b.focus(firstInput);
+        }
         b.invalidate();
     }
 
