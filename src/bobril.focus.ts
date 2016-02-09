@@ -74,36 +74,61 @@
 
     var focusableTag = /^input$|^select$|^textarea$|^button$/;
     function focus(node: IBobrilCacheNode): boolean {
+        return callElementAction(node, selectableTag, (el: HTMLElement) => el.focus(), emitOnFocusChange);    
+    }
+
+    function emitOnSelectionChange(node: IBobrilCacheNode, s: ISelectionData) : void {
+        let c = node.component;
+        if (c && c.onSelectionChange) {
+            let sStart: number, sEnd: number;            
+            if (s.direction === 'backward') {
+                sStart = s.end; sEnd = s.start;
+            } else {
+                s.start = s.start; sEnd = s.end;
+            }
+            c.onSelectionChange(node.ctx, {startPosition : sStart, endPosition : sEnd});
+        }
+    }
+
+    const selectableTag = /^input$|^textarea$/;
+    function select(node: IBobrilCacheNode, s: ISelectionData): boolean {
+        return callElementAction(node, selectableTag,
+            (el: HTMLElement) => (<any>el).setSelectionRange(s.start, s.end, s.direction),
+            () => emitOnSelectionChange(node, s));
+    }
+
+    function callElementAction(node: IBobrilCacheNode, tags: RegExp, action:(el: HTMLElement) => void, emit?:() => void): boolean {
         if (node == null) return false;
         if (typeof node === "string") return false;
-        var style = node.style;
+        let style = node.style;
         if (style != null) {
             if (style.visibility === "hidden")
                 return false;
             if (style.display === "none")
                 return false;
         }
-        var attrs = node.attrs;
+        let attrs = node.attrs;
         if (attrs != null) {
             var ti = attrs.tabindex || (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
-            if (ti !== undefined || focusableTag.test(node.tag)) {
+            if (ti !== undefined || tags.test(node.tag)) {
                 var el = node.element;
-                (<HTMLElement>el).focus();
-                emitOnFocusChange();
+                action(<HTMLElement>el);
+                emit();
                 return true;
             }
         }
-        var children = node.children;
-        if (b.isArray(children)) {
-            for (var i = 0; i < children.length; i++) {
-                if (focus(children[i]))
+        let children = node.children;
+        if (isArray(children)) {
+            for (let i = 0; i < (<IBobrilChild[]>children).length; i++) {
+                if (callElementAction((<IBobrilChild[]>children)[i], tags, action, emit))
                     return true;
             }
             return false;
         }
-        return false;
+        return callElementAction(children, tags, action, emit);
     }
 
     b.focused = focused;
     b.focus = focus;
+    b.select = select;
 })(b);
