@@ -97,7 +97,7 @@
             () => emitOnSelectionChange(node, s));
     }
 
-    function callElementAction(node: IBobrilCacheNode, allowedTags: RegExp, action:(el: HTMLElement) => void, emit?:() => void): boolean {
+    function callElementAction(node: IBobrilCacheNode, tags: RegExp, action:(el: HTMLElement) => void, emit?:() => void): boolean {
         if (node == null) return false;
         if (typeof node === "string") return false;
         let style = node.style;
@@ -110,7 +110,7 @@
         let attrs = node.attrs;
         if (attrs != null) {
             var ti = attrs.tabindex || (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
-            if (ti !== undefined || allowedTags.test(node.tag)) {
+            if (ti !== undefined || tags.test(node.tag)) {
                 var el = node.element;
                 action(<HTMLElement>el);
                 emit();
@@ -120,12 +120,12 @@
         let children = node.children;
         if (isArray(children)) {
             for (let i = 0; i < (<IBobrilChild[]>children).length; i++) {
-                if (callElementAction((<IBobrilChild[]>children)[i], allowedTags, action, emit))
+                if (callElementAction((<IBobrilChild[]>children)[i], tags, action, emit))
                     return true;
             }
             return false;
         }
-        return callElementAction(children, allowedTags, action, emit);
+        return callElementAction(children, tags, action, emit);
     }
 
     b.focused = focused;
