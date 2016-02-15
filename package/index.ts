@@ -2968,7 +2968,7 @@ export function focus(node: IBobrilCacheNode): boolean {
     }
     var attrs = node.attrs;
     if (attrs != null) {
-        var ti = attrs.tabindex || (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
+        var ti = attrs.tabindex != null ? attrs.tabindex : (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
         if (ti !== undefined || focusableTag.test(node.tag)) {
             var el = node.element;
             (<HTMLElement>el).focus();

@@ -2743,7 +2743,7 @@ function focus(node) {
     }
     var attrs = node.attrs;
     if (attrs != null) {
-        var ti = attrs.tabindex || attrs.tabIndex; // < tabIndex is here because of backward compatibility
+        var ti = attrs.tabindex != null ? attrs.tabindex : attrs.tabIndex; // < tabIndex is here because of backward compatibility
         if (ti !== undefined || focusableTag.test(node.tag)) {
             var el = node.element;
             el.focus();

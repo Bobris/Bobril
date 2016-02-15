@@ -15,8 +15,8 @@
             while (common < nodestack.length && common < newstack.length && nodestack[common] === newstack[common])
                 common++;
             var i = nodestack.length - 1;
-            var n:IBobrilCacheNode;
-            var c:IBobrilComponent;
+            var n: IBobrilCacheNode;
+            var c: IBobrilComponent;
             if (i >= common) {
                 n = nodestack[i];
                 if (n) {
@@ -64,7 +64,7 @@
         emitOnFocusChange();
     }
 
-    var events = ["focus","blur","keydown","keyup","keypress","mousedown","mouseup","mousemove","touchstart","touchend"];
+    var events = ["focus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 50, <any>(b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
 
@@ -85,7 +85,7 @@
         }
         var attrs = node.attrs;
         if (attrs != null) {
-            var ti = attrs.tabindex || (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
+            var ti = attrs.tabindex != null ? attrs.tabindex : (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
             if (ti !== undefined || focusableTag.test(node.tag)) {
                 var el = node.element;
                 (<HTMLElement>el).focus();
