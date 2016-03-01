@@ -225,6 +225,7 @@ export declare function addOnScroll(callback: (info?: IBobrilScroll) => void): v
 export declare function removeOnScroll(callback: (info?: IBobrilScroll) => void): void;
 export declare function isScrollable(el: Element): [boolean, boolean];
 export declare function getWindowScroll(): [number, number];
+export declare function nodePagePos(node: IBobrilCacheNode): [number, number];
 export declare const enum DndOp {
     None = 0,
     Link = 1,
@@ -354,3 +355,10 @@ export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): 
 export declare function createVirtualComponent<TData>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare function createComponent<TData extends Object>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
+export declare function createElement(name: any, props: any): IBobrilNode;
+export declare const __spread: {
+    <T, U>(target: T, source: U): T & U;
+    <T, U, V>(target: T, source1: U, source2: V): T & U & V;
+    <T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
+    (target: any, ...sources: any[]): any;
+};

@@ -156,7 +156,7 @@ export interface IBobrilCtx {
     // properties passed from parent component, treat it as immutable
     data?: any;
     me?: IBobrilCacheNode;
-    // properties passed from parent component automaticaly, but could be extended for children to IBobrilNode.cfg
+    // properties passed from parent component automatically, but could be extended for children to IBobrilNode.cfg
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode };
 }
@@ -187,7 +187,7 @@ function createTextNode(content: string): Text {
     return document.createTextNode(content);
 }
 
-function createElement(name: string): HTMLElement {
+function createEl(name: string): HTMLElement {
     return document.createElement(name);
 }
 
@@ -542,7 +542,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
             var removeEl = false;
             var parent = createInto;
             if (!(<HTMLElement>el).insertAdjacentHTML) {
-                el = parent.insertBefore(createElement("i"), el);
+                el = parent.insertBefore(createEl("i"), el);
                 removeEl = true;
             }
             (<HTMLElement>el).insertAdjacentHTML("beforebegin", htmltext);
@@ -573,7 +573,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
         el = <any>document.createElementNS("http://www.w3.org/2000/svg", tag);
         inSvg = true;
     } else if (!el) {
-        el = createElement(tag);
+        el = createEl(tag);
     }
     createInto.insertBefore(el, createBefore);
     c.element = el;
@@ -2631,7 +2631,7 @@ var prevMousePath: IBobrilCacheNode[] = [];
 
 export function revalidateMouseIn() {
     if (lastMouseEv)
-        mouseEnterAndLeave(lastMouseEv);        
+        mouseEnterAndLeave(lastMouseEv);
 }
 
 function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
@@ -3038,6 +3038,15 @@ export function getWindowScroll(): [number, number] {
     return [left, top];
 }
 
+// returns node offset on page in standart X,Y order
+export function nodePagePos(node: IBobrilCacheNode): [number, number] {
+    let rect = (<Element>getDomNode(node)).getBoundingClientRect();
+    let res = getWindowScroll();
+    res[0] += rect.left;
+    res[1] += rect.top;
+    return res;
+}
+
 // Bobril.Dnd
 
 export const enum DndOp {
@@ -3075,7 +3084,7 @@ export interface IDndCtx {
     local: boolean;
     ended: boolean;
     // default value is 10, but you can assign to this >=0 number in onDragStart
-    distanceToStart: number;    
+    distanceToStart: number;
     // drag started at this pointer position
     startX: number;
     startY: number;
@@ -4757,3 +4766,48 @@ export function createDerivedComponent<TData>(original: (data?: any, children?: 
 
 // bobril-clouseau needs this
 if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, invalidateStyles, ignoreShouldChange, setAfterFrame, setBeforeFrame, getDnds };
+
+// TSX reactNamespace emulation
+// PureFuncs: createElement
+
+export function createElement(name: any, props: any): IBobrilNode {
+    var children: IBobrilChild[] = [];
+    for (var i = 2; i < arguments.length; i++) {
+        var ii = arguments[i];
+        if (typeof ii === "number")
+            children.push("" + ii);
+        else
+            children.push(ii);
+    }
+    if (typeof name === "string") {
+        var res: IBobrilNode = { tag: name, children: children };
+        if (props == null) {
+            return res;
+        }
+        var attrs = {};
+        var someattrs = false;
+        for (var n in props) {
+            if (!props.hasOwnProperty(n)) continue;
+            if (n === "style") {
+                style(res, props[n]);
+            }
+            if (n === "key" || n === "ref" || n === "className" || n === "component" || n === "data") {
+                res[n] = props[n];
+                continue;
+            }
+            someattrs = true;
+            attrs[n] = props[n];
+        }
+        if (someattrs)
+            res.attrs = attrs;
+
+        return res;
+    } else {
+        let res = name(props, children);
+        if (props.key != null) res.key = props.key;
+        if (props.ref != null) res.ref = props.ref;
+        return res;
+    }
+}
+
+export const __spread = assign;

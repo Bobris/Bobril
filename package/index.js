@@ -12,7 +12,7 @@ var isArray = Array.isArray;
 function createTextNode(content) {
     return document.createTextNode(content);
 }
-function createElement(name) {
+function createEl(name) {
     return document.createElement(name);
 }
 var hasTextContent = "textContent" in createTextNode("");
@@ -377,7 +377,7 @@ function createNode(n, parentNode, createInto, createBefore) {
             var removeEl = false;
             var parent = createInto;
             if (!el.insertAdjacentHTML) {
-                el = parent.insertBefore(createElement("i"), el);
+                el = parent.insertBefore(createEl("i"), el);
                 removeEl = true;
             }
             el.insertAdjacentHTML("beforebegin", htmltext);
@@ -410,7 +410,7 @@ function createNode(n, parentNode, createInto, createBefore) {
         inSvg = true;
     }
     else if (!el) {
-        el = createElement(tag);
+        el = createEl(tag);
     }
     createInto.insertBefore(el, createBefore);
     c.element = el;
@@ -2810,6 +2810,15 @@ function getWindowScroll() {
     return [left, top];
 }
 exports.getWindowScroll = getWindowScroll;
+// returns node offset on page in standart X,Y order
+function nodePagePos(node) {
+    var rect = getDomNode(node).getBoundingClientRect();
+    var res = getWindowScroll();
+    res[0] += rect.left;
+    res[1] += rect.top;
+    return res;
+}
+exports.nodePagePos = nodePagePos;
 var lastDndId = 0;
 var dnds = [];
 var systemdnd = null;
@@ -4404,3 +4413,49 @@ exports.createDerivedComponent = createDerivedComponent;
 // bobril-clouseau needs this
 if (!window.b)
     window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, invalidateStyles: invalidateStyles, ignoreShouldChange: ignoreShouldChange, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
+// TSX reactNamespace emulation
+// PureFuncs: createElement
+function createElement(name, props) {
+    var children = [];
+    for (var i = 2; i < arguments.length; i++) {
+        var ii = arguments[i];
+        if (typeof ii === "number")
+            children.push("" + ii);
+        else
+            children.push(ii);
+    }
+    if (typeof name === "string") {
+        var res = { tag: name, children: children };
+        if (props == null) {
+            return res;
+        }
+        var attrs = {};
+        var someattrs = false;
+        for (var n in props) {
+            if (!props.hasOwnProperty(n))
+                continue;
+            if (n === "style") {
+                style(res, props[n]);
+            }
+            if (n === "key" || n === "ref" || n === "className" || n === "component" || n === "data") {
+                res[n] = props[n];
+                continue;
+            }
+            someattrs = true;
+            attrs[n] = props[n];
+        }
+        if (someattrs)
+            res.attrs = attrs;
+        return res;
+    }
+    else {
+        var res_1 = name(props, children);
+        if (props.key != null)
+            res_1.key = props.key;
+        if (props.ref != null)
+            res_1.ref = props.ref;
+        return res_1;
+    }
+}
+exports.createElement = createElement;
+exports.__spread = exports.assign;
