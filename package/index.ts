@@ -4804,8 +4804,10 @@ export function createElement(name: any, props: any): IBobrilNode {
         return res;
     } else {
         let res = name(props, children);
-        if (props.key != null) res.key = props.key;
-        if (props.ref != null) res.ref = props.ref;
+        if (props != null) {
+            if (props.key != null) res.key = props.key;
+            if (props.ref != null) res.ref = props.ref;
+        }
         return res;
     }
 }

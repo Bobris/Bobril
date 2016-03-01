@@ -4450,10 +4450,12 @@ function createElement(name, props) {
     }
     else {
         var res_1 = name(props, children);
-        if (props.key != null)
-            res_1.key = props.key;
-        if (props.ref != null)
-            res_1.ref = props.ref;
+        if (props != null) {
+            if (props.key != null)
+                res_1.key = props.key;
+            if (props.ref != null)
+                res_1.ref = props.ref;
+        }
         return res_1;
     }
 }
