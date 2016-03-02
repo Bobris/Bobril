@@ -65,6 +65,11 @@ module MouseApp {
             return ctx.data.stopPropagation;
         },
 
+        onContextMenu(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
+            ctx.data.onAdd(new EventWrapper(event, "Context Menu"));
+            return ctx.data.stopPropagation;
+        },
+
         onMouseDown(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return ctx.data.stopPropagation;

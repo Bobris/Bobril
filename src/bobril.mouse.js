@@ -378,11 +378,11 @@
     function decodeButton(ev) {
         return ev.which || ev.button;
     }
-    function createHandler(handlerName) {
+    function createHandler(handlerName, allButtons) {
         return function (ev, target, node) {
             var button = decodeButton(ev) || 1;
-            // Ignore non left mouse click/dblclick event
-            if (button !== 1)
+            // Ignore non left mouse click/dblclick event, but not for contextmenu event
+            if (!allButtons && button !== 1)
                 return false;
             var param = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
@@ -422,6 +422,7 @@
     // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
+    addEvent5("contextmenu", createHandler("onContextMenu", true));
     var wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
     function handleMouseWheel(ev, target, node) {
         if (hasPointerEventsNoneB(node)) {

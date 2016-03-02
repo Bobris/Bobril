@@ -40,6 +40,7 @@ export interface IBobrilComponent {
     onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
     onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;

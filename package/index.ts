@@ -62,8 +62,9 @@ export interface IBobrilComponent {
     onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
 
     // called on input element after click/tap
-    onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean
+    onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
@@ -2798,11 +2799,11 @@ function decodeButton(ev: MouseEvent): number {
     return ev.which || ev.button;
 }
 
-function createHandler(handlerName: string) {
+function createHandler(handlerName: string, allButtons?: boolean) {
     return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
         let button = decodeButton(ev) || 1;
-        // Ignore non left mouse click/dblclick event
-        if (button !== 1) return false;
+        // Ignore non left mouse click/dblclick event, but not for contextmenu event
+        if (!allButtons && button !== 1) return false;
         var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
         if (invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
             preventDefault(ev);
@@ -2845,6 +2846,7 @@ addEvent5("selectstart", handleSelectStart);
 // click must have higher priority over onchange detection
 addEvent5("click", createHandler(onClickText));
 addEvent5("dblclick", createHandler("onDoubleClick"));
+addEvent5("contextmenu", createHandler("onContextMenu", true));
 
 let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
 function handleMouseWheel(ev: any, target: Node, node: IBobrilCacheNode): boolean {

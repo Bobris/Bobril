@@ -249,9 +249,9 @@ const enum Consts {
 
     function revalidateMouseIn() {
         if (lastMouseEv)
-            mouseEnterAndLeave(lastMouseEv);        
+            mouseEnterAndLeave(lastMouseEv);
     }
-    
+
     function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         lastMouseEv = ev;
         var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
@@ -416,11 +416,11 @@ const enum Consts {
         return ev.which || ev.button;
     }
 
-    function createHandler(handlerName: string) {
+    function createHandler(handlerName: string, allButtons?: boolean) {
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
             let button = decodeButton(ev) || 1;
-            // Ignore non left mouse click/dblclick event
-            if (button !== 1) return false;
+            // Ignore non left mouse click/dblclick event, but not for contextmenu event
+            if (!allButtons && button !== 1) return false;
             var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
             if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
@@ -463,6 +463,7 @@ const enum Consts {
     // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
+    addEvent5("contextmenu", createHandler("onContextMenu", true));
 
     let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
     function handleMouseWheel(ev: any, target: Node, node: IBobrilCacheNode): boolean {
