@@ -3984,8 +3984,20 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         }
     }
 }
+var firstStyles = false;
 function beforeFrame() {
+    var dbs = document.body.style;
+    if (firstStyles && uptimeMs >= 150) {
+        dbs.opacity = "1";
+        firstStyles = false;
+    }
     if (rebuildStyles) {
+        // Hack around bug in Chrome to not have FOUC
+        if (frameCounter === 1 && "webkitAnimation" in dbs) {
+            firstStyles = true;
+            dbs.opacity = "0";
+            setTimeout(exports.invalidate, 200);
+        }
         for (var i_9 = 0; i_9 < dynamicSprites.length; i_9++) {
             var dynSprite = dynamicSprites[i_9];
             var image = imageCache[dynSprite.url];

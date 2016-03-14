@@ -29,7 +29,7 @@ export interface IBobrilAttributes {
 
 export interface IBobrilComponent {
     // parent component of devired/overriding component
-    super?: IBobrilComponent;     
+    super?: IBobrilComponent;
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;
@@ -1649,7 +1649,7 @@ function overrideComponents(originalComponent: IBobrilComponent, overridingCompo
         }
     }
     return res;
-}   
+}
 
 export function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode {
     var comp = node.component;
@@ -4375,8 +4375,20 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
     }
 }
 
+let firstStyles = false;
 function beforeFrame() {
+    var dbs = document.body.style;
+    if (firstStyles && uptimeMs >= 150) {
+        dbs.opacity = "1";
+        firstStyles = false;
+    }
     if (rebuildStyles) {
+        // Hack around bug in Chrome to not have FOUC
+        if (frameCounter === 1 && "webkitAnimation" in dbs) {
+            firstStyles = true;
+            dbs.opacity = "0";
+            setTimeout(invalidate, 200);
+        }
         for (let i = 0; i < dynamicSprites.length; i++) {
             let dynSprite = dynamicSprites[i];
             let image = imageCache[dynSprite.url];
