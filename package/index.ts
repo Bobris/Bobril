@@ -28,6 +28,8 @@ export interface IBobrilAttributes {
 }
 
 export interface IBobrilComponent {
+    // parent component of devired/overriding component
+    super?: IBobrilComponent;     
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;
@@ -1614,7 +1616,8 @@ function merge(f1: Function, f2: Function): Function {
 var emptyObject = {};
 
 function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent) {
-    var res = Object.create(c1);
+    let res: IBobrilComponent = Object.create(c1);
+    res.super = c1;
     for (var i in c2) {
         if (!(i in <any>emptyObject)) {
             var m = (<any>c2)[i];
@@ -1630,6 +1633,23 @@ function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent) {
     }
     return res;
 }
+
+function overrideComponents(originalComponent: IBobrilComponent, overridingComponent: IBobrilComponent) {
+    let res: IBobrilComponent = Object.create(originalComponent);
+    res.super = originalComponent;
+    for (let i in overridingComponent) {
+        if (!(i in <any>emptyObject)) {
+            let m = (<any>overridingComponent)[i];
+            let origM = (<any>originalComponent)[i];
+            if (i === 'id') {
+                res[i] = ((origM != null) ? origM : '') + '/' + m;
+            } else {
+                res[i] = m;
+            }
+        }
+    }
+    return res;
+}   
 
 export function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode {
     var comp = node.component;
@@ -4739,6 +4759,14 @@ export function createVirtualComponent<TData>(component: IBobrilComponent): (dat
         }
         return { data, component: component };
     };
+}
+
+export function createOverridingComponent<TData>(
+    original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent
+): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+    const originalComponent = original().component;
+    const overriding = overrideComponents(originalComponent, after);
+    return createVirtualComponent<TData>(overriding);
 }
 
 export function createComponent<TData extends Object>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
