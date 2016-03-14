@@ -1421,6 +1421,7 @@ b = (function (window, document) {
     var emptyObject = {};
     function mergeComponents(c1, c2) {
         var res = Object.create(c1);
+        res.super = c1;
         for (var i in c2) {
             if (!(i in emptyObject)) {
                 var m = c2[i];

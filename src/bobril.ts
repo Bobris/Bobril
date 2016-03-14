@@ -1415,17 +1415,18 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var emptyObject = {};
 
     function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent {
-        var res = Object.create(c1);
+        let res: IBobrilComponent = Object.create(c1);
+        res.super = c1;
         for (var i in c2) {
             if (!(i in <any>emptyObject)) {
                 var m = (<any>c2)[i];
                 var origM = (<any>c1)[i];
                 if (i === "id") {
-                    res[i] = ((origM != null) ? origM : "") + "/" + m;
+                    (<any>res)[i] = ((origM != null) ? origM : "") + "/" + m;
                 } else if (typeof m === "function" && origM != null && typeof origM === "function") {
-                    res[i] = merge(origM, m);
+                    (<any>res)[i] = merge(origM, m);
                 } else {
-                    res[i] = m;
+                    (<any>res)[i] = m;
                 }
             }
         }

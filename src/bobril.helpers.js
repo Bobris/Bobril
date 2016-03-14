@@ -33,23 +33,40 @@
         else {
             component.render = function (ctx, me) { me.tag = 'div'; };
         }
-        return function (data, children) {
-            if (children !== undefined) {
-                if (data == null)
-                    data = {};
-                data.children = children;
-            }
-            return { data: data, component: component };
-        };
+        return createVirtualComponent(component);
     }
     function createDerivedComponent(original, after) {
         var originalComponent = original().component;
         var merged = b.mergeComponents(originalComponent, after);
         return createVirtualComponent(merged);
     }
+    var emptyObject = {};
+    function overrideComponents(originalComponent, overridingComponent) {
+        var res = Object.create(originalComponent);
+        res.super = originalComponent;
+        for (var i in overridingComponent) {
+            if (!(i in emptyObject)) {
+                var m = overridingComponent[i];
+                var origM = originalComponent[i];
+                if (i === 'id') {
+                    res[i] = ((origM != null) ? origM : '') + '/' + m;
+                }
+                else {
+                    res[i] = m;
+                }
+            }
+        }
+        return res;
+    }
+    function createOverridingComponent(original, after) {
+        var originalComponent = original().component;
+        var overriding = overrideComponents(originalComponent, after);
+        return createVirtualComponent(overriding);
+    }
     b.withKey = withKey;
     b.styledDiv = styledDiv;
     b.createVirtualComponent = createVirtualComponent;
     b.createComponent = createComponent;
     b.createDerivedComponent = createDerivedComponent;
+    b.createOverridingComponent = createOverridingComponent;
 }(b);

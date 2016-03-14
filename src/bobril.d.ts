@@ -115,6 +115,8 @@ interface IBobrilAttributes {
 }
 
 interface IBobrilComponent {
+    // parent component of devired/overriding component
+    super?: IBobrilComponent;     
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;

@@ -1475,6 +1475,7 @@ function merge(f1, f2) {
 var emptyObject = {};
 function mergeComponents(c1, c2) {
     var res = Object.create(c1);
+    res.super = c1;
     for (var i in c2) {
         if (!(i in emptyObject)) {
             var m = c2[i];
@@ -1487,6 +1488,23 @@ function mergeComponents(c1, c2) {
             }
             else {
                 res[i] = m;
+            }
+        }
+    }
+    return res;
+}
+function overrideComponents(originalComponent, overridingComponent) {
+    var res = Object.create(originalComponent);
+    res.super = originalComponent;
+    for (var i_4 in overridingComponent) {
+        if (!(i_4 in emptyObject)) {
+            var m = overridingComponent[i_4];
+            var origM = originalComponent[i_4];
+            if (i_4 === 'id') {
+                res[i_4] = ((origM != null) ? origM : '') + '/' + m;
+            }
+            else {
+                res[i_4] = m;
             }
         }
     }
@@ -3269,8 +3287,8 @@ function handleDrop(ev, target, node) {
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer;
-        for (var i_4 = 0; i_4 < dataKeys.length; i_4++) {
-            var k = dataKeys[i_4];
+        for (var i_5 = 0; i_5 < dataKeys.length; i_5++) {
+            var k = dataKeys[i_5];
             var d;
             if (k === "Files") {
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
@@ -3304,8 +3322,8 @@ function handleDndSelectStart(ev, target, node) {
     return true;
 }
 function anyActiveDnd() {
-    for (var i_5 = 0; i_5 < dnds.length; i_5++) {
-        var dnd = dnds[i_5];
+    for (var i_6 = 0; i_6 < dnds.length; i_6++) {
+        var dnd = dnds[i_6];
         if (dnd.beforeDrag)
             continue;
         return dnd;
@@ -3912,11 +3930,11 @@ function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
         if (isArray(parent)) {
-            for (var i_6 = 0; i_6 < parent.length; i_6++) {
-                if (i_6 > 0) {
+            for (var i_7 = 0; i_7 < parent.length; i_7++) {
+                if (i_7 > 0) {
                     result += ",";
                 }
-                result += "." + buildCssSubRule(parent[i_6]) + "." + name;
+                result += "." + buildCssSubRule(parent[i_7]) + "." + name;
             }
         }
         else {
@@ -3940,8 +3958,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         style(cur, curPseudo);
     }
     else if (isArray(style)) {
-        for (var i_7 = 0; i_7 < style.length; i_7++) {
-            flattenStyle(cur, curPseudo, style[i_7], undefined);
+        for (var i_8 = 0; i_8 < style.length; i_8++) {
+            flattenStyle(cur, curPseudo, style[i_8], undefined);
         }
     }
     else if (typeof style === "object") {
@@ -3968,8 +3986,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
 }
 function beforeFrame() {
     if (rebuildStyles) {
-        for (var i_8 = 0; i_8 < dynamicSprites.length; i_8++) {
-            var dynSprite = dynamicSprites[i_8];
+        for (var i_9 = 0; i_9 < dynamicSprites.length; i_9++) {
+            var dynSprite = dynamicSprites[i_9];
             var image = imageCache[dynSprite.url];
             if (image == null)
                 continue;
@@ -4364,7 +4382,7 @@ function withKey(node, key) {
     return node;
 }
 exports.withKey = withKey;
-// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent
 function styledDiv(children) {
     var styles = [];
     for (var _i = 1; _i < arguments.length; _i++) {
@@ -4384,6 +4402,12 @@ function createVirtualComponent(component) {
     };
 }
 exports.createVirtualComponent = createVirtualComponent;
+function createOverridingComponent(original, after) {
+    var originalComponent = original().component;
+    var overriding = overrideComponents(originalComponent, after);
+    return createVirtualComponent(overriding);
+}
+exports.createOverridingComponent = createOverridingComponent;
 function createComponent(component) {
     var originalRender = component.render;
     if (originalRender) {
@@ -4395,14 +4419,7 @@ function createComponent(component) {
     else {
         component.render = function (ctx, me) { me.tag = 'div'; };
     }
-    return function (data, children) {
-        if (children !== undefined) {
-            if (data == null)
-                data = {};
-            data.children = children;
-        }
-        return { data: data, component: component };
-    };
+    return createVirtualComponent(component);
 }
 exports.createComponent = createComponent;
 function createDerivedComponent(original, after) {
@@ -4437,6 +4454,7 @@ function createElement(name, props) {
                 continue;
             if (n === "style") {
                 style(res, props[n]);
+                continue;
             }
             if (n === "key" || n === "ref" || n === "className" || n === "component" || n === "data") {
                 res[n] = props[n];

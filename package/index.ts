@@ -1615,7 +1615,7 @@ function merge(f1: Function, f2: Function): Function {
 
 var emptyObject = {};
 
-function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent) {
+function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent {
     let res: IBobrilComponent = Object.create(c1);
     res.super = c1;
     for (var i in c2) {
@@ -4745,7 +4745,7 @@ export function withKey(node: IBobrilNode, key: string): IBobrilNode {
     return node;
 }
 
-// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent
 
 export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
     return style({ tag: 'div', children }, styles);
@@ -4779,13 +4779,7 @@ export function createComponent<TData extends Object>(component: IBobrilComponen
     } else {
         component.render = (ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
     }
-    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
-        if (children !== undefined) {
-            if (data == null) data = <any>{};
-            (<any>data).children = children;
-        }
-        return { data, component: component };
-    };
+    return createVirtualComponent<TData>(component);
 }
 
 export function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
@@ -4820,6 +4814,7 @@ export function createElement(name: any, props: any): IBobrilNode {
             if (!props.hasOwnProperty(n)) continue;
             if (n === "style") {
                 style(res, props[n]);
+                continue;
             }
             if (n === "key" || n === "ref" || n === "className" || n === "component" || n === "data") {
                 res[n] = props[n];

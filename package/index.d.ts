@@ -23,6 +23,7 @@ export interface IBobrilAttributes {
     [name: string]: any;
 }
 export interface IBobrilComponent {
+    super?: IBobrilComponent;
     id?: string;
     init?(ctx: IBobrilCtx, me: IBobrilCacheNode): void;
     render?(ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
@@ -354,6 +355,7 @@ export declare function svgRect(x: number, y: number, width: number, height: num
 export declare function withKey(node: IBobrilNode, key: string): IBobrilNode;
 export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode;
 export declare function createVirtualComponent<TData>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
+export declare function createOverridingComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare function createComponent<TData extends Object>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare function createElement(name: any, props: any): IBobrilNode;

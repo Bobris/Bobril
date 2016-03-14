@@ -32,13 +32,7 @@ function createComponent<TData>(component: IBobrilComponent): (data?: TData, chi
     } else {
         component.render = (ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
     }
-    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
-        if (children !== undefined) {
-            if (data == null) data = <any>{};
-            (<any>data).children = children;
-        }
-        return { data, component: component };
-    };
+    return createVirtualComponent<TData>(component);
 }
 
 function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
@@ -47,10 +41,39 @@ function createDerivedComponent<TData>(original: (data?: any, children?: IBobril
     return createVirtualComponent<TData>(merged);
 }
 
+const emptyObject = {};
+
+function overrideComponents(originalComponent: IBobrilComponent, overridingComponent: IBobrilComponent) {
+    let res: IBobrilComponent = Object.create(originalComponent);
+    res.super = originalComponent;
+    for (let i in overridingComponent) {
+        if (!(i in <any>emptyObject)) {
+            let m = (<any>overridingComponent)[i];
+            let origM = (<any>originalComponent)[i];
+            if (i === 'id') {
+                (<any>res)[i] = ((origM != null) ? origM : '') + '/' + m;
+            } else {
+                (<any>res)[i] = m;
+            }
+        }
+    }
+    return res;
+}   
+
+function createOverridingComponent<TData>(
+    original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent
+): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+    const originalComponent = original().component;
+    const overriding = overrideComponents(originalComponent, after);
+    return createVirtualComponent<TData>(overriding);
+}
+
+
 b.withKey = withKey;
 b.styledDiv = styledDiv;
 b.createVirtualComponent = createVirtualComponent;
 b.createComponent = createComponent;
 b.createDerivedComponent = createDerivedComponent;
+b.createOverridingComponent = createOverridingComponent;
 
 }(b);
