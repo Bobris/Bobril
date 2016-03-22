@@ -24,7 +24,7 @@
     "karma-jasmine": "*",
 	"jasmine-core": "*",
     "karma-phantomjs-launcher": "*",
-	"phantomjs": "*",
+    "phantomjs-prebuilt": "*",
     "rimraf": "*",
     "through2": "*",
     "typescript": "1.8.0-dev.20151219",

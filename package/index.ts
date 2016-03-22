@@ -22,7 +22,7 @@ export type IBobrilRoots = { [id: string]: IBobrilRoot };
 export interface IBobrilAttributes {
     id?: string;
     href?: string;
-    value?: boolean | string | string[];
+    value?: boolean | string | string[] | IProp<boolean | string | string[]>;
     tabindex?: number;
     [name: string]: any;
 }
@@ -250,7 +250,7 @@ var updateCall: Array<boolean> = [];
 var updateInstance: Array<IBobrilCacheNode> = [];
 var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
     if (newValue !== oldValue)
-        (<any>el)["value"] = newValue;
+        (<any>el)[tvalue] = newValue;
 }
 
 export function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void {
@@ -408,7 +408,11 @@ function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttrib
     for (attrName in newAttrs) {
         newAttr = newAttrs[attrName];
         oldAttr = oldAttrs[attrName];
-        if (attrName === "value" && !inSvg) {
+        if (attrName === tvalue && !inSvg) {
+            if (typeof newAttr === "function") {
+                oldAttrs[bvalue] = newAttr;
+                newAttr = newAttr();
+            }
             valueOldAttr = oldAttr;
             valueNewAttr = newAttr;
             oldAttrs[attrName] = newAttr;
@@ -426,6 +430,7 @@ function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttrib
     }
     for (attrName in oldAttrs) {
         if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+            if (attrName === bvalue) continue;
             oldAttrs[attrName] = undefined;
             el.removeAttribute(attrName);
         }
@@ -2210,21 +2215,22 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
         return false;
     }
     var c = node.component;
-    if (!c)
-        return false;
-    const hasOnChange = c.onChange != null;
-    const hasOnSelectionChange = c.onSelectionChange != null;
-    if (!hasOnChange && !hasOnSelectionChange)
+    const hasProp = node.attrs[bvalue];
+    const hasOnChange = c && c.onChange != null;
+    const hasPropOrOnChange = hasProp || hasOnChange;
+    const hasOnSelectionChange = c && c.onSelectionChange != null;
+    if (!hasPropOrOnChange && !hasOnSelectionChange)
         return false;
     var ctx = node.ctx;
     var tagName = (<Element>target).tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
-    if (hasOnChange && isMultiSelect) {
+    if (hasPropOrOnChange && isMultiSelect) {
         var vs = selectedArray(<HTMLSelectElement>(<HTMLSelectElement>target).options);
         if (!stringArrayEqual((<any>ctx)[bvalue], vs)) {
             (<any>ctx)[bvalue] = vs;
-            c.onChange(ctx, vs);
+            if (hasProp) hasProp(vs);
+            if (hasOnChange) c.onChange(ctx, vs);
         }
     } else if (hasOnChange && isCheckboxlike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
@@ -2240,21 +2246,24 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
                 var radio = radios[j];
                 var radionode = deref(radio);
                 if (!radionode) continue;
+                const rbhasProp = node.attrs[bvalue];
                 var radiocomponent = radionode.component;
-                if (!radiocomponent) continue;
-                if (!radiocomponent.onChange) continue;
+                const rbhasOnChange = radiocomponent && radiocomponent.onChange != null;
+                if (!rbhasProp && !rbhasOnChange) continue;
                 var radioctx = radionode.ctx;
                 var vrb = (<HTMLInputElement>radio).checked;
                 if ((<any>radioctx)[bvalue] !== vrb) {
                     (<any>radioctx)[bvalue] = vrb;
-                    radiocomponent.onChange(radioctx, vrb);
+                    if (rbhasProp) rbhasProp(vrb);
+                    if (rbhasOnChange) radiocomponent.onChange(radioctx, vrb);
                 }
             }
         } else {
             var vb = (<HTMLInputElement>target).checked;
             if ((<any>ctx)[bvalue] !== vb) {
                 (<any>ctx)[bvalue] = vb;
-                c.onChange(ctx, vb);
+                if (hasProp) hasProp(vb);
+                if (hasOnChange) c.onChange(ctx, vb);
             }
         }
     } else {
@@ -2262,7 +2271,8 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
             var v = (<HTMLInputElement>target).value;
             if ((<any>ctx)[bvalue] !== v) {
                 (<any>ctx)[bvalue] = v;
-                c.onChange(ctx, v);
+                if (hasProp) hasProp(v);
+                if (hasOnChange) c.onChange(ctx, v);
             }
         }
         if (hasOnSelectionChange) {
@@ -4757,7 +4767,7 @@ export function withKey(node: IBobrilNode, key: string): IBobrilNode {
     return node;
 }
 
-// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa
 
 export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
     return style({ tag: 'div', children }, styles);
@@ -4798,6 +4808,48 @@ export function createDerivedComponent<TData>(original: (data?: any, children?: 
     const originalComponent = original().component;
     const merged = mergeComponents(originalComponent, after);
     return createVirtualComponent<TData>(merged);
+}
+
+export type IProp<T> = (value?: T) => T;
+export type IPropAsync<T> = (value?: T | PromiseLike<T>) => T;
+
+export function prop<T>(value: T, onChange?: (value: T, old: T) => void): IProp<T> {
+    return (val?: T) => {
+        if (val !== undefined) {
+            if (onChange !== undefined)
+                onChange(val, value);
+            value = val;
+        }
+        return value;
+    };
+}
+
+export function propi<T>(value: T): IProp<T> {
+    return (val?: T) => {
+        if (val !== undefined) {
+            value = val;
+            invalidate();
+        }
+        return value;
+    };
+}
+
+export function propa<T>(prop: IProp<T>): IPropAsync<T> {
+    return (val?: T | PromiseLike<T>) => {
+        if (val !== undefined) {
+            if (typeof val === "object" && typeof (<PromiseLike<T>>val).then === "function") {
+                (<PromiseLike<T>>val).then((v) => {
+                    prop(v);
+                }, (err) => {
+                    if (window["console"] && console.error)
+                        console.error(err);
+                });
+            } else {
+                return prop(<T>val);
+            }
+        }
+        return prop();
+    };
 }
 
 // bobril-clouseau needs this

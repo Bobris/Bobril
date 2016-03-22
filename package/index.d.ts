@@ -18,7 +18,7 @@ export declare type IBobrilRoots = {
 export interface IBobrilAttributes {
     id?: string;
     href?: string;
-    value?: boolean | string | string[];
+    value?: boolean | string | string[] | IProp<boolean | string | string[]>;
     tabindex?: number;
     [name: string]: any;
 }
@@ -358,6 +358,11 @@ export declare function createVirtualComponent<TData>(component: IBobrilComponen
 export declare function createOverridingComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare function createComponent<TData extends Object>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
+export declare type IProp<T> = (value?: T) => T;
+export declare type IPropAsync<T> = (value?: T | PromiseLike<T>) => T;
+export declare function prop<T>(value: T, onChange?: (value: T, old: T) => void): IProp<T>;
+export declare function propi<T>(value: T): IProp<T>;
+export declare function propa<T>(prop: IProp<T>): IPropAsync<T>;
 export declare function createElement(name: any, props: any): IBobrilNode;
 export declare const __spread: {
     <T, U>(target: T, source: U): T & U;

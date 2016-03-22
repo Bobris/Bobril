@@ -73,7 +73,7 @@ var updateCall = [];
 var updateInstance = [];
 var setValueCallback = function (el, node, newValue, oldValue) {
     if (newValue !== oldValue)
-        el["value"] = newValue;
+        el[tvalue] = newValue;
 };
 function setSetValue(callback) {
     var prev = setValueCallback;
@@ -233,7 +233,11 @@ function updateElement(n, el, newAttrs, oldAttrs) {
     for (attrName in newAttrs) {
         newAttr = newAttrs[attrName];
         oldAttr = oldAttrs[attrName];
-        if (attrName === "value" && !inSvg) {
+        if (attrName === tvalue && !inSvg) {
+            if (typeof newAttr === "function") {
+                oldAttrs[bvalue] = newAttr;
+                newAttr = newAttr();
+            }
             valueOldAttr = oldAttr;
             valueNewAttr = newAttr;
             oldAttrs[attrName] = newAttr;
@@ -256,6 +260,8 @@ function updateElement(n, el, newAttrs, oldAttrs) {
     }
     for (attrName in oldAttrs) {
         if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+            if (attrName === bvalue)
+                continue;
             oldAttrs[attrName] = undefined;
             el.removeAttribute(attrName);
         }
@@ -2056,21 +2062,24 @@ function emitOnChange(ev, target, node) {
         return false;
     }
     var c = node.component;
-    if (!c)
-        return false;
-    var hasOnChange = c.onChange != null;
-    var hasOnSelectionChange = c.onSelectionChange != null;
-    if (!hasOnChange && !hasOnSelectionChange)
+    var hasProp = node.attrs[bvalue];
+    var hasOnChange = c && c.onChange != null;
+    var hasPropOrOnChange = hasProp || hasOnChange;
+    var hasOnSelectionChange = c && c.onSelectionChange != null;
+    if (!hasPropOrOnChange && !hasOnSelectionChange)
         return false;
     var ctx = node.ctx;
     var tagName = target.tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && target.multiple;
-    if (hasOnChange && isMultiSelect) {
+    if (hasPropOrOnChange && isMultiSelect) {
         var vs = selectedArray(target.options);
         if (!stringArrayEqual(ctx[bvalue], vs)) {
             ctx[bvalue] = vs;
-            c.onChange(ctx, vs);
+            if (hasProp)
+                hasProp(vs);
+            if (hasOnChange)
+                c.onChange(ctx, vs);
         }
     }
     else if (hasOnChange && isCheckboxlike(target)) {
@@ -2088,16 +2097,19 @@ function emitOnChange(ev, target, node) {
                 var radionode = deref(radio);
                 if (!radionode)
                     continue;
+                var rbhasProp = node.attrs[bvalue];
                 var radiocomponent = radionode.component;
-                if (!radiocomponent)
-                    continue;
-                if (!radiocomponent.onChange)
+                var rbhasOnChange = radiocomponent && radiocomponent.onChange != null;
+                if (!rbhasProp && !rbhasOnChange)
                     continue;
                 var radioctx = radionode.ctx;
                 var vrb = radio.checked;
                 if (radioctx[bvalue] !== vrb) {
                     radioctx[bvalue] = vrb;
-                    radiocomponent.onChange(radioctx, vrb);
+                    if (rbhasProp)
+                        rbhasProp(vrb);
+                    if (rbhasOnChange)
+                        radiocomponent.onChange(radioctx, vrb);
                 }
             }
         }
@@ -2105,7 +2117,10 @@ function emitOnChange(ev, target, node) {
             var vb = target.checked;
             if (ctx[bvalue] !== vb) {
                 ctx[bvalue] = vb;
-                c.onChange(ctx, vb);
+                if (hasProp)
+                    hasProp(vb);
+                if (hasOnChange)
+                    c.onChange(ctx, vb);
             }
         }
     }
@@ -2114,7 +2129,10 @@ function emitOnChange(ev, target, node) {
             var v = target.value;
             if (ctx[bvalue] !== v) {
                 ctx[bvalue] = v;
-                c.onChange(ctx, v);
+                if (hasProp)
+                    hasProp(v);
+                if (hasOnChange)
+                    c.onChange(ctx, v);
             }
         }
         if (hasOnSelectionChange) {
@@ -4394,7 +4412,7 @@ function withKey(node, key) {
     return node;
 }
 exports.withKey = withKey;
-// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa
 function styledDiv(children) {
     var styles = [];
     for (var _i = 1; _i < arguments.length; _i++) {
@@ -4440,6 +4458,46 @@ function createDerivedComponent(original, after) {
     return createVirtualComponent(merged);
 }
 exports.createDerivedComponent = createDerivedComponent;
+function prop(value, onChange) {
+    return function (val) {
+        if (val !== undefined) {
+            if (onChange !== undefined)
+                onChange(val, value);
+            value = val;
+        }
+        return value;
+    };
+}
+exports.prop = prop;
+function propi(value) {
+    return function (val) {
+        if (val !== undefined) {
+            value = val;
+            exports.invalidate();
+        }
+        return value;
+    };
+}
+exports.propi = propi;
+function propa(prop) {
+    return function (val) {
+        if (val !== undefined) {
+            if (typeof val === "object" && typeof val.then === "function") {
+                val.then(function (v) {
+                    prop(v);
+                }, function (err) {
+                    if (window["console"] && console.error)
+                        console.error(err);
+                });
+            }
+            else {
+                return prop(val);
+            }
+        }
+        return prop();
+    };
+}
+exports.propa = propa;
 // bobril-clouseau needs this
 if (!window.b)
     window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, invalidateStyles: invalidateStyles, ignoreShouldChange: ignoreShouldChange, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
