@@ -4813,6 +4813,11 @@ export function createDerivedComponent<TData>(original: (data?: any, children?: 
 export type IProp<T> = (value?: T) => T;
 export type IPropAsync<T> = (value?: T | PromiseLike<T>) => T;
 
+export interface IValueData<T> {
+    value: T | IProp<T>;
+    onChange?: (value: T) => void;
+}
+
 export function prop<T>(value: T, onChange?: (value: T, old: T) => void): IProp<T> {
     return (val?: T) => {
         if (val !== undefined) {
@@ -4850,6 +4855,22 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
         }
         return prop();
     };
+}
+
+function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T {
+    if (typeof value === "function") {
+        return (<IProp<T>>value)();
+    }
+    return <T>value;
+}
+
+function emitChange<T>(data: IValueData<T>, value: T) {
+    if (typeof data.value === "function") {
+        (<IProp<T>>data.value)(value);
+    }
+    if (data.onChange !== undefined) {
+        data.onChange(value);
+    }
 }
 
 // bobril-clouseau needs this

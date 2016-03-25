@@ -360,6 +360,10 @@ export declare function createComponent<TData extends Object>(component: IBobril
 export declare function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode;
 export declare type IProp<T> = (value?: T) => T;
 export declare type IPropAsync<T> = (value?: T | PromiseLike<T>) => T;
+export interface IValueData<T> {
+    value: T | IProp<T>;
+    onChange?: (value: T) => void;
+}
 export declare function prop<T>(value: T, onChange?: (value: T, old: T) => void): IProp<T>;
 export declare function propi<T>(value: T): IProp<T>;
 export declare function propa<T>(prop: IProp<T>): IPropAsync<T>;

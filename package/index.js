@@ -4498,6 +4498,20 @@ function propa(prop) {
     };
 }
 exports.propa = propa;
+function getValue(value) {
+    if (typeof value === "function") {
+        return value();
+    }
+    return value;
+}
+function emitChange(data, value) {
+    if (typeof data.value === "function") {
+        data.value(value);
+    }
+    if (data.onChange !== undefined) {
+        data.onChange(value);
+    }
+}
 // bobril-clouseau needs this
 if (!window.b)
     window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, invalidateStyles: invalidateStyles, ignoreShouldChange: ignoreShouldChange, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
