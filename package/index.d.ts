@@ -367,6 +367,8 @@ export interface IValueData<T> {
 export declare function prop<T>(value: T, onChange?: (value: T, old: T) => void): IProp<T>;
 export declare function propi<T>(value: T): IProp<T>;
 export declare function propa<T>(prop: IProp<T>): IPropAsync<T>;
+export declare function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T;
+export declare function emitChange<T>(data: IValueData<T>, value: T): void;
 export declare function createElement(name: any, props: any): IBobrilNode;
 export declare const __spread: {
     <T, U>(target: T, source: U): T & U;

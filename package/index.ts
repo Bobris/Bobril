@@ -4767,7 +4767,7 @@ export function withKey(node: IBobrilNode, key: string): IBobrilNode {
     return node;
 }
 
-// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, getValue
 
 export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
     return style({ tag: 'div', children }, styles);
@@ -4857,14 +4857,14 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
     };
 }
 
-function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T {
+export function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T {
     if (typeof value === "function") {
         return (<IProp<T>>value)();
     }
     return <T>value;
 }
 
-function emitChange<T>(data: IValueData<T>, value: T) {
+export function emitChange<T>(data: IValueData<T>, value: T) {
     if (typeof data.value === "function") {
         (<IProp<T>>data.value)(value);
     }

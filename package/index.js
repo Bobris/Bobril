@@ -4412,7 +4412,7 @@ function withKey(node, key) {
     return node;
 }
 exports.withKey = withKey;
-// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, getValue
 function styledDiv(children) {
     var styles = [];
     for (var _i = 1; _i < arguments.length; _i++) {
@@ -4504,6 +4504,7 @@ function getValue(value) {
     }
     return value;
 }
+exports.getValue = getValue;
 function emitChange(data, value) {
     if (typeof data.value === "function") {
         data.value(value);
@@ -4512,6 +4513,7 @@ function emitChange(data, value) {
         data.onChange(value);
     }
 }
+exports.emitChange = emitChange;
 // bobril-clouseau needs this
 if (!window.b)
     window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, invalidateStyles: invalidateStyles, ignoreShouldChange: ignoreShouldChange, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
