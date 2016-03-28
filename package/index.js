@@ -2062,7 +2062,7 @@ function emitOnChange(ev, target, node) {
         return false;
     }
     var c = node.component;
-    var hasProp = node.attrs[bvalue];
+    var hasProp = node.attrs && node.attrs[bvalue];
     var hasOnChange = c && c.onChange != null;
     var hasPropOrOnChange = hasProp || hasOnChange;
     var hasOnSelectionChange = c && c.onSelectionChange != null;

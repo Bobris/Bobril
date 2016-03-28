@@ -2215,7 +2215,7 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
         return false;
     }
     var c = node.component;
-    const hasProp = node.attrs[bvalue];
+    const hasProp = node.attrs && node.attrs[bvalue];
     const hasOnChange = c && c.onChange != null;
     const hasPropOrOnChange = hasProp || hasOnChange;
     const hasOnSelectionChange = c && c.onSelectionChange != null;
