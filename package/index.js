@@ -1338,8 +1338,6 @@ function setInvalidate(inv) {
 }
 exports.setInvalidate = setInvalidate;
 exports.invalidate = function (ctx, deepness) {
-    if (fullRecreateRequested)
-        return;
     if (ctx != null) {
         if (deepness == undefined)
             deepness = 1e6;

@@ -1275,8 +1275,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function invalidate(ctx?: Object, deepness?: number) {
-        if (fullRecreateRequested)
-            return;
         if (ctx != null) {
             if (deepness == undefined) deepness = 1e6;
             if ((<any>ctx)[ctxInvalidated] !== frameCounter + 1) {

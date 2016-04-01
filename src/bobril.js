@@ -1284,8 +1284,6 @@ b = (function (window, document) {
         invalidate();
     }
     function invalidate(ctx, deepness) {
-        if (fullRecreateRequested)
-            return;
         if (ctx != null) {
             if (deepness == undefined)
                 deepness = 1e6;
