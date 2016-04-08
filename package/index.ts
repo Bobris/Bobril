@@ -2972,14 +2972,12 @@ function emitOnFocusChange(): void {
     }
 }
 
-function emitOnFocusChangeIE(): void {
+function emitOnFocusChangeDelayed(): void {
     setTimeout(emitOnFocusChange, 10);
-    emitOnFocusChange();
 }
 
-var events = ["focus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
-for (var i = 0; i < events.length; i++)
-    addEvent(events[i], 50, <any>(ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
+addEvent("^focus", 50, <any>emitOnFocusChange);
+addEvent("^blur", 50, <any>emitOnFocusChangeDelayed);
 
 export function focused(): IBobrilCacheNode {
     return currentFocusedNode;

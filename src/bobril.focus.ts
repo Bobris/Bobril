@@ -59,14 +59,12 @@
         }
     }
 
-    function emitOnFocusChangeIE(): void {
+    function emitOnFocusChangeDelayed(): void {
         setTimeout(emitOnFocusChange, 10);
-        emitOnFocusChange();
     }
 
-    var events = ["focus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
-    for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 50, <any>(b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
+    b.addEvent("^focus", 50, <any>emitOnFocusChange);
+    b.addEvent("^blur", 50, <any>emitOnFocusChangeDelayed);
 
     function focused(): IBobrilCacheNode {
         return currentFocusedNode;
