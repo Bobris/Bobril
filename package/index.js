@@ -487,23 +487,43 @@ function destroyNode(c) {
     setRef(c.ref, null);
     var ch = c.children;
     if (isArray(ch)) {
-        for (var i = 0, l = ch.length; i < l; i++) {
-            destroyNode(ch[i]);
+        for (var i_3 = 0, l = ch.length; i_3 < l; i_3++) {
+            destroyNode(ch[i_3]);
         }
     }
     var component = c.component;
     if (component) {
+        var ctx = c.ctx;
         if (component.destroy)
-            component.destroy(c.ctx, c, c.element);
+            component.destroy(ctx, c, c.element);
+        var disposables = ctx.disposables;
+        if (isArray(disposables)) {
+            for (var i_4 = disposables.length; i_4-- > 0;) {
+                var d = disposables[i_4];
+                if (typeof d === "function")
+                    d(ctx);
+                else
+                    d.dispose();
+            }
+        }
     }
 }
+function addDisposable(ctx, disposable) {
+    var disposables = ctx.disposables;
+    if (disposables == null) {
+        disposables = [];
+        ctx.disposables = disposables;
+    }
+    disposables.push(disposable);
+}
+exports.addDisposable = addDisposable;
 function removeNodeRecursive(c) {
     var el = c.element;
     if (isArray(el)) {
         var pa = el[0].parentNode;
         if (pa) {
-            for (var i_3 = 0; i_3 < el.length; i_3++) {
-                pa.removeChild(el[i_3]);
+            for (var i_5 = 0; i_5 < el.length; i_5++) {
+                pa.removeChild(el[i_5]);
             }
         }
     }
@@ -1500,15 +1520,15 @@ function mergeComponents(c1, c2) {
 function overrideComponents(originalComponent, overridingComponent) {
     var res = Object.create(originalComponent);
     res.super = originalComponent;
-    for (var i_4 in overridingComponent) {
-        if (!(i_4 in emptyObject)) {
-            var m = overridingComponent[i_4];
-            var origM = originalComponent[i_4];
-            if (i_4 === 'id') {
-                res[i_4] = ((origM != null) ? origM : '') + '/' + m;
+    for (var i_6 in overridingComponent) {
+        if (!(i_6 in emptyObject)) {
+            var m = overridingComponent[i_6];
+            var origM = originalComponent[i_6];
+            if (i_6 === 'id') {
+                res[i_6] = ((origM != null) ? origM : '') + '/' + m;
             }
             else {
-                res[i_4] = m;
+                res[i_6] = m;
             }
         }
     }
@@ -3301,8 +3321,8 @@ function handleDrop(ev, target, node) {
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer;
-        for (var i_5 = 0; i_5 < dataKeys.length; i_5++) {
-            var k = dataKeys[i_5];
+        for (var i_7 = 0; i_7 < dataKeys.length; i_7++) {
+            var k = dataKeys[i_7];
             var d;
             if (k === "Files") {
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
@@ -3336,8 +3356,8 @@ function handleDndSelectStart(ev, target, node) {
     return true;
 }
 function anyActiveDnd() {
-    for (var i_6 = 0; i_6 < dnds.length; i_6++) {
-        var dnd = dnds[i_6];
+    for (var i_8 = 0; i_8 < dnds.length; i_8++) {
+        var dnd = dnds[i_8];
         if (dnd.beforeDrag)
             continue;
         return dnd;
@@ -3944,11 +3964,11 @@ function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
         if (isArray(parent)) {
-            for (var i_7 = 0; i_7 < parent.length; i_7++) {
-                if (i_7 > 0) {
+            for (var i_9 = 0; i_9 < parent.length; i_9++) {
+                if (i_9 > 0) {
                     result += ",";
                 }
-                result += "." + buildCssSubRule(parent[i_7]) + "." + name;
+                result += "." + buildCssSubRule(parent[i_9]) + "." + name;
             }
         }
         else {
@@ -3972,8 +3992,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         style(cur, curPseudo);
     }
     else if (isArray(style)) {
-        for (var i_8 = 0; i_8 < style.length; i_8++) {
-            flattenStyle(cur, curPseudo, style[i_8], undefined);
+        for (var i_10 = 0; i_10 < style.length; i_10++) {
+            flattenStyle(cur, curPseudo, style[i_10], undefined);
         }
     }
     else if (typeof style === "object") {
@@ -4012,8 +4032,8 @@ function beforeFrame() {
             dbs.opacity = "0";
             setTimeout(exports.invalidate, 200);
         }
-        for (var i_9 = 0; i_9 < dynamicSprites.length; i_9++) {
-            var dynSprite = dynamicSprites[i_9];
+        for (var i_11 = 0; i_11 < dynamicSprites.length; i_11++) {
+            var dynSprite = dynamicSprites[i_11];
             var image = imageCache[dynSprite.url];
             if (image == null)
                 continue;

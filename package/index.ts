@@ -6,6 +6,12 @@ export interface IBobrilChildArray extends Array<IBobrilChildren> { };
 export type IBobrilCacheChildren = string | IBobrilCacheNode[];
 export type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
+export interface IDisposable {
+    dispose(): void;
+}
+
+export type IDisposableLike = IDisposable | ((ctx?: any) => void);
+
 export interface IBobrilRoot {
     // Factory function
     f: () => IBobrilChildren;
@@ -162,6 +168,7 @@ export interface IBobrilCtx {
     // properties passed from parent component automatically, but could be extended for children to IBobrilNode.cfg
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode };
+    disposables?: IDisposableLike[];
 }
 
 export interface IBobrilScroll {
@@ -649,15 +656,32 @@ function destroyNode(c: IBobrilCacheNode) {
     setRef(c.ref, null);
     let ch = c.children;
     if (isArray(ch)) {
-        for (var i = 0, l = ch.length; i < l; i++) {
+        for (let i = 0, l = ch.length; i < l; i++) {
             destroyNode(ch[i]);
         }
     }
     let component = c.component;
     if (component) {
+        let ctx = c.ctx;
         if (component.destroy)
-            component.destroy(c.ctx, c, <HTMLElement>c.element);
+            component.destroy(ctx, c, <HTMLElement>c.element);
+        let disposables = ctx.disposables;
+        if (isArray(disposables)) {
+            for (let i = disposables.length; i-- > 0;) {
+                let d = disposables[i];
+                if (typeof d === "function") d(ctx); else d.dispose();
+            }
+        }
     }
+}
+
+export function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike) {
+    let disposables = ctx.disposables;
+    if (disposables == null) {
+        disposables = [];
+        ctx.disposables = disposables;
+    }
+    disposables.push(disposable);
 }
 
 function removeNodeRecursive(c: IBobrilCacheNode) {
@@ -1879,10 +1903,10 @@ export const asap = (() => {
 })();
 
 if (!(<any>window).Promise) {
-    (function() {
+    (function () {
         // Polyfill for Function.prototype.bind
         function bind(fn: (args: any) => void, thisArg: any) {
-            return function() {
+            return function () {
                 fn.apply(thisArg, arguments);
             }
         }
@@ -1971,18 +1995,18 @@ if (!(<any>window).Promise) {
             doResolve(fn, bind(resolve, this), bind(reject, this));
         }
 
-        Promise.prototype.then = function(onFulfilled: any, onRejected?: any) {
+        Promise.prototype.then = function (onFulfilled: any, onRejected?: any) {
             var me = this;
             return new (<any>Promise)((resolve: any, reject: any) => {
                 handle.call(me, [onFulfilled, onRejected, resolve, reject]);
             });
         };
 
-        Promise.prototype['catch'] = function(onRejected?: any) {
+        Promise.prototype['catch'] = function (onRejected?: any) {
             return this.then(undefined, onRejected);
         };
 
-        (<any>Promise).all = function() {
+        (<any>Promise).all = function () {
             var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
 
             return new (<any>Promise)((resolve: (value: any) => void, reject: (reason: any) => void) => {
@@ -3155,7 +3179,7 @@ shimStyle(shimedStyle);
 var shimedStyleKeys = Object.keys(shimedStyle);
 var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 
-var DndCtx = function(pointerId: number) {
+var DndCtx = function (pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -3254,41 +3278,41 @@ function dndRootFactory(): IBobrilChildren {
 }
 
 var dndProto = DndCtx.prototype;
-dndProto.setOperation = function(operation: DndOp): void {
+dndProto.setOperation = function (operation: DndOp): void {
     this.operation = operation;
 }
 
-dndProto.setDragNodeView = function(view: (dnd: IDndCtx) => IBobrilNode): void {
+dndProto.setDragNodeView = function (view: (dnd: IDndCtx) => IBobrilNode): void {
     this.dragView = view;
 }
 
-dndProto.addData = function(type: string, data: any): boolean {
+dndProto.addData = function (type: string, data: any): boolean {
     this.data[type] = data;
     return true;
 }
 
-dndProto.listData = function(): string[] {
+dndProto.listData = function (): string[] {
     return Object.keys(this.data);
 }
 
-dndProto.hasData = function(type: string): boolean {
+dndProto.hasData = function (type: string): boolean {
     return this.data[type] !== undefined;
 }
 
-dndProto.getData = function(type: string): any {
+dndProto.getData = function (type: string): any {
     return this.data[type];
 }
 
-dndProto.setEnabledOps = function(ops: DndEnabledOps): void {
+dndProto.setEnabledOps = function (ops: DndEnabledOps): void {
     this.enabledOperations = ops;
 }
 
-dndProto.cancelDnd = function(): void {
+dndProto.cancelDnd = function (): void {
     dndmoved(null, this);
     this.destroy();
 }
 
-dndProto.destroy = function(): void {
+dndProto.destroy = function (): void {
     this.ended = true;
     if (this.started)
         broadcast("onDragEnd", this);
@@ -4790,7 +4814,7 @@ export function createOverridingComponent<TData>(
 export function createComponent<TData extends Object>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
     const originalRender = component.render;
     if (originalRender) {
-        component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
+        component.render = function (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
             me.tag = 'div';
             return originalRender.call(component, ctx, me, oldMe);
         }

@@ -6,6 +6,10 @@ export declare type IBobrilCacheChildren = string | IBobrilCacheNode[];
 export declare type IBobrilShimStyleMapping = {
     [name: string]: (style: any, value: any, oldName: string) => void;
 };
+export interface IDisposable {
+    dispose(): void;
+}
+export declare type IDisposableLike = IDisposable | ((ctx?: any) => void);
 export interface IBobrilRoot {
     f: () => IBobrilChildren;
     e: HTMLElement;
@@ -111,6 +115,7 @@ export interface IBobrilCtx {
     refs?: {
         [name: string]: IBobrilCacheNode;
     };
+    disposables?: IDisposableLike[];
 }
 export interface IBobrilScroll {
     node: IBobrilCacheNode;
@@ -129,6 +134,7 @@ export declare function flatten(a: any | any[]): any[];
 export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void;
 export declare function ieVersion(): any;
 export declare function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode;
+export declare function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike): void;
 export declare function vdomPath(n: Node): IBobrilCacheNode[];
 export declare function deref(n: Node): IBobrilCacheNode;
 export declare function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node, deepness: number): IBobrilCacheNode;
