@@ -10,7 +10,8 @@ export interface IDisposable {
     dispose(): void;
 }
 
-export type IDisposableLike = IDisposable | ((ctx?: any) => void);
+export type IDisposeFunction = (ctx?: any) => void;
+export type IDisposableLike = IDisposable | IDisposeFunction;
 
 export interface IBobrilRoot {
     // Factory function

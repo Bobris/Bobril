@@ -9,7 +9,8 @@ export declare type IBobrilShimStyleMapping = {
 export interface IDisposable {
     dispose(): void;
 }
-export declare type IDisposableLike = IDisposable | ((ctx?: any) => void);
+export declare type IDisposeFunction = (ctx?: any) => void;
+export declare type IDisposableLike = IDisposable | IDisposeFunction;
 export interface IBobrilRoot {
     f: () => IBobrilChildren;
     e: HTMLElement;
