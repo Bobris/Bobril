@@ -4161,7 +4161,14 @@ function style(node) {
         else {
             if (inlineStyle == null)
                 inlineStyle = {};
-            inlineStyle = exports.assign(inlineStyle, s);
+            for (var key in s) {
+                if (s.hasOwnProperty(key)) {
+                    var val = s[key];
+                    if (typeof val === "function")
+                        val = val();
+                    inlineStyle[key] = val;
+                }
+            }
         }
         i++;
     }

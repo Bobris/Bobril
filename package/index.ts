@@ -4531,7 +4531,13 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             continue;
         } else {
             if (inlineStyle == null) inlineStyle = {};
-            inlineStyle = assign(inlineStyle, s);
+            for (let key in s) {
+                if (s.hasOwnProperty(key)) {
+                    let val = s[key];
+                    if (typeof val === "function") val = val();
+                    inlineStyle[key] = val;
+                }
+            }
         }
         i++;
     }
