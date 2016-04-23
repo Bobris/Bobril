@@ -1,6 +1,6 @@
 // Bobril.Core
 
-export type IBobrilChild = boolean | string | IBobrilNode;
+export type IBobrilChild = boolean | number | string | IBobrilNode;
 export type IBobrilChildren = IBobrilChild | IBobrilChildArray;
 export interface IBobrilChildArray extends Array<IBobrilChildren> { };
 export type IBobrilCacheChildren = string | IBobrilCacheNode[];
@@ -204,8 +204,20 @@ function createEl(name: string): HTMLElement {
 
 var hasTextContent = "textContent" in createTextNode("");
 
-function isObject(value: any): boolean {
-    return typeof value === "object";
+export function isNumber(val: any): val is Number {
+    return typeof val == "number";
+}
+
+export function isString(val: any): val is String {
+    return typeof val == "string";
+}
+
+export function isFunction(val: any): val is Function {
+    return typeof val == "function";
+}
+
+export function isObject(val: any): val is Object {
+    return typeof val === "object";
 }
 
 if (Object.assign == null) {
@@ -254,6 +266,7 @@ export function flatten(a: any | any[]): any[] {
 }
 
 var inSvg: boolean = false;
+var inNotFocusable: boolean = false;
 var updateCall: Array<boolean> = [];
 var updateInstance: Array<IBobrilCacheNode> = [];
 var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
@@ -274,7 +287,7 @@ function newHashObj() {
 var vendors = ["Webkit", "Moz", "ms", "O"];
 var testingDivStyle: any = document.createElement("div").style;
 function testPropExistence(name: string) {
-    return typeof testingDivStyle[name] === "string";
+    return isString(testingDivStyle[name]);
 }
 
 var mapping: IBobrilShimStyleMapping = newHashObj();
@@ -309,7 +322,7 @@ function renamer(newName: string) {
 
 function renamerpx(newName: string) {
     return (style: any, value: any, oldName: string) => {
-        if (typeof value === "number") {
+        if (isNumber(value)) {
             style[newName] = value + "px";
         } else {
             style[newName] = value;
@@ -319,7 +332,7 @@ function renamerpx(newName: string) {
 }
 
 function pxadder(style: any, value: any, name: string) {
-    if (typeof value === "number")
+    if (isNumber(value))
         style[name] = value + "px";
 }
 
@@ -411,13 +424,20 @@ function setClassName(el: Element, className: string) {
         (<HTMLElement>el).className = className;
 }
 
-function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes): IBobrilAttributes {
+const focusableTag = /^input$|^select$|^textarea$|^button$/;
+const tabindexStr = "tabindex";
+
+function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes, notFocusable: boolean): IBobrilAttributes {
     var attrName: string, newAttr: any, oldAttr: any, valueOldAttr: any, valueNewAttr: any;
-    for (attrName in newAttrs) {
+    let wasTabindex = false;
+    if (newAttrs != null) for (attrName in newAttrs) {
         newAttr = newAttrs[attrName];
         oldAttr = oldAttrs[attrName];
-        if (attrName === tvalue && !inSvg) {
-            if (typeof newAttr === "function") {
+        if (notFocusable && attrName === tabindexStr) {
+            newAttr = -1;
+            wasTabindex = true;
+        } else if (attrName === tvalue && !inSvg) {
+            if (isFunction(newAttr)) {
                 oldAttrs[bvalue] = newAttr;
                 newAttr = newAttr();
             }
@@ -436,11 +456,27 @@ function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttrib
             } else el.setAttribute(attrName, newAttr);
         }
     }
-    for (attrName in oldAttrs) {
-        if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
-            if (attrName === bvalue) continue;
-            oldAttrs[attrName] = undefined;
-            el.removeAttribute(attrName);
+    if (notFocusable && !wasTabindex && focusableTag.test(n.tag)) {
+        el.setAttribute(tabindexStr, "-1");
+        oldAttrs[tabindexStr] = -1;
+    }
+    if (newAttrs == null) {
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined) {
+                if (notFocusable && attrName === tabindexStr) continue;
+                if (attrName === bvalue) continue;
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
+            }
+        }
+    } else {
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+                if (notFocusable && attrName === tabindexStr) continue;
+                if (attrName === bvalue) continue;
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
+            }
         }
     }
     if (valueNewAttr !== undefined) {
@@ -475,7 +511,7 @@ function findCfg(parent: IBobrilCacheNode): any {
 
 function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
     if (ref == null) return;
-    if (typeof ref === "function") {
+    if (isFunction(ref)) {
         (<(node: IBobrilCacheNode) => void>ref)(value);
         return;
     }
@@ -486,6 +522,23 @@ function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void), 
         ctx.refs = refs;
     }
     refs[(<[IBobrilCtx, string]>ref)[1]] = value;
+}
+
+let focusRootStack: IBobrilCacheNode[] = [];
+let focusRootTop: IBobrilCacheNode = null;
+
+export function registerFocusRoot(ctx: IBobrilCtx) {
+    focusRootStack.push(ctx.me);
+    addDisposable(ctx, unregisterFocusRoot);
+    ignoreShouldChange();
+}
+
+export function unregisterFocusRoot(ctx: IBobrilCtx) {
+    let idx = focusRootStack.indexOf(ctx.me);
+    if (idx !== -1) {
+        focusRootStack.splice(idx, 1);
+        ignoreShouldChange();
+    }
 }
 
 export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode {
@@ -505,6 +558,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
         ctx: undefined
     };
     var backupInSvg = inSvg;
+    var backupInNotFocusable = inNotFocusable;
     var component = c.component;
     var el: Node;
     setRef(c.ref, c);
@@ -520,8 +574,10 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
     }
     var tag = c.tag;
     var children = c.children;
+    if (isNumber(children))
+        children = "" + children;
     if (tag === undefined) {
-        if (typeof children === "string") {
+        if (isString(children)) {
             el = createTextNode(<string>children);
             c.element = el;
             createInto.insertBefore(el, createBefore);
@@ -599,21 +655,26 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
             component.postRender(c.ctx, c);
         }
     }
-    if (c.attrs) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {});
+    if (inNotFocusable && focusRootTop === c)
+        inNotFocusable = false;
+    if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
     if (c.style) updateStyle(c, <HTMLElement>el, c.style, undefined);
     var className = c.className;
     if (className) setClassName(<HTMLElement>el, className);
     inSvg = backupInSvg;
+    inNotFocusable = backupInNotFocusable;
     pushInitCallback(c, false);
     return c;
 }
 
 function normalizeNode(n: any): IBobrilNode {
-    var t = typeof n;
-    if (t === "string") {
+    if (n === false || n === true) return null;
+    if (isString(n)) {
         return { children: n };
     }
-    if (t === "boolean") return null;
+    if (isNumber(n)) {
+        return { children: "" + n };
+    }
     return <IBobrilNode>n;
 }
 
@@ -622,7 +683,7 @@ function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: 
     if (!ch)
         return;
     if (!isArray(ch)) {
-        if (typeof ch === "string") {
+        if (isString(ch)) {
             if (hasTextContent) {
                 createInto.textContent = ch;
             } else {
@@ -670,7 +731,7 @@ function destroyNode(c: IBobrilCacheNode) {
         if (isArray(disposables)) {
             for (let i = disposables.length; i-- > 0;) {
                 let d = disposables[i];
-                if (typeof d === "function") d(ctx); else d.dispose();
+                if (isFunction(d)) d(ctx); else d.dispose();
             }
         }
     }
@@ -818,6 +879,7 @@ function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobri
 export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node, deepness: number): IBobrilCacheNode {
     var component = n.component;
     var backupInSvg = inSvg;
+    var backupInNotFocusable = inNotFocusable;
     var bigChange = false;
     var ctx = c.ctx;
     if (component && ctx != null) {
@@ -831,8 +893,16 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
                 if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
-                    if (isArray(c.children))
+                    if (isArray(c.children)) {
+                        if (c.tag === "svg") {
+                            inSvg = true;
+                        }
+                        if (inNotFocusable && focusRootTop === c)
+                            inNotFocusable = false;
                         selectedUpdate(<IBobrilCacheNode[]>c.children, <Element>c.element || createInto, c.element != null ? null : createBefore);
+                        inSvg = backupInSvg;
+                        inNotFocusable = backupInNotFocusable;
+                    }
                     return c;
                 }
             (<any>ctx).data = n.data || {};
@@ -846,7 +916,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
     }
     if (DEBUG) {
         if (!((n.ref == null && c.ref == null) ||
-            ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" ||
+            ((n.ref != null && c.ref != null && (isFunction(n.ref) || isFunction(c.ref) ||
                 (<[IBobrilCtx, string]>n.ref)[0] === (<[IBobrilCtx, string]>c.ref)[0] && (<[IBobrilCtx, string]>n.ref)[1] === (<[IBobrilCtx, string]>c.ref)[1]))))) {
             if (window.console && console.warn) console.warn("ref changed in child in update");
         }
@@ -854,6 +924,9 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
     var newChildren = n.children;
     var cachedChildren = c.children;
     var tag = n.tag;
+    if (isNumber(newChildren)) {
+        newChildren = "" + newChildren;
+    }
     if (bigChange || (component && ctx == null)) {
         // it is big change of component.id or old one was not even component => recreate
     } else if (tag === "/") {
@@ -863,7 +936,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
         }
     } else if (tag === c.tag) {
         if (tag === undefined) {
-            if (typeof newChildren === "string" && typeof cachedChildren === "string") {
+            if (isString(newChildren) && isString(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     var el = <Element>c.element;
                     if (hasTextContent) {
@@ -874,12 +947,19 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
                     c.children = newChildren;
                 }
             } else {
+                if (tag === "svg") {
+                    inSvg = true;
+                }
+                if (inNotFocusable && focusRootTop === c)
+                    inNotFocusable = false;
                 if (deepness <= 0) {
                     if (isArray(cachedChildren))
                         selectedUpdate(<IBobrilCacheNode[]>c.children, createInto, createBefore);
                 } else {
                     c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
                 }
+                inSvg = backupInSvg;
+                inNotFocusable = backupInNotFocusable;
             }
             finishUpdateNode(n, c, component);
             return c;
@@ -887,8 +967,10 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             if (tag === "svg") {
                 inSvg = true;
             }
+            if (inNotFocusable && focusRootTop === c)
+                inNotFocusable = false;
             var el = <Element>c.element;
-            if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
+            if ((isString(newChildren)) && !isArray(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     if (hasTextContent) {
                         el.textContent = newChildren;
@@ -907,8 +989,8 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             }
             c.children = cachedChildren;
             finishUpdateNode(n, c, component);
-            if (c.attrs || n.attrs)
-                c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
+            if (c.attrs || n.attrs || inNotFocusable)
+                c.attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
             updateStyle(c, <HTMLElement>el, n.style, c.style);
             c.style = n.style;
             var className = n.className;
@@ -917,6 +999,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
                 c.className = className;
             }
             inSvg = backupInSvg;
+            inNotFocusable = backupInNotFocusable;
             return c;
         }
     }
@@ -1409,9 +1492,13 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
             cache[i] = updateNode(cloned, node, element, createBefore, (<any>ctx)[ctxDeepness]);
         } else if (isArray(node.children)) {
             var backupInSvg = inSvg;
+            var backupInNotFocusable = inNotFocusable;
+            if (inNotFocusable && focusRootTop === node)
+                inNotFocusable = false;
             if (node.tag === "svg") inSvg = true;
             selectedUpdate(<IBobrilCacheNode[]>node.children, (<Element>node.element) || element, findNextNode(cache, i, len, createBefore));
             inSvg = backupInSvg;
+            inNotFocusable = backupInNotFocusable;
         }
     }
 }
@@ -1454,6 +1541,26 @@ function findLastNode(children: IBobrilCacheNode[]): Node {
     return null;
 }
 
+function isLogicalParent(parent: IBobrilCacheNode, child: IBobrilCacheNode, rootIds: string[]): boolean {
+    while (child != null) {
+        if (parent === child) return true;
+        let p = child.parent;
+        if (p == null) {
+            for (var i = 0; i < rootIds.length; i++) {
+                var r = roots[rootIds[i]];
+                if (!r) continue;
+                var rc = r.c;
+                if (rc.indexOf(child) >= 0) {
+                    p = r.p;
+                    break;
+                }
+            }
+        }
+        child = p;
+    }
+    return false;
+}
+
 function update(time: number) {
     renderFrameBegin = now();
     initEvents();
@@ -1463,6 +1570,8 @@ function update(time: number) {
     uptimeMs = time;
     scheduled = false;
     beforeFrameCallback();
+    focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
+    inNotFocusable = false;
     var fullRefresh = false;
     if (fullRecreateRequested) {
         fullRecreateRequested = false;
@@ -1474,6 +1583,7 @@ function update(time: number) {
         if (!r) continue;
         var rc = r.c;
         var insertBefore = findLastNode(rc);
+        if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
         if (insertBefore != null) insertBefore = insertBefore.nextSibling;
         if (fullRefresh) {
             var newChildren = r.f();
@@ -1652,7 +1762,7 @@ function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilCom
             var origM = (<any>c1)[i];
             if (i === "id") {
                 res[i] = ((origM != null) ? origM : "") + "/" + m;
-            } else if (typeof m === "function" && origM != null && typeof origM === "function") {
+            } else if (isFunction(m) && origM != null && isFunction(origM)) {
                 res[i] = merge(origM, m);
             } else {
                 res[i] = m;
@@ -3008,10 +3118,9 @@ export function focused(): IBobrilCacheNode {
     return currentFocusedNode;
 }
 
-const focusableTag = /^input$|^select$|^textarea$|^button$/;
 export function focus(node: IBobrilCacheNode): boolean {
     if (node == null) return false;
-    if (typeof node === "string") return false;
+    if (isString(node)) return false;
     var style = node.style;
     if (style != null) {
         if (style.visibility === "hidden")
@@ -3535,7 +3644,7 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
         try {
             var k = dataKeys[i];
             var d = datas[k];
-            if (typeof d !== "string")
+            if (!isString(d))
                 d = JSON.stringify(d);
             ev.dataTransfer.setData(k, d);
         }
@@ -3998,7 +4107,7 @@ function rootNodeFactory(): IBobrilNode {
                 data.routeParams = routeParams;
                 var handler = r.handler;
                 var res: IBobrilNode;
-                if (typeof handler === "function") {
+                if (isFunction(handler)) {
                     res = (<(data: any) => IBobrilNode>handler)(data);
                 } else {
                     res = { key: undefined, ref: undefined, data, component: handler };
@@ -4240,7 +4349,7 @@ function nextIteration(): void {
             transitionState--;
             let handler = rr.handler;
             let comp: IBobrilComponent = null;
-            if (typeof handler === "function") {
+            if (isFunction(handler)) {
                 let node = (<(data: any) => IBobrilNode>handler)({});
                 if (!node) continue;
                 comp = node.component;
@@ -4372,13 +4481,13 @@ function buildCssRule(parent: string | string[], name: string): string {
 }
 
 function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): void {
-    if (typeof style === "string") {
+    if (isString(style)) {
         let externalStyle = allStyles[style];
         if (externalStyle === undefined) {
             throw new Error("uknown style " + style);
         }
         flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
-    } else if (typeof style === "function") {
+    } else if (isFunction(style)) {
         style(cur, curPseudo);
     } else if (isArray(style)) {
         for (let i = 0; i < style.length; i++) {
@@ -4388,7 +4497,7 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
         for (let key in style) {
             if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
             let val = style[key];
-            if (typeof val === "function") {
+            if (isFunction(val)) {
                 val = val(cur, key);
             }
             cur[key] = val;
@@ -4441,10 +4550,10 @@ function beforeFrame() {
             let name = ss.name;
             let sspseudo = ss.pseudo;
             let ssstyle = ss.style;
-            if (typeof ssstyle === "function" && ssstyle.length === 0) {
+            if (isFunction(ssstyle) && ssstyle.length === 0) {
                 [ssstyle, sspseudo] = ssstyle();
             }
-            if (typeof ssstyle === "string" && sspseudo == null) {
+            if (isString(ssstyle) && sspseudo == null) {
                 ss.realname = ssstyle;
                 continue;
             }
@@ -4512,9 +4621,9 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             continue;
         }
         let s = ca[i];
-        if (s == null || typeof s === "boolean" || s === '') {
+        if (s == null || s === true || s === false || s === '') {
             // skip
-        } else if (typeof s === "string") {
+        } else if (isString(s)) {
             var sd = allStyles[s];
             if (className == null) className = sd.realname; else className = className + " " + sd.realname;
             var inls = sd.inlStyle;
@@ -4534,7 +4643,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             for (let key in s) {
                 if (s.hasOwnProperty(key)) {
                     let val = s[key];
-                    if (typeof val === "function") val = val();
+                    if (isFunction(val)) val = val();
                     inlineStyle[key] = val;
                 }
             }
@@ -4869,7 +4978,7 @@ export function propi<T>(value: T): IProp<T> {
 export function propa<T>(prop: IProp<T>): IPropAsync<T> {
     return (val?: T | PromiseLike<T>) => {
         if (val !== undefined) {
-            if (typeof val === "object" && typeof (<PromiseLike<T>>val).then === "function") {
+            if (typeof val === "object" && isFunction((<PromiseLike<T>>val).then)) {
                 (<PromiseLike<T>>val).then((v) => {
                     prop(v);
                 }, (err) => {
@@ -4885,14 +4994,14 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
 }
 
 export function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T {
-    if (typeof value === "function") {
+    if (isFunction(value)) {
         return (<IProp<T>>value)();
     }
     return <T>value;
 }
 
 export function emitChange<T>(data: IValueData<T>, value: T) {
-    if (typeof data.value === "function") {
+    if (isFunction(data.value)) {
         (<IProp<T>>data.value)(value);
     }
     if (data.onChange !== undefined) {
@@ -4910,12 +5019,9 @@ export function createElement(name: any, props: any): IBobrilNode {
     var children: IBobrilChild[] = [];
     for (var i = 2; i < arguments.length; i++) {
         var ii = arguments[i];
-        if (typeof ii === "number")
-            children.push("" + ii);
-        else
-            children.push(ii);
+        children.push(ii);
     }
-    if (typeof name === "string") {
+    if (isString(name)) {
         var res: IBobrilNode = { tag: name, children: children };
         if (props == null) {
             return res;

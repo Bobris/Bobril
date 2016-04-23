@@ -1,4 +1,4 @@
-export declare type IBobrilChild = boolean | string | IBobrilNode;
+export declare type IBobrilChild = boolean | number | string | IBobrilNode;
 export declare type IBobrilChildren = IBobrilChild | IBobrilChildArray;
 export interface IBobrilChildArray extends Array<IBobrilChildren> {
 }
@@ -125,6 +125,10 @@ export interface ISelectionChangeEvent {
     startPosition: number;
     endPosition: number;
 }
+export declare function isNumber(val: any): val is Number;
+export declare function isString(val: any): val is String;
+export declare function isFunction(val: any): val is Function;
+export declare function isObject(val: any): val is Object;
 export declare let assign: {
     <T, U>(target: T, source: U): T & U;
     <T, U, V>(target: T, source1: U, source2: V): T & U & V;
@@ -134,6 +138,8 @@ export declare let assign: {
 export declare function flatten(a: any | any[]): any[];
 export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void;
 export declare function ieVersion(): any;
+export declare function registerFocusRoot(ctx: IBobrilCtx): void;
+export declare function unregisterFocusRoot(ctx: IBobrilCtx): void;
 export declare function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode;
 export declare function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike): void;
 export declare function vdomPath(n: Node): IBobrilCacheNode[];

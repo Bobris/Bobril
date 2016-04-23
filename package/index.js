@@ -16,9 +16,22 @@ function createEl(name) {
     return document.createElement(name);
 }
 var hasTextContent = "textContent" in createTextNode("");
-function isObject(value) {
-    return typeof value === "object";
+function isNumber(val) {
+    return typeof val == "number";
 }
+exports.isNumber = isNumber;
+function isString(val) {
+    return typeof val == "string";
+}
+exports.isString = isString;
+function isFunction(val) {
+    return typeof val == "function";
+}
+exports.isFunction = isFunction;
+function isObject(val) {
+    return typeof val === "object";
+}
+exports.isObject = isObject;
 if (Object.assign == null) {
     Object.assign = function assign(target) {
         var sources = [];
@@ -69,6 +82,7 @@ function flatten(a) {
 }
 exports.flatten = flatten;
 var inSvg = false;
+var inNotFocusable = false;
 var updateCall = [];
 var updateInstance = [];
 var setValueCallback = function (el, node, newValue, oldValue) {
@@ -87,7 +101,7 @@ function newHashObj() {
 var vendors = ["Webkit", "Moz", "ms", "O"];
 var testingDivStyle = document.createElement("div").style;
 function testPropExistence(name) {
-    return typeof testingDivStyle[name] === "string";
+    return isString(testingDivStyle[name]);
 }
 var mapping = newHashObj();
 var isUnitlessNumber = {
@@ -119,7 +133,7 @@ function renamer(newName) {
 ;
 function renamerpx(newName) {
     return function (style, value, oldName) {
-        if (typeof value === "number") {
+        if (isNumber(value)) {
             style[newName] = value + "px";
         }
         else {
@@ -129,7 +143,7 @@ function renamerpx(newName) {
     };
 }
 function pxadder(style, value, name) {
-    if (typeof value === "number")
+    if (isNumber(value))
         style[name] = value + "px";
 }
 function ieVersion() {
@@ -228,42 +242,70 @@ function setClassName(el, className) {
     else
         el.className = className;
 }
-function updateElement(n, el, newAttrs, oldAttrs) {
+var focusableTag = /^input$|^select$|^textarea$|^button$/;
+var tabindexStr = "tabindex";
+function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
     var attrName, newAttr, oldAttr, valueOldAttr, valueNewAttr;
-    for (attrName in newAttrs) {
-        newAttr = newAttrs[attrName];
-        oldAttr = oldAttrs[attrName];
-        if (attrName === tvalue && !inSvg) {
-            if (typeof newAttr === "function") {
-                oldAttrs[bvalue] = newAttr;
-                newAttr = newAttr();
+    var wasTabindex = false;
+    if (newAttrs != null)
+        for (attrName in newAttrs) {
+            newAttr = newAttrs[attrName];
+            oldAttr = oldAttrs[attrName];
+            if (notFocusable && attrName === tabindexStr) {
+                newAttr = -1;
+                wasTabindex = true;
             }
-            valueOldAttr = oldAttr;
-            valueNewAttr = newAttr;
-            oldAttrs[attrName] = newAttr;
-            continue;
-        }
-        if (oldAttr !== newAttr) {
-            oldAttrs[attrName] = newAttr;
-            if (inSvg) {
-                if (attrName === "href")
-                    el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
+            else if (attrName === tvalue && !inSvg) {
+                if (isFunction(newAttr)) {
+                    oldAttrs[bvalue] = newAttr;
+                    newAttr = newAttr();
+                }
+                valueOldAttr = oldAttr;
+                valueNewAttr = newAttr;
+                oldAttrs[attrName] = newAttr;
+                continue;
+            }
+            if (oldAttr !== newAttr) {
+                oldAttrs[attrName] = newAttr;
+                if (inSvg) {
+                    if (attrName === "href")
+                        el.setAttributeNS("http://www.w3.org/1999/xlink", "href", newAttr);
+                    else
+                        el.setAttribute(attrName, newAttr);
+                }
+                else if (attrName in el && !(attrName === "list" || attrName === "form")) {
+                    el[attrName] = newAttr;
+                }
                 else
                     el.setAttribute(attrName, newAttr);
             }
-            else if (attrName in el && !(attrName === "list" || attrName === "form")) {
-                el[attrName] = newAttr;
+        }
+    if (notFocusable && !wasTabindex && focusableTag.test(n.tag)) {
+        el.setAttribute(tabindexStr, "-1");
+        oldAttrs[tabindexStr] = -1;
+    }
+    if (newAttrs == null) {
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined) {
+                if (notFocusable && attrName === tabindexStr)
+                    continue;
+                if (attrName === bvalue)
+                    continue;
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
             }
-            else
-                el.setAttribute(attrName, newAttr);
         }
     }
-    for (attrName in oldAttrs) {
-        if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
-            if (attrName === bvalue)
-                continue;
-            oldAttrs[attrName] = undefined;
-            el.removeAttribute(attrName);
+    else {
+        for (attrName in oldAttrs) {
+            if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
+                if (notFocusable && attrName === tabindexStr)
+                    continue;
+                if (attrName === bvalue)
+                    continue;
+                oldAttrs[attrName] = undefined;
+                el.removeAttribute(attrName);
+            }
         }
     }
     if (valueNewAttr !== undefined) {
@@ -297,7 +339,7 @@ function findCfg(parent) {
 function setRef(ref, value) {
     if (ref == null)
         return;
-    if (typeof ref === "function") {
+    if (isFunction(ref)) {
         ref(value);
         return;
     }
@@ -309,6 +351,22 @@ function setRef(ref, value) {
     }
     refs[ref[1]] = value;
 }
+var focusRootStack = [];
+var focusRootTop = null;
+function registerFocusRoot(ctx) {
+    focusRootStack.push(ctx.me);
+    addDisposable(ctx, unregisterFocusRoot);
+    ignoreShouldChange();
+}
+exports.registerFocusRoot = registerFocusRoot;
+function unregisterFocusRoot(ctx) {
+    var idx = focusRootStack.indexOf(ctx.me);
+    if (idx !== -1) {
+        focusRootStack.splice(idx, 1);
+        ignoreShouldChange();
+    }
+}
+exports.unregisterFocusRoot = unregisterFocusRoot;
 function createNode(n, parentNode, createInto, createBefore) {
     var c = {
         tag: n.tag,
@@ -326,6 +384,7 @@ function createNode(n, parentNode, createInto, createBefore) {
         ctx: undefined
     };
     var backupInSvg = inSvg;
+    var backupInNotFocusable = inNotFocusable;
     var component = c.component;
     var el;
     setRef(c.ref, c);
@@ -341,8 +400,10 @@ function createNode(n, parentNode, createInto, createBefore) {
     }
     var tag = c.tag;
     var children = c.children;
+    if (isNumber(children))
+        children = "" + children;
     if (tag === undefined) {
-        if (typeof children === "string") {
+        if (isString(children)) {
             el = createTextNode(children);
             c.element = el;
             createInto.insertBefore(el, createBefore);
@@ -426,25 +487,30 @@ function createNode(n, parentNode, createInto, createBefore) {
             component.postRender(c.ctx, c);
         }
     }
-    if (c.attrs)
-        c.attrs = updateElement(c, el, c.attrs, {});
+    if (inNotFocusable && focusRootTop === c)
+        inNotFocusable = false;
+    if (c.attrs || inNotFocusable)
+        c.attrs = updateElement(c, el, c.attrs, {}, inNotFocusable);
     if (c.style)
         updateStyle(c, el, c.style, undefined);
     var className = c.className;
     if (className)
         setClassName(el, className);
     inSvg = backupInSvg;
+    inNotFocusable = backupInNotFocusable;
     pushInitCallback(c, false);
     return c;
 }
 exports.createNode = createNode;
 function normalizeNode(n) {
-    var t = typeof n;
-    if (t === "string") {
+    if (n === false || n === true)
+        return null;
+    if (isString(n)) {
         return { children: n };
     }
-    if (t === "boolean")
-        return null;
+    if (isNumber(n)) {
+        return { children: "" + n };
+    }
     return n;
 }
 function createChildren(c, createInto, createBefore) {
@@ -452,7 +518,7 @@ function createChildren(c, createInto, createBefore) {
     if (!ch)
         return;
     if (!isArray(ch)) {
-        if (typeof ch === "string") {
+        if (isString(ch)) {
             if (hasTextContent) {
                 createInto.textContent = ch;
             }
@@ -500,7 +566,7 @@ function destroyNode(c) {
         if (isArray(disposables)) {
             for (var i_4 = disposables.length; i_4-- > 0;) {
                 var d = disposables[i_4];
-                if (typeof d === "function")
+                if (isFunction(d))
                     d(ctx);
                 else
                     d.dispose();
@@ -654,6 +720,7 @@ function finishUpdateNode(n, c, component) {
 function updateNode(n, c, createInto, createBefore, deepness) {
     var component = n.component;
     var backupInSvg = inSvg;
+    var backupInNotFocusable = inNotFocusable;
     var bigChange = false;
     var ctx = c.ctx;
     if (component && ctx != null) {
@@ -668,8 +735,16 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
                 if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
-                    if (isArray(c.children))
+                    if (isArray(c.children)) {
+                        if (c.tag === "svg") {
+                            inSvg = true;
+                        }
+                        if (inNotFocusable && focusRootTop === c)
+                            inNotFocusable = false;
                         selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
+                        inSvg = backupInSvg;
+                        inNotFocusable = backupInNotFocusable;
+                    }
                     return c;
                 }
             ctx.data = n.data || {};
@@ -683,7 +758,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
     }
     if (DEBUG) {
         if (!((n.ref == null && c.ref == null) ||
-            ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" ||
+            ((n.ref != null && c.ref != null && (isFunction(n.ref) || isFunction(c.ref) ||
                 n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
             if (window.console && console.warn)
                 console.warn("ref changed in child in update");
@@ -692,6 +767,9 @@ function updateNode(n, c, createInto, createBefore, deepness) {
     var newChildren = n.children;
     var cachedChildren = c.children;
     var tag = n.tag;
+    if (isNumber(newChildren)) {
+        newChildren = "" + newChildren;
+    }
     if (bigChange || (component && ctx == null)) {
     }
     else if (tag === "/") {
@@ -702,7 +780,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
     }
     else if (tag === c.tag) {
         if (tag === undefined) {
-            if (typeof newChildren === "string" && typeof cachedChildren === "string") {
+            if (isString(newChildren) && isString(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     var el = c.element;
                     if (hasTextContent) {
@@ -715,6 +793,11 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 }
             }
             else {
+                if (tag === "svg") {
+                    inSvg = true;
+                }
+                if (inNotFocusable && focusRootTop === c)
+                    inNotFocusable = false;
                 if (deepness <= 0) {
                     if (isArray(cachedChildren))
                         selectedUpdate(c.children, createInto, createBefore);
@@ -722,6 +805,8 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 else {
                     c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
                 }
+                inSvg = backupInSvg;
+                inNotFocusable = backupInNotFocusable;
             }
             finishUpdateNode(n, c, component);
             return c;
@@ -730,8 +815,10 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             if (tag === "svg") {
                 inSvg = true;
             }
+            if (inNotFocusable && focusRootTop === c)
+                inNotFocusable = false;
             var el = c.element;
-            if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
+            if ((isString(newChildren)) && !isArray(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     if (hasTextContent) {
                         el.textContent = newChildren;
@@ -753,8 +840,8 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             }
             c.children = cachedChildren;
             finishUpdateNode(n, c, component);
-            if (c.attrs || n.attrs)
-                c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
+            if (c.attrs || n.attrs || inNotFocusable)
+                c.attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
             updateStyle(c, el, n.style, c.style);
             c.style = n.style;
             var className = n.className;
@@ -763,6 +850,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 c.className = className;
             }
             inSvg = backupInSvg;
+            inNotFocusable = backupInNotFocusable;
             return c;
         }
     }
@@ -1262,10 +1350,14 @@ function selectedUpdate(cache, element, createBefore) {
         }
         else if (isArray(node.children)) {
             var backupInSvg = inSvg;
+            var backupInNotFocusable = inNotFocusable;
+            if (inNotFocusable && focusRootTop === node)
+                inNotFocusable = false;
             if (node.tag === "svg")
                 inSvg = true;
             selectedUpdate(node.children, node.element || element, findNextNode(cache, i, len, createBefore));
             inSvg = backupInSvg;
+            inNotFocusable = backupInNotFocusable;
         }
     }
 }
@@ -1305,6 +1397,27 @@ function findLastNode(children) {
     }
     return null;
 }
+function isLogicalParent(parent, child, rootIds) {
+    while (child != null) {
+        if (parent === child)
+            return true;
+        var p = child.parent;
+        if (p == null) {
+            for (var i = 0; i < rootIds.length; i++) {
+                var r = roots[rootIds[i]];
+                if (!r)
+                    continue;
+                var rc = r.c;
+                if (rc.indexOf(child) >= 0) {
+                    p = r.p;
+                    break;
+                }
+            }
+        }
+        child = p;
+    }
+    return false;
+}
 function update(time) {
     renderFrameBegin = exports.now();
     initEvents();
@@ -1314,6 +1427,8 @@ function update(time) {
     uptimeMs = time;
     scheduled = false;
     beforeFrameCallback();
+    focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
+    inNotFocusable = false;
     var fullRefresh = false;
     if (fullRecreateRequested) {
         fullRecreateRequested = false;
@@ -1326,6 +1441,8 @@ function update(time) {
             continue;
         var rc = r.c;
         var insertBefore = findLastNode(rc);
+        if (focusRootTop)
+            inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
         if (insertBefore != null)
             insertBefore = insertBefore.nextSibling;
         if (fullRefresh) {
@@ -1507,7 +1624,7 @@ function mergeComponents(c1, c2) {
             if (i === "id") {
                 res[i] = ((origM != null) ? origM : "") + "/" + m;
             }
-            else if (typeof m === "function" && origM != null && typeof origM === "function") {
+            else if (isFunction(m) && origM != null && isFunction(origM)) {
                 res[i] = merge(origM, m);
             }
             else {
@@ -2781,11 +2898,10 @@ function focused() {
     return currentFocusedNode;
 }
 exports.focused = focused;
-var focusableTag = /^input$|^select$|^textarea$|^button$/;
 function focus(node) {
     if (node == null)
         return false;
-    if (typeof node === "string")
+    if (isString(node))
         return false;
     var style = node.style;
     if (style != null) {
@@ -3232,7 +3348,7 @@ function handleDragStart(ev, target, node) {
         try {
             var k = dataKeys[i];
             var d = datas[k];
-            if (typeof d !== "string")
+            if (!isString(d))
                 d = JSON.stringify(d);
             ev.dataTransfer.setData(k, d);
         }
@@ -3625,7 +3741,7 @@ function rootNodeFactory() {
                 data.routeParams = routeParams;
                 var handler = r.handler;
                 var res;
-                if (typeof handler === "function") {
+                if (isFunction(handler)) {
                     res = handler(data);
                 }
                 else {
@@ -3884,7 +4000,7 @@ function nextIteration() {
             transitionState--;
             var handler = rr.handler;
             var comp = null;
-            if (typeof handler === "function") {
+            if (isFunction(handler)) {
                 var node = handler({});
                 if (!node)
                     continue;
@@ -3981,14 +4097,14 @@ function buildCssRule(parent, name) {
     return result;
 }
 function flattenStyle(cur, curPseudo, style, stylePseudo) {
-    if (typeof style === "string") {
+    if (isString(style)) {
         var externalStyle = allStyles[style];
         if (externalStyle === undefined) {
             throw new Error("uknown style " + style);
         }
         flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
     }
-    else if (typeof style === "function") {
+    else if (isFunction(style)) {
         style(cur, curPseudo);
     }
     else if (isArray(style)) {
@@ -4001,7 +4117,7 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
             if (!Object.prototype.hasOwnProperty.call(style, key))
                 continue;
             var val = style[key];
-            if (typeof val === "function") {
+            if (isFunction(val)) {
                 val = val(cur, key);
             }
             cur[key] = val;
@@ -4056,10 +4172,10 @@ function beforeFrame() {
             var name_1 = ss.name;
             var sspseudo = ss.pseudo;
             var ssstyle = ss.style;
-            if (typeof ssstyle === "function" && ssstyle.length === 0) {
+            if (isFunction(ssstyle) && ssstyle.length === 0) {
                 _a = ssstyle(), ssstyle = _a[0], sspseudo = _a[1];
             }
-            if (typeof ssstyle === "string" && sspseudo == null) {
+            if (isString(ssstyle) && sspseudo == null) {
                 ss.realname = ssstyle;
                 continue;
             }
@@ -4132,9 +4248,9 @@ function style(node) {
             continue;
         }
         var s = ca[i];
-        if (s == null || typeof s === "boolean" || s === '') {
+        if (s == null || s === true || s === false || s === '') {
         }
-        else if (typeof s === "string") {
+        else if (isString(s)) {
             var sd = allStyles[s];
             if (className == null)
                 className = sd.realname;
@@ -4164,7 +4280,7 @@ function style(node) {
             for (var key in s) {
                 if (s.hasOwnProperty(key)) {
                     var val = s[key];
-                    if (typeof val === "function")
+                    if (isFunction(val))
                         val = val();
                     inlineStyle[key] = val;
                 }
@@ -4505,7 +4621,7 @@ exports.propi = propi;
 function propa(prop) {
     return function (val) {
         if (val !== undefined) {
-            if (typeof val === "object" && typeof val.then === "function") {
+            if (typeof val === "object" && isFunction(val.then)) {
                 val.then(function (v) {
                     prop(v);
                 }, function (err) {
@@ -4522,14 +4638,14 @@ function propa(prop) {
 }
 exports.propa = propa;
 function getValue(value) {
-    if (typeof value === "function") {
+    if (isFunction(value)) {
         return value();
     }
     return value;
 }
 exports.getValue = getValue;
 function emitChange(data, value) {
-    if (typeof data.value === "function") {
+    if (isFunction(data.value)) {
         data.value(value);
     }
     if (data.onChange !== undefined) {
@@ -4546,12 +4662,9 @@ function createElement(name, props) {
     var children = [];
     for (var i = 2; i < arguments.length; i++) {
         var ii = arguments[i];
-        if (typeof ii === "number")
-            children.push("" + ii);
-        else
-            children.push(ii);
+        children.push(ii);
     }
-    if (typeof name === "string") {
+    if (isString(name)) {
         var res = { tag: name, children: children };
         if (props == null) {
             return res;
