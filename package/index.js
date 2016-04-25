@@ -4409,14 +4409,32 @@ function recolorAndClip(image, colorStr, width, height, left, top) {
     ctx.putImageData(imgdata, 0, 0);
     return canvas.toDataURL();
 }
+var lastFuncId = 0;
+var funcIdName = "b@funcId";
 function sprite(url, color, width, height, left, top) {
     left = left || 0;
     top = top || 0;
-    if (typeof color === 'function') {
-        var styleid = emptyStyleDef(url);
-        dynamicSprites.push({
-            styleid: styleid, color: color, url: url, width: width, height: height, left: left, top: top, lastColor: '', lastUrl: ''
-        });
+    var colorId = color || "";
+    var isVarColor = false;
+    if (isFunction(color)) {
+        isVarColor = true;
+        colorId = color[funcIdName];
+        if (colorId == null) {
+            colorId = "" + (lastFuncId++);
+            color[funcIdName] = colorId;
+        }
+    }
+    var key = url + ":" + colorId + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
+    var spDef = allSprites[key];
+    if (spDef)
+        return spDef.styleid;
+    var styleid = emptyStyleDef(url);
+    spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+    if (isVarColor) {
+        spDef.color = color;
+        spDef.lastColor = '';
+        spDef.lastUrl = '';
+        dynamicSprites.push(spDef);
         if (imageCache[url] === undefined) {
             imageCache[url] = null;
             var image = new Image();
@@ -4426,15 +4444,9 @@ function sprite(url, color, width, height, left, top) {
             });
             image.src = url;
         }
-        return styleid;
+        invalidateStyles();
     }
-    var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
-    var spDef = allSprites[key];
-    if (spDef)
-        return spDef.styleid;
-    var styleid = emptyStyleDef(url);
-    spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
-    if (width == null || height == null || color != null) {
+    else if (width == null || height == null || color != null) {
         var image = new Image();
         image.addEventListener("load", function () {
             if (spDef.width == null)

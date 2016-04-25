@@ -4418,14 +4418,8 @@ interface ISprite {
     top: number;
 }
 
-interface IDynamicSprite {
-    styleid: IBobrilStyleDef;
+interface IDynamicSprite extends ISprite {
     color: () => string;
-    url: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
     lastColor: string;
     lastUrl: string;
 }
@@ -4767,14 +4761,31 @@ function recolorAndClip(image: HTMLImageElement, colorStr: string, width: number
     return canvas.toDataURL();
 }
 
+let lastFuncId = 0;
+const funcIdName = "b@funcId";
 export function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
     left = left || 0;
     top = top || 0;
-    if (typeof color === 'function') {
-        var styleid = emptyStyleDef(url);
-        dynamicSprites.push({
-            styleid, color, url, width, height, left, top, lastColor: '', lastUrl: ''
-        });
+    let colorId = color || "";
+    let isVarColor = false;
+    if (isFunction(color)) {
+        isVarColor = true;
+        colorId = color[funcIdName];
+        if (colorId == null) {
+            colorId = "" + (lastFuncId++);
+            color[funcIdName] = colorId;
+        }
+    }
+    var key = url + ":" + colorId + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
+    var spDef = allSprites[key];
+    if (spDef) return spDef.styleid;
+    var styleid = emptyStyleDef(url);
+    spDef = { styleid, url, width, height, left, top };
+    if (isVarColor) {
+        (<IDynamicSprite>spDef).color = <() => string>color;
+        (<IDynamicSprite>spDef).lastColor = '';
+        (<IDynamicSprite>spDef).lastUrl = '';
+        dynamicSprites.push(<IDynamicSprite>spDef);
         if (imageCache[url] === undefined) {
             imageCache[url] = null;
             var image = new Image();
@@ -4784,15 +4795,8 @@ export function sprite(url: string, color?: string | (() => string), width?: num
             });
             image.src = url;
         }
-        return styleid;
-    }
-    var key = url + ":" + (color || "") + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
-    var spDef = allSprites[key];
-    if (spDef) return spDef.styleid;
-    var styleid = emptyStyleDef(url);
-    spDef = { styleid, url, width, height, left, top };
-
-    if (width == null || height == null || color != null) {
+        invalidateStyles();
+    } else if (width == null || height == null || color != null) {
         var image = new Image();
         image.addEventListener("load", () => {
             if (spDef.width == null) spDef.width = image.width;
