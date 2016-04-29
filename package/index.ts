@@ -1561,14 +1561,22 @@ function isLogicalParent(parent: IBobrilCacheNode, child: IBobrilCacheNode, root
     return false;
 }
 
+export function syncUpdate() {
+    internalUpdate(now() - startTime);
+}
+
 function update(time: number) {
+    scheduled = false;
+    internalUpdate(time);
+}
+
+function internalUpdate(time: number) {
     renderFrameBegin = now();
     initEvents();
     frameCounter++;
     ignoringShouldChange = nextIgnoreShouldChange;
     nextIgnoreShouldChange = false;
     uptimeMs = time;
-    scheduled = false;
     beforeFrameCallback();
     focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
     inNotFocusable = false;

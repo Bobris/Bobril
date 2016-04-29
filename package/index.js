@@ -1418,14 +1418,21 @@ function isLogicalParent(parent, child, rootIds) {
     }
     return false;
 }
+function syncUpdate() {
+    internalUpdate(exports.now() - startTime);
+}
+exports.syncUpdate = syncUpdate;
 function update(time) {
+    scheduled = false;
+    internalUpdate(time);
+}
+function internalUpdate(time) {
     renderFrameBegin = exports.now();
     initEvents();
     frameCounter++;
     ignoringShouldChange = nextIgnoreShouldChange;
     nextIgnoreShouldChange = false;
     uptimeMs = time;
-    scheduled = false;
     beforeFrameCallback();
     focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
     inNotFocusable = false;

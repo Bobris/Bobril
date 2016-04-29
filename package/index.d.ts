@@ -153,6 +153,7 @@ export declare function addEvent(name: string, priority: number, callback: (ev: 
 export declare function emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean;
 export declare function setBeforeFrame(callback: () => void): () => void;
 export declare function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void;
+export declare function syncUpdate(): void;
 export declare function ignoreShouldChange(): void;
 export declare function setInvalidate(inv: (ctx?: Object, deepness?: number) => void): (ctx?: Object, deepness?: number) => void;
 export declare var invalidate: (ctx?: Object, deepness?: number) => void;
