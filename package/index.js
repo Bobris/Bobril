@@ -4184,6 +4184,7 @@ function beforeFrame() {
             }
             if (isString(ssstyle) && sspseudo == null) {
                 ss.realname = ssstyle;
+                assert(name_1 != null, "Cannot link existing class to selector");
                 continue;
             }
             ss.realname = name_1;
@@ -4208,11 +4209,12 @@ function beforeFrame() {
             shimStyle(style_1);
             var cssStyle = inlineStyleToCssDeclaration(style_1);
             if (cssStyle.length > 0)
-                stylestr += buildCssRule(parent_1, name_1) + " {" + cssStyle + "}\n";
+                stylestr += (name_1 == null ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n";
             for (var key2 in flattenPseudo) {
                 var sspi = flattenPseudo[key2];
                 shimStyle(sspi);
-                stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
+                stylestr += (name_1 == null ? parent_1 + ":" + key2 : buildCssRule(parent_1, name_1 + ":" + key2))
+                    + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
             }
         }
         var styleElement = document.createElement("style");
@@ -4341,6 +4343,11 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     return nameHint;
 }
 exports.styleDefEx = styleDefEx;
+function selectorStyleDef(selector, style, pseudo) {
+    allStyles["b-" + globalCounter++] = { name: null, realname: null, parent: selector, style: style, inlStyle: null, pseudo: pseudo };
+    invalidateStyles();
+}
+exports.selectorStyleDef = selectorStyleDef;
 function invalidateStyles() {
     rebuildStyles = true;
     exports.invalidate();

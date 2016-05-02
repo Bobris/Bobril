@@ -4557,6 +4557,7 @@ function beforeFrame() {
             }
             if (isString(ssstyle) && sspseudo == null) {
                 ss.realname = ssstyle;
+                assert(name != null, "Cannot link existing class to selector");
                 continue;
             }
             ss.realname = name;
@@ -4581,11 +4582,12 @@ function beforeFrame() {
             shimStyle(style);
             let cssStyle = inlineStyleToCssDeclaration(style);
             if (cssStyle.length > 0)
-                stylestr += buildCssRule(parent, name) + " {" + cssStyle + "}\n";
+                stylestr += (name == null ? parent : buildCssRule(parent, name)) + " {" + cssStyle + "}\n";
             for (var key2 in flattenPseudo) {
                 let sspi = flattenPseudo[key2];
                 shimStyle(sspi);
-                stylestr += buildCssRule(parent, name + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
+                stylestr += (name == null ? parent + ":" + key2 : buildCssRule(parent, name + ":" + key2))
+                    + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
             }
         }
         var styleElement = document.createElement("style");
@@ -4696,6 +4698,11 @@ export function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], style: a
     allStyles[nameHint] = { name: nameHint, realname: nameHint, parent, style, inlStyle: null, pseudo };
     invalidateStyles();
     return nameHint;
+}
+
+export function selectorStyleDef(selector: string, style: any, pseudo?: { [name: string]: any }) {
+    allStyles["b-" + globalCounter++] = { name: null, realname: null, parent: selector, style, inlStyle: null, pseudo };
+    invalidateStyles();
 }
 
 export function invalidateStyles(): void {
