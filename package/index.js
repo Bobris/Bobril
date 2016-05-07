@@ -313,11 +313,37 @@ function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
     }
     return oldAttrs;
 }
-function pushInitCallback(c, aupdate) {
+function pushInitCallback(c) {
     var cc = c.component;
     if (cc) {
-        if (cc[aupdate ? "postUpdateDom" : "postInitDom"]) {
-            updateCall.push(aupdate);
+        var fn = cc.postInitDom;
+        if (fn) {
+            updateCall.push(fn);
+            updateInstance.push(c);
+        }
+    }
+}
+function pushUpdateCallback(c) {
+    var cc = c.component;
+    if (cc) {
+        var fn = cc.postUpdateDom;
+        if (fn) {
+            updateCall.push(fn);
+            updateInstance.push(c);
+        }
+        fn = cc.postUpdateDomEverytime;
+        if (fn) {
+            updateCall.push(fn);
+            updateInstance.push(c);
+        }
+    }
+}
+function pushUpdateEverytimeCallback(c) {
+    var cc = c.component;
+    if (cc) {
+        var fn = cc.postUpdateDomEverytime;
+        if (fn) {
+            updateCall.push(fn);
             updateInstance.push(c);
         }
     }
@@ -415,7 +441,7 @@ function createNode(n, parentNode, createInto, createBefore) {
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
-            pushInitCallback(c, false);
+            pushInitCallback(c);
         }
         return c;
     }
@@ -468,7 +494,7 @@ function createNode(n, parentNode, createInto, createBefore) {
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
-            pushInitCallback(c, false);
+            pushInitCallback(c);
         }
         return c;
     }
@@ -498,7 +524,7 @@ function createNode(n, parentNode, createInto, createBefore) {
         setClassName(el, className);
     inSvg = backupInSvg;
     inNotFocusable = backupInNotFocusable;
-    pushInitCallback(c, false);
+    pushInitCallback(c);
     return c;
 }
 exports.createNode = createNode;
@@ -715,7 +741,7 @@ function finishUpdateNode(n, c, component) {
         }
     }
     c.data = n.data;
-    pushInitCallback(c, true);
+    pushUpdateCallback(c);
 }
 function updateNode(n, c, createInto, createBefore, deepness) {
     var component = n.component;
@@ -745,6 +771,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                         inSvg = backupInSvg;
                         inNotFocusable = backupInNotFocusable;
                     }
+                    pushUpdateEverytimeCallback(c);
                     return c;
                 }
             ctx.data = n.data || {};
@@ -899,12 +926,7 @@ function callPostCallbacks() {
     var count = updateInstance.length;
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i];
-        if (updateCall[i]) {
-            n.component.postUpdateDom(n.ctx, n, n.element);
-        }
-        else {
-            n.component.postInitDom(n.ctx, n, n.element);
-        }
+        updateCall[i].call(n.component, n.ctx, n, n.element);
     }
     updateCall = [];
     updateInstance = [];
@@ -1356,6 +1378,7 @@ function selectedUpdate(cache, element, createBefore) {
             if (node.tag === "svg")
                 inSvg = true;
             selectedUpdate(node.children, node.element || element, findNextNode(cache, i, len, createBefore));
+            pushUpdateEverytimeCallback(node);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
         }

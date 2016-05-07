@@ -36,6 +36,7 @@ export interface IBobrilComponent {
     shouldChange?(ctx: IBobrilCtx, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
     postInitDom?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
     postUpdateDom?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
+    postUpdateDomEverytime?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
     destroy?(ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement): void;
     shouldStopBubble?(ctx: IBobrilCtx, name: string, param: Object): boolean;
     shouldStopBroadcast?(ctx: IBobrilCtx, name: string, param: Object): boolean;

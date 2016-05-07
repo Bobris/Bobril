@@ -61,6 +61,8 @@ Every node could have `component` field defined. It has can contain main life cy
 
 <img src="https://raw.githubusercontent.com/Bobris/Bobril/master/src/BobrilComponentLifecycle.png" width="377px">
 
+`postUpdateDomEverytime` is similiar to `postUpdateDom` function, but it is called in every frame regardless shouldChange or invalidate(ctx).
+
 Init
 ----
 

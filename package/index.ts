@@ -54,6 +54,8 @@ export interface IBobrilComponent {
     postInitDom?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
     // called from children to parents order for updated nodes
     postUpdateDom?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
+    // called from children to parents order for updated nodes but in every frame even when render was not run
+    postUpdateDomEverytime?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
     // called just before removing node from dom
     destroy?(ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement): void;
     // called when bubling event to parent so you could stop bubling without preventing default handling
@@ -267,7 +269,7 @@ export function flatten(a: any | any[]): any[] {
 
 var inSvg: boolean = false;
 var inNotFocusable: boolean = false;
-var updateCall: Array<boolean> = [];
+var updateCall: Array<Function> = [];
 var updateInstance: Array<IBobrilCacheNode> = [];
 var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
     if (newValue !== oldValue)
@@ -485,11 +487,39 @@ function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttrib
     return oldAttrs;
 }
 
-function pushInitCallback(c: IBobrilCacheNode, aupdate: boolean) {
+function pushInitCallback(c: IBobrilCacheNode) {
     var cc = c.component;
     if (cc) {
-        if ((<any>cc)[aupdate ? "postUpdateDom" : "postInitDom"]) {
-            updateCall.push(aupdate);
+        let fn = cc.postInitDom;
+        if (fn) {
+            updateCall.push(fn);
+            updateInstance.push(c);
+        }
+    }
+}
+
+function pushUpdateCallback(c: IBobrilCacheNode) {
+    var cc = c.component;
+    if (cc) {
+        let fn = cc.postUpdateDom;
+        if (fn) {
+            updateCall.push(fn);
+            updateInstance.push(c);
+        }
+        fn = cc.postUpdateDomEverytime;
+        if (fn) {
+            updateCall.push(fn);
+            updateInstance.push(c);
+        }
+    }
+}
+
+function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
+    var cc = c.component;
+    if (cc) {
+        let fn = cc.postUpdateDomEverytime;
+        if (fn) {
+            updateCall.push(fn);
             updateInstance.push(c);
         }
     }
@@ -588,7 +618,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
-            pushInitCallback(c, false);
+            pushInitCallback(c);
         }
         return c;
     } else if (tag === "/") {
@@ -638,7 +668,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
             if (component.postRender) {
                 component.postRender(c.ctx, c);
             }
-            pushInitCallback(c, false);
+            pushInitCallback(c);
         }
         return c;
     } else if (inSvg || tag === "svg") {
@@ -663,7 +693,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
     if (className) setClassName(<HTMLElement>el, className);
     inSvg = backupInSvg;
     inNotFocusable = backupInNotFocusable;
-    pushInitCallback(c, false);
+    pushInitCallback(c);
     return c;
 }
 
@@ -873,7 +903,7 @@ function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobri
         }
     }
     c.data = n.data;
-    pushInitCallback(c, true);
+    pushUpdateCallback(c);
 }
 
 export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node, deepness: number): IBobrilCacheNode {
@@ -903,6 +933,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
                         inSvg = backupInSvg;
                         inNotFocusable = backupInNotFocusable;
                     }
+                    pushUpdateEverytimeCallback(c);
                     return c;
                 }
             (<any>ctx).data = n.data || {};
@@ -1040,11 +1071,7 @@ export function callPostCallbacks() {
     var count = updateInstance.length;
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i];
-        if (updateCall[i]) {
-            n.component.postUpdateDom(n.ctx, n, <HTMLElement>n.element);
-        } else {
-            n.component.postInitDom(n.ctx, n, <HTMLElement>n.element);
-        }
+        updateCall[i].call(n.component, n.ctx, n, n.element);
     }
     updateCall = [];
     updateInstance = [];
@@ -1497,6 +1524,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
                 inNotFocusable = false;
             if (node.tag === "svg") inSvg = true;
             selectedUpdate(<IBobrilCacheNode[]>node.children, (<Element>node.element) || element, findNextNode(cache, i, len, createBefore));
+            pushUpdateEverytimeCallback(node);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
         }
