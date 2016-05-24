@@ -8,7 +8,7 @@ function assert(shoudBeTrue, messageIfFalse) {
     if (DEBUG && !shoudBeTrue)
         throw Error(messageIfFalse || "assertion failed");
 }
-var isArray = Array.isArray;
+exports.isArray = Array.isArray;
 function createTextNode(content) {
     return document.createTextNode(content);
 }
@@ -57,7 +57,7 @@ if (Object.assign == null) {
 }
 exports.assign = Object.assign;
 function flatten(a) {
-    if (!isArray(a)) {
+    if (!exports.isArray(a)) {
         if (a == null || a === false || a === true)
             return [];
         return [a];
@@ -66,7 +66,7 @@ function flatten(a) {
     var alen = a.length;
     for (var i_2 = 0; i_2 < alen;) {
         var item = a[i_2];
-        if (isArray(item)) {
+        if (exports.isArray(item)) {
             a.splice.apply(a, [i_2, 1].concat(item));
             alen = a.length;
             continue;
@@ -543,7 +543,7 @@ function createChildren(c, createInto, createBefore) {
     var ch = c.children;
     if (!ch)
         return;
-    if (!isArray(ch)) {
+    if (!exports.isArray(ch)) {
         if (isString(ch)) {
             if (hasTextContent) {
                 createInto.textContent = ch;
@@ -559,7 +559,7 @@ function createChildren(c, createInto, createBefore) {
     var i = 0, l = ch.length;
     while (i < l) {
         var item = ch[i];
-        if (isArray(item)) {
+        if (exports.isArray(item)) {
             ch.splice.apply(ch, [i, 1].concat(item));
             l = ch.length;
             continue;
@@ -578,7 +578,7 @@ function createChildren(c, createInto, createBefore) {
 function destroyNode(c) {
     setRef(c.ref, null);
     var ch = c.children;
-    if (isArray(ch)) {
+    if (exports.isArray(ch)) {
         for (var i_3 = 0, l = ch.length; i_3 < l; i_3++) {
             destroyNode(ch[i_3]);
         }
@@ -589,7 +589,7 @@ function destroyNode(c) {
         if (component.destroy)
             component.destroy(ctx, c, c.element);
         var disposables = ctx.disposables;
-        if (isArray(disposables)) {
+        if (exports.isArray(disposables)) {
             for (var i_4 = disposables.length; i_4-- > 0;) {
                 var d = disposables[i_4];
                 if (isFunction(d))
@@ -611,7 +611,7 @@ function addDisposable(ctx, disposable) {
 exports.addDisposable = addDisposable;
 function removeNodeRecursive(c) {
     var el = c.element;
-    if (isArray(el)) {
+    if (exports.isArray(el)) {
         var pa = el[0].parentNode;
         if (pa) {
             for (var i_5 = 0; i_5 < el.length; i_5++) {
@@ -626,7 +626,7 @@ function removeNodeRecursive(c) {
     }
     else {
         var ch = c.children;
-        if (isArray(ch)) {
+        if (exports.isArray(ch)) {
             for (var i = 0, l = ch.length; i < l; i++) {
                 removeNodeRecursive(ch[i]);
             }
@@ -641,11 +641,11 @@ var roots = newHashObj();
 function nodeContainsNode(c, n, resIndex, res) {
     var el = c.element;
     var ch = c.children;
-    if (isArray(el)) {
+    if (exports.isArray(el)) {
         for (var ii = 0; ii < el.length; ii++) {
             if (el[ii] === n) {
                 res.push(c);
-                if (isArray(ch)) {
+                if (exports.isArray(ch)) {
                     return ch;
                 }
                 return null;
@@ -653,7 +653,7 @@ function nodeContainsNode(c, n, resIndex, res) {
         }
     }
     else if (el == null) {
-        if (isArray(ch)) {
+        if (exports.isArray(ch)) {
             for (var i = 0; i < ch.length; i++) {
                 var result = nodeContainsNode(ch[i], n, resIndex, res);
                 if (result !== undefined) {
@@ -665,7 +665,7 @@ function nodeContainsNode(c, n, resIndex, res) {
     }
     else if (el === n) {
         res.push(c);
-        if (isArray(ch)) {
+        if (exports.isArray(ch)) {
             return ch;
         }
         return null;
@@ -761,7 +761,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
                 if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
-                    if (isArray(c.children)) {
+                    if (exports.isArray(c.children)) {
                         if (c.tag === "svg") {
                             inSvg = true;
                         }
@@ -826,7 +826,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 if (inNotFocusable && focusRootTop === c)
                     inNotFocusable = false;
                 if (deepness <= 0) {
-                    if (isArray(cachedChildren))
+                    if (exports.isArray(cachedChildren))
                         selectedUpdate(c.children, createInto, createBefore);
                 }
                 else {
@@ -845,7 +845,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             if (inNotFocusable && focusRootTop === c)
                 inNotFocusable = false;
             var el = c.element;
-            if ((isString(newChildren)) && !isArray(cachedChildren)) {
+            if ((isString(newChildren)) && !exports.isArray(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     if (hasTextContent) {
                         el.textContent = newChildren;
@@ -858,7 +858,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             }
             else {
                 if (deepness <= 0) {
-                    if (isArray(cachedChildren))
+                    if (exports.isArray(cachedChildren))
                         selectedUpdate(c.children, el, createBefore);
                 }
                 else {
@@ -882,7 +882,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
         }
     }
     var parEl = c.element;
-    if (isArray(parEl))
+    if (exports.isArray(parEl))
         parEl = parEl[0];
     if (parEl == null)
         parEl = createInto;
@@ -896,12 +896,12 @@ exports.updateNode = updateNode;
 function getDomNode(c) {
     var el = c.element;
     if (el != null) {
-        if (isArray(el))
+        if (exports.isArray(el))
             return el[0];
         return el;
     }
     var ch = c.children;
-    if (!isArray(ch))
+    if (!exports.isArray(ch))
         return null;
     for (var i = 0; i < ch.length; i++) {
         el = getDomNode(ch[i]);
@@ -938,7 +938,7 @@ function updateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cached
 function reorderInUpdateChildrenRec(c, element, before) {
     var el = c.element;
     if (el != null) {
-        if (isArray(el)) {
+        if (exports.isArray(el)) {
             for (var i = 0; i < el.length; i++) {
                 element.insertBefore(el[i], before);
             }
@@ -948,7 +948,7 @@ function reorderInUpdateChildrenRec(c, element, before) {
         return;
     }
     var ch = c.children;
-    if (!isArray(ch))
+    if (!exports.isArray(ch))
         return null;
     for (var i = 0; i < ch.length; i++) {
         reorderInUpdateChildrenRec(ch[i], element, before);
@@ -974,12 +974,12 @@ function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedInd
 function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
     if (newChildren == null)
         newChildren = [];
-    if (!isArray(newChildren)) {
+    if (!exports.isArray(newChildren)) {
         newChildren = [newChildren];
     }
     if (cachedChildren == null)
         cachedChildren = [];
-    if (!isArray(cachedChildren)) {
+    if (!exports.isArray(cachedChildren)) {
         if (element.firstChild)
             element.removeChild(element.firstChild);
         cachedChildren = [];
@@ -990,7 +990,7 @@ function updateChildren(element, newChildren, cachedChildren, parentNode, create
     var newIndex;
     for (newIndex = 0; newIndex < newLength;) {
         var item = newCh[newIndex];
-        if (isArray(item)) {
+        if (exports.isArray(item)) {
             newCh.splice.apply(newCh, [newIndex, 1].concat(item));
             newLength = newCh.length;
             continue;
@@ -1370,7 +1370,7 @@ function selectedUpdate(cache, element, createBefore) {
             var cloned = { data: ctx.data, component: node.component };
             cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness]);
         }
-        else if (isArray(node.children)) {
+        else if (exports.isArray(node.children)) {
             var backupInSvg = inSvg;
             var backupInNotFocusable = inNotFocusable;
             if (inNotFocusable && focusRootTop === node)
@@ -1403,7 +1403,7 @@ function findLastNode(children) {
         var c = children[i];
         var el = c.element;
         if (el != null) {
-            if (isArray(el)) {
+            if (exports.isArray(el)) {
                 var l = el.length;
                 if (l === 0)
                     continue;
@@ -1412,7 +1412,7 @@ function findLastNode(children) {
             return el;
         }
         var ch = c.children;
-        if (!isArray(ch))
+        if (!exports.isArray(ch))
             continue;
         var res = findLastNode(ch);
         if (res != null)
@@ -1607,7 +1607,7 @@ function broadcastEventToNode(node, name, param) {
         }
     }
     var ch = node.children;
-    if (isArray(ch)) {
+    if (exports.isArray(ch)) {
         for (var i = 0; i < ch.length; i++) {
             var res = broadcastEventToNode(ch[i], name, param);
             if (res != null)
@@ -1713,7 +1713,7 @@ function cloneNodeArray(a) {
     a = a.slice(0);
     for (var i = 0; i < a.length; i++) {
         var n = a[i];
-        if (isArray(n)) {
+        if (exports.isArray(n)) {
             a[i] = cloneNodeArray(n);
         }
         else if (isObject(n)) {
@@ -1732,7 +1732,7 @@ function cloneNode(node) {
     }
     var ch = r.children;
     if (ch) {
-        if (isArray(ch)) {
+        if (exports.isArray(ch)) {
             r.children = cloneNodeArray(ch);
         }
         else if (isObject(ch)) {
@@ -1982,7 +1982,7 @@ if (!window.Promise) {
             return this.then(undefined, onRejected);
         };
         Promise.all = function () {
-            var args = [].slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
+            var args = [].slice.call(arguments.length === 1 && exports.isArray(arguments[0]) ? arguments[0] : arguments);
             return new Promise(function (resolve, reject) {
                 if (args.length === 0) {
                     resolve(args);
@@ -2951,7 +2951,7 @@ function focus(node) {
         }
     }
     var children = node.children;
-    if (isArray(children)) {
+    if (exports.isArray(children)) {
         for (var i = 0; i < children.length; i++) {
             if (focus(children[i]))
                 return true;
@@ -3825,7 +3825,7 @@ function registerRoutes(url, rs) {
     }
 }
 function routes(rootroutes) {
-    if (!isArray(rootroutes)) {
+    if (!exports.isArray(rootroutes)) {
         rootroutes = [rootroutes];
     }
     registerRoutes("/", rootroutes);
@@ -4109,7 +4109,7 @@ function buildCssSubRule(parent) {
 function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
-        if (isArray(parent)) {
+        if (exports.isArray(parent)) {
             for (var i_9 = 0; i_9 < parent.length; i_9++) {
                 if (i_9 > 0) {
                     result += ",";
@@ -4137,7 +4137,7 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
     else if (isFunction(style)) {
         style(cur, curPseudo);
     }
-    else if (isArray(style)) {
+    else if (exports.isArray(style)) {
         for (var i_10 = 0; i_10 < style.length; i_10++) {
             flattenStyle(cur, curPseudo, style[i_10], undefined);
         }
@@ -4295,7 +4295,7 @@ function style(node) {
                 inlineStyle = exports.assign(inlineStyle, inls);
             }
         }
-        else if (isArray(s)) {
+        else if (exports.isArray(s)) {
             if (ca.length > i + 1) {
                 if (stack == null)
                     stack = [];
@@ -4379,9 +4379,7 @@ exports.invalidateStyles = invalidateStyles;
 function updateSprite(spDef) {
     var stDef = allStyles[spDef.styleid];
     var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
-    if (spDef.left || spDef.top) {
-        style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
-    }
+    style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
     stDef.style = style;
     invalidateStyles();
 }

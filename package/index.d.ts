@@ -126,6 +126,7 @@ export interface ISelectionChangeEvent {
     startPosition: number;
     endPosition: number;
 }
+export declare const isArray: (arg: any) => arg is any[];
 export declare function isNumber(val: any): val is Number;
 export declare function isString(val: any): val is String;
 export declare function isFunction(val: any): val is Function;

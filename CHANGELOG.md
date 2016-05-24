@@ -1,6 +1,20 @@
 CHANGELOG
 ===
 
+4.41.0
+--
+
+New Features
+-
+
+Exported isArray = Array.isArray
+
+Fixed
+-
+
+Background position for sprite is set every time, so it cannot be wrongly inherited.
+
+
 4.40.0
 --
 

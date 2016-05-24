@@ -194,7 +194,7 @@ function assert(shoudBeTrue: boolean, messageIfFalse?: string) {
         throw Error(messageIfFalse || "assertion failed");
 }
 
-const isArray = Array.isArray;
+export const isArray = Array.isArray;
 
 function createTextNode(content: string): Text {
     return document.createTextNode(content);
@@ -4741,9 +4741,7 @@ export function invalidateStyles(): void {
 function updateSprite(spDef: ISprite): void {
     var stDef = allStyles[spDef.styleid];
     var style: any = { backgroundImage: `url(${spDef.url})`, width: spDef.width, height: spDef.height };
-    if (spDef.left || spDef.top) {
-        style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
-    }
+    style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
     stDef.style = style;
     invalidateStyles();
 }
