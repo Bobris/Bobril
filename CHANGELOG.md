@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.41.1
+--
+
+Fixed
+-
+
+"InnerHTML" tag didn't removed old content on change when it was not last in parent.
+
 4.41.0
 --
 

@@ -363,7 +363,7 @@ b = (function (window, document) {
                     newElements.push(elprev);
                     elprev = elprev.nextSibling;
                 }
-                n.element = newElements;
+                c.element = newElements;
                 if (removeEl) {
                     parent.removeChild(el);
                 }

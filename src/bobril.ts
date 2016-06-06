@@ -365,7 +365,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     newElements.push(elprev);
                     elprev = elprev.nextSibling;
                 }
-                (<IBobrilCacheNode>n).element = newElements;
+                c.element = newElements;
                 if (removeEl) {
                     parent.removeChild(el);
                 }
