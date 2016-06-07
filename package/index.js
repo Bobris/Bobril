@@ -4192,7 +4192,7 @@ function beforeFrame() {
                     dynSprite.height = image.height;
                 var lastUrl = recolorAndClip(image, colorStr, dynSprite.width, dynSprite.height, dynSprite.left, dynSprite.top);
                 var stDef = allStyles[dynSprite.styleid];
-                stDef.style = { backgroundImage: "url(" + lastUrl + ")", width: dynSprite.width, height: dynSprite.height };
+                stDef.style = { backgroundImage: "url(" + lastUrl + ")", width: dynSprite.width, height: dynSprite.height, backgroundPosition: 0 };
             }
         }
         var stylestr = injectedCss;

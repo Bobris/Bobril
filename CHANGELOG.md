@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.41.2
+--
+
+Fixed
+-
+
+Dynamicaly created image has now backgroundPosition zero.
+
 4.41.1
 --
 
