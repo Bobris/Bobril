@@ -9,6 +9,7 @@ interface IBobrilMouseEvent {
     ctrl: boolean;
     alt: boolean;
     meta: boolean;
+    count: number;
 }
 
 declare const enum BobrilPointerType {
@@ -31,6 +32,7 @@ interface IBobrilComponent {
     // called on input element after click
     onClick? (ctx: Object, event: IBobrilMouseEvent): boolean;
     onDoubleClick? (ctx: Object, event: IBobrilMouseEvent): boolean;
+    onMultiClick? (ctx: Object, event: IBobrilMouseEvent): boolean;
     onContextMenu? (ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseDown? (ctx: Object, event: IBobrilMouseEvent): boolean;
     onMouseUp? (ctx: Object, event: IBobrilMouseEvent): boolean;
