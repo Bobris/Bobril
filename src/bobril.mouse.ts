@@ -154,7 +154,7 @@ const enum Consts {
                 button = 1;
                 while (!(buttons & 1)) { buttons = buttons >> 1; button++; }
             }
-            var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -170,7 +170,7 @@ const enum Consts {
                 var t = ev.changedTouches[i];
                 target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
                 node = b.deref(target);
-                var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+                var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
                 if (b.emitEvent("!" + name, param, target, node))
                     preventDef = true;
             }
@@ -191,7 +191,7 @@ const enum Consts {
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param: IBobrilPointerEvent = { id: 1, type: BobrilPointerType.Mouse, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var param: IBobrilPointerEvent = { id: 1, type: BobrilPointerType.Mouse, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -421,8 +421,9 @@ const enum Consts {
             let button = decodeButton(ev) || 1;
             // Ignore non left mouse click/dblclick event, but not for contextmenu event
             if (!allButtons && button !== 1) return false;
-            var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
-            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+            var hname = (ev.detail > 2)? "onMultiClick": handlerName;
+            var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
+            if (invokeMouseOwner(hname, param) || b.bubble(node, hname, param)) {
                 preventDefault(ev);
                 return true;
             }
@@ -486,7 +487,7 @@ const enum Consts {
             dx = ev.deltaX;
             dy = ev.deltaY;
         }
-        var param: IBobrilMouseWheelEvent = { dx, dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        var param: IBobrilMouseWheelEvent = { dx, dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
         if (invokeMouseOwner("onMouseWheel", param) || b.bubble(node, "onMouseWheel", param)) {
             preventDefault(ev);
             return true;

@@ -65,6 +65,11 @@ module MouseApp {
             return ctx.data.stopPropagation;
         },
 
+        onMultiClick(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
+            ctx.data.onAdd(new EventWrapper(event, "Multi Click " + event.count));
+            return ctx.data.stopPropagation;
+        },
+
         onContextMenu(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Context Menu"));
             return ctx.data.stopPropagation;
@@ -89,7 +94,7 @@ module MouseApp {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return ctx.data.stopPropagation;
         },
-        
+
         onMouseWheel(ctx: ITrackClickCtx, event: IBobrilMouseWheelEvent): boolean {
             ctx.data.onAdd(new EventWheelWrapper(event, "Wheel"));
             return ctx.data.stopPropagation;
