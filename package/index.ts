@@ -75,6 +75,7 @@ export interface IBobrilComponent {
     // called on input element after click/tap
     onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onMultiClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
@@ -2563,8 +2564,10 @@ addEvent("keypress", 50, emitOnKeyPress);
 export interface IBobrilMouseEvent {
     x: number;
     y: number;
-    // 1 - left (or touch), 2 - middle, 3 - right <- it does not make sense but that's W3C
+    /// 1 - left (or touch), 2 - middle, 3 - right <- it does not make sense but that's W3C
     button: number;
+    /// 1 - single click, 2 - double click, 3+ - multiclick
+    count: number;
     shift: boolean;
     ctrl: boolean;
     alt: boolean;
@@ -2737,7 +2740,7 @@ function buildHandlerPointer(name: string) {
             button = 1;
             while (!(buttons & 1)) { buttons = buttons >> 1; button++; }
         }
-        var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
             return true;
@@ -2753,7 +2756,7 @@ function buildHandlerTouch(name: string) {
             var t = ev.changedTouches[i];
             target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
             node = deref(target);
-            var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
             if (emitEvent("!" + name, param, target, node))
                 preventDef = true;
         }
@@ -2774,7 +2777,7 @@ function buildHandlerMouse(name: string) {
             target = fixed[0];
             node = fixed[1];
         }
-        var param: IBobrilPointerEvent = { id: 1, type: BobrilPointerType.Mouse, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        var param: IBobrilPointerEvent = { id: 1, type: BobrilPointerType.Mouse, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
             return true;
@@ -3003,7 +3006,9 @@ function createHandler(handlerName: string, allButtons?: boolean) {
         let button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
-        var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        if (ev.detail > 2)
+            handlerName = "onMultiClick";
+        let param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail || 1 };
         if (invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
             preventDefault(ev);
             return true;
@@ -3068,7 +3073,7 @@ function handleMouseWheel(ev: any, target: Node, node: IBobrilCacheNode): boolea
         dx = ev.deltaX;
         dy = ev.deltaY;
     }
-    var param: IBobrilMouseWheelEvent = { dx, dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+    var param: IBobrilMouseWheelEvent = { dx, dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
     if (invokeMouseOwner("onMouseWheel", param) || bubble(node, "onMouseWheel", param)) {
         preventDefault(ev);
         return true;

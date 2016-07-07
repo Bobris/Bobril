@@ -2533,7 +2533,7 @@ function buildHandlerPointer(name) {
                 button++;
             }
         }
-        var param = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        var param = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
             return true;
@@ -2548,7 +2548,7 @@ function buildHandlerTouch(name) {
             var t = ev.changedTouches[i];
             target = document.elementFromPoint(t.clientX, t.clientY);
             node = deref(target);
-            var param = { id: t.identifier + 2, type: 1 /* Touch */, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+            var param = { id: t.identifier + 2, type: 1 /* Touch */, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
             if (emitEvent("!" + name, param, target, node))
                 preventDef = true;
         }
@@ -2568,7 +2568,7 @@ function buildHandlerMouse(name) {
             target = fixed[0];
             node = fixed[1];
         }
-        var param = { id: 1, type: 0 /* Mouse */, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        var param = { id: 1, type: 0 /* Mouse */, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
             return true;
@@ -2784,7 +2784,9 @@ function createHandler(handlerName, allButtons) {
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1)
             return false;
-        var param = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+        if (ev.detail > 2)
+            handlerName = "onMultiClick";
+        var param = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail || 1 };
         if (invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
             preventDefault(ev);
             return true;
@@ -2849,7 +2851,7 @@ function handleMouseWheel(ev, target, node) {
         dx = ev.deltaX;
         dy = ev.deltaY;
     }
-    var param = { dx: dx, dy: dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false };
+    var param = { dx: dx, dy: dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
     if (invokeMouseOwner("onMouseWheel", param) || bubble(node, "onMouseWheel", param)) {
         preventDefault(ev);
         return true;

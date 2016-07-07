@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.42.0
+--
+
+New features
+-
+
+`onMultiClick` event to detect more than double clicks, new count property contains how many times
+
 4.41.2
 --
 

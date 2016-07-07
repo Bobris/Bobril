@@ -47,6 +47,7 @@ export interface IBobrilComponent {
     onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
     onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onMultiClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
@@ -210,6 +211,7 @@ export interface IBobrilMouseEvent {
     x: number;
     y: number;
     button: number;
+    count: number;
     shift: boolean;
     ctrl: boolean;
     alt: boolean;

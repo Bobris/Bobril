@@ -49,6 +49,10 @@ var MouseApp;
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return ctx.data.stopPropagation;
         },
+        onMultiClick: function (ctx, event) {
+            ctx.data.onAdd(new EventWrapper(event, "Multi Click " + event.count));
+            return ctx.data.stopPropagation;
+        },
         onContextMenu: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Context Menu"));
             return ctx.data.stopPropagation;
