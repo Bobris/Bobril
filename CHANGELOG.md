@@ -9,6 +9,8 @@ New features
 
 `onMultiClick` event to detect more than double clicks, new count property contains how many times
 
+`convertPointFromPageToNode` new method to convert global to local position which supports any 3D transformations. 
+
 4.41.2
 --
 

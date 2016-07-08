@@ -1,12 +1,15 @@
 {
     "version": "1.4.1",
     "compilerOptions": {
-        "target": "es5",
+        "target": "es6",
         "module": "commonjs",
         "declaration": false,
         "noImplicitAny": true,
         "removeComments": false,
-        "noLib": false
+        "noLib": false,
+        "moduleResolution": "node",
+        "jsx": "react",
+        "reactNamespace": "b"
     },
     "compileOnSave": false,
     "filesGlob": [
@@ -14,6 +17,7 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "./app.ts"
+        "app.ts",
+        "node_modules/bobril/jsx.d.ts"
     ]
 }
