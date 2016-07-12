@@ -14,7 +14,7 @@ if (b.ieVersion() === 10) {
         style["msFlexOrder"] = value;
         style[oldName] = undefined;
     });
-    var jcTable = {
+    var jcTable_1 = {
         "flex-start": "start",
         "flex-end": "end",
         "center": "center",
@@ -23,14 +23,14 @@ if (b.ieVersion() === 10) {
         "stretch": "stretch"
     };
     b.setStyleShim("justifyContent", function (style, value, oldName) {
-        style["msFlexPack"] = jcTable[value];
+        style["msFlexPack"] = jcTable_1[value];
         style[oldName] = undefined;
     });
     b.setStyleShim("alignContent", function (style, value, oldName) {
-        style["msFlexLinePack"] = jcTable[value];
+        style["msFlexLinePack"] = jcTable_1[value];
         style[oldName] = undefined;
     });
-    var aiTable = {
+    var aiTable_1 = {
         "flex-start": "start",
         "flex-end": "end",
         "center": "center",
@@ -39,11 +39,11 @@ if (b.ieVersion() === 10) {
         "auto": "auto"
     };
     b.setStyleShim("alignItems", function (style, value, oldName) {
-        style["msFlexAlign"] = aiTable[value];
+        style["msFlexAlign"] = aiTable_1[value];
         style[oldName] = undefined;
     });
     b.setStyleShim("alignSelf", function (style, value, oldName) {
-        style["msFlexItemAlign"] = aiTable[value];
+        style["msFlexItemAlign"] = aiTable_1[value];
         style[oldName] = undefined;
     });
 }

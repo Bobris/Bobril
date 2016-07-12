@@ -47,7 +47,6 @@ export interface IBobrilComponent {
     onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
     onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMultiClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
@@ -246,6 +245,7 @@ export declare function removeOnScroll(callback: (info?: IBobrilScroll) => void)
 export declare function isScrollable(el: Element): [boolean, boolean];
 export declare function getWindowScroll(): [number, number];
 export declare function nodePagePos(node: IBobrilCacheNode): [number, number];
+export declare function convertPointFromPageToNode(node: IBobrilCacheNode, pageX: number, pageY: number): [number, number];
 export declare const enum DndOp {
     None = 0,
     Link = 1,

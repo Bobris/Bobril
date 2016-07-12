@@ -1,6 +1,19 @@
 CHANGELOG
 ===
 
+4.43.0
+--
+
+Removed features
+-
+
+Due to regressions `onMultiClick` event was removed you get called with `onClick` again, but you can still check `count` property, so feature is still there.
+
+Tooling changed
+-
+
+Compiled with TS 2.0
+
 4.42.0
 --
 

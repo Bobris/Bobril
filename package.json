@@ -22,12 +22,12 @@
     "karma": "*",
     "karma-coverage": "*",
     "karma-jasmine": "*",
-	"jasmine-core": "*",
+    "jasmine-core": "*",
     "karma-phantomjs-launcher": "*",
     "phantomjs-prebuilt": "*",
     "rimraf": "*",
     "through2": "*",
-    "typescript": "1.8.0-dev.20151219",
+    "typescript": "*",
     "uglifyjs": "*"
   }
 }

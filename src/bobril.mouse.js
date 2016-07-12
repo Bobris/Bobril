@@ -384,9 +384,8 @@
             // Ignore non left mouse click/dblclick event, but not for contextmenu event
             if (!allButtons && button !== 1)
                 return false;
-            var hname = (ev.detail > 2) ? "onMultiClick" : handlerName;
             var param = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
-            if (invokeMouseOwner(hname, param) || b.bubble(node, hname, param)) {
+            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;
             }

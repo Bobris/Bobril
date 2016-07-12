@@ -40,7 +40,7 @@ function latestTime(fileNames) {
 
 function createCompilerHost(currentDirectory) {
 	function getCanonicalFileName(fileName) {
-		return ts.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
+		return fileName.toLowerCase();
 	}
 	function getSourceFile(filename, languageVersion, onError) {
 		if (filename===defaultLibFilename && languageVersion===lastLibVersion) {
@@ -85,7 +85,7 @@ function createCompilerHost(currentDirectory) {
 		getDefaultLibFileName: function (options) { return defaultLibFilename; },
 		writeFile: writeFile,
 		getCurrentDirectory: function () { return currentDirectory; },
-		useCaseSensitiveFileNames: function () { return ts.sys.useCaseSensitiveFileNames; },
+		useCaseSensitiveFileNames: function () { return false; },
 		getCanonicalFileName: getCanonicalFileName,
 		getNewLine: function () { return '\n'; },
         fileExists: function(fileName) {
@@ -128,7 +128,8 @@ function typeScriptCompile(tsconfig, rebuild) {
 	tsconfigjson["compilerOptions"]["moduleResolution"]="node";
 	tsconfigjson["compilerOptions"]["target"]="es5";
 	tsconfigjson["compilerOptions"]["module"]="commonjs";
-	var tscmd = ts.parseJsonConfigFileContent(tsconfigjson, null, curDir);
+	var host = createCompilerHost(curDir);
+	var tscmd = ts.parseJsonConfigFileContent(tsconfigjson, host, curDir);
 	if (tscmd.errors.length) {
 		reportDiagnostics(tscmd.errors);
 		return 1;
@@ -168,7 +169,7 @@ function typeScriptCompile(tsconfig, rebuild) {
 		return;
 	}
 
-	var program = ts.createProgram(fileNames, tscmd.options, createCompilerHost(curDir));
+	var program = ts.createProgram(fileNames, tscmd.options, host);
 	var diagnostics = program.getSyntacticDiagnostics();
 	reportDiagnostics(diagnostics);
 	if (diagnostics.length === 0) {
