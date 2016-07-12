@@ -75,7 +75,6 @@ export interface IBobrilComponent {
     // called on input element after click/tap
     onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMultiClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
     onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
@@ -3006,8 +3005,6 @@ function createHandler(handlerName: string, allButtons?: boolean) {
         let button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
-        if (ev.detail > 2)
-            handlerName = "onMultiClick";
         let param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail || 1 };
         if (invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
             preventDefault(ev);
@@ -3343,7 +3340,7 @@ export function convertPointFromPageToNode(node: IBobrilCacheNode, pageX: number
                         0, 0, 0, 1]);
                     return X.multiply(Y);
                 };
-                transformPoint(x: number, y:number): Point {
+                transformPoint(x: number, y: number): Point {
                     var m = this.data;
                     return [m[0] * x + m[1] * y + m[3], m[4] * x + m[5] * y + m[7]];
                 };
@@ -3361,8 +3358,16 @@ export function convertPointFromPageToNode(node: IBobrilCacheNode, pageX: number
                     transformationMatrix = c.multiply(transformationMatrix);
                     x = x.parentNode;
                 }
-                var w = (<HTMLElement>element).offsetWidth || (<HTMLElement>element).clientWidth;
-                var h = (<HTMLElement>element).offsetHeight || (<HTMLElement>element).clientHeight;
+                var w: number;
+                var h: number;
+                if ((element.nodeName + "").toLowerCase() === "svg") {
+                    var cs = getComputedStyle(<Element>element, null);
+                    w = parseFloat(cs.getPropertyValue("width")) || 0;
+                    h = parseFloat(cs.getPropertyValue("height")) || 0;
+                } else {
+                    w = (<HTMLElement>element).offsetWidth;
+                    h = (<HTMLElement>element).offsetHeight;
+                }
                 var i = 4;
                 var left = +Infinity;
                 var top = +Infinity;
