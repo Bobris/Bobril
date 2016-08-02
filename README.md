@@ -19,7 +19,7 @@ For modern code look at Bobril Material: https://github.com/Bobril/Bobril-m
 
 Getting started video [cz]: 
 
-[![Getting started video](http://img.youtube.com/vi/iU8_5aKHURM/default.jpg)](http://www.youtube.com/watch?v=iU8_5aKHURM)
+[![Getting started video](http://img.youtube.com/vi/8p27FLAneiM/default.jpg)](http://www.youtube.com/watch?v=8p27FLAneiM)
 
 See it in vdom-benchmarks: http://vdom-benchmark.github.io/vdom-benchmark/
 
