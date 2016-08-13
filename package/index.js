@@ -3019,6 +3019,133 @@ function nodePagePos(node) {
 }
 exports.nodePagePos = nodePagePos;
 var cachedConvertPointFromPageToNode;
+var CSSMatrix = (function () {
+    function CSSMatrix(data) {
+        this.data = data;
+    }
+    CSSMatrix.fromString = function (s) {
+        var c = s.match(/matrix3?d?\(([^\)]+)\)/i)[1].split(",");
+        if (c.length === 6) {
+            c = [c[0], c[1], "0", "0", c[2], c[3], "0", "0", "0", "0", "1", "0", c[4], c[5], "0", "1"];
+        }
+        return new CSSMatrix([
+            parseFloat(c[0]), parseFloat(c[4]), parseFloat(c[8]), parseFloat(c[12]),
+            parseFloat(c[1]), parseFloat(c[5]), parseFloat(c[9]), parseFloat(c[13]),
+            parseFloat(c[2]), parseFloat(c[6]), parseFloat(c[10]), parseFloat(c[14]),
+            parseFloat(c[3]), parseFloat(c[7]), parseFloat(c[11]), parseFloat(c[15])
+        ]);
+    };
+    ;
+    CSSMatrix.identity = function () {
+        return new CSSMatrix([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+    };
+    CSSMatrix.prototype.multiply = function (m) {
+        var a = this.data;
+        var b = m.data;
+        return new CSSMatrix([
+            a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12],
+            a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13],
+            a[0] * b[2] + a[1] * b[6] + a[2] * b[10] + a[3] * b[14],
+            a[0] * b[3] + a[1] * b[7] + a[2] * b[11] + a[3] * b[15],
+            a[4] * b[0] + a[5] * b[4] + a[6] * b[8] + a[7] * b[12],
+            a[4] * b[1] + a[5] * b[5] + a[6] * b[9] + a[7] * b[13],
+            a[4] * b[2] + a[5] * b[6] + a[6] * b[10] + a[7] * b[14],
+            a[4] * b[3] + a[5] * b[7] + a[6] * b[11] + a[7] * b[15],
+            a[8] * b[0] + a[9] * b[4] + a[10] * b[8] + a[11] * b[12],
+            a[8] * b[1] + a[9] * b[5] + a[10] * b[9] + a[11] * b[13],
+            a[8] * b[2] + a[9] * b[6] + a[10] * b[10] + a[11] * b[14],
+            a[8] * b[3] + a[9] * b[7] + a[10] * b[11] + a[11] * b[15],
+            a[12] * b[0] + a[13] * b[4] + a[14] * b[8] + a[15] * b[12],
+            a[12] * b[1] + a[13] * b[5] + a[14] * b[9] + a[15] * b[13],
+            a[12] * b[2] + a[13] * b[6] + a[14] * b[10] + a[15] * b[14],
+            a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15],
+        ]);
+    };
+    ;
+    CSSMatrix.prototype.translate = function (tx, ty, tz) {
+        var z = new CSSMatrix([1, 0, 0, tx, 0, 1, 0, ty, 0, 0, 1, tz, 0, 0, 0, 1]);
+        return this.multiply(z);
+    };
+    ;
+    CSSMatrix.prototype.inverse = function () {
+        var m = this.data;
+        var a = m[0];
+        var b = m[1];
+        var c = m[2];
+        var d = m[4];
+        var e = m[5];
+        var f = m[6];
+        var g = m[8];
+        var h = m[9];
+        var k = m[10];
+        var A = e * k - f * h;
+        var B = f * g - d * k;
+        var C = d * h - e * g;
+        var D = c * h - b * k;
+        var E = a * k - c * g;
+        var F = b * g - a * h;
+        var G = b * f - c * e;
+        var H = c * d - a * f;
+        var K = a * e - b * d;
+        var det = a * A + b * B + c * C;
+        var X = new CSSMatrix([A / det, D / det, G / det, 0,
+            B / det, E / det, H / det, 0,
+            C / det, F / det, K / det, 0,
+            0, 0, 0, 1]);
+        var Y = new CSSMatrix([1, 0, 0, -m[3],
+            0, 1, 0, -m[7],
+            0, 0, 1, -m[11],
+            0, 0, 0, 1]);
+        return X.multiply(Y);
+    };
+    ;
+    CSSMatrix.prototype.transformPoint = function (x, y) {
+        var m = this.data;
+        return [m[0] * x + m[1] * y + m[3], m[4] * x + m[5] * y + m[7]];
+    };
+    ;
+    return CSSMatrix;
+}());
+function getTransformationMatrix(element) {
+    var identity = CSSMatrix.identity();
+    var transformationMatrix = identity;
+    var x = element;
+    var doc = x.ownerDocument.documentElement;
+    while (x != undefined && x !== doc && x.nodeType != 1)
+        x = x.parentNode;
+    while (x != undefined && x !== doc) {
+        var computedStyle = window.getComputedStyle(x, undefined);
+        var c = CSSMatrix.fromString((computedStyle.transform || computedStyle.OTransform || computedStyle.WebkitTransform || computedStyle.msTransform || computedStyle.MozTransform || "none").replace(/^none$/, "matrix(1,0,0,1,0,0)"));
+        transformationMatrix = c.multiply(transformationMatrix);
+        x = x.parentNode;
+    }
+    var w;
+    var h;
+    if ((element.nodeName + "").toLowerCase() === "svg") {
+        var cs = getComputedStyle(element, null);
+        w = parseFloat(cs.getPropertyValue("width")) || 0;
+        h = parseFloat(cs.getPropertyValue("height")) || 0;
+    }
+    else {
+        w = element.offsetWidth;
+        h = element.offsetHeight;
+    }
+    var i = 4;
+    var left = +Infinity;
+    var top = +Infinity;
+    while (--i >= 0) {
+        var p = transformationMatrix.transformPoint(i === 0 || i === 1 ? 0 : w, i === 0 || i === 3 ? 0 : h);
+        if (p[0] < left) {
+            left = p[0];
+        }
+        if (p[1] < top) {
+            top = p[1];
+        }
+    }
+    var rect = element.getBoundingClientRect();
+    transformationMatrix = identity.translate(window.pageXOffset + rect.left - left, window.pageYOffset + rect.top - top, 0).multiply(transformationMatrix);
+    return transformationMatrix;
+}
 function convertPointFromPageToNode(node, pageX, pageY) {
     var element = getDomNode(node);
     if (cachedConvertPointFromPageToNode == null) {
@@ -3030,133 +3157,6 @@ function convertPointFromPageToNode(node, pageX, pageY) {
             };
         }
         else {
-            var CSSMatrix_1 = (function () {
-                function CSSMatrix_1(data) {
-                    this.data = data;
-                }
-                CSSMatrix_1.fromString = function (s) {
-                    var c = s.match(/matrix3?d?\(([^\)]+)\)/i)[1].split(",");
-                    if (c.length === 6) {
-                        c = [c[0], c[1], "0", "0", c[2], c[3], "0", "0", "0", "0", "1", "0", c[4], c[5], "0", "1"];
-                    }
-                    return new CSSMatrix_1([
-                        parseFloat(c[0]), parseFloat(c[4]), parseFloat(c[8]), parseFloat(c[12]),
-                        parseFloat(c[1]), parseFloat(c[5]), parseFloat(c[9]), parseFloat(c[13]),
-                        parseFloat(c[2]), parseFloat(c[6]), parseFloat(c[10]), parseFloat(c[14]),
-                        parseFloat(c[3]), parseFloat(c[7]), parseFloat(c[11]), parseFloat(c[15])
-                    ]);
-                };
-                ;
-                CSSMatrix_1.identity = function () {
-                    return new CSSMatrix_1([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-                };
-                CSSMatrix_1.prototype.multiply = function (m) {
-                    var a = this.data;
-                    var b = m.data;
-                    return new CSSMatrix_1([
-                        a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12],
-                        a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13],
-                        a[0] * b[2] + a[1] * b[6] + a[2] * b[10] + a[3] * b[14],
-                        a[0] * b[3] + a[1] * b[7] + a[2] * b[11] + a[3] * b[15],
-                        a[4] * b[0] + a[5] * b[4] + a[6] * b[8] + a[7] * b[12],
-                        a[4] * b[1] + a[5] * b[5] + a[6] * b[9] + a[7] * b[13],
-                        a[4] * b[2] + a[5] * b[6] + a[6] * b[10] + a[7] * b[14],
-                        a[4] * b[3] + a[5] * b[7] + a[6] * b[11] + a[7] * b[15],
-                        a[8] * b[0] + a[9] * b[4] + a[10] * b[8] + a[11] * b[12],
-                        a[8] * b[1] + a[9] * b[5] + a[10] * b[9] + a[11] * b[13],
-                        a[8] * b[2] + a[9] * b[6] + a[10] * b[10] + a[11] * b[14],
-                        a[8] * b[3] + a[9] * b[7] + a[10] * b[11] + a[11] * b[15],
-                        a[12] * b[0] + a[13] * b[4] + a[14] * b[8] + a[15] * b[12],
-                        a[12] * b[1] + a[13] * b[5] + a[14] * b[9] + a[15] * b[13],
-                        a[12] * b[2] + a[13] * b[6] + a[14] * b[10] + a[15] * b[14],
-                        a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15],
-                    ]);
-                };
-                ;
-                CSSMatrix_1.prototype.translate = function (tx, ty, tz) {
-                    var z = new CSSMatrix_1([1, 0, 0, tx, 0, 1, 0, ty, 0, 0, 1, tz, 0, 0, 0, 1]);
-                    return this.multiply(z);
-                };
-                ;
-                CSSMatrix_1.prototype.inverse = function () {
-                    var m = this.data;
-                    var a = m[0];
-                    var b = m[1];
-                    var c = m[2];
-                    var d = m[4];
-                    var e = m[5];
-                    var f = m[6];
-                    var g = m[8];
-                    var h = m[9];
-                    var k = m[10];
-                    var A = e * k - f * h;
-                    var B = f * g - d * k;
-                    var C = d * h - e * g;
-                    var D = c * h - b * k;
-                    var E = a * k - c * g;
-                    var F = b * g - a * h;
-                    var G = b * f - c * e;
-                    var H = c * d - a * f;
-                    var K = a * e - b * d;
-                    var det = a * A + b * B + c * C;
-                    var X = new CSSMatrix_1([A / det, D / det, G / det, 0,
-                        B / det, E / det, H / det, 0,
-                        C / det, F / det, K / det, 0,
-                        0, 0, 0, 1]);
-                    var Y = new CSSMatrix_1([1, 0, 0, -m[3],
-                        0, 1, 0, -m[7],
-                        0, 0, 1, -m[11],
-                        0, 0, 0, 1]);
-                    return X.multiply(Y);
-                };
-                ;
-                CSSMatrix_1.prototype.transformPoint = function (x, y) {
-                    var m = this.data;
-                    return [m[0] * x + m[1] * y + m[3], m[4] * x + m[5] * y + m[7]];
-                };
-                ;
-                return CSSMatrix_1;
-            }());
-            function getTransformationMatrix(element) {
-                var identity = CSSMatrix_1.identity();
-                var transformationMatrix = identity;
-                var x = element;
-                var doc = x.ownerDocument.documentElement;
-                while (x != undefined && x !== doc && x.nodeType != 1)
-                    x = x.parentNode;
-                while (x != undefined && x !== doc) {
-                    var computedStyle = window.getComputedStyle(x, undefined);
-                    var c = CSSMatrix_1.fromString((computedStyle.transform || computedStyle.OTransform || computedStyle.WebkitTransform || computedStyle.msTransform || computedStyle.MozTransform || "none").replace(/^none$/, "matrix(1,0,0,1,0,0)"));
-                    transformationMatrix = c.multiply(transformationMatrix);
-                    x = x.parentNode;
-                }
-                var w;
-                var h;
-                if ((element.nodeName + "").toLowerCase() === "svg") {
-                    var cs = getComputedStyle(element, null);
-                    w = parseFloat(cs.getPropertyValue("width")) || 0;
-                    h = parseFloat(cs.getPropertyValue("height")) || 0;
-                }
-                else {
-                    w = element.offsetWidth;
-                    h = element.offsetHeight;
-                }
-                var i = 4;
-                var left = +Infinity;
-                var top = +Infinity;
-                while (--i >= 0) {
-                    var p = transformationMatrix.transformPoint(i === 0 || i === 1 ? 0 : w, i === 0 || i === 3 ? 0 : h);
-                    if (p[0] < left) {
-                        left = p[0];
-                    }
-                    if (p[1] < top) {
-                        top = p[1];
-                    }
-                }
-                var rect = element.getBoundingClientRect();
-                transformationMatrix = identity.translate(window.pageXOffset + rect.left - left, window.pageYOffset + rect.top - top, 0).multiply(transformationMatrix);
-                return transformationMatrix;
-            }
             cachedConvertPointFromPageToNode = function (element, x, y) {
                 return getTransformationMatrix(element).inverse().transformPoint(x, y);
             };

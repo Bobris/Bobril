@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.44.1
+--
+
+Fixed
+-
+
+Make it again correctly strict. Old PhantomJs tests pass again.
+
 4.44.0
 --
 
