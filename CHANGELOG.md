@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.44.0
+--
+
+New features
+-
+
+Exported setBeforeInit to window.b so bobril-g11n could be dynamicaly linked to bobril. This allows to reuse bobril-g11n also in bobril native.
+
 4.43.0
 --
 

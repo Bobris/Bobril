@@ -5202,7 +5202,8 @@ export function emitChange<T>(data: IValueData<T>, value: T) {
 }
 
 // bobril-clouseau needs this
-if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, invalidateStyles, ignoreShouldChange, setAfterFrame, setBeforeFrame, getDnds };
+// bobril-g11n needs ignoreShouldChange and setBeforeInit 
+if (!(<any>window).b) (<any>window).b = { deref, getRoots, setInvalidate, invalidateStyles, ignoreShouldChange, setAfterFrame, setBeforeFrame, getDnds, setBeforeInit };
 
 // TSX reactNamespace emulation
 // PureFuncs: createElement

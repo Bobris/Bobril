@@ -4849,8 +4849,9 @@ function emitChange(data, value) {
 }
 exports.emitChange = emitChange;
 // bobril-clouseau needs this
+// bobril-g11n needs ignoreShouldChange and setBeforeInit 
 if (!window.b)
-    window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, invalidateStyles: invalidateStyles, ignoreShouldChange: ignoreShouldChange, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds };
+    window.b = { deref: deref, getRoots: getRoots, setInvalidate: setInvalidate, invalidateStyles: invalidateStyles, ignoreShouldChange: ignoreShouldChange, setAfterFrame: setAfterFrame, setBeforeFrame: setBeforeFrame, getDnds: exports.getDnds, setBeforeInit: setBeforeInit };
 // TSX reactNamespace emulation
 // PureFuncs: createElement
 function createElement(name, props) {
