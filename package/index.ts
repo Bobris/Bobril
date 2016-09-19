@@ -4464,13 +4464,14 @@ function doAction(transition: IRouteTransition) {
 }
 
 declare var Promise: any;
+export interface ITransitionRunInfo { transition: IRouteTransition; runCount: number; }
+
+export let lastActiveRouteRunCount = 0;
 
 function nextIteration(): void {
-    if (lastRunnedTransitionInfo.transition && lastRunnedTransitionInfo.transition.name === currentTransition.name) {
-        lastRunnedTransitionInfo.runCount++;
-    } else {
-        lastRunnedTransitionInfo = { transition: currentTransition, runCount: 1 };
-    }
+    lastActiveRouteRunCount = isActive(currentTransition.name, currentTransition.params)
+        ? lastActiveRouteRunCount + 1
+        : 1
 
     while (true) {
         if (transitionState >= 0 && transitionState < activeRoutes.length) {
@@ -4567,10 +4568,6 @@ function nextIteration(): void {
     }
 }
 
-export interface ITransitionRunInfo { transition: IRouteTransition; runCount: number; }
-
-export let lastRunnedTransitionInfo: ITransitionRunInfo = { transition: null, runCount: 0 }
-
 export function runTransition(transition: IRouteTransition): void {
     if (currentTransition != null) {
         nextTransition = transition;
@@ -4582,24 +4579,23 @@ export function runTransition(transition: IRouteTransition): void {
     nextIteration();
 }
 
-interface IBobrilAnchorCtx { lastHandledTransition: ITransitionRunInfo; lastHandledTransitionRunCount: number; }
+interface IBobrilAnchorCtx { lastHandledTransitionRunCount: number; }
 
-export function anchor(node: IBobrilNode): IBobrilNode {
+export function anchor(node: IBobrilNode, name?: string, params?: Params): IBobrilNode {
     postEnhance(node, {
         postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilNode, element: HTMLElement) {
-            if (!me.attrs || !lastRunnedTransitionInfo.transition)
-                return;
+            const routeName = name || (me.attrs ? me.attrs.id : '');
 
-            if (lastRunnedTransitionInfo.transition.name !== me.attrs.id)
+            if (!isActive(routeName, params)) {
+                ctx.lastHandledTransitionRunCount = 0;
                 return;
+            }
 
-            if (ctx.lastHandledTransition === lastRunnedTransitionInfo
-                && ctx.lastHandledTransitionRunCount === lastRunnedTransitionInfo.runCount)
+            if (ctx.lastHandledTransitionRunCount === lastActiveRouteRunCount)
                 return;
 
             element.scrollIntoView();
-            ctx.lastHandledTransition = lastRunnedTransitionInfo
-            ctx.lastHandledTransitionRunCount = lastRunnedTransitionInfo.runCount
+            ctx.lastHandledTransitionRunCount = lastActiveRouteRunCount
         }
     });
     return node;
