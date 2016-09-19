@@ -4576,26 +4576,31 @@ export function runTransition(transition: IRouteTransition): void {
     nextIteration();
 }
 
-interface IBobrilAnchorCtx { lastHandledTransitionRunCount: number; }
+interface IBobrilAnchorCtx { l: number; } // shortened lastTransitionRunCount
 
-export function anchor(node: IBobrilNode, name?: string, params?: Params): IBobrilNode {
-    postEnhance(node, {
-        postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilNode, element: HTMLElement) {
-            const routeName = name || (me.attrs ? me.attrs.id : '');
-
-            if (!isActive(routeName, params)) {
-                ctx.lastHandledTransitionRunCount = 0;
-                return;
+export function anchor(children: IBobrilChildren, name?: string, params?: Params): IBobrilNode {
+    return {
+        children, component: {
+            id: "anchor",
+            postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, element: HTMLElement) {
+                let routeName: string;
+                if (name) {
+                    routeName = name;
+                } else {
+                    let firstChild = (me.children && me.children[0]) as IBobrilCacheNode;
+                    routeName = firstChild.attrs && firstChild.attrs.id;
+                }
+                if (!isActive(routeName, params)) {
+                    ctx.l = 0;
+                    return;
+                }
+                if (ctx.l === transitionRunCount)
+                    return;
+                (getDomNode(me) as HTMLElement).scrollIntoView();
+                ctx.l = transitionRunCount;
             }
-
-            if (ctx.lastHandledTransitionRunCount === transitionRunCount)
-                return;
-
-            element.scrollIntoView();
-            ctx.lastHandledTransitionRunCount = transitionRunCount
         }
-    });
-    return node;
+    };
 }
 
 export function getRoutes() {

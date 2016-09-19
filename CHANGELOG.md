@@ -1,6 +1,15 @@
 CHANGELOG
 ===
 
+4.45.0
+--
+
+New features
+-
+
+`b.anchor` to add scroll position to route. `b.propim` for prop with reference check for change and optional local invalidate.
+Both dedicated by Keeema.
+
 4.44.1
 --
 
@@ -15,7 +24,7 @@ Make it again correctly strict. Old PhantomJs tests pass again.
 New features
 -
 
-Exported setBeforeInit to window.b so bobril-g11n could be dynamicaly linked to bobril. This allows to reuse bobril-g11n also in bobril native.
+Exported setBeforeInit to window.b so bobril-g11n could be dynamicaly linked to Bobril. This allows to reuse bobril-g11n also in bobril native.
 
 4.43.0
 --

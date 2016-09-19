@@ -4212,7 +4212,9 @@ function nextIteration() {
         }
     }
 }
+exports.transitionRunCount = 1;
 function runTransition(transition) {
+    exports.transitionRunCount++;
     if (currentTransition != null) {
         nextTransition = transition;
         return;
@@ -4223,6 +4225,32 @@ function runTransition(transition) {
     nextIteration();
 }
 exports.runTransition = runTransition;
+function anchor(children, name, params) {
+    return {
+        children: children, component: {
+            id: "anchor",
+            postUpdateDom: function (ctx, me, element) {
+                var routeName;
+                if (name) {
+                    routeName = name;
+                }
+                else {
+                    var firstChild = (me.children && me.children[0]);
+                    routeName = firstChild.attrs && firstChild.attrs.id;
+                }
+                if (!isActive(routeName, params)) {
+                    ctx.l = 0;
+                    return;
+                }
+                if (ctx.l === exports.transitionRunCount)
+                    return;
+                getDomNode(me).scrollIntoView();
+                ctx.l = exports.transitionRunCount;
+            }
+        }
+    };
+}
+exports.anchor = anchor;
 function getRoutes() {
     return rootRoutes;
 }
@@ -4746,7 +4774,7 @@ function withKey(node, key) {
     return node;
 }
 exports.withKey = withKey;
-// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, getValue
+// PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue
 function styledDiv(children) {
     var styles = [];
     for (var _i = 1; _i < arguments.length; _i++) {
@@ -4832,6 +4860,19 @@ function propa(prop) {
     };
 }
 exports.propa = propa;
+function propim(value, ctx, onChange) {
+    return function (val) {
+        if (val !== undefined && val !== value) {
+            var oldVal = val;
+            value = val;
+            if (onChange !== undefined)
+                onChange(val, oldVal);
+            exports.invalidate(ctx);
+        }
+        return value;
+    };
+}
+exports.propim = propim;
 function getValue(value) {
     if (isFunction(value)) {
         return value();

@@ -346,7 +346,9 @@ export declare function link(node: IBobrilNode, name: string, params?: Params): 
 export declare function createRedirectPush(name: string, params?: Params): IRouteTransition;
 export declare function createRedirectReplace(name: string, params?: Params): IRouteTransition;
 export declare function createBackTransition(distance?: number): IRouteTransition;
+export declare let transitionRunCount: number;
 export declare function runTransition(transition: IRouteTransition): void;
+export declare function anchor(children: IBobrilChildren, name?: string, params?: Params): IBobrilNode;
 export declare function getRoutes(): IRoute[];
 export declare function getActiveRoutes(): IRoute[];
 export declare function getActiveParams(): Params;
@@ -388,6 +390,7 @@ export interface IValueData<T> {
 export declare function prop<T>(value: T, onChange?: (value: T, old: T) => void): IProp<T>;
 export declare function propi<T>(value: T): IProp<T>;
 export declare function propa<T>(prop: IProp<T>): IPropAsync<T>;
+export declare function propim<T>(value: T, ctx?: IBobrilCtx, onChange?: (value: T, old: T) => void): IProp<T>;
 export declare function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T;
 export declare function emitChange<T>(data: IValueData<T>, value: T): void;
 export declare function createElement(name: any, props: any): IBobrilNode;
