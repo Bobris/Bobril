@@ -4465,13 +4465,7 @@ function doAction(transition: IRouteTransition) {
 
 declare var Promise: any;
 
-export let lastActiveRouteRunCount = 0;
-
 function nextIteration(): void {
-    lastActiveRouteRunCount = isActive(currentTransition.name, currentTransition.params)
-        ? lastActiveRouteRunCount + 1
-        : 1
-
     while (true) {
         if (transitionState >= 0 && transitionState < activeRoutes.length) {
             let node = nodesArray[transitionState];
@@ -4567,7 +4561,11 @@ function nextIteration(): void {
     }
 }
 
+export let transitionRunCount = 1;
+
 export function runTransition(transition: IRouteTransition): void {
+    transitionRunCount++;
+
     if (currentTransition != null) {
         nextTransition = transition;
         return;
@@ -4590,11 +4588,11 @@ export function anchor(node: IBobrilNode, name?: string, params?: Params): IBobr
                 return;
             }
 
-            if (ctx.lastHandledTransitionRunCount === lastActiveRouteRunCount)
+            if (ctx.lastHandledTransitionRunCount === transitionRunCount)
                 return;
 
             element.scrollIntoView();
-            ctx.lastHandledTransitionRunCount = lastActiveRouteRunCount
+            ctx.lastHandledTransitionRunCount = transitionRunCount
         }
     });
     return node;
