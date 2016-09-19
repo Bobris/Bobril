@@ -4464,7 +4464,6 @@ function doAction(transition: IRouteTransition) {
 }
 
 declare var Promise: any;
-export interface ITransitionRunInfo { transition: IRouteTransition; runCount: number; }
 
 export let lastActiveRouteRunCount = 0;
 
