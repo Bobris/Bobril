@@ -4561,7 +4561,11 @@ function nextIteration(): void {
     }
 }
 
+export let transitionRunCount = 1;
+
 export function runTransition(transition: IRouteTransition): void {
+    transitionRunCount++;
+
     if (currentTransition != null) {
         nextTransition = transition;
         return;
@@ -4570,6 +4574,28 @@ export function runTransition(transition: IRouteTransition): void {
     currentTransition = transition;
     transitionState = 0;
     nextIteration();
+}
+
+interface IBobrilAnchorCtx { lastHandledTransitionRunCount: number; }
+
+export function anchor(node: IBobrilNode, name?: string, params?: Params): IBobrilNode {
+    postEnhance(node, {
+        postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilNode, element: HTMLElement) {
+            const routeName = name || (me.attrs ? me.attrs.id : '');
+
+            if (!isActive(routeName, params)) {
+                ctx.lastHandledTransitionRunCount = 0;
+                return;
+            }
+
+            if (ctx.lastHandledTransitionRunCount === transitionRunCount)
+                return;
+
+            element.scrollIntoView();
+            ctx.lastHandledTransitionRunCount = transitionRunCount
+        }
+    });
+    return node;
 }
 
 export function getRoutes() {
