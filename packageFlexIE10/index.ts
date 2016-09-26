@@ -13,7 +13,7 @@ if (b.ieVersion() === 10) {
         style["msFlexOrder"] = value;
         style[oldName] = undefined;
     });
-    const jcTable = {
+    const jcTable: { [name: string]: string } = {
         "flex-start": "start",
         "flex-end": "end",
         "center": "center",
@@ -29,7 +29,7 @@ if (b.ieVersion() === 10) {
         style["msFlexLinePack"] = jcTable[value];
         style[oldName] = undefined;
     });
-    const aiTable = {
+    const aiTable: { [name: string]: string } = {
         "flex-start": "start",
         "flex-end": "end",
         "center": "center",

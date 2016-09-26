@@ -1,6 +1,6 @@
 {
   "name": "bobril-flex-ie10",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "IE10 flex style polyfill for Bobril",
   "main": "index.js",
   "typescript": {

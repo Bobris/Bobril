@@ -1,10 +1,10 @@
 // Bobril.Core
 
-export type IBobrilChild = boolean | number | string | IBobrilNode;
-export type IBobrilChildren = IBobrilChild | IBobrilChildArray;
+export type IBobrilChild = boolean | number | string | IBobrilNode | null | undefined;
+export type IBobrilChildren = IBobrilChild | IBobrilChildArray | null | undefined;
 export interface IBobrilChildArray extends Array<IBobrilChildren> { };
-export type IBobrilCacheChildren = string | IBobrilCacheNode[];
-export type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
+export type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
+export type IBobrilShimStyleMapping = { [name: string]: null | ((style: any, value: any, oldName: string) => void) };
 
 export interface IDisposable {
     dispose(): void;
@@ -17,11 +17,11 @@ export interface IBobrilRoot {
     // Factory function
     f: () => IBobrilChildren;
     // Root element
-    e: HTMLElement;
+    e: HTMLElement | undefined;
     // Virtual Dom Cache
     c: IBobrilCacheNode[];
     // Optional Logical parent
-    p: IBobrilCacheNode;
+    p: IBobrilCacheNode | undefined;
 }
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -149,28 +149,28 @@ export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
 export type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;
 
 export interface IBobrilCacheNode {
-    tag: string;
-    key: string;
-    className: string;
+    tag: string | undefined;
+    key: string | undefined;
+    className: string | undefined;
     style: any;
-    attrs: IBobrilAttributes;
+    attrs: IBobrilAttributes | undefined;
     children: IBobrilCacheChildren;
     ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
     cfg: any;
     component: IBobrilComponent;
     data: any;
-    element: Node | Node[];
-    parent: IBobrilCacheNode;
-    ctx: IBobrilCtx;
+    element: Node | Node[] | undefined;
+    parent: IBobrilCacheNode | undefined;
+    ctx: IBobrilCtx | undefined;
 }
 
 export interface IBobrilCtx {
     // properties passed from parent component, treat it as immutable
     data?: any;
-    me?: IBobrilCacheNode;
+    me: IBobrilCacheNode;
     // properties passed from parent component automatically, but could be extended for children to IBobrilNode.cfg
     cfg?: any;
-    refs?: { [name: string]: IBobrilCacheNode };
+    refs?: { [name: string]: IBobrilCacheNode | null };
     disposables?: IDisposableLike[];
 }
 
@@ -204,13 +204,17 @@ function createEl(name: string): HTMLElement {
     return document.createElement(name);
 }
 
+function null2undefined<T>(value: T | null | undefined): T | undefined {
+    return value === null ? undefined: value;
+}
+
 var hasTextContent = "textContent" in createTextNode("");
 
-export function isNumber(val: any): val is Number {
+export function isNumber(val: any): val is number {
     return typeof val == "number";
 }
 
-export function isString(val: any): val is String {
+export function isString(val: any): val is string {
     return typeof val == "string";
 }
 
@@ -218,12 +222,12 @@ export function isFunction(val: any): val is Function {
     return typeof val == "function";
 }
 
-export function isObject(val: any): val is Object {
+export function isObject(val: any): val is { [name: string]: any } {
     return typeof val === "object";
 }
 
 if (Object.assign == null) {
-    Object.assign = function assign(target: Object, ...sources: Object[]): Object {
+    Object.assign = function assign(target: Object, ..._sources: Object[]): Object {
         if (target == null) throw new TypeError('Target in assign cannot be undefined or null');
         let totalArgs = arguments.length;
         for (let i = 1; i < totalArgs; i++) {
@@ -271,7 +275,7 @@ var inSvg: boolean = false;
 var inNotFocusable: boolean = false;
 var updateCall: Array<Function> = [];
 var updateInstance: Array<IBobrilCacheNode> = [];
-var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
+var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (el: Element, _node: IBobrilCacheNode, newValue: any, oldValue: any): void => {
     if (newValue !== oldValue)
         (<any>el)[tvalue] = newValue;
 }
@@ -282,7 +286,7 @@ export function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newV
     return prev;
 }
 
-function newHashObj() {
+function newHashObj(): { [name: string]: any } {
     return Object.create(null);
 }
 
@@ -379,7 +383,7 @@ function removeProperty(s: any, name: string) {
     (<any>s)[name] = "";
 }
 
-function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {
+function updateStyle(el: HTMLElement, newStyle: any, oldStyle: any) {
     var s = el.style;
     if (isObject(newStyle)) {
         shimStyle(newStyle);
@@ -429,7 +433,7 @@ function setClassName(el: Element, className: string) {
 const focusableTag = /^input$|^select$|^textarea$|^button$/;
 const tabindexStr = "tabindex";
 
-function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttributes, oldAttrs: IBobrilAttributes, notFocusable: boolean): IBobrilAttributes {
+function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttributes | undefined, oldAttrs: IBobrilAttributes, notFocusable: boolean): IBobrilAttributes {
     var attrName: string, newAttr: any, oldAttr: any, valueOldAttr: any, valueNewAttr: any;
     let wasTabindex = false;
     if (newAttrs != null) for (attrName in newAttrs) {
@@ -458,7 +462,7 @@ function updateElement(n: IBobrilCacheNode, el: Element, newAttrs: IBobrilAttrib
             } else el.setAttribute(attrName, newAttr);
         }
     }
-    if (notFocusable && !wasTabindex && focusableTag.test(n.tag)) {
+    if (notFocusable && !wasTabindex && n.tag && focusableTag.test(n.tag)) {
         el.setAttribute(tabindexStr, "-1");
         oldAttrs[tabindexStr] = -1;
     }
@@ -525,7 +529,7 @@ function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
     }
 }
 
-function findCfg(parent: IBobrilCacheNode): any {
+function findCfg(parent: IBobrilCacheNode | undefined): any {
     var cfg: any;
     while (parent) {
         cfg = parent.cfg;
@@ -539,15 +543,15 @@ function findCfg(parent: IBobrilCacheNode): any {
     return cfg;
 }
 
-function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void), value: IBobrilCacheNode) {
+function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode | null) => void), value: IBobrilCacheNode | null) {
     if (ref == null) return;
     if (isFunction(ref)) {
-        (<(node: IBobrilCacheNode) => void>ref)(value);
+        (<(node: IBobrilCacheNode | null) => void>ref)(value);
         return;
     }
     var ctx = (<[IBobrilCtx, string]>ref)[0];
     var refs = ctx.refs;
-    if (!refs) {
+    if (refs == null) {
         refs = newHashObj();
         ctx.refs = refs;
     }
@@ -555,7 +559,7 @@ function setRef(ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void), 
 }
 
 let focusRootStack: IBobrilCacheNode[] = [];
-let focusRootTop: IBobrilCacheNode = null;
+let focusRootTop: IBobrilCacheNode | null = null;
 
 export function registerFocusRoot(ctx: IBobrilCtx) {
     focusRootStack.push(ctx.me);
@@ -571,7 +575,7 @@ export function unregisterFocusRoot(ctx: IBobrilCtx) {
     }
 }
 
-export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode {
+export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefined, createInto: Element, createBefore: Node | null): IBobrilCacheNode {
     var c = <IBobrilCacheNode>{ // This makes CacheNode just one object class = fast
         tag: n.tag,
         key: n.key,
@@ -590,7 +594,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
     var backupInSvg = inSvg;
     var backupInNotFocusable = inNotFocusable;
     var component = c.component;
-    var el: Node;
+    var el: Node | undefined;
     setRef(c.ref, c);
     if (component) {
         var ctx: IBobrilCtx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
@@ -616,7 +620,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
         }
         if (component) {
             if (component.postRender) {
-                component.postRender(c.ctx, c);
+                component.postRender(c.ctx!, c);
             }
             pushInitCallback(c);
         }
@@ -666,7 +670,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
         }
         if (component) {
             if (component.postRender) {
-                component.postRender(c.ctx, c);
+                component.postRender(c.ctx!, c);
             }
             pushInitCallback(c);
         }
@@ -677,18 +681,18 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
     } else if (!el) {
         el = createEl(tag);
     }
-    createInto.insertBefore(el, createBefore);
+    createInto.insertBefore(el!, createBefore);
     c.element = el;
     createChildren(c, <Element>el, null);
     if (component) {
         if (component.postRender) {
-            component.postRender(c.ctx, c);
+            component.postRender(c.ctx!, c);
         }
     }
     if (inNotFocusable && focusRootTop === c)
         inNotFocusable = false;
     if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
-    if (c.style) updateStyle(c, <HTMLElement>el, c.style, undefined);
+    if (c.style) updateStyle(<HTMLElement>el, c.style, undefined);
     var className = c.className;
     if (className) setClassName(<HTMLElement>el, className);
     inSvg = backupInSvg;
@@ -697,18 +701,18 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createI
     return c;
 }
 
-function normalizeNode(n: any): IBobrilNode {
-    if (n === false || n === true) return null;
+function normalizeNode(n: any): IBobrilNode | undefined {
+    if (n === false || n === true || n === null) return undefined;
     if (isString(n)) {
         return { children: n };
     }
     if (isNumber(n)) {
         return { children: "" + n };
     }
-    return <IBobrilNode>n;
+    return <IBobrilNode | undefined>n;
 }
 
-function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: Node): void {
+function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: Node | null): void {
     var ch = c.children;
     if (!ch)
         return;
@@ -754,7 +758,7 @@ function destroyNode(c: IBobrilCacheNode) {
     }
     let component = c.component;
     if (component) {
-        let ctx = c.ctx;
+        let ctx = c.ctx!;
         if (component.destroy)
             component.destroy(ctx, c, <HTMLElement>c.element);
         let disposables = ctx.disposables;
@@ -805,7 +809,7 @@ function removeNode(c: IBobrilCacheNode) {
 
 var roots: IBobrilRoots = newHashObj();
 
-function nodeContainsNode(c: IBobrilCacheNode, n: Node, resIndex: number, res: IBobrilCacheNode[]): IBobrilCacheNode[] {
+function nodeContainsNode(c: IBobrilCacheNode, n: Node, resIndex: number, res: (IBobrilCacheNode | null)[]): IBobrilCacheNode[] | null | undefined {
     var el = c.element;
     var ch = c.children;
     if (isArray(el)) {
@@ -838,8 +842,8 @@ function nodeContainsNode(c: IBobrilCacheNode, n: Node, resIndex: number, res: I
     return undefined;
 }
 
-export function vdomPath(n: Node): IBobrilCacheNode[] {
-    var res: IBobrilCacheNode[] = [];
+export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[] {
+    var res: (IBobrilCacheNode | null)[] = [];
     if (n == null) return res;
     var rootIds = Object.keys(roots);
     var rootElements = rootIds.map((i) => roots[i].e || document.body);
@@ -852,8 +856,8 @@ export function vdomPath(n: Node): IBobrilCacheNode[] {
         n = n.parentNode;
     }
     if (!n || nodeStack.length === 0) return res;
-    var currentCacheArray: IBobrilChildren = null;
-    var currentNode = nodeStack.pop();
+    var currentCacheArray: IBobrilChildren | null = null;
+    var currentNode = nodeStack.pop() !;
     rootFound2: for (j = 0; j < rootElements.length; j++) {
         if (n === rootElements[j]) {
             var rc = roots[rootIds[j]].c;
@@ -867,46 +871,43 @@ export function vdomPath(n: Node): IBobrilCacheNode[] {
             }
         }
     }
-    while (nodeStack.length) {
-        currentNode = nodeStack.pop();
+    subtreeSearch: while (nodeStack.length) {
+        currentNode = nodeStack.pop() !;
         if (currentCacheArray && (<any>currentCacheArray).length) for (var i = 0, l = (<any>currentCacheArray).length; i < l; i++) {
             var bn = (<IBobrilCacheNode[]>currentCacheArray)[i];
             var findResult = nodeContainsNode(bn, currentNode, res.length, res);
             if (findResult !== undefined) {
                 currentCacheArray = findResult;
-                currentNode = null;
-                break;
+                continue subtreeSearch;
             }
         }
-        if (currentNode) {
-            res.push(null);
-            break;
-        }
+        res.push(null);
+        break;
     }
     return res;
 }
 
 // PureFuncs: deref, getDomNode
-export function deref(n: Node): IBobrilCacheNode {
+export function deref(n: Node): IBobrilCacheNode | undefined {
     var p = vdomPath(n);
-    var currentNode: IBobrilCacheNode = null;
-    while (currentNode === null && p.length > 0) {
+    var currentNode: IBobrilCacheNode | null | undefined = null;
+    while (currentNode === null) {
         currentNode = p.pop();
     }
     return currentNode;
 }
 
-function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent) {
+function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent | null | undefined) {
     if (component) {
         if (component.postRender) {
-            component.postRender(c.ctx, n, c);
+            component.postRender(c.ctx!, n, c);
         }
     }
     c.data = n.data;
     pushUpdateCallback(c);
 }
 
-export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node, deepness: number): IBobrilCacheNode {
+export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number): IBobrilCacheNode {
     var component = n.component;
     var backupInSvg = inSvg;
     var backupInNotFocusable = inNotFocusable;
@@ -1022,7 +1023,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             finishUpdateNode(n, c, component);
             if (c.attrs || n.attrs || inNotFocusable)
                 c.attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
-            updateStyle(c, <HTMLElement>el, n.style, c.style);
+            updateStyle(<HTMLElement>el, n.style, c.style);
             c.style = n.style;
             var className = n.className;
             if (className !== c.className) {
@@ -1035,29 +1036,29 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
         }
     }
     var parEl = c.element;
-    if (isArray(parEl)) parEl = (<Node[]>parEl)[0];
-    if (parEl == null) parEl = createInto; else parEl = (<Node>parEl).parentNode;
+    if (isArray(parEl)) parEl = parEl[0];
+    if (parEl == null) parEl = createInto; else parEl = <Element>parEl.parentNode;
     var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c));
     removeNode(c);
     return r;
 }
 
-export function getDomNode(c: IBobrilCacheNode): Node {
-    var el = c.element;
+export function getDomNode(c: IBobrilCacheNode): Node | null {
+    var el: Node | Node[] | null | undefined = c.element;
     if (el != null) {
-        if (isArray(el)) return (<Node[]>el)[0];
-        return <Node>el;
+        if (isArray(el)) return el[0];
+        return el;
     }
     var ch = c.children;
     if (!isArray(ch)) return null;
-    for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-        el = getDomNode((<IBobrilCacheNode[]>ch)[i]);
-        if (el) return <Node>el;
+    for (var i = 0; i < ch.length; i++) {
+        el = getDomNode(ch[i]);
+        if (el) return el;
     }
     return null;
 }
 
-function findNextNode(a: IBobrilCacheNode[], i: number, len: number, def: Node): Node {
+function findNextNode(a: IBobrilCacheNode[], i: number, len: number, def: Node | null): Node | null {
     while (++i < len) {
         var ai = a[i];
         if (ai == null) continue;
@@ -1077,30 +1078,30 @@ export function callPostCallbacks() {
     updateInstance = [];
 }
 
-function updateNodeInUpdateChildren(newNode: IBobrilNode, cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node, element: Element, deepness: number) {
+function updateNodeInUpdateChildren(newNode: IBobrilNode, cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node | null, element: Element, deepness: number) {
     cachedChildren[cachedIndex] = updateNode(newNode, cachedChildren[cachedIndex], element,
         findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore), deepness);
 }
 
-function reorderInUpdateChildrenRec(c: IBobrilCacheNode, element: Element, before: Node): void {
+function reorderInUpdateChildrenRec(c: IBobrilCacheNode, element: Element, before: Node | null): void {
     var el = c.element;
     if (el != null) {
         if (isArray(el)) {
-            for (var i = 0; i < (<Node[]>el).length; i++) {
-                element.insertBefore((<Node[]>el)[i], before);
+            for (var i = 0; i < el.length; i++) {
+                element.insertBefore(el[i], before);
             }
         } else
-            element.insertBefore(<Node>el, before);
+            element.insertBefore(el, before);
         return;
     }
     var ch = c.children;
-    if (!isArray(ch)) return null;
+    if (!isArray(ch)) return;
     for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
         reorderInUpdateChildrenRec((<IBobrilCacheNode[]>ch)[i], element, before);
     }
 }
 
-function reorderInUpdateChildren(cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node, element: Element) {
+function reorderInUpdateChildren(cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node | null, element: Element) {
     var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
     var cur = cachedChildren[cachedIndex];
     var what = getDomNode(cur);
@@ -1109,7 +1110,7 @@ function reorderInUpdateChildren(cachedChildren: IBobrilCacheNode[], cachedIndex
     }
 }
 
-function reorderAndUpdateNodeInUpdateChildren(newNode: IBobrilNode, cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node, element: Element, deepness: number) {
+function reorderAndUpdateNodeInUpdateChildren(newNode: IBobrilNode, cachedChildren: IBobrilCacheNode[], cachedIndex: number, cachedLength: number, createBefore: Node | null, element: Element, deepness: number) {
     var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
     var cur = cachedChildren[cachedIndex];
     var what = getDomNode(cur);
@@ -1119,7 +1120,7 @@ function reorderAndUpdateNodeInUpdateChildren(newNode: IBobrilNode, cachedChildr
     cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
 }
 
-export function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode, createBefore: Node, deepness: number): IBobrilCacheNode[] {
+export function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode | undefined, createBefore: Node | null, deepness: number): IBobrilCacheNode[] {
     if (newChildren == null) newChildren = <IBobrilNode[]>[];
     if (!isArray(newChildren)) {
         newChildren = [newChildren];
@@ -1152,7 +1153,7 @@ export function updateChildren(element: Element, newChildren: IBobrilChildren, c
     return updateChildrenCore(element, <IBobrilNode[]>newCh, <IBobrilCacheNode[]>cachedChildren, parentNode, createBefore, deepness);
 }
 
-function updateChildrenCore(element: Element, newChildren: IBobrilNode[], cachedChildren: IBobrilCacheNode[], parentNode: IBobrilCacheNode, createBefore: Node, deepness: number): IBobrilCacheNode[] {
+function updateChildrenCore(element: Element, newChildren: IBobrilNode[], cachedChildren: IBobrilCacheNode[], parentNode: IBobrilCacheNode | undefined, createBefore: Node | null, deepness: number): IBobrilCacheNode[] {
     let newEnd = newChildren.length;
     var cachedLength = cachedChildren.length;
     let cachedEnd = cachedLength;
@@ -1222,7 +1223,7 @@ function updateChildrenCore(element: Element, newChildren: IBobrilNode[], cached
     // order of keyed nodes ware changed => reorder keyed nodes first
     var cachedKeys: { [keyName: string]: number } = newHashObj();
     var newKeys: { [keyName: string]: number } = newHashObj();
-    var key: string;
+    var key: string | undefined;
     var node: IBobrilNode;
     var backupNewIndex = newIndex;
     var backupCachedIndex = cachedIndex;
@@ -1252,7 +1253,7 @@ function updateChildrenCore(element: Element, newChildren: IBobrilNode[], cached
     var delta = 0;
     newIndex = backupNewIndex;
     cachedIndex = backupCachedIndex;
-    var cachedKey: string;
+    var cachedKey: string | undefined;
     while (cachedIndex < cachedEnd && newIndex < newEnd) {
         if (cachedChildren[cachedIndex] === null) { // already moved somethere else
             cachedChildren.splice(cachedIndex, 1);
@@ -1308,7 +1309,7 @@ function updateChildrenCore(element: Element, newChildren: IBobrilNode[], cached
             // Move
             cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
             delta++;
-            cachedChildren[akpos + delta] = null;
+            cachedChildren[akpos + delta] = null!;
             reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
             cachedIndex++;
             cachedEnd++;
@@ -1456,17 +1457,17 @@ var frameCounter = 0;
 var lastFrameDurationMs = 0;
 var renderFrameBegin = 0;
 
-var regEvents: { [name: string]: Array<(ev: any, target: Node, node: IBobrilCacheNode) => boolean> } = {};
-var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean }> };
+var regEvents: { [name: string]: Array<(ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean> } = {};
+var registryEvents: { [name: string]: Array<{ priority: number; callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean }> } | undefined;
 
-export function addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void {
+export function addEvent(name: string, priority: number, callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean): void {
     if (registryEvents == null) registryEvents = {};
     var list = registryEvents[name] || [];
     list.push({ priority: priority, callback: callback });
     registryEvents[name] = list;
 }
 
-export function emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean {
+export function emitEvent(name: string, ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
     var events = regEvents[name];
     if (events) for (var i = 0; i < events.length; i++) {
         if (events[i](ev, target, node))
@@ -1493,7 +1494,7 @@ function addListener(el: EventTarget, name: string) {
 }
 
 function initEvents() {
-    if (registryEvents == null)
+    if (registryEvents === undefined)
         return;
     var eventNames = Object.keys(registryEvents);
     for (var j = 0; j < eventNames.length; j++) {
@@ -1502,14 +1503,14 @@ function initEvents() {
         arr = arr.sort((a, b) => a.priority - b.priority);
         regEvents[eventName] = arr.map(v => v.callback);
     }
-    registryEvents = null;
+    registryEvents = undefined;
     var body = document.body;
     for (var i = 0; i < eventNames.length; i++) {
         addListener(body, eventNames[i]);
     }
 }
 
-function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefore: Node) {
+function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefore: Node | null) {
     var len = cache.length;
     for (var i = 0; i < len; i++) {
         var node = cache[i];
@@ -1523,7 +1524,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
             if (inNotFocusable && focusRootTop === node)
                 inNotFocusable = false;
             if (node.tag === "svg") inSvg = true;
-            selectedUpdate(<IBobrilCacheNode[]>node.children, (<Element>node.element) || element, findNextNode(cache, i, len, createBefore));
+            selectedUpdate(node.children, (<Element>node.element) || element, findNextNode(cache, i, len, createBefore));
             pushUpdateEverytimeCallback(node);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
@@ -1532,7 +1533,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
 }
 
 var beforeFrameCallback: () => void = () => { };
-var afterFrameCallback: (root: IBobrilCacheChildren) => void = () => { };
+var afterFrameCallback: (root: IBobrilCacheChildren | null) => void = () => { };
 
 export function setBeforeFrame(callback: () => void): () => void {
     var res = beforeFrameCallback;
@@ -1540,36 +1541,36 @@ export function setBeforeFrame(callback: () => void): () => void {
     return res;
 }
 
-export function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void {
+export function setAfterFrame(callback: (root: IBobrilCacheChildren | null) => void): (root: IBobrilCacheChildren | null) => void {
     var res = afterFrameCallback;
     afterFrameCallback = callback;
     return res;
 }
 
-function findLastNode(children: IBobrilCacheNode[]): Node {
+function findLastNode(children: IBobrilCacheNode[]): Node | null {
     for (var i = children.length - 1; i >= 0; i--) {
         var c = children[i];
         var el = c.element;
         if (el != null) {
             if (isArray(el)) {
-                var l = (<Node[]>el).length;
+                var l = el.length;
                 if (l === 0)
                     continue;
-                return (<Node[]>el)[l - 1];
+                return el[l - 1];
             }
             return <Node>el;
         }
         var ch = c.children;
         if (!isArray(ch))
             continue;
-        var res = findLastNode(<IBobrilCacheNode[]>ch);
+        var res = findLastNode(ch);
         if (res != null)
             return res;
     }
     return null;
 }
 
-function isLogicalParent(parent: IBobrilCacheNode, child: IBobrilCacheNode, rootIds: string[]): boolean {
+function isLogicalParent(parent: IBobrilCacheNode, child: IBobrilCacheNode | null | undefined, rootIds: string[]): boolean {
     while (child != null) {
         if (parent === child) return true;
         let p = child.parent;
@@ -1626,10 +1627,10 @@ function internalUpdate(time: number) {
             if (newChildren === undefined)
                 break;
             r.e = r.e || document.body;
-            r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
+            r.c = updateChildren(r.e, newChildren, rc, undefined, insertBefore, 1e6);
         }
         else {
-            selectedUpdate(rc, r.e, insertBefore);
+            selectedUpdate(rc, r.e!, insertBefore);
         }
     }
     callPostCallbacks();
@@ -1691,7 +1692,7 @@ export function removeRoot(id: string): void {
     var root = roots[id];
     if (!root) return;
     if (root.c.length) {
-        root.c = <any>updateChildren(root.e, <any>[], root.c, null, null, 1e9);
+        root.c = <any>updateChildren(root.e!, <any>[], root.c, undefined, null, 1e9);
     }
     delete roots[id];
 }
@@ -1716,11 +1717,11 @@ export function setBeforeInit(callback: (cb: () => void) => void): void {
     }
 }
 
-export function bubble(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx {
+export function bubble(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined {
     while (node) {
         var c = node.component;
         if (c) {
-            var ctx = node.ctx;
+            var ctx = node.ctx!;
             var m = (<any>c)[name];
             if (m) {
                 if (m.call(c, ctx, param))
@@ -1734,15 +1735,15 @@ export function bubble(node: IBobrilCacheNode, name: string, param: any): IBobri
         }
         node = node.parent;
     }
-    return null;
+    return undefined;
 }
 
-function broadcastEventToNode(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx {
+function broadcastEventToNode(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined {
     if (!node)
-        return null;
+        return undefined;
     var c = node.component;
     if (c) {
-        var ctx = node.ctx;
+        var ctx = node.ctx!;
         var m = (<any>c)[name];
         if (m) {
             if (m.call(c, ctx, param))
@@ -1751,7 +1752,7 @@ function broadcastEventToNode(node: IBobrilCacheNode, name: string, param: any):
         m = c.shouldStopBroadcast;
         if (m) {
             if (m.call(c, ctx, name, param))
-                return null;
+                return undefined;
         }
     }
     var ch = node.children;
@@ -1762,9 +1763,10 @@ function broadcastEventToNode(node: IBobrilCacheNode, name: string, param: any):
                 return res;
         }
     }
+    return undefined;
 }
 
-export function broadcast(name: string, param: any): IBobrilCtx {
+export function broadcast(name: string, param: any): IBobrilCtx | undefined {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
         var ch = roots[k[i]].c;
@@ -1776,11 +1778,11 @@ export function broadcast(name: string, param: any): IBobrilCtx {
             }
         }
     }
-    return null;
+    return undefined;
 }
 
 function merge(f1: Function, f2: Function): Function {
-    return (...params: any[]) => {
+    return function (this: any, ...params: any[]) {
         var result = f1.apply(this, params);
         if (result) return result;
         return f2.apply(this, params);
@@ -1790,18 +1792,18 @@ function merge(f1: Function, f2: Function): Function {
 var emptyObject = {};
 
 function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent {
-    let res: IBobrilComponent = Object.create(c1);
+    let res: IBobrilComponent = Object.create(c1)!;
     res.super = c1;
     for (var i in c2) {
         if (!(i in <any>emptyObject)) {
             var m = (<any>c2)[i];
             var origM = (<any>c1)[i];
             if (i === "id") {
-                res[i] = ((origM != null) ? origM : "") + "/" + m;
+                (<any>res)[i] = ((origM != null) ? origM : "") + "/" + m;
             } else if (isFunction(m) && origM != null && isFunction(origM)) {
-                res[i] = merge(origM, m);
+                (<any>res)[i] = merge(origM, m);
             } else {
-                res[i] = m;
+                (<any>res)[i] = m;
             }
         }
     }
@@ -1809,16 +1811,16 @@ function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilCom
 }
 
 function overrideComponents(originalComponent: IBobrilComponent, overridingComponent: IBobrilComponent) {
-    let res: IBobrilComponent = Object.create(originalComponent);
+    let res: IBobrilComponent = Object.create(originalComponent)!;
     res.super = originalComponent;
     for (let i in overridingComponent) {
         if (!(i in <any>emptyObject)) {
             let m = (<any>overridingComponent)[i];
             let origM = (<any>originalComponent)[i];
             if (i === 'id') {
-                res[i] = ((origM != null) ? origM : '') + '/' + m;
+                (<any>res)[i] = ((origM != null) ? origM : '') + '/' + m;
             } else {
-                res[i] = m;
+                (<any>res)[i] = m;
             }
         }
     }
@@ -1850,14 +1852,14 @@ export function preventDefault(event: Event) {
     if (pd) pd.call(event); else (<any>event).returnValue = false;
 }
 
-function cloneNodeArray(a: IBobrilChild[]): IBobrilChild[] {
+function cloneNodeArray(a: IBobrilChildArray): IBobrilChildArray {
     a = a.slice(0);
     for (var i = 0; i < a.length; i++) {
         var n = a[i];
         if (isArray(n)) {
-            a[i] = <any>cloneNodeArray(<any>n);
+            a[i] = cloneNodeArray(n);
         } else if (isObject(n)) {
-            a[i] = cloneNode(<IBobrilNode>n);
+            a[i] = cloneNode(n);
         }
     }
     return a;
@@ -1874,9 +1876,9 @@ export function cloneNode(node: IBobrilNode): IBobrilNode {
     var ch = r.children;
     if (ch) {
         if (isArray(ch)) {
-            r.children = cloneNodeArray(<IBobrilChild[]>ch);
+            r.children = cloneNodeArray(ch);
         } else if (isObject(ch)) {
-            r.children = cloneNode(<IBobrilNode>ch);
+            r.children = cloneNode(ch);
         }
     }
     return r;
@@ -1910,7 +1912,7 @@ export interface IBobrilMedia {
     portrait: boolean;
 }
 
-var media: IBobrilMedia = null;
+var media: IBobrilMedia | null = null;
 var breaks = [
     [414, 800, 900], //portrait widths
     [736, 1280, 1440] //landscape widths
@@ -2035,7 +2037,7 @@ export const asap = (() => {
         };
         // All other browsers
     } else {
-        var timeout: number;
+        var timeout: number | undefined;
         var timeoutFn: (cb: () => void, timeout: number) => number = window.setImmediate || setTimeout;
         return (callback: () => void) => {
             callbacks.push(callback);
@@ -2058,7 +2060,7 @@ if (!(<any>window).Promise) {
             }
         }
 
-        function handle(deferred: Array<(v: any) => any>) {
+        function handle(this:any, deferred: Array<(v: any) => any>) {
             if (this.s/*tate*/ === null) {
                 this.d/*eferreds*/.push(deferred);
                 return;
@@ -2080,14 +2082,14 @@ if (!(<any>window).Promise) {
             });
         }
 
-        function finale() {
+        function finale(this: any) {
             for (var i = 0, len = this.d/*eferreds*/.length; i < len; i++) {
                 handle.call(this, this.d/*eferreds*/[i]);
             }
             this.d/*eferreds*/ = null;
         }
 
-        function reject(newValue: any) {
+        function reject(this: any, newValue: any) {
             this.s/*tate*/ = false;
             this.v/*alue*/ = newValue;
             finale.call(this);
@@ -2118,7 +2120,7 @@ if (!(<any>window).Promise) {
             }
         }
 
-        function resolve(newValue: any) {
+        function resolve(this: any, newValue: any) {
             try { //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
                 if (newValue === this) throw new TypeError('Promise selfresolve');
                 if (Object(newValue) === newValue) {
@@ -2134,7 +2136,7 @@ if (!(<any>window).Promise) {
             } catch (e) { reject.call(this, e); }
         }
 
-        function Promise(fn: (onFulfilled: (value: any) => void, onRejected: (reason: any) => void) => void) {
+        function Promise(this:any, fn: (onFulfilled: (value: any) => void, onRejected: (reason: any) => void) => void) {
             this.s/*tate*/ = null;
             this.v/*alue*/ = null;
             this.d/*eferreds*/ = <Array<Array<() => void>>>[];
@@ -2142,14 +2144,14 @@ if (!(<any>window).Promise) {
             doResolve(fn, bind(resolve, this), bind(reject, this));
         }
 
-        Promise.prototype.then = function (onFulfilled: any, onRejected?: any) {
+        Promise.prototype.then = function (this: any, onFulfilled: any, onRejected?: any) {
             var me = this;
             return new (<any>Promise)((resolve: any, reject: any) => {
                 handle.call(me, [onFulfilled, onRejected, resolve, reject]);
             });
         };
 
-        Promise.prototype['catch'] = function (onRejected?: any) {
+        Promise.prototype['catch'] = function (this: any, onRejected?: any) {
             return this.then(undefined, onRejected);
         };
 
@@ -2195,7 +2197,7 @@ if (!(<any>window).Promise) {
             });
         };
 
-        (<any>Promise).reject = (value: any) => new (<any>Promise)((resolve: any, reject: (reason: any) => void) => {
+        (<any>Promise).reject = (value: any) => new (<any>Promise)((_resolve: any, reject: (reason: any) => void) => {
             reject(value);
         });
 
@@ -2242,7 +2244,7 @@ if (ieVersion() === 9) {
     (() => {
         var teststyle = document.createElement("div").style;
         teststyle.cssText = "background:-webkit-linear-gradient(top,red,red)";
-        if (teststyle.background.length > 0) {
+        if (teststyle.background!.length > 0) {
             (() => {
                 var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/ig;
                 var revdirs = { top: "bottom", bottom: "top", left: "right", right: "left" };
@@ -2310,7 +2312,7 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, new
         prevSetValueCallback(el, node, newValue, oldValue);
         return;
     }
-    if (node.ctx === undefined) node.ctx = {};
+    if (node.ctx === undefined) node.ctx = { me: node };
     if (oldValue === undefined) {
         (<any>node.ctx)[bvalue] = newValue;
     }
@@ -2369,13 +2371,13 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, new
         }
     }
     if (emitDiff) {
-        emitOnChange(null, el, node);
+        emitOnChange(undefined, el, node);
     } else {
         (<any>node.ctx)[bvalue] = newValue;
     }
 });
 
-function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
+function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBobrilCacheNode | undefined) {
     if (target && target.nodeName === "OPTION") {
         target = document.activeElement;
         node = deref(target);
@@ -2390,7 +2392,7 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
     const hasOnSelectionChange = c && c.onSelectionChange != null;
     if (!hasPropOrOnChange && !hasOnSelectionChange)
         return false;
-    var ctx = node.ctx;
+    var ctx = node.ctx!;
     var tagName = (<Element>target).tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
@@ -2399,13 +2401,13 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
         if (!stringArrayEqual((<any>ctx)[bvalue], vs)) {
             (<any>ctx)[bvalue] = vs;
             if (hasProp) hasProp(vs);
-            if (hasOnChange) c.onChange(ctx, vs);
+            if (hasOnChange) c.onChange!(ctx, vs);
         }
     } else if (hasOnChange && isCheckboxlike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(() => {
-                emitOnChange(null, target, node);
+                emitOnChange(undefined, target, node);
             }, 10);
             return false;
         }
@@ -2415,7 +2417,7 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
                 var radio = radios[j];
                 var radionode = deref(radio);
                 if (!radionode) continue;
-                const rbhasProp = node.attrs[bvalue];
+                const rbhasProp = node.attrs![bvalue];
                 var radiocomponent = radionode.component;
                 const rbhasOnChange = radiocomponent && radiocomponent.onChange != null;
                 if (!rbhasProp && !rbhasOnChange) continue;
@@ -2424,7 +2426,7 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
                 if ((<any>radioctx)[bvalue] !== vrb) {
                     (<any>radioctx)[bvalue] = vrb;
                     if (rbhasProp) rbhasProp(vrb);
-                    if (rbhasOnChange) radiocomponent.onChange(radioctx, vrb);
+                    if (rbhasOnChange) radiocomponent.onChange!(radioctx!, vrb);
                 }
             }
         } else {
@@ -2432,7 +2434,7 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
             if ((<any>ctx)[bvalue] !== vb) {
                 (<any>ctx)[bvalue] = vb;
                 if (hasProp) hasProp(vb);
-                if (hasOnChange) c.onChange(ctx, vb);
+                if (hasOnChange) c.onChange!(ctx, vb);
             }
         }
     } else {
@@ -2441,7 +2443,7 @@ function emitOnChange(ev: Event, target: Node, node: IBobrilCacheNode) {
             if ((<any>ctx)[bvalue] !== v) {
                 (<any>ctx)[bvalue] = v;
                 if (hasProp) hasProp(v);
-                if (hasOnChange) c.onChange(ctx, v);
+                if (hasOnChange) c.onChange!(ctx, v);
             }
         }
         if (hasOnSelectionChange) {
@@ -2470,7 +2472,7 @@ function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: numbe
     if (c && ((<any>ctx)[bSelectionStart] !== start || (<any>ctx)[bSelectionEnd] !== end)) {
         (<any>ctx)[bSelectionStart] = start;
         (<any>ctx)[bSelectionEnd] = end;
-        c.onSelectionChange(ctx, {
+        if (c.onSelectionChange) c.onSelectionChange(ctx!, {
             startPosition: start,
             endPosition: end
         });
@@ -2482,7 +2484,7 @@ export function select(node: IBobrilCacheNode, start: number, end = start): void
     emitOnSelectionChange(node, start, end);
 }
 
-function emitOnMouseChange(ev: Event, target: Node, node: IBobrilCacheNode): boolean {
+function emitOnMouseChange(ev: Event | undefined, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
     let f = focused();
     if (f) emitOnChange(ev, <Node>f.element, f);
     return false;
@@ -2521,7 +2523,7 @@ function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
     };
 }
 
-function emitOnKeyDown(ev: KeyboardEvent, target: Node, node: IBobrilCacheNode) {
+function emitOnKeyDown(ev: KeyboardEvent, _target: Node, node: IBobrilCacheNode) {
     if (!node)
         return false;
     var param: IKeyDownUpEvent = buildParam(ev);
@@ -2531,7 +2533,7 @@ function emitOnKeyDown(ev: KeyboardEvent, target: Node, node: IBobrilCacheNode) 
     }
     return false;
 }
-function emitOnKeyUp(ev: KeyboardEvent, target: Node, node: IBobrilCacheNode) {
+function emitOnKeyUp(ev: KeyboardEvent, _target: Node, node: IBobrilCacheNode) {
     if (!node)
         return false;
     var param: IKeyDownUpEvent = buildParam(ev);
@@ -2541,7 +2543,7 @@ function emitOnKeyUp(ev: KeyboardEvent, target: Node, node: IBobrilCacheNode) {
     }
     return false;
 }
-function emitOnKeyPress(ev: KeyboardEvent, target: Node, node: IBobrilCacheNode) {
+function emitOnKeyPress(ev: KeyboardEvent, _target: Node, node: IBobrilCacheNode) {
     if (!node)
         return false;
     if (ev.which === 0) // don't want special key presses
@@ -2634,7 +2636,7 @@ function invokeMouseOwner(handlerName: string, param: any): boolean {
     return stop;
 }
 
-function hasPointerEventsNoneB(node: IBobrilCacheNode): boolean {
+function hasPointerEventsNoneB(node: IBobrilCacheNode | null | undefined): boolean {
     while (node) {
         var s = node.style;
         if (s) {
@@ -2665,12 +2667,12 @@ function revertVisibilityChanges(hiddenEls: { t: HTMLElement; p: string }[]): bo
     return false;
 }
 
-function pushAndHide(hiddenEls: { t: HTMLElement; p: string }[], t: HTMLElement) {
+function pushAndHide(hiddenEls: { t: HTMLElement; p: string | null }[], t: HTMLElement) {
     hiddenEls.push({ t: t, p: t.style.visibility });
     t.style.visibility = "hidden";
 }
 
-function pointerThroughIE(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+function pointerThroughIE(ev: MouseEvent, target: Node, _node: IBobrilCacheNode): boolean {
     var hiddenEls: { t: HTMLElement; p: string }[] = [];
     var t = <HTMLElement>target;
     while (hasPointerEventsNone(t)) {
@@ -2713,7 +2715,7 @@ function type2Bobril(t: any): BobrilPointerType {
     return BobrilPointerType.Touch;
 }
 
-function pointerEventsNoneFix(x: number, y: number, target: Node, node: IBobrilCacheNode): [Node, IBobrilCacheNode] {
+function pointerEventsNoneFix(x: number, y: number, target: Node | undefined, node: IBobrilCacheNode | undefined): [Node, IBobrilCacheNode | undefined] {
     var hiddenEls: { t: HTMLElement; p: string }[] = [];
     var t = <HTMLElement>target;
     while (hasPointerEventsNoneB(node)) {
@@ -2726,7 +2728,7 @@ function pointerEventsNoneFix(x: number, y: number, target: Node, node: IBobrilC
 }
 
 function buildHandlerPointer(name: string) {
-    return function handlePointerDown(ev: PointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+    return function handlePointerDown(ev: PointerEvent, target: Node, node: IBobrilCacheNode | undefined): boolean {
         if (hasPointerEventsNoneB(node)) {
             var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
             target = fixed[0];
@@ -2749,7 +2751,7 @@ function buildHandlerPointer(name: string) {
 }
 
 function buildHandlerTouch(name: string) {
-    return function handlePointerDown(ev: TouchEvent, target: Node, node: IBobrilCacheNode): boolean {
+    return function handlePointerDown(ev: TouchEvent, target: Node, node: IBobrilCacheNode | undefined): boolean {
         var preventDef = false;
         for (var i = 0; i < ev.changedTouches.length; i++) {
             var t = ev.changedTouches[i];
@@ -2768,7 +2770,7 @@ function buildHandlerTouch(name: string) {
 }
 
 function buildHandlerMouse(name: string) {
-    return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+    return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode | undefined): boolean {
         target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
         node = deref(target);
         if (hasPointerEventsNoneB(node)) {
@@ -2810,7 +2812,7 @@ if (window.onpointerdown !== undefined) {
 for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
     ((name: string) => {
         var onname = "on" + name;
-        addEvent("!" + name, 50, (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+        addEvent("!" + name, 50, (ev: IBobrilPointerEvent, _target: Node, node: IBobrilCacheNode) => {
             return invokeMouseOwner(onname, ev) || (bubble(node, onname, ev) != null);
         });
     })(pointersEventNames[j]);
@@ -2823,13 +2825,13 @@ var firstPointerDownTime = 0;
 var firstPointerDownX = 0;
 var firstPointerDownY = 0;
 var tapCanceled = false;
-var lastMouseEv: IBobrilPointerEvent = null;
+var lastMouseEv: IBobrilPointerEvent | undefined;
 
 function diffLess(n1: number, n2: number, diff: number) {
     return Math.abs(n1 - n2) < diff;
 }
 
-var prevMousePath: IBobrilCacheNode[] = [];
+var prevMousePath: (IBobrilCacheNode | null)[] = [];
 
 export function revalidateMouseIn() {
     if (lastMouseEv)
@@ -2840,9 +2842,9 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     lastMouseEv = ev;
     var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
     var toPath = vdomPath(t);
-    var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
+    var node = toPath.length == 0 ? undefined : toPath[toPath.length - 1];
     if (hasPointerEventsNoneB(node)) {
-        var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node);
+        var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node == null ? undefined : node);
         t = <HTMLElement>fixed[0];
         toPath = vdomPath(t);
     }
@@ -2853,7 +2855,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
         common++;
 
-    var n: IBobrilCacheNode;
+    var n: IBobrilCacheNode | null;
     var c: IBobrilComponent;
     var i = prevMousePath.length;
     if (i > 0) {
@@ -2861,7 +2863,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         if (n) {
             c = n.component;
             if (c && c.onMouseOut)
-                c.onMouseOut(n.ctx, ev);
+                c.onMouseOut(n.ctx!, ev);
         }
     }
     while (i > common) {
@@ -2870,7 +2872,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         if (n) {
             c = n.component;
             if (c && c.onMouseLeave)
-                c.onMouseLeave(n.ctx, ev);
+                c.onMouseLeave(n.ctx!, ev);
         }
     }
     while (i < toPath.length) {
@@ -2878,7 +2880,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         if (n) {
             c = n.component;
             if (c && c.onMouseEnter)
-                c.onMouseEnter(n.ctx, ev);
+                c.onMouseEnter(n.ctx!, ev);
         }
         i++;
     }
@@ -2888,7 +2890,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         if (n) {
             c = n.component;
             if (c && c.onMouseIn)
-                c.onMouseIn(n.ctx, ev);
+                c.onMouseIn(n.ctx!, ev);
         }
     }
     return false;
@@ -2898,7 +2900,7 @@ function noPointersDown(): boolean {
     return Object.keys(pointersDown).length === 0;
 }
 
-function bustingPointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+function bustingPointerDown(ev: IBobrilPointerEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     if (firstPointerDown === -1 && noPointersDown()) {
         firstPointerDown = ev.id;
         firstPointerDownTime = now();
@@ -2949,7 +2951,7 @@ function bustingPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCa
     return false;
 }
 
-function bustingPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+function bustingPointerCancel(ev: IBobrilPointerEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     delete pointersDown[ev.id];
     if (firstPointerDown == ev.id) {
         firstPointerDown = -1;
@@ -2957,7 +2959,7 @@ function bustingPointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobr
     return false;
 }
 
-function bustingClick(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+function bustingClick(ev: MouseEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     var n = now();
     for (var i = 0; i < toBust.length; i++) {
         var j = toBust[i];
@@ -2982,7 +2984,7 @@ for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
 }
 
 function createHandlerMouse(handlerName: string) {
-    return (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+    return (ev: IBobrilPointerEvent, _target: Node, node: IBobrilCacheNode) => {
         if (firstPointerDown != ev.id && !noPointersDown()) return false;
         if (invokeMouseOwner(handlerName, ev) || bubble(node, handlerName, ev)) {
             return true;
@@ -3001,7 +3003,7 @@ function decodeButton(ev: MouseEvent): number {
 }
 
 function createHandler(handlerName: string, allButtons?: boolean) {
-    return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
+    return (ev: MouseEvent, _target: Node, node: IBobrilCacheNode) => {
         let button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
@@ -3014,7 +3016,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
     };
 }
 
-export function nodeOnPoint(x: number, y: number): IBobrilCacheNode {
+export function nodeOnPoint(x: number, y: number): IBobrilCacheNode | undefined {
     var target = <HTMLElement>document.elementFromPoint(x, y);
     var node = deref(target);
     if (hasPointerEventsNoneB(node)) {
@@ -3024,7 +3026,7 @@ export function nodeOnPoint(x: number, y: number): IBobrilCacheNode {
     return node;
 }
 
-function handleSelectStart(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+function handleSelectStart(ev: any, _target: Node, node: IBobrilCacheNode | undefined): boolean {
     while (node) {
         var s = node.style;
         if (s) {
@@ -3050,7 +3052,7 @@ addEvent5("dblclick", createHandler("onDoubleClick"));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 
 let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
-function handleMouseWheel(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+function handleMouseWheel(ev: any, target: Node, node: IBobrilCacheNode | undefined): boolean {
     if (hasPointerEventsNoneB(node)) {
         var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
         target = fixed[0];
@@ -3088,12 +3090,12 @@ export const ignoreClick = (x: number, y: number) => {
 
 // Bobril.Focus
 
-let currentActiveElement: Element = null;
-let currentFocusedNode: IBobrilCacheNode = null;
-let nodestack: IBobrilCacheNode[] = [];
+let currentActiveElement: Element | undefined = undefined;
+let currentFocusedNode: IBobrilCacheNode | undefined = undefined;
+let nodestack: (IBobrilCacheNode | null)[] = [];
 
 function emitOnFocusChange(): void {
-    var newActiveElement = document.hasFocus() ? document.activeElement : null;
+    var newActiveElement = document.hasFocus() ? document.activeElement : undefined;
     if (newActiveElement !== currentActiveElement) {
         currentActiveElement = newActiveElement;
         var newstack = vdomPath(currentActiveElement);
@@ -3101,14 +3103,14 @@ function emitOnFocusChange(): void {
         while (common < nodestack.length && common < newstack.length && nodestack[common] === newstack[common])
             common++;
         var i = nodestack.length - 1;
-        var n: IBobrilCacheNode;
+        var n: IBobrilCacheNode | null;
         var c: IBobrilComponent;
         if (i >= common) {
             n = nodestack[i];
             if (n) {
                 c = n.component;
                 if (c && c.onBlur)
-                    c.onBlur(n.ctx);
+                    c.onBlur(n.ctx!);
             }
             i--;
         }
@@ -3117,7 +3119,7 @@ function emitOnFocusChange(): void {
             if (n) {
                 c = n.component;
                 if (c && c.onFocusOut)
-                    c.onFocusOut(n.ctx);
+                    c.onFocusOut(n.ctx!);
             }
             i--;
         }
@@ -3127,7 +3129,7 @@ function emitOnFocusChange(): void {
             if (n) {
                 c = n.component;
                 if (c && c.onFocusIn)
-                    c.onFocusIn(n.ctx);
+                    c.onFocusIn(n.ctx!);
             }
             i++;
         }
@@ -3136,12 +3138,12 @@ function emitOnFocusChange(): void {
             if (n) {
                 c = n.component;
                 if (c && c.onFocus)
-                    c.onFocus(n.ctx);
+                    c.onFocus(n.ctx!);
             }
             i++;
         }
         nodestack = newstack;
-        currentFocusedNode = nodestack.length == 0 ? null : nodestack[nodestack.length - 1];
+        currentFocusedNode = nodestack.length == 0 ? undefined : null2undefined(nodestack[nodestack.length - 1]);
     }
 }
 
@@ -3152,7 +3154,7 @@ function emitOnFocusChangeDelayed(): void {
 addEvent("^focus", 50, <any>emitOnFocusChange);
 addEvent("^blur", 50, <any>emitOnFocusChangeDelayed);
 
-export function focused(): IBobrilCacheNode {
+export function focused(): IBobrilCacheNode | undefined {
     return currentFocusedNode;
 }
 
@@ -3169,7 +3171,7 @@ export function focus(node: IBobrilCacheNode): boolean {
     var attrs = node.attrs;
     if (attrs != null) {
         var ti = attrs.tabindex != null ? attrs.tabindex : (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
-        if (ti !== undefined || focusableTag.test(node.tag)) {
+        if (ti !== undefined || node.tag && focusableTag.test(node.tag)) {
             var el = node.element;
             (<HTMLElement>el).focus();
             emitOnFocusChange();
@@ -3190,7 +3192,7 @@ export function focus(node: IBobrilCacheNode): boolean {
 // Bobril.Scroll
 var callbacks: Array<(info: IBobrilScroll) => void> = [];
 
-function emitOnScroll(ev: Event, target: Node, node: IBobrilCacheNode) {
+function emitOnScroll(_ev: Event, _target: Node, node: IBobrilCacheNode) {
     let info: IBobrilScroll = {
         node
     };
@@ -3247,7 +3249,7 @@ export function nodePagePos(node: IBobrilCacheNode): [number, number] {
     return res;
 }
 
-var cachedConvertPointFromPageToNode: (element: Node, x: number, y: number) => [number, number];
+var cachedConvertPointFromPageToNode: (element: Node | null, x: number, y: number) => [number, number];
 
 type Point = [number, number];
 class CSSMatrix {
@@ -3256,7 +3258,7 @@ class CSSMatrix {
         this.data = data;
     }
     static fromString(s: string): CSSMatrix {
-        var c = s.match(/matrix3?d?\(([^\)]+)\)/i)[1].split(",");
+        var c = s.match(/matrix3?d?\(([^\)]+)\)/i)![1].split(",");
         if (c.length === 6) {
             c = [c[0], c[1], "0", "0", c[2], c[3], "0", "0", "0", "0", "1", "0", c[4], c[5], "0", "1"];
         }
@@ -3321,8 +3323,8 @@ class CSSMatrix {
         var K = a * e - b * d;
         var det = a * A + b * B + c * C;
         var X = new CSSMatrix([A / det, D / det, G / det, 0,
-            B / det, E / det, H / det, 0,
-            C / det, F / det, K / det, 0,
+        B / det, E / det, H / det, 0,
+        C / det, F / det, K / det, 0,
             0, 0, 0, 1]);
         var Y = new CSSMatrix([1, 0, 0, -m[3],
             0, 1, 0, -m[7],
@@ -3351,7 +3353,7 @@ function getTransformationMatrix(element: Node) {
     var w: number;
     var h: number;
     if ((element.nodeName + "").toLowerCase() === "svg") {
-        var cs = getComputedStyle(<Element>element, null);
+        var cs = getComputedStyle(<Element>element, undefined);
         w = parseFloat(cs.getPropertyValue("width")) || 0;
         h = parseFloat(cs.getPropertyValue("height")) || 0;
     } else {
@@ -3420,9 +3422,9 @@ export interface IDndCtx {
     getData(type: string): any;
     enabledOperations: DndEnabledOps;
     operation: DndOp;
-    overNode: IBobrilCacheNode;
+    overNode: IBobrilCacheNode | undefined;
     // way to overrride mouse cursor, leave null to emulate dnd cursor
-    cursor: string;
+    cursor: string | null;
     // dnd is wating for activation by moving atleast distanceToStart pixels
     started: boolean;
     beforeDrag: boolean;
@@ -3450,6 +3452,13 @@ export interface IDndCtx {
     ctrl: boolean;
     alt: boolean;
     meta: boolean;
+
+    // internal
+    pointerid: number;
+    data: any;
+    targetCtx: any;
+    dragView: any;
+    destroy(): void;
 }
 
 export interface IDndStartCtx extends IDndCtx {
@@ -3464,8 +3473,8 @@ export interface IDndOverCtx extends IDndCtx {
 
 var lastDndId = 0;
 var dnds: IDndCtx[] = [];
-var systemdnd: IDndCtx = null;
-var rootId: string = null;
+var systemdnd: IDndCtx | null = null;
+var rootId: string | null = null;
 var bodyCursorBackup: string;
 var userSelectBackup: string;
 var shimedStyle = { userSelect: '' };
@@ -3473,7 +3482,7 @@ shimStyle(shimedStyle);
 var shimedStyleKeys = Object.keys(shimedStyle);
 var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 
-var DndCtx = function (pointerId: number) {
+var DndCtx = function (this:IDndCtx, pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -3484,7 +3493,7 @@ var DndCtx = function (pointerId: number) {
     this.system = false;
     this.ended = false;
     this.cursor = null;
-    this.overNode = null;
+    this.overNode = undefined;
     this.targetCtx = null;
     this.dragView = null;
     this.startX = 0;
@@ -3544,7 +3553,7 @@ function currentCursor() {
 }
 
 var DndRootComp: IBobrilComponent = {
-    render(ctx: IBobrilCtx, me: IBobrilNode) {
+    render(_ctx: IBobrilCtx, me: IBobrilNode) {
         var res: IBobrilNode[] = [];
         for (var i = 0; i < dnds.length; i++) {
             var dnd = dnds[i];
@@ -3572,41 +3581,41 @@ function dndRootFactory(): IBobrilChildren {
 }
 
 var dndProto = DndCtx.prototype;
-dndProto.setOperation = function (operation: DndOp): void {
+dndProto.setOperation = function (this: IDndCtx, operation: DndOp): void {
     this.operation = operation;
 }
 
-dndProto.setDragNodeView = function (view: (dnd: IDndCtx) => IBobrilNode): void {
+dndProto.setDragNodeView = function (this: IDndCtx, view: (dnd: IDndCtx) => IBobrilNode): void {
     this.dragView = view;
 }
 
-dndProto.addData = function (type: string, data: any): boolean {
+dndProto.addData = function (this: IDndCtx, type: string, data: any): boolean {
     this.data[type] = data;
     return true;
 }
 
-dndProto.listData = function (): string[] {
+dndProto.listData = function (this: IDndCtx): string[] {
     return Object.keys(this.data);
 }
 
-dndProto.hasData = function (type: string): boolean {
+dndProto.hasData = function (this: IDndCtx, type: string): boolean {
     return this.data[type] !== undefined;
 }
 
-dndProto.getData = function (type: string): any {
+dndProto.getData = function (this: IDndCtx, type: string): any {
     return this.data[type];
 }
 
-dndProto.setEnabledOps = function (ops: DndEnabledOps): void {
+dndProto.setEnabledOps = function (this: IDndCtx, ops: DndEnabledOps): void {
     this.enabledOperations = ops;
 }
 
-dndProto.cancelDnd = function (): void {
-    dndmoved(null, this);
+dndProto.cancelDnd = function (this: IDndCtx): void {
+    dndmoved(undefined, this);
     this.destroy();
 }
 
-dndProto.destroy = function (): void {
+dndProto.destroy = function (this: IDndCtx): void {
     this.ended = true;
     if (this.started)
         broadcast("onDragEnd", this);
@@ -3631,7 +3640,7 @@ dndProto.destroy = function (): void {
 
 var pointer2Dnd = newHashObj();
 
-function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handlePointerDown(ev: IBobrilPointerEvent, _target: Node, node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (dnd) {
         dnd.cancelDnd();
@@ -3670,10 +3679,10 @@ function handlePointerDown(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
     return false;
 }
 
-function dndmoved(node: IBobrilCacheNode, dnd: IDndCtx) {
+function dndmoved(node: IBobrilCacheNode | undefined, dnd: IDndCtx) {
     dnd.overNode = node;
-    (<any>dnd).targetCtx = bubble(node, "onDragOver", dnd);
-    if ((<any>dnd).targetCtx == null) {
+    dnd.targetCtx = bubble(node, "onDragOver", dnd);
+    if (dnd.targetCtx == null) {
         dnd.operation = DndOp.None;
     }
     broadcast("onDrag", dnd);
@@ -3688,7 +3697,7 @@ function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent) {
     dnd.y = ev.y;
 }
 
-function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handlePointerMove(ev: IBobrilPointerEvent, _target: Node, node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (!dnd) return false;
     dnd.totalX += Math.abs(ev.x - dnd.lastX);
@@ -3708,7 +3717,7 @@ function handlePointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilC
     return true;
 }
 
-function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handlePointerUp(ev: IBobrilPointerEvent, _target: Node, node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (!dnd) return false;
     if (!dnd.beforeDrag) {
@@ -3727,7 +3736,7 @@ function handlePointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCac
     return false;
 }
 
-function handlePointerCancel(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handlePointerCancel(ev: IBobrilPointerEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (!dnd) return false;
     if (!dnd.beforeDrag) {
@@ -3755,27 +3764,27 @@ function updateFromNative(dnd: IDndCtx, ev: DragEvent) {
 
 var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
 
-function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
-    var dnd: IDndCtx = systemdnd;
+function handleDragStart(ev: DragEvent, _target: Node, node: IBobrilCacheNode): boolean {
+    var dnd: IDndCtx | null = systemdnd;
     if (dnd != null) {
         (<any>dnd).destroy();
     }
     var activePointerIds = Object.keys(pointer2Dnd);
     if (activePointerIds.length > 0) {
         dnd = pointer2Dnd[activePointerIds[0]];
-        dnd.system = true;
+        dnd!.system = true;
         systemdnd = dnd;
     } else {
         var startX = ev.clientX, startY = ev.clientY;
         dnd = new (<any>DndCtx)(-1);
-        dnd.system = true;
+        dnd!.system = true;
         systemdnd = dnd;
-        dnd.x = startX;
-        dnd.y = startY;
-        dnd.lastX = startX;
-        dnd.lastY = startY;
-        dnd.startX = startX;
-        dnd.startY = startY;
+        dnd!.x = startX;
+        dnd!.y = startY;
+        dnd!.lastX = startX;
+        dnd!.lastY = startY;
+        dnd!.startX = startX;
+        dnd!.startY = startY;
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
             var htmlNode = getDomNode(sourceCtx.me);
@@ -3783,12 +3792,12 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
                 (<any>dnd).destroy();
                 return false;
             }
-            dnd.started = true;
+            dnd!.started = true;
             var boundFn = (<Element>htmlNode).getBoundingClientRect;
             if (boundFn) {
                 var rect = boundFn.call(htmlNode);
-                dnd.deltaX = rect.left - startX;
-                dnd.deltaY = rect.top - startY;
+                dnd!.deltaX = rect.left - startX;
+                dnd!.deltaY = rect.top - startY;
             }
             lazyCreateRoot();
         } else {
@@ -3796,8 +3805,8 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
             return false;
         }
     }
-    dnd.beforeDrag = false;
-    var eff = effectAllowedTable[dnd.enabledOperations];
+    dnd!.beforeDrag = false;
+    var eff = effectAllowedTable[dnd!.enabledOperations];
     var dt = ev.dataTransfer;
     dt.effectAllowed = eff;
     if ((<any>dt).setDragImage) {
@@ -3822,7 +3831,7 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
             style.padding = paddingBackup;
         }, 0);
     }
-    var datas = (<any>dnd).data;
+    var datas = dnd!.data;
     var dataKeys = Object.keys(datas);
     for (var i = 0; i < dataKeys.length; i++) {
         try {
@@ -3837,7 +3846,7 @@ function handleDragStart(ev: DragEvent, target: Node, node: IBobrilCacheNode): b
                 if (window.console) console.log("Cannot set dnd data to " + dataKeys[i]);
         }
     }
-    updateFromNative(dnd, ev);
+    updateFromNative(dnd!, ev);
     return false;
 }
 
@@ -3845,27 +3854,28 @@ function setDropEffect(ev: DragEvent, op: DndOp) {
     ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][op];
 }
 
-function handleDragOver(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handleDragOver(ev: DragEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     var dnd = systemdnd;
     if (dnd == null) {
         dnd = new (<any>DndCtx)(-1);
-        dnd.system = true;
+        dnd!.system = true;
         systemdnd = dnd;
-        dnd.x = ev.clientX;
-        dnd.y = ev.clientY;
-        dnd.startX = dnd.x;
-        dnd.startY = dnd.y;
-        dnd.local = false;
+        dnd!.x = ev.clientX;
+        dnd!.y = ev.clientY;
+        dnd!.startX = dnd!.x;
+        dnd!.startY = dnd!.y;
+        dnd!.local = false;
         var dt = ev.dataTransfer;
         var eff = 0;
+        var effectAllowed: string | undefined = undefined;
         try {
-            var effectAllowed = dt.effectAllowed;
+            effectAllowed = dt.effectAllowed;
         }
         catch (e) { }
         for (; eff < 7; eff++) {
             if (effectAllowedTable[eff] === effectAllowed) break;
         }
-        dnd.enabledOperations = eff;
+        dnd!.enabledOperations = eff;
         var dttypes = dt.types;
         if (dttypes) {
             for (var i = 0; i < dttypes.length; i++) {
@@ -3878,16 +3888,16 @@ function handleDragOver(ev: DragEvent, target: Node, node: IBobrilCacheNode): bo
             if (dt.getData("Text") !== undefined) (<any>dnd).data["Text"] = null;
         }
     }
-    updateFromNative(dnd, ev);
-    setDropEffect(ev, dnd.operation);
-    if (dnd.operation != DndOp.None) {
+    updateFromNative(dnd!, ev);
+    setDropEffect(ev, dnd!.operation);
+    if (dnd!.operation != DndOp.None) {
         preventDefault(ev);
         return true;
     }
     return false;
 }
 
-function handleDrag(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handleDrag(ev: DragEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     var x = ev.clientX;
     var y = ev.clientY;
     var m = getMedia();
@@ -3900,21 +3910,21 @@ function handleDrag(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolea
     return false;
 }
 
-function handleDragEnd(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handleDragEnd(_ev: DragEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     if (systemdnd != null) {
-        (<any>systemdnd).destroy();
+        systemdnd.destroy();
     }
     return false;
 }
 
-function handleDrop(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolean {
+function handleDrop(ev: DragEvent, _target: Node, _node: IBobrilCacheNode): boolean {
     var dnd = systemdnd;
     if (dnd == null)
         return false;
     dnd.x = ev.clientX;
     dnd.y = ev.clientY;
     if (!dnd.local) {
-        var dataKeys = Object.keys((<any>dnd).data);
+        var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer;
         for (let i = 0; i < dataKeys.length; i++) {
             var k = dataKeys[i];
@@ -3924,14 +3934,14 @@ function handleDrop(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolea
             } else {
                 d = dt.getData(k);
             }
-            (<any>dnd).data[k] = d;
+            dnd.data[k] = d;
         }
     }
     updateFromNative(dnd, ev);
-    var t: IBobrilCtx = (<any>dnd).targetCtx;
+    var t: IBobrilCtx = dnd.targetCtx;
     if (t && bubble(t.me, "onDrop", dnd)) {
         setDropEffect(ev, dnd.operation);
-        (<any>dnd).destroy();
+        dnd.destroy();
         preventDefault(ev);
     } else {
         (<any>dnd).cancelDnd();
@@ -3939,24 +3949,24 @@ function handleDrop(ev: DragEvent, target: Node, node: IBobrilCacheNode): boolea
     return true;
 }
 
-function justPreventDefault(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+function justPreventDefault(ev: any, _target: Node, _node: IBobrilCacheNode): boolean {
     preventDefault(ev);
     return true;
 }
 
-function handleDndSelectStart(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+function handleDndSelectStart(ev: any, _target: Node, _node: IBobrilCacheNode): boolean {
     if (dnds.length === 0) return false;
     preventDefault(ev);
     return true;
 }
 
-export function anyActiveDnd(): IDndCtx {
+export function anyActiveDnd(): IDndCtx | undefined {
     for (let i = 0; i < dnds.length; i++) {
         let dnd = dnds[i];
         if (dnd.beforeDrag) continue;
         return dnd;
     }
-    return null;
+    return undefined;
 }
 
 addEvent("!PointerDown", 4, handlePointerDown);
@@ -4001,8 +4011,8 @@ export const enum RouteTransitionType {
 export interface IRouteTransition {
     inApp: boolean;
     type: RouteTransitionType;
-    name: string;
-    params: Params;
+    name: string | undefined;
+    params: Params | undefined;
     distance?: number;
 }
 
@@ -4110,13 +4120,9 @@ function compilePattern(pattern: string) {
     return compiledPatterns[pattern];
 }
 
-function extractParamNames(pattern: string): string[] {
-    return compilePattern(pattern).paramNames;
-}
-
 // Extracts the portions of the given URL path that match the given pattern.
 // Returns null if the pattern does not match the given path.
-function extractParams(pattern: string, path: string): Params {
+function extractParams(pattern: string, path: string): Params | null {
     var object = compilePattern(pattern);
     var match = decodeUrl(path).match(object.matcher);
 
@@ -4141,39 +4147,39 @@ function injectParams(pattern: string, params?: Params) {
 
     var splatIndex = 0;
 
-    return pattern.replace(paramInjectMatcher, (match: string, paramName: string) => {
+    return pattern.replace(paramInjectMatcher, (_match: string, paramName: string) => {
         paramName = paramName || "splat";
 
         // If param is optional don't check for existence
         if (paramName.slice(-1) !== "?") {
-            if (params[paramName] == null)
+            if (params![paramName] == null)
                 throw new Error("Missing \"" + paramName + "\" parameter for path \"" + pattern + "\"");
         } else {
             paramName = paramName.slice(0, -1);
-            if (params[paramName] == null) {
+            if (params![paramName] == null) {
                 return "";
             }
         }
 
         var segment: string;
-        if (paramName === "splat" && Array.isArray(params[paramName])) {
-            segment = params[paramName][splatIndex++];
+        if (paramName === "splat" && Array.isArray(params![paramName])) {
+            segment = params![paramName][splatIndex++];
 
             if (segment == null)
                 throw new Error("Missing splat # " + splatIndex + " for path \"" + pattern + "\"");
         } else {
-            segment = params[paramName];
+            segment = params![paramName];
         }
 
         return encodeUrlPath(segment);
     });
 }
 
-function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IRoute[] {
+function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IRoute[] | undefined {
     var l = rs.length;
-    var notFoundRoute: IRoute;
-    var defaultRoute: IRoute;
-    var params: Params;
+    var notFoundRoute: IRoute | undefined;
+    var defaultRoute: IRoute | undefined;
+    var params: Params | null;
     for (var i = 0; i < l; i++) {
         var r = rs[i];
         if (r.isNotFound) {
@@ -4198,26 +4204,26 @@ function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IR
         }
     }
     if (defaultRoute) {
-        params = extractParams(defaultRoute.url, path);
+        params = extractParams(defaultRoute.url || "", path);
         if (params) {
             outParams.p = params;
             return [defaultRoute];
         }
     }
     if (notFoundRoute) {
-        params = extractParams(notFoundRoute.url, path);
+        params = extractParams(notFoundRoute.url || "", path);
         if (params) {
             outParams.p = params;
             return [notFoundRoute];
         }
     }
-    return null;
+    return undefined;
 };
 
 let activeRoutes: IRoute[] = [];
 let futureRoutes: IRoute[];
 let activeParams: Params = newHashObj();
-let nodesArray: IBobrilCacheNode[] = [];
+let nodesArray: (IBobrilCacheNode | undefined)[] = [];
 let setterOfNodesArray: ((node: IBobrilCacheNode) => void)[] = [];
 const urlRegex = /.*(?:\:|\/).*/;
 
@@ -4229,13 +4235,13 @@ function isAbsolute(url: string): boolean {
     return url[0] === "/";
 }
 
-function noop(): IBobrilNode {
-    return null;
+function noop(): IBobrilNode | undefined {
+    return undefined;
 }
 
 function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode) => void {
     while (idx >= setterOfNodesArray.length) {
-        setterOfNodesArray.push(((a: IBobrilCacheNode[], i: number) =>
+        setterOfNodesArray.push(((a: (IBobrilCacheNode | undefined)[], i: number) =>
             ((n: IBobrilCacheNode) => {
                 if (n)
                     a[i] = n
@@ -4245,7 +4251,7 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode) => void {
 }
 
 var firstRouting = true;
-function rootNodeFactory(): IBobrilNode {
+function rootNodeFactory(): IBobrilNode | undefined {
     if (waitingForPopHashChange >= 0)
         return undefined;
     let browserPath = window.location.hash;
@@ -4255,12 +4261,12 @@ function rootNodeFactory(): IBobrilNode {
     var matches = findMatch(path, rootRoutes, out) || [];
     if (firstRouting) {
         firstRouting = false;
-        currentTransition = { inApp: true, type: RouteTransitionType.Pop, name: null, params: null };
+        currentTransition = { inApp: true, type: RouteTransitionType.Pop, name: undefined, params: undefined };
         transitionState = -1;
         programPath = browserPath;
     } else {
         if (!currentTransition && matches.length > 0 && browserPath != programPath) {
-            runTransition(createRedirectPush(matches[0].name, out.p));
+            runTransition(createRedirectPush(matches[0].name!, out.p));
         }
     }
     if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
@@ -4278,10 +4284,10 @@ function rootNodeFactory(): IBobrilNode {
     if (currentTransition == null) {
         activeRoutes = matches;
         while (nodesArray.length > activeRoutes.length) nodesArray.pop();
-        while (nodesArray.length < activeRoutes.length) nodesArray.push(null);
+        while (nodesArray.length < activeRoutes.length) nodesArray.push(undefined);
         activeParams = out.p;
     }
-    var fn: (otherdata?: any) => IBobrilNode = noop;
+    var fn: (otherdata?: any) => IBobrilNode | undefined = noop;
     for (var i = 0; i < activeRoutes.length; i++) {
         ((fninner: Function, r: IRoute, routeParams: Params, i: number) => {
             fn = (otherdata?: any) => {
@@ -4292,7 +4298,7 @@ function rootNodeFactory(): IBobrilNode {
                 var handler = r.handler;
                 var res: IBobrilNode;
                 if (isFunction(handler)) {
-                    res = (<(data: any) => IBobrilNode>handler)(data);
+                    res = handler(data);
                 } else {
                     res = { key: undefined, ref: undefined, data, component: handler };
                 }
@@ -4362,7 +4368,7 @@ export function routeNotFound(config: IRouteConfig): IRoute {
     return { name: config.name, data: config.data, handler: config.handler, keyBuilder: config.keyBuilder, isNotFound: true };
 }
 
-export function isActive(name: string, params?: Params): boolean {
+export function isActive(name: string | undefined, params?: Params): boolean {
     if (params) {
         for (var prop in params) {
             if (params.hasOwnProperty(prop)) {
@@ -4385,7 +4391,7 @@ export function urlOfRoute(name: string, params?: Params): string {
             if (rootRoutes == null) throw Error('Cannot use urlOfRoute before defining routes');
             if (r == null) throw Error('Route with name ' + name + ' if not defined in urlOfRoute');
         }
-        return "#" + injectParams(r.url, params);
+        return "#" + injectParams(r.url!, params);
     }
     return name;
 }
@@ -4438,26 +4444,26 @@ export function createBackTransition(distance?: number): IRouteTransition {
     return {
         inApp: myAppHistoryDeepness >= distance,
         type: RouteTransitionType.Pop,
-        name: null,
+        name: undefined,
         params: {},
         distance
     }
 }
 
-var currentTransition: IRouteTransition = null;
-var nextTransition: IRouteTransition = null;
+var currentTransition: IRouteTransition | null = null;
+var nextTransition: IRouteTransition | null = null;
 var transitionState: number = 0;
 
 function doAction(transition: IRouteTransition) {
     switch (transition.type) {
         case RouteTransitionType.Push:
-            push(urlOfRoute(transition.name, transition.params), transition.inApp);
+            push(urlOfRoute(transition.name!, transition.params), transition.inApp);
             break;
         case RouteTransitionType.Replace:
-            replace(urlOfRoute(transition.name, transition.params), transition.inApp);
+            replace(urlOfRoute(transition.name!, transition.params), transition.inApp);
             break;
         case RouteTransitionType.Pop:
-            pop(transition.distance);
+            pop(transition.distance!);
             break;
     }
     invalidate();
@@ -4492,21 +4498,21 @@ function nextIteration(): void {
         } else if (transitionState == activeRoutes.length) {
             if (nextTransition) {
                 if (currentTransition && currentTransition.type == RouteTransitionType.Push) {
-                    push(urlOfRoute(currentTransition.name, currentTransition.params), currentTransition.inApp);
+                    push(urlOfRoute(currentTransition.name!, currentTransition.params), currentTransition.inApp);
                 }
                 currentTransition = nextTransition;
                 nextTransition = null;
             }
             transitionState = -1;
-            if (!currentTransition.inApp || currentTransition.type === RouteTransitionType.Pop) {
-                let tr = currentTransition; if (!currentTransition.inApp) currentTransition = null;
-                doAction(tr);
+            if (!currentTransition!.inApp || currentTransition!.type === RouteTransitionType.Pop) {
+                let tr = currentTransition; if (!currentTransition!.inApp) currentTransition = null;
+                doAction(tr!);
                 return;
             }
         } else if (transitionState === -1) {
             var out: OutFindMatch = { p: {} };
-            if (currentTransition.inApp) {
-                futureRoutes = findMatch(urlOfRoute(currentTransition.name, currentTransition.params).substring(1), rootRoutes, out) || [];
+            if (currentTransition!.inApp) {
+                futureRoutes = findMatch(urlOfRoute(currentTransition!.name!, currentTransition!.params).substring(1), rootRoutes, out) || [];
             } else {
                 futureRoutes = [];
             }
@@ -4516,9 +4522,9 @@ function nextIteration(): void {
                 transitionState = activeRoutes.length;
                 continue;
             }
-            if (currentTransition.type !== RouteTransitionType.Pop) {
+            if (currentTransition!.type !== RouteTransitionType.Pop) {
                 let tr = currentTransition; currentTransition = null;
-                doAction(tr);
+                doAction(tr!);
             } else {
                 invalidate();
             }
@@ -4532,9 +4538,9 @@ function nextIteration(): void {
             let rr = futureRoutes[futureRoutes.length + 1 + transitionState];
             transitionState--;
             let handler = rr.handler;
-            let comp: IBobrilComponent = null;
+            let comp: IBobrilComponent | undefined = undefined;
             if (isFunction(handler)) {
-                let node = (<(data: any) => IBobrilNode>handler)({});
+                let node = handler({});
                 if (!node) continue;
                 comp = node.component;
             } else {
@@ -4546,13 +4552,13 @@ function nextIteration(): void {
             let res = fn.call(comp, currentTransition);
             if (res === true)
                 continue;
-            (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
+            Promise.resolve(res).then((resp: boolean | IRouteTransition) => {
                 if (resp === true) { }
                 else if (resp === false) {
                     currentTransition = null; nextTransition = null;
                     return;
                 } else {
-                    nextTransition = <IRouteTransition>resp;
+                    nextTransition = resp;
                 }
                 nextIteration();
             }).catch((err: any) => { if (typeof console !== "undefined" && console.log) console.log(err); });
@@ -4576,14 +4582,14 @@ export function runTransition(transition: IRouteTransition): void {
     nextIteration();
 }
 
-interface IBobrilAnchorCtx { l: number; } // shortened lastTransitionRunCount
+interface IBobrilAnchorCtx extends IBobrilCtx { l: number; } // shortened lastTransitionRunCount
 
 export function anchor(children: IBobrilChildren, name?: string, params?: Params): IBobrilNode {
     return {
         children, component: {
             id: "anchor",
-            postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, element: HTMLElement) {
-                let routeName: string;
+            postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
+                let routeName: string | undefined;
                 if (name) {
                     routeName = name;
                 } else {
@@ -4627,8 +4633,8 @@ export type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
 interface ISprite {
     styleid: IBobrilStyleDef;
     url: string;
-    width: number;
-    height: number;
+    width: number | undefined;
+    height: number | undefined;
     left: number;
     top: number;
 }
@@ -4640,8 +4646,8 @@ interface IDynamicSprite extends ISprite {
 }
 
 interface IInternalStyle {
-    name: string;
-    realname: string;
+    name: string | null;
+    realname: string | null;
     parent?: IBobrilStyleDef | IBobrilStyleDef[];
     style: any;
     inlStyle?: any;
@@ -4652,10 +4658,10 @@ var allStyles: { [id: string]: IInternalStyle } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
 var dynamicSprites: IDynamicSprite[] = [];
-var imageCache: { [url: string]: HTMLImageElement } = newHashObj();
+var imageCache: { [url: string]: HTMLImageElement | null } = newHashObj();
 var injectedCss = "";
 var rebuildStyles = false;
-var htmlStyle: HTMLStyleElement = null;
+var htmlStyle: HTMLStyleElement | null = null;
 var globalCounter: number = 0;
 const isIE9 = ieVersion() === 9;
 
@@ -4663,14 +4669,14 @@ var chainedBeforeFrame = setBeforeFrame(beforeFrame);
 
 const cssSubRuleDelimiter = /\:|\ |\>/;
 
-function buildCssSubRule(parent: string): string {
+function buildCssSubRule(parent: string): string | null {
     let matchSplit = cssSubRuleDelimiter.exec(parent);
     if (!matchSplit) return allStyles[parent].name;
     let posSplit = matchSplit.index;
     return allStyles[parent.substring(0, posSplit)].name + parent.substring(posSplit);
 }
 
-function buildCssRule(parent: string | string[], name: string): string {
+function buildCssRule(parent: string | string[] | undefined, name: string): string {
     let result = "";
     if (parent) {
         if (isArray(parent)) {
@@ -4821,7 +4827,7 @@ function beforeFrame() {
 export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
     let className = node.className;
     let inlineStyle = node.style;
-    let stack = <(IBobrilStyles | number)[]>null;
+    let stack: (IBobrilStyles | number)[] | null = null;
     let i = 0;
     let ca = styles;
     while (true) {
@@ -4836,7 +4842,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             // skip
         } else if (isString(s)) {
             var sd = allStyles[s];
-            if (className == null) className = sd.realname; else className = className + " " + sd.realname;
+            if (className == null) className = sd.realname!; else className = className + " " + sd.realname;
             var inls = sd.inlStyle;
             if (inls) {
                 if (inlineStyle == null) inlineStyle = {};
@@ -4853,7 +4859,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             if (inlineStyle == null) inlineStyle = {};
             for (let key in s) {
                 if (s.hasOwnProperty(key)) {
-                    let val = s[key];
+                    let val = (<any>s)[key];
                     if (isFunction(val)) val = val();
                     inlineStyle[key] = val;
                 }
@@ -4888,10 +4894,10 @@ function inlineStyleToCssDeclaration(style: any): string {
 // PureFuncs: styleDef, styleDefEx, sprite, spriteb, spritebc, asset
 
 export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
-    return styleDefEx(null, style, pseudo, nameHint);
+    return styleDefEx(undefined, style, pseudo, nameHint);
 }
 
-export function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+export function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined, style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
     if (nameHint && nameHint !== "b-") {
         if (allNameHints[nameHint]) {
             var counter = 1;
@@ -4926,7 +4932,7 @@ function updateSprite(spDef: ISprite): void {
 }
 
 function emptyStyleDef(url: string): IBobrilStyleDef {
-    return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
+    return styleDef({ width: 0, height: 0 }, undefined, url.replace(/[^a-z0-9_-]/gi, '_'));
 }
 
 const rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
@@ -4990,10 +4996,10 @@ export function sprite(url: string, color?: string | (() => string), width?: num
     let isVarColor = false;
     if (isFunction(color)) {
         isVarColor = true;
-        colorId = color[funcIdName];
+        colorId = (<any>color)[funcIdName];
         if (colorId == null) {
             colorId = "" + (lastFuncId++);
-            color[funcIdName] = colorId;
+            (<any>color)[funcIdName] = colorId;
         }
     }
     var key = url + ":" + colorId + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
@@ -5036,7 +5042,7 @@ export function sprite(url: string, color?: string | (() => string), width?: num
     return styleid;
 }
 
-var bundlePath = window['bobrilBPath'] || 'bundle.png';
+var bundlePath = (<any>window)['bobrilBPath'] || 'bundle.png';
 
 export function setBundlePngPath(path: string) {
     bundlePath = path;
@@ -5146,7 +5152,7 @@ export function createVirtualComponent<TData>(component: IBobrilComponent): (dat
 export function createOverridingComponent<TData>(
     original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent
 ): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
-    const originalComponent = original().component;
+    const originalComponent = original().component!;
     const overriding = overrideComponents(originalComponent, after);
     return createVirtualComponent<TData>(overriding);
 }
@@ -5159,13 +5165,13 @@ export function createComponent<TData extends Object>(component: IBobrilComponen
             return originalRender.call(component, ctx, me, oldMe);
         }
     } else {
-        component.render = (ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
+        component.render = (_ctx: any, me: IBobrilNode) => { me.tag = 'div'; };
     }
     return createVirtualComponent<TData>(component);
 }
 
 export function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
-    const originalComponent = original().component;
+    const originalComponent = original().component!;
     const merged = mergeComponents(originalComponent, after);
     return createVirtualComponent<TData>(merged);
 }
@@ -5265,7 +5271,7 @@ export function createElement(name: any, props: any): IBobrilNode {
         if (props == null) {
             return res;
         }
-        var attrs = {};
+        var attrs: IBobrilAttributes = {};
         var someattrs = false;
         for (var n in props) {
             if (!props.hasOwnProperty(n)) continue;
@@ -5274,7 +5280,7 @@ export function createElement(name: any, props: any): IBobrilNode {
                 continue;
             }
             if (n === "key" || n === "ref" || n === "className" || n === "component" || n === "data") {
-                res[n] = props[n];
+                (<any>res)[n] = props[n];
                 continue;
             }
             someattrs = true;

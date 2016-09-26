@@ -1,10 +1,10 @@
-export declare type IBobrilChild = boolean | number | string | IBobrilNode;
-export declare type IBobrilChildren = IBobrilChild | IBobrilChildArray;
+export declare type IBobrilChild = boolean | number | string | IBobrilNode | null | undefined;
+export declare type IBobrilChildren = IBobrilChild | IBobrilChildArray | null | undefined;
 export interface IBobrilChildArray extends Array<IBobrilChildren> {
 }
-export declare type IBobrilCacheChildren = string | IBobrilCacheNode[];
+export declare type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
 export declare type IBobrilShimStyleMapping = {
-    [name: string]: (style: any, value: any, oldName: string) => void;
+    [name: string]: null | ((style: any, value: any, oldName: string) => void);
 };
 export interface IDisposable {
     dispose(): void;
@@ -13,9 +13,9 @@ export declare type IDisposeFunction = (ctx?: any) => void;
 export declare type IDisposableLike = IDisposable | IDisposeFunction;
 export interface IBobrilRoot {
     f: () => IBobrilChildren;
-    e: HTMLElement;
+    e: HTMLElement | undefined;
     c: IBobrilCacheNode[];
-    p: IBobrilCacheNode;
+    p: IBobrilCacheNode | undefined;
 }
 export declare type IBobrilRoots = {
     [id: string]: IBobrilRoot;
@@ -96,26 +96,26 @@ export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
 }
 export declare type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;
 export interface IBobrilCacheNode {
-    tag: string;
-    key: string;
-    className: string;
+    tag: string | undefined;
+    key: string | undefined;
+    className: string | undefined;
     style: any;
-    attrs: IBobrilAttributes;
+    attrs: IBobrilAttributes | undefined;
     children: IBobrilCacheChildren;
     ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
     cfg: any;
     component: IBobrilComponent;
     data: any;
-    element: Node | Node[];
-    parent: IBobrilCacheNode;
-    ctx: IBobrilCtx;
+    element: Node | Node[] | undefined;
+    parent: IBobrilCacheNode | undefined;
+    ctx: IBobrilCtx | undefined;
 }
 export interface IBobrilCtx {
     data?: any;
-    me?: IBobrilCacheNode;
+    me: IBobrilCacheNode;
     cfg?: any;
     refs?: {
-        [name: string]: IBobrilCacheNode;
+        [name: string]: IBobrilCacheNode | null;
     };
     disposables?: IDisposableLike[];
 }
@@ -127,10 +127,12 @@ export interface ISelectionChangeEvent {
     endPosition: number;
 }
 export declare const isArray: (arg: any) => arg is any[];
-export declare function isNumber(val: any): val is Number;
-export declare function isString(val: any): val is String;
+export declare function isNumber(val: any): val is number;
+export declare function isString(val: any): val is string;
 export declare function isFunction(val: any): val is Function;
-export declare function isObject(val: any): val is Object;
+export declare function isObject(val: any): val is {
+    [name: string]: any;
+};
 export declare let assign: {
     <T, U>(target: T, source: U): T & U;
     <T, U, V>(target: T, source1: U, source2: V): T & U & V;
@@ -142,30 +144,30 @@ export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNo
 export declare function ieVersion(): any;
 export declare function registerFocusRoot(ctx: IBobrilCtx): void;
 export declare function unregisterFocusRoot(ctx: IBobrilCtx): void;
-export declare function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode;
+export declare function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefined, createInto: Element, createBefore: Node | null): IBobrilCacheNode;
 export declare function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike): void;
-export declare function vdomPath(n: Node): IBobrilCacheNode[];
-export declare function deref(n: Node): IBobrilCacheNode;
-export declare function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node, deepness: number): IBobrilCacheNode;
-export declare function getDomNode(c: IBobrilCacheNode): Node;
+export declare function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[];
+export declare function deref(n: Node): IBobrilCacheNode | undefined;
+export declare function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number): IBobrilCacheNode;
+export declare function getDomNode(c: IBobrilCacheNode): Node | null;
 export declare function callPostCallbacks(): void;
-export declare function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode, createBefore: Node, deepness: number): IBobrilCacheNode[];
+export declare function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode | undefined, createBefore: Node | null, deepness: number): IBobrilCacheNode[];
 export declare const now: () => number;
-export declare function addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void;
-export declare function emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean;
+export declare function addEvent(name: string, priority: number, callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean): void;
+export declare function emitEvent(name: string, ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined): boolean;
 export declare function setBeforeFrame(callback: () => void): () => void;
-export declare function setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void;
+export declare function setAfterFrame(callback: (root: IBobrilCacheChildren | null) => void): (root: IBobrilCacheChildren | null) => void;
 export declare function syncUpdate(): void;
 export declare function ignoreShouldChange(): void;
 export declare function setInvalidate(inv: (ctx?: Object, deepness?: number) => void): (ctx?: Object, deepness?: number) => void;
-export declare var invalidate: (ctx?: Object, deepness?: number) => void;
+export declare var invalidate: (ctx?: Object | undefined, deepness?: number | undefined) => void;
 export declare function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string;
 export declare function removeRoot(id: string): void;
 export declare function getRoots(): IBobrilRoots;
 export declare function init(factory: () => any, element?: HTMLElement): void;
 export declare function setBeforeInit(callback: (cb: () => void) => void): void;
-export declare function bubble(node: IBobrilCacheNode, name: string, param: any): IBobrilCtx;
-export declare function broadcast(name: string, param: any): IBobrilCtx;
+export declare function bubble(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined;
+export declare function broadcast(name: string, param: any): IBobrilCtx | undefined;
 export declare function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
 export declare function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
 export declare function preventDefault(event: Event): void;
@@ -234,11 +236,11 @@ export declare function isMouseOwnerEvent(): boolean;
 export declare function registerMouseOwner(ctx: any): void;
 export declare function releaseMouseOwner(): void;
 export declare function revalidateMouseIn(): void;
-export declare function nodeOnPoint(x: number, y: number): IBobrilCacheNode;
+export declare function nodeOnPoint(x: number, y: number): IBobrilCacheNode | undefined;
 export declare const pointersDownCount: () => number;
 export declare const firstPointerDownId: () => number;
 export declare const ignoreClick: (x: number, y: number) => void;
-export declare function focused(): IBobrilCacheNode;
+export declare function focused(): IBobrilCacheNode | undefined;
 export declare function focus(node: IBobrilCacheNode): boolean;
 export declare function addOnScroll(callback: (info?: IBobrilScroll) => void): void;
 export declare function removeOnScroll(callback: (info?: IBobrilScroll) => void): void;
@@ -269,8 +271,8 @@ export interface IDndCtx {
     getData(type: string): any;
     enabledOperations: DndEnabledOps;
     operation: DndOp;
-    overNode: IBobrilCacheNode;
-    cursor: string;
+    overNode: IBobrilCacheNode | undefined;
+    cursor: string | null;
     started: boolean;
     beforeDrag: boolean;
     system: boolean;
@@ -291,6 +293,11 @@ export interface IDndCtx {
     ctrl: boolean;
     alt: boolean;
     meta: boolean;
+    pointerid: number;
+    data: any;
+    targetCtx: any;
+    dragView: any;
+    destroy(): void;
 }
 export interface IDndStartCtx extends IDndCtx {
     addData(type: string, data: any): boolean;
@@ -300,7 +307,7 @@ export interface IDndStartCtx extends IDndCtx {
 export interface IDndOverCtx extends IDndCtx {
     setOperation(operation: DndOp): void;
 }
-export declare function anyActiveDnd(): IDndCtx;
+export declare function anyActiveDnd(): IDndCtx | undefined;
 export declare const getDnds: () => IDndCtx[];
 export interface Params {
     [name: string]: string;
@@ -323,8 +330,8 @@ export declare const enum RouteTransitionType {
 export interface IRouteTransition {
     inApp: boolean;
     type: RouteTransitionType;
-    name: string;
-    params: Params;
+    name: string | undefined;
+    params: Params | undefined;
     distance?: number;
 }
 export declare type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
@@ -340,7 +347,7 @@ export declare function routes(rootroutes: IRoute | IRoute[]): void;
 export declare function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRoute;
 export declare function routeDefault(config: IRouteConfig): IRoute;
 export declare function routeNotFound(config: IRouteConfig): IRoute;
-export declare function isActive(name: string, params?: Params): boolean;
+export declare function isActive(name: string | undefined, params?: Params): boolean;
 export declare function urlOfRoute(name: string, params?: Params): string;
 export declare function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode;
 export declare function createRedirectPush(name: string, params?: Params): IRouteTransition;
@@ -359,7 +366,7 @@ export declare function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IB
 export declare function styleDef(style: any, pseudo?: {
     [name: string]: any;
 }, nameHint?: string): IBobrilStyleDef;
-export declare function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], style: any, pseudo?: {
+export declare function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined, style: any, pseudo?: {
     [name: string]: any;
 }, nameHint?: string): IBobrilStyleDef;
 export declare function selectorStyleDef(selector: string, style: any, pseudo?: {

@@ -1,6 +1,19 @@
 CHANGELOG
 ===
 
+4.46.0
+--
+
+New features
+-
+
+Converted to be completely TS 2.0 safe with all safety features enabled.
+
+Fixes
+-
+
+Allow to call b.select without onSelectionChange defined
+
 4.45.0
 --
 
