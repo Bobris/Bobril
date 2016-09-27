@@ -1,11 +1,11 @@
 {
   "name": "bobril",
-  "version": "4.46.0",
+  "version": "4.46.1",
   "description": "Component Oriented MVC Framework with virtual DOM and CSS",
   "main": "index.js",
+  "types": "index.d.ts",
   "typescript": {
-    "main": "index.ts",
-    "definition": "index.d.ts"
+    "main": "index.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

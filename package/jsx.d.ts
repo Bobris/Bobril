@@ -1,9 +1,9 @@
 declare namespace JSX {
-type IBobrilChild = boolean | string | IBobrilNode;
-type IBobrilChildren = IBobrilChild | IBobrilChildArray;
+type IBobrilChild = boolean | string | IBobrilNode | null | undefined;
+type IBobrilChildren = IBobrilChild | IBobrilChildArray | null | undefined;
 interface IBobrilChildArray extends Array<IBobrilChildren> {
 }
-type IBobrilCacheChildren = string | IBobrilCacheNode[];
+type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
 interface IBobrilAttributes {
     id?: string;
     href?: string;

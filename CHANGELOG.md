@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.46.1
+--
+
+Fixes
+-
+
+Provide types definition in package.json
+
 4.46.0
 --
 
