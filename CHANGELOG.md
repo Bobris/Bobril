@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.47.0
+--
+
+New features
+-
+
+Exported new type `IComponentFactory<TData>` which is returned by `createComponent`.
+
 4.46.1
 --
 

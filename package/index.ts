@@ -5139,7 +5139,11 @@ export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilN
     return style({ tag: 'div', children }, styles);
 }
 
-export function createVirtualComponent<TData>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+export interface IComponentFactory<TData extends Object> {
+    (data?: TData, children?: IBobrilChildren): IBobrilNode;
+}
+
+export function createVirtualComponent<TData>(component: IBobrilComponent): IComponentFactory<TData> {
     return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
         if (children !== undefined) {
             if (data == null) data = <any>{};
@@ -5151,13 +5155,13 @@ export function createVirtualComponent<TData>(component: IBobrilComponent): (dat
 
 export function createOverridingComponent<TData>(
     original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent
-): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+): IComponentFactory<TData> {
     const originalComponent = original().component!;
     const overriding = overrideComponents(originalComponent, after);
     return createVirtualComponent<TData>(overriding);
 }
 
-export function createComponent<TData extends Object>(component: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+export function createComponent<TData extends Object>(component: IBobrilComponent): IComponentFactory<TData> {
     const originalRender = component.render;
     if (originalRender) {
         component.render = function (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
@@ -5170,7 +5174,7 @@ export function createComponent<TData extends Object>(component: IBobrilComponen
     return createVirtualComponent<TData>(component);
 }
 
-export function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): (data?: TData, children?: IBobrilChildren) => IBobrilNode {
+export function createDerivedComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): IComponentFactory<TData> {
     const originalComponent = original().component!;
     const merged = mergeComponents(originalComponent, after);
     return createVirtualComponent<TData>(merged);
