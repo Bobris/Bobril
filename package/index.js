@@ -429,6 +429,7 @@ function createNode(n, parentNode, createInto, createBefore) {
     }
     var tag = c.tag;
     var children = c.children;
+    var inSvgForeignObject = false;
     if (isNumber(children))
         children = "" + children;
     if (tag === undefined) {
@@ -503,7 +504,8 @@ function createNode(n, parentNode, createInto, createBefore) {
     }
     else if (inSvg || tag === "svg") {
         el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-        inSvg = true;
+        inSvgForeignObject = tag === "foreignObject";
+        inSvg = !inSvgForeignObject;
     }
     else if (!el) {
         el = createEl(tag);
@@ -518,6 +520,8 @@ function createNode(n, parentNode, createInto, createBefore) {
     }
     if (inNotFocusable && focusRootTop === c)
         inNotFocusable = false;
+    if (inSvgForeignObject)
+        inSvg = true;
     if (c.attrs || inNotFocusable)
         c.attrs = updateElement(c, el, c.attrs, {}, inNotFocusable);
     if (c.style)
@@ -765,6 +769,8 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                         if (c.tag === "svg") {
                             inSvg = true;
                         }
+                        else if (inSvg && c.tag === "foreignObject")
+                            inSvg = false;
                         if (inNotFocusable && focusRootTop === c)
                             inNotFocusable = false;
                         selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
@@ -820,9 +826,6 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 }
             }
             else {
-                if (tag === "svg") {
-                    inSvg = true;
-                }
                 if (inNotFocusable && focusRootTop === c)
                     inNotFocusable = false;
                 if (deepness <= 0) {
@@ -839,8 +842,13 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             return c;
         }
         else {
+            var inSvgForeignObject = false;
             if (tag === "svg") {
                 inSvg = true;
+            }
+            else if (inSvg && tag === "foreignObject") {
+                inSvgForeignObject = true;
+                inSvg = false;
             }
             if (inNotFocusable && focusRootTop === c)
                 inNotFocusable = false;
@@ -866,6 +874,8 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 }
             }
             c.children = cachedChildren;
+            if (inSvgForeignObject)
+                inSvg = true;
             finishUpdateNode(n, c, component);
             if (c.attrs || n.attrs || inNotFocusable)
                 c.attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
@@ -1377,6 +1387,8 @@ function selectedUpdate(cache, element, createBefore) {
                 inNotFocusable = false;
             if (node.tag === "svg")
                 inSvg = true;
+            else if (inSvg && node.tag === "foreignObject")
+                inSvg = false;
             selectedUpdate(node.children, node.element || element, findNextNode(cache, i, len, createBefore));
             pushUpdateEverytimeCallback(node);
             inSvg = backupInSvg;

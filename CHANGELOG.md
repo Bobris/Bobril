@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.48.0
+--
+
+New features
+--
+
+Support for `foreignObject` in svg.
+
 4.47.0
 --
 
