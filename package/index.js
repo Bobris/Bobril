@@ -2880,8 +2880,8 @@ exports.ignoreClick = function (x, y) {
 var currentActiveElement = undefined;
 var currentFocusedNode = undefined;
 var nodestack = [];
-function emitOnFocusChange() {
-    var newActiveElement = document.hasFocus() ? document.activeElement : undefined;
+function emitOnFocusChange(inFocus) {
+    var newActiveElement = (document.hasFocus() || inFocus) ? document.activeElement : undefined;
     if (newActiveElement !== currentActiveElement) {
         currentActiveElement = newActiveElement;
         var newstack = vdomPath(currentActiveElement);
@@ -2931,11 +2931,13 @@ function emitOnFocusChange() {
         nodestack = newstack;
         currentFocusedNode = nodestack.length == 0 ? undefined : null2undefined(nodestack[nodestack.length - 1]);
     }
+    return false;
 }
 function emitOnFocusChangeDelayed() {
-    setTimeout(emitOnFocusChange, 10);
+    setTimeout(function () { return emitOnFocusChange(false); }, 10);
+    return false;
 }
-addEvent("^focus", 50, emitOnFocusChange);
+addEvent("^focus", 50, function () { return emitOnFocusChange(true); });
 addEvent("^blur", 50, emitOnFocusChangeDelayed);
 function focused() {
     return currentFocusedNode;
@@ -2959,7 +2961,7 @@ function focus(node) {
         if (ti !== undefined || node.tag && focusableTag.test(node.tag)) {
             var el = node.element;
             el.focus();
-            emitOnFocusChange();
+            emitOnFocusChange(false);
             return true;
         }
     }

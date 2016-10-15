@@ -205,7 +205,7 @@ function createEl(name: string): HTMLElement {
 }
 
 function null2undefined<T>(value: T | null | undefined): T | undefined {
-    return value === null ? undefined: value;
+    return value === null ? undefined : value;
 }
 
 var hasTextContent = "textContent" in createTextNode("");
@@ -693,7 +693,7 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
     }
     if (inNotFocusable && focusRootTop === c)
         inNotFocusable = false;
-    if (inSvgForeignObject) inSvg = true; 
+    if (inSvgForeignObject) inSvg = true;
     if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
     if (c.style) updateStyle(<HTMLElement>el, c.style, undefined);
     var className = c.className;
@@ -999,10 +999,10 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             var inSvgForeignObject = false;
             if (tag === "svg") {
                 inSvg = true;
-            } else if (inSvg && tag==="foreignObject") {
+            } else if (inSvg && tag === "foreignObject") {
                 inSvgForeignObject = true;
                 inSvg = false;
-            } 
+            }
             if (inNotFocusable && focusRootTop === c)
                 inNotFocusable = false;
             var el = <Element>c.element;
@@ -1798,7 +1798,7 @@ function merge(f1: Function, f2: Function): Function {
 var emptyObject = {};
 
 function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent {
-    let res: IBobrilComponent = Object.create(c1)!;
+    let res: IBobrilComponent = Object.create(c1) !;
     res.super = c1;
     for (var i in c2) {
         if (!(i in <any>emptyObject)) {
@@ -1817,7 +1817,7 @@ function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilCom
 }
 
 function overrideComponents(originalComponent: IBobrilComponent, overridingComponent: IBobrilComponent) {
-    let res: IBobrilComponent = Object.create(originalComponent)!;
+    let res: IBobrilComponent = Object.create(originalComponent) !;
     res.super = originalComponent;
     for (let i in overridingComponent) {
         if (!(i in <any>emptyObject)) {
@@ -2066,7 +2066,7 @@ if (!(<any>window).Promise) {
             }
         }
 
-        function handle(this:any, deferred: Array<(v: any) => any>) {
+        function handle(this: any, deferred: Array<(v: any) => any>) {
             if (this.s/*tate*/ === null) {
                 this.d/*eferreds*/.push(deferred);
                 return;
@@ -2142,7 +2142,7 @@ if (!(<any>window).Promise) {
             } catch (e) { reject.call(this, e); }
         }
 
-        function Promise(this:any, fn: (onFulfilled: (value: any) => void, onRejected: (reason: any) => void) => void) {
+        function Promise(this: any, fn: (onFulfilled: (value: any) => void, onRejected: (reason: any) => void) => void) {
             this.s/*tate*/ = null;
             this.v/*alue*/ = null;
             this.d/*eferreds*/ = <Array<Array<() => void>>>[];
@@ -3100,8 +3100,8 @@ let currentActiveElement: Element | undefined = undefined;
 let currentFocusedNode: IBobrilCacheNode | undefined = undefined;
 let nodestack: (IBobrilCacheNode | null)[] = [];
 
-function emitOnFocusChange(): void {
-    var newActiveElement = document.hasFocus() ? document.activeElement : undefined;
+function emitOnFocusChange(inFocus: boolean): boolean {
+    var newActiveElement = (document.hasFocus() || inFocus) ? document.activeElement : undefined;
     if (newActiveElement !== currentActiveElement) {
         currentActiveElement = newActiveElement;
         var newstack = vdomPath(currentActiveElement);
@@ -3151,14 +3151,16 @@ function emitOnFocusChange(): void {
         nodestack = newstack;
         currentFocusedNode = nodestack.length == 0 ? undefined : null2undefined(nodestack[nodestack.length - 1]);
     }
+    return false;
 }
 
-function emitOnFocusChangeDelayed(): void {
-    setTimeout(emitOnFocusChange, 10);
+function emitOnFocusChangeDelayed(): boolean {
+    setTimeout(() => emitOnFocusChange(false), 10);
+    return false;
 }
 
-addEvent("^focus", 50, <any>emitOnFocusChange);
-addEvent("^blur", 50, <any>emitOnFocusChangeDelayed);
+addEvent("^focus", 50, () => emitOnFocusChange(true));
+addEvent("^blur", 50, emitOnFocusChangeDelayed);
 
 export function focused(): IBobrilCacheNode | undefined {
     return currentFocusedNode;
@@ -3180,7 +3182,7 @@ export function focus(node: IBobrilCacheNode): boolean {
         if (ti !== undefined || node.tag && focusableTag.test(node.tag)) {
             var el = node.element;
             (<HTMLElement>el).focus();
-            emitOnFocusChange();
+            emitOnFocusChange(false);
             return true;
         }
     }
@@ -3264,7 +3266,7 @@ class CSSMatrix {
         this.data = data;
     }
     static fromString(s: string): CSSMatrix {
-        var c = s.match(/matrix3?d?\(([^\)]+)\)/i)![1].split(",");
+        var c = s.match(/matrix3?d?\(([^\)]+)\)/i) ![1].split(",");
         if (c.length === 6) {
             c = [c[0], c[1], "0", "0", c[2], c[3], "0", "0", "0", "0", "1", "0", c[4], c[5], "0", "1"];
         }
@@ -3488,7 +3490,7 @@ shimStyle(shimedStyle);
 var shimedStyleKeys = Object.keys(shimedStyle);
 var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 
-var DndCtx = function (this:IDndCtx, pointerId: number) {
+var DndCtx = function (this: IDndCtx, pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;

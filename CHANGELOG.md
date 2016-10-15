@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.48.1
+--
+
+Fixes
+-
+
+In Chrome refocusing same element from different application didn't triggered onFocus event.
+
 4.48.0
 --
 
