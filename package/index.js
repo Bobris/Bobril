@@ -2259,7 +2259,7 @@ function emitOnChange(ev, target, node) {
                 c.onChange(ctx, vs);
         }
     }
-    else if (hasOnChange && isCheckboxlike(target)) {
+    else if (hasPropOrOnChange && isCheckboxlike(target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(function () {
@@ -2302,7 +2302,7 @@ function emitOnChange(ev, target, node) {
         }
     }
     else {
-        if (hasOnChange) {
+        if (hasPropOrOnChange) {
             var v = target.value;
             if (ctx[bvalue] !== v) {
                 ctx[bvalue] = v;

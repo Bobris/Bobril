@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.48.2
+--
+
+Fixes
+--
+
+`b.prop` style value does not work for checkbox.
+
 4.48.1
 --
 

@@ -2409,7 +2409,7 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
             if (hasProp) hasProp(vs);
             if (hasOnChange) c.onChange!(ctx, vs);
         }
-    } else if (hasOnChange && isCheckboxlike(<HTMLInputElement>target)) {
+    } else if (hasPropOrOnChange && isCheckboxlike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(() => {
@@ -2444,7 +2444,7 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
             }
         }
     } else {
-        if (hasOnChange) {
+        if (hasPropOrOnChange) {
             var v = (<HTMLInputElement>target).value;
             if ((<any>ctx)[bvalue] !== v) {
                 (<any>ctx)[bvalue] = v;
