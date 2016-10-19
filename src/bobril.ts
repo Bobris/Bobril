@@ -1115,6 +1115,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     var ctxDeepness = "$deepness";
     var fullRecreateRequested = true;
     var scheduled = false;
+    let initializing = true;
     var uptime = 0;
     var frameCounter = 0;
     var lastFrameDuration = 0;
@@ -1287,7 +1288,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         } else {
             fullRecreateRequested = true;
         }
-        if (scheduled)
+        if (scheduled || initializing)
             return;
         scheduled = true;
         requestAnimationFrame(update);
@@ -1295,17 +1296,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     var lastRootId = 0;
 
-    function forceInvalidate() {
-        if (!scheduled)
-            fullRecreateRequested = false;
-        invalidate();
-    }
-
     function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string {
         lastRootId++;
         var rootId = "" + lastRootId;
         roots[rootId] = { f: factory, e: element, c: [], p: parent };
-        forceInvalidate();
+        invalidate();
         return rootId;
     }
 
@@ -1322,13 +1317,19 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return roots;
     }
 
-    var beforeInit: () => void = forceInvalidate;
+    function finishInitialize() {
+        initializing = false;
+        invalidate();
+    }
+
+    var beforeInit: () => void = finishInitialize;
 
     function init(factory: () => any, element?: HTMLElement) {
         removeRoot("0");
         roots["0"] = { f: factory, e: element, c: [], p: undefined };
+        initializing = true;
         beforeInit();
-        beforeInit = forceInvalidate;
+        beforeInit = finishInitialize;
     }
 
     function setBeforeInit(callback: (cb: () => void) => void): void {

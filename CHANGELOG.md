@@ -1,11 +1,19 @@
 CHANGELOG
 ===
 
+4.48.3
+--
+
+Fixes
+-
+
+`setBeforeInit` and `styleDef` didn't play nicely together.
+
 4.48.2
 --
 
 Fixes
---
+-
 
 `b.prop` style value does not work for checkbox.
 
