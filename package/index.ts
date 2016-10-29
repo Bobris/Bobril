@@ -4999,6 +4999,7 @@ function recolorAndClip(image: HTMLImageElement, colorStr: string, width: number
 let lastFuncId = 0;
 const funcIdName = "b@funcId";
 export function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
+    assert(allStyles[url] === undefined, "Wrong sprite url");
     left = left || 0;
     top = top || 0;
     let colorId = color || "";

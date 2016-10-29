@@ -4637,6 +4637,7 @@ function recolorAndClip(image, colorStr, width, height, left, top) {
 var lastFuncId = 0;
 var funcIdName = "b@funcId";
 function sprite(url, color, width, height, left, top) {
+    assert(allStyles[url] === undefined, "Wrong sprite url");
     left = left || 0;
     top = top || 0;
     var colorId = color || "";

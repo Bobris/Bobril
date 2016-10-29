@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.49.0
+--
+
+New feature
+-
+
+In debug check for wrong url in b.sprite (probably double called).
+
 4.48.3
 --
 
