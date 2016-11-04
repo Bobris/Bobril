@@ -3010,7 +3010,12 @@ function decodeButton(ev: MouseEvent): number {
 }
 
 function createHandler(handlerName: string, allButtons?: boolean) {
-    return (ev: MouseEvent, _target: Node, node: IBobrilCacheNode) => {
+    return (ev: MouseEvent, target: Node, node: IBobrilCacheNode | undefined) => {
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            target = fixed[0];
+            node = fixed[1];
+        }
         let button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;

@@ -46,7 +46,7 @@ const FreeDrawComp = b.createVirtualComponent<void>({
     },
     onPointerDown(ctx: IFreeDrawCtx, param: b.IBobrilPointerEvent): boolean {
         const pos = b.convertPointFromPageToNode(ctx.me, param.x, param.y);
-        console.log(param,pos);
+        console.log(param, pos);
         ctx.pointers[param.id] = {
             gid: "" + globPointerCounter++,
             startx: pos[0],
@@ -93,12 +93,12 @@ const FreeDrawComp = b.createVirtualComponent<void>({
 
 b.init(() => {
     b.invalidate();
-    let rotate = b.uptime()*0.01%360;
-    let skew = Math.sin(b.uptime()*0.0001)*30;
+    let rotate = b.uptime() * 0.01 % 360;
+    let skew = Math.sin(b.uptime() * 0.001) * 30;
     return [
         b.styledDiv([
             b.styledDiv("Free Draw", { position: "absolute", color: "#ccc" }),
             FreeDrawComp()
-         ],{ transform:`rotate(${rotate}deg) skewX(${skew}deg) translate(50px,50px)`, touchAction: "none", width: "300px", height: "200px", border: "1px solid black" })
+        ], { transform: `rotate(${rotate}deg) skewX(${skew}deg) translate(50px,50px)`, touchAction: "none", width: "300px", height: "200px", border: "1px solid black" })
     ];
 });

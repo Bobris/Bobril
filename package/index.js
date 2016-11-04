@@ -2793,7 +2793,12 @@ function decodeButton(ev) {
     return ev.which || ev.button;
 }
 function createHandler(handlerName, allButtons) {
-    return function (ev, _target, node) {
+    return function (ev, target, node) {
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            target = fixed[0];
+            node = fixed[1];
+        }
         var button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1)

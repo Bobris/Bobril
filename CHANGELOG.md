@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.49.1
+--
+
+Fixes
+-
+
+IE9/10 onClick pointerEvents:none emulation fixed.
+ 
 4.49.0
 --
 
