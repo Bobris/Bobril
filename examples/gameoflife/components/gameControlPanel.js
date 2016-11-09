@@ -47,7 +47,6 @@ var GameOfLifeApp;
             ];
         };
         return GameControlPanel;
-    })();
+    }());
     GameOfLifeApp.GameControlPanel = GameControlPanel;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=gamecontrolpanel.js.map

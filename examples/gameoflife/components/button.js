@@ -18,4 +18,3 @@ var GameOfLifeApp;
     }
     GameOfLifeApp.Button = Button;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=button.js.map

@@ -1,5 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.swipe.d.ts"/>
 
 module MouseApp {
     function d(style: any, content: IBobrilChildren): IBobrilNode {
@@ -63,6 +65,11 @@ module MouseApp {
             return ctx.data.stopPropagation;
         },
 
+        onContextMenu(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
+            ctx.data.onAdd(new EventWrapper(event, "Context Menu"));
+            return ctx.data.stopPropagation;
+        },
+
         onMouseDown(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return ctx.data.stopPropagation;
@@ -80,6 +87,11 @@ module MouseApp {
 
         onSwipeRight(ctx: ITrackClickCtx, event: IBobrilMouseEvent): boolean {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
+            return ctx.data.stopPropagation;
+        },
+
+        onMouseWheel(ctx: ITrackClickCtx, event: IBobrilMouseWheelEvent): boolean {
+            ctx.data.onAdd(new EventWheelWrapper(event, "Wheel"));
             return ctx.data.stopPropagation;
         }
     }
@@ -99,7 +111,15 @@ module MouseApp {
         constructor(private ev: IBobrilMouseEvent, private eventName: string) { }
 
         toString(): string {
-            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
+        }
+    }
+
+    class EventWheelWrapper implements IEvent {
+        constructor(private ev: IBobrilMouseWheelEvent, private eventName: string) { }
+
+        toString(): string {
+            return this.eventName +" dx: "+this.ev.dx+" dy: "+this.ev.dy+ " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
         }
     }
 

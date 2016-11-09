@@ -56,16 +56,11 @@
             currentFocusedNode = nodestack.length == 0 ? null : nodestack[nodestack.length - 1];
         }
     }
-    function emitOnFocusChangeIE() {
+    function emitOnFocusChangeDelayed() {
         setTimeout(emitOnFocusChange, 10);
-        emitOnFocusChange();
     }
-    var events = ["focus", "blur", "keydown", "keyup", "keypress", "mousedown", "mouseup", "mousemove", "touchstart", "touchend"];
-    for (var i = 0; i < events.length; i++)
-        b.addEvent(events[i], 50, (b.ieVersion() ? emitOnFocusChangeIE : emitOnFocusChange));
-    if (b.ieVersion() === 8) {
-        setInterval(emitOnFocusChange, 100);
-    }
+    b.addEvent("^focus", 50, emitOnFocusChange);
+    b.addEvent("^blur", 50, emitOnFocusChangeDelayed);
     function focused() {
         return currentFocusedNode;
     }
@@ -84,10 +79,8 @@
         }
         var attrs = node.attrs;
         if (attrs != null) {
-            var ti = attrs.tabIndex;
+            var ti = attrs.tabindex != null ? attrs.tabindex : attrs.tabIndex; // < tabIndex is here because of backward compatibility
             if (ti !== undefined || focusableTag.test(node.tag)) {
-                if (+ti === -1)
-                    return false;
                 var el = node.element;
                 el.focus();
                 emitOnFocusChange();
@@ -100,11 +93,9 @@
                 if (focus(children[i]))
                     return true;
             }
-            return false;
         }
-        return focus(children);
+        return false;
     }
     b.focused = focused;
     b.focus = focus;
 })(b);
-//# sourceMappingURL=bobril.focus.js.map

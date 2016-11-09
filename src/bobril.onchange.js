@@ -2,6 +2,8 @@
 /// <reference path="bobril.onchange.d.ts"/>
 (function (b) {
     var bvalue = "b$value";
+    var bSelectionStart = "b$selStart";
+    var bSelectionEnd = "b$selEnd";
     var tvalue = "value";
     function isCheckboxlike(el) {
         var t = el.type;
@@ -124,21 +126,23 @@
         var c = node.component;
         if (!c)
             return false;
-        if (!c.onChange)
+        var hasOnChange = c.onChange != null;
+        var hasOnSelectionChange = c.onSelectionChange != null;
+        if (!hasOnChange && !hasOnSelectionChange)
             return false;
         var ctx = node.ctx;
         var tagName = target.tagName;
         var isSelect = tagName === "SELECT";
         var isMultiSelect = isSelect && target.multiple;
-        if (isMultiSelect) {
+        if (hasOnChange && isMultiSelect) {
             var vs = selectedArray(target.options);
             if (!stringArrayEqual(ctx[bvalue], vs)) {
                 ctx[bvalue] = vs;
                 c.onChange(ctx, vs);
             }
         }
-        else if (isCheckboxlike(target)) {
-            // Postpone change event so onCLick will be processed before it
+        else if (hasOnChange && isCheckboxlike(target)) {
+            // Postpone change event so onClick will be processed before it
             if (ev && ev.type === "change") {
                 setTimeout(function () {
                     emitOnChange(null, target, node);
@@ -174,17 +178,65 @@
             }
         }
         else {
-            var v = target.value;
-            if (ctx[bvalue] !== v) {
-                ctx[bvalue] = v;
-                c.onChange(ctx, v);
+            if (hasOnChange) {
+                var v = target.value;
+                if (ctx[bvalue] !== v) {
+                    ctx[bvalue] = v;
+                    c.onChange(ctx, v);
+                }
+            }
+            if (hasOnSelectionChange) {
+                var sStart = target.selectionStart;
+                var sEnd = target.selectionEnd;
+                var sDir = target.selectionDirection;
+                var swap = false;
+                var oStart = ctx[bSelectionStart];
+                if (sDir == null) {
+                    if (sEnd === oStart)
+                        swap = true;
+                }
+                else if (sDir === "backward") {
+                    swap = true;
+                }
+                if (swap) {
+                    var s = sStart;
+                    sStart = sEnd;
+                    sEnd = s;
+                }
+                emitOnSelectionChange(node, sStart, sEnd);
             }
         }
+        return false;
+    }
+    function emitOnSelectionChange(node, start, end) {
+        var c = node.component;
+        var ctx = node.ctx;
+        if (c && (ctx[bSelectionStart] !== start || ctx[bSelectionEnd] !== end)) {
+            ctx[bSelectionStart] = start;
+            ctx[bSelectionEnd] = end;
+            c.onSelectionChange(ctx, {
+                startPosition: start,
+                endPosition: end
+            });
+        }
+    }
+    function select(node, start, end) {
+        if (end === void 0) { end = start; }
+        node.element.setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
+        emitOnSelectionChange(node, start, end);
+    }
+    function emitOnMouseChange(ev, target, node) {
+        var f = b.focused && b.focused();
+        if (f)
+            emitOnChange(ev, f.element, f);
         return false;
     }
     // click here must have lower priority (higher number) over mouse handlers
     var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)
         b.addEvent(events[i], 10, emitOnChange);
+    var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
+    for (var i = 0; i < mouseEvents.length; i++)
+        b.addEvent(mouseEvents[i], 2, emitOnMouseChange);
+    b.select = select;
 })(b);
-//# sourceMappingURL=bobril.onchange.js.map

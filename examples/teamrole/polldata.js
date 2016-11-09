@@ -346,4 +346,3 @@ var polldata = [
         ]
     }
 ];
-//# sourceMappingURL=polldata.js.map

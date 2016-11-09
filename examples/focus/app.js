@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.focus.d.ts"/>
 var FocusApp;
 (function (FocusApp) {
@@ -81,4 +82,3 @@ var FocusApp;
         ];
     });
 })(FocusApp || (FocusApp = {}));
-//# sourceMappingURL=app.js.map

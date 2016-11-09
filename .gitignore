@@ -1,5 +1,7 @@
 coverage/
 gh-pages/
+.publish/
+.vs/
 *.sln.ide/
 node_modules/
 

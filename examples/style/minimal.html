@@ -1,0 +1,31 @@
+<!doctype html>
+<body>
+<image src="light.png">
+<image id="result"><br>
+Number of wrong pixels: <span id="count"></span>
+<script>
+var image = new Image();
+image.onload = function() {
+    var canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0);
+    var imgdata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var imgd = imgdata.data;
+	var buggy = 0;
+    for (var i = 0; i < imgd.length; i += 4) {
+		var r=imgd[i],g=imgd[i + 1]
+        if (imgd[i] === imgd[i + 1] && imgd[i] === imgd[i + 2]) {
+		    if (imgd[i]===0x80 || imgd[i + 3] < 0xff && imgd[i]>0x70) {
+                imgd[i] = 0xff; imgd[i + 1] = 0x0; imgd[i + 2] = 0x0;
+		    } else if (imgd[i]!=0) { buggy++; console.log(imgd[i],imgd[i+1],imgd[i+2],imgd[i+3]); }
+		}
+    }
+    ctx.putImageData(imgdata, 0, 0);
+    document.getElementById('result').src = canvas.toDataURL();
+	document.getElementById('count').innerHTML = '' + buggy;
+};
+image.src='light.png';
+</script>
+</body>

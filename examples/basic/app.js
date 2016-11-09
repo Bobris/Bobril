@@ -18,4 +18,3 @@ var BasicApp;
         ];
     });
 })(BasicApp || (BasicApp = {}));
-//# sourceMappingURL=app.js.map

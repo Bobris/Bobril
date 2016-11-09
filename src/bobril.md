@@ -1,15 +1,15 @@
 Bobril core
 ===========
 
-It has no dependencies.
+Bobril is component oriented framework with very lightweight virtual dom. It has no dependencies.
 
-It polyfills for IE8 - `Array.isArray`, `Array.map`, `Object.create`, `Object.keys`
+There are 2 versions of framework.
+
+First should be used directly as scripts without any build tool, it declares global variable `b` which is like namespace for all bobril methods. And is probably easiest way to start learning Bobril. 
+
+Second one in package directory which is published in NPM. It is meant to be used with bobril-build. And should be used with standard ES6 imports. For this version there is also additional NPM module bobril-g11n to help with globalization of Bobril applications.
 
 There is used `DEBUG` variable which could be predefined to false and remove some code by uglify, also remove warnings for developer mistakes, so make sure you are using nonminified version in development.
-
-It defines global variable `b` which is used like namespace for all bobril methods.
-
-Bobril is component oriented framework with very lightweight virtual dom.
 
 Virtual Dom
 -----------
@@ -57,4 +57,19 @@ it is not enriched like object case. For `style` key `float` must be written as 
 Components
 ----------
 
+Every node could have `component` field defined. It has can contain main life cycle methods. It can also contain event handlers. You should not use native HTML events directly though for example attrs field. If you need to use some of events currently not wrapped by Bobril, you can use `postInitDom` function to link event.
+
 <img src="https://raw.githubusercontent.com/Bobris/Bobril/master/src/BobrilComponentLifecycle.png" width="377px">
+
+`postUpdateDomEverytime` is similiar to `postUpdateDom` function, but it is called in every frame regardless shouldChange or invalidate(ctx).
+
+Init
+----
+
+So you know how to create Virtual dom. So to display it at end of body use:
+
+	b.init(functionReturningVdom);
+	
+This function will be called for every "frame", but only if it is requested. Easiest request for next frame is:
+
+	b.invalidate();

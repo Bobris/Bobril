@@ -1,5 +1,6 @@
 /// <reference path="jasmine.d.ts"/>
 /// <reference path="../src/bobril.d.ts"/>
+/// <reference path="../src/bobril.mouse.d.ts"/>
 function expectInsensitive(s1, s2) {
     s1 = s1.replace(/\s/g, "");
     s1 = s1.replace(/;\"/g, "\"");
@@ -19,18 +20,21 @@ describe("updateElement", function () {
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("update style from string to object", function () {
-        var r = b.createNode({ tag: "div", style: "font-size:5px" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", style: "font-size:5px" }, null, scope, null);
+        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("update style from object to string", function () {
-        var r = b.createNode({ tag: "div", style: { fontSize: "5px" } }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", style: { fontSize: "5px" } }, null, scope, null);
+        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
     it("update style by removing property", function () {
-        var r = b.createNode({ tag: "div", style: { fontSize: "10px", color: "black" } }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", style: { fontSize: "10px", color: "black" } }, null, scope, null);
+        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<divstyle=\"font-size:10px\"></div>");
     });
 });
@@ -71,37 +75,61 @@ describe("createNode", function () {
         };
         b.createNode({ component: comp1 }, null, document.createElement("div"), null);
     });
+    it("it skips virtual node", function () {
+        var r = b.createNode({ tag: "div", children: { children: { tag: "span", children: "ok" } } }, null, document.createElement("div"), null);
+        expectInsensitive(r.element.outerHTML, "<div><span>ok</span></div>");
+    });
+    it("empty virtual node", function () {
+        var r = b.createNode({ tag: "div", children: {} }, null, document.createElement("div"), null);
+        expectInsensitive(r.element.outerHTML, "<div></div>");
+    });
+    it("more empty virtual nodes", function () {
+        var r = b.createNode({ tag: "div", children: [{ children: [] }, "ok", {}] }, null, document.createElement("div"), null);
+        expectInsensitive(r.element.outerHTML, "<div>ok</div>");
+    });
 });
 describe("updateNode", function () {
     it("simple", function () {
-        var r = b.createNode({ tag: "div", children: "hello" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: "bye" }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "hello" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: "bye" }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>bye</div>");
     });
     it("change single child from text to span", function () {
-        var r = b.createNode({ tag: "div", children: "hello" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "hello" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: { tag: "span", children: "ok" } }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div><span>ok</span></div>");
     });
     it("change single child from span to text", function () {
-        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: "ok" }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: { tag: "span", children: "ko" } }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: "ok" }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>ok</div>");
     });
     it("append text after text", function () {
-        var r = b.createNode({ tag: "div", children: "A" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: ["A", "B"] }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "A" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: ["A", "B"] }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>AB</div>");
     });
     it("preppend text before text", function () {
-        var r = b.createNode({ tag: "div", children: "A" }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: ["B", "A"] }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: "A" }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: ["B", "A"] }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>BA</div>");
     });
     it("change html", function () {
-        var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null, document.createElement("div"), null);
-        r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r);
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r, scope, null, 1e6);
         expectInsensitive(r.element.outerHTML, "<div>d<i>e</i>f</div>");
+    });
+    it("more empty virtual nodes", function () {
+        var scope = document.createElement("div");
+        var r = b.createNode({ tag: "div", children: [{ children: [] }, "ok", {}] }, null, scope, null);
+        r = b.updateNode({ tag: "div", children: [{ children: "o" }, "k", { tag: "span", children: "!" }] }, r, scope, null, 1e6);
+        expectInsensitive(r.element.outerHTML, "<div>ok<span>!</span></div>");
     });
     function buildVdom(s) {
         var items = s.split(",");
@@ -119,13 +147,14 @@ describe("updateNode", function () {
     }
     function advancedTest(start, update, result) {
         var vdomStart = buildVdom(start);
-        var r = b.createNode(vdomStart, null, document.createElement("div"), null);
+        var scope = document.createElement("div");
+        var r = b.createNode(vdomStart, null, scope, null);
         var c = r.element.childNodes;
         for (var i = 0; i < c.length; i++) {
             c[i].id = "" + i;
         }
         var vdomUpdate = buildVdom(update);
-        r = b.updateNode(vdomUpdate, r);
+        r = b.updateNode(vdomUpdate, r, scope, null, 1e6);
         var a = [];
         for (i = 0; i < r.children.length; i++) {
             var ch = r.children[i];
@@ -254,16 +283,13 @@ describe("stopBubbling", function () {
         var outer = false;
         var inner = false;
         var n = b.createNode({
-            tag: "div",
-            component: {
+            tag: "div", component: {
                 onClick: function () {
                     outer = true;
                     return true;
                 }
-            },
-            children: {
-                tag: "span",
-                component: {
+            }, children: {
+                tag: "span", component: {
                     onClick: function () {
                         inner = true;
                         return false;
@@ -308,4 +334,3 @@ describe("stopBubbling", function () {
         expect(outer).toBeFalsy();
     });
 });
-//# sourceMappingURL=vdom.js.map

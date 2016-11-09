@@ -18,4 +18,3 @@ var GameOfLifeApp;
         });
     });
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=cell.js.map

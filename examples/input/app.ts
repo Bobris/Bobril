@@ -1,10 +1,13 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
+/// <reference path="../../src/bobril.focus.d.ts"/>
+
 module InputApp {
     function h(tag: string, ...args: any[]) {
         return { tag: tag, children: args };
     }
 
-    function layoutPair(left: any, right: any, leftWidth = "50%"): IBobrilNode {
+    function layoutPair(left: IBobrilChildren, right: IBobrilChildren, leftWidth = "50%"): IBobrilNode {
         return {
             tag: "div",
             style: { display: "table", width: "100%" },
@@ -22,6 +25,7 @@ module InputApp {
     // Model
     var frame = 0;
     var value = "Change this";
+    let firstInput: IBobrilCacheNode = null;
 
     function setValue(v: string) {
         value = v;
@@ -32,6 +36,10 @@ module InputApp {
 
     function setChecked(v: boolean) {
         checked = v;
+        if (v) {
+            b.select(firstInput, 5, 3);
+            b.focus(firstInput);
+        }
         b.invalidate();
     }
 
@@ -85,9 +93,17 @@ module InputApp {
         data: IOnChangeData;
     }
 
+    var selectionStart: number = -1;
+    var selectionEnd: number = -1;
+
     var OnChangeComponent: IBobrilComponent = {
         onChange(ctx: IOnChangeCtx, v: any): void {
             ctx.data.onChange(v);
+        },
+        onSelectionChange(ctx: IBobrilCtx, event: ISelectionChangeEvent): void {
+            selectionStart = event.startPosition;
+            selectionEnd = event.endPosition;
+            b.invalidate();
         }
     }
 
@@ -147,19 +163,24 @@ module InputApp {
         }
     }
 
+    function withRef(node: IBobrilNode, setter: (node: IBobrilCacheNode) => void) {
+        node.ref = setter;
+        return node;
+    }
+
     b.init(() => {
         frame++;
         return [
             h("h1", "Input Bobril sample"),
             layoutPair([
-                textInput(value, setValue),
+                withRef(textInput(value, setValue), (n) => firstInput = n),
                 h("p", "Entered: ", value),
                 h("label", checkbox(checked, setChecked), "Checkbox"),
                 h("p", "Checked: ", checked ? <any>"Yes" : "No"),
                 h("label", radiobox("g1", radio1, setRadio1), "Radio 1"),
                 h("label", radiobox("g1", radio2, setRadio2), "Radio 2"),
                 h("p", "Radio1: ", radio1 ? <any>"Yes" : "No", " Radio2: ", radio2 ? <any>"Yes" : "No"),
-                h("p", "Frame: " + frame)
+                h("p", "Frame: " + frame + " Selection:" + selectionStart + " - " + selectionEnd)
             ], [
                     layoutPair([
                         combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])

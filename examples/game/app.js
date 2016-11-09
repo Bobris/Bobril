@@ -78,7 +78,7 @@ var GameApp;
             };
         };
         return Player;
-    })();
+    }());
     var ShootParticle = (function () {
         function ShootParticle(x, y, vx, vy) {
             this.x = x + vx;
@@ -105,7 +105,7 @@ var GameApp;
             };
         };
         return ShootParticle;
-    })();
+    }());
     var player = new Player();
     var shootParticles = [];
     var GameControler = {
@@ -175,11 +175,7 @@ var GameApp;
         return [
             h("h1", "Game"),
             {
-                tag: "div",
-                attrs: { tabindex: "0" },
-                style: { width: boardX + "px", height: boardY + "px", outline: "0" },
-                component: GameControler,
-                children: [
+                tag: "div", attrs: { tabindex: "0" }, style: { width: boardX + "px", height: boardY + "px", outline: "0" }, component: GameControler, children: [
                     {
                         component: b.vg,
                         data: { width: boardX + "px", height: boardY + "px" },
@@ -194,4 +190,3 @@ var GameApp;
         ];
     });
 })(GameApp || (GameApp = {}));
-//# sourceMappingURL=app.js.map

@@ -1,11 +1,11 @@
-﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.mouse.d.ts"/>
-/// <reference path="lib.touch.d.ts"/>
 
 const enum Consts {
     MoveOverIsNotTap = 13,
-    TabShouldBeShorterThanMs = 750,
+    TapShouldBeShorterThanMs = 750,
     MaxBustDelay = 500,
+    MaxBustDelayForIE = 800,
     BustDistance = 50
 }
 
@@ -47,8 +47,20 @@ const enum Consts {
 
     var preventDefault = b.preventDefault;
 
-    function hasPointerEventsNoneB(node: IBobrilNode): boolean {
-        return node && node.style && node.style.pointerEvents === "none";
+    function hasPointerEventsNoneB(node: IBobrilCacheNode): boolean {
+        while (node) {
+            var s = node.style;
+            if (s) {
+                var e = s.pointerEvents;
+                if (e !== undefined) {
+                    if (e === "none")
+                        return true;
+                    return false;
+                }
+            }
+            node = node.parent;
+        }
+        return false;
     }
 
     function hasPointerEventsNone(target: Node): boolean {
@@ -80,11 +92,7 @@ const enum Consts {
         }
         if (revertVisibilityChanges(hiddenEls)) {
             try {
-                if (b.ieVersion() < 9)
-                    t.fireEvent("on" + ev.type, ev);
-                else {
-                    t.dispatchEvent(ev);
-                }
+                t.dispatchEvent(ev);
             } catch (e) {
                 return false;
             }
@@ -139,7 +147,14 @@ const enum Consts {
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param: IBobrilPointerEvent = { id: ev.pointerId, type: type2Bobril(ev.pointerType), x: ev.clientX, y: ev.clientY };
+            let button = ev.button + 1;
+            let type = type2Bobril(ev.pointerType);
+            let buttons = ev.buttons;
+            if (button === 0 && type === BobrilPointerType.Mouse && buttons) {
+                button = 1;
+                while (!(buttons & 1)) { buttons = buttons >> 1; button++; }
+            }
+            var param: IBobrilPointerEvent = { id: ev.pointerId, type: type, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -153,7 +168,9 @@ const enum Consts {
             var preventDef = false;
             for (var i = 0; i < ev.changedTouches.length; i++) {
                 var t = ev.changedTouches[i];
-                var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY };
+                target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
+                node = b.deref(target);
+                var param: IBobrilPointerEvent = { id: t.identifier + 2, type: BobrilPointerType.Touch, x: t.clientX, y: t.clientY, button: 1, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
                 if (b.emitEvent("!" + name, param, target, node))
                     preventDef = true;
             }
@@ -167,12 +184,14 @@ const enum Consts {
 
     function buildHandlerMouse(name: string) {
         return function handlePointer(ev: MouseEvent, target: Node, node: IBobrilCacheNode): boolean {
+            target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+            node = b.deref(target);
             if (hasPointerEventsNoneB(node)) {
-                var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+                var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
                 target = fixed[0];
                 node = fixed[1];
             }
-            var param: IBobrilPointerEvent = { id: 1, type: BobrilPointerType.Mouse, x: ev.clientX, y: ev.clientY };
+            var param: IBobrilPointerEvent = { id: 1, type: BobrilPointerType.Mouse, x: ev.clientX, y: ev.clientY, button: decodeButton(ev), shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
             if (b.emitEvent("!" + name, param, target, node)) {
                 preventDefault(ev);
                 return true;
@@ -206,8 +225,8 @@ const enum Consts {
     for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
         ((name: string) => {
             var onname = "on" + name;
-            addEvent("!" + name, 50,(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
-                return invokeMouseOwner(onname, ev) || b.bubble(node, onname, ev);
+            addEvent("!" + name, 50, (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
+                return invokeMouseOwner(onname, ev) || (b.bubble(node, onname, ev) != null);
             });
         })(pointersEventNames[j]);
     }
@@ -220,6 +239,7 @@ const enum Consts {
     var firstPointerDownY = 0;
     var tapCanceled = false;
     var now = b.now;
+    var lastMouseEv: IBobrilPointerEvent = null;
 
     function diffLess(n1: number, n2: number, diff: number) {
         return Math.abs(n1 - n2) < diff;
@@ -227,8 +247,13 @@ const enum Consts {
 
     var prevMousePath: IBobrilCacheNode[] = [];
 
+    function revalidateMouseIn() {
+        if (lastMouseEv)
+            mouseEnterAndLeave(lastMouseEv);
+    }
+
     function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
-        var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
+        lastMouseEv = ev;
         var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
         var toPath = b.vdomPath(t);
         var node = toPath.length == 0 ? null : toPath[toPath.length - 1];
@@ -238,22 +263,30 @@ const enum Consts {
             toPath = b.vdomPath(t);
         }
 
-        b.bubble(node, "onMouseOver", param);
+        b.bubble(node, "onMouseOver", ev);
 
         var common = 0;
         while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
             common++;
 
-        var i = prevMousePath.length;
         var n: IBobrilCacheNode;
         var c: IBobrilComponent;
+        var i = prevMousePath.length;
+        if (i > 0) {
+            n = prevMousePath[i - 1];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseOut)
+                    c.onMouseOut(n.ctx, ev);
+            }
+        }
         while (i > common) {
             i--;
             n = prevMousePath[i];
             if (n) {
                 c = n.component;
                 if (c && c.onMouseLeave)
-                    c.onMouseLeave(n.ctx, param);
+                    c.onMouseLeave(n.ctx, ev);
             }
         }
         while (i < toPath.length) {
@@ -261,11 +294,19 @@ const enum Consts {
             if (n) {
                 c = n.component;
                 if (c && c.onMouseEnter)
-                    c.onMouseEnter(n.ctx, param);
+                    c.onMouseEnter(n.ctx, ev);
             }
             i++;
         }
         prevMousePath = toPath;
+        if (i > 0) {
+            n = prevMousePath[i - 1];
+            if (n) {
+                c = n.component;
+                if (c && c.onMouseIn)
+                    c.onMouseIn(n.ctx, ev);
+            }
+        }
         return false;
     };
 
@@ -290,6 +331,12 @@ const enum Consts {
     }
 
     function bustingPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
+        // Browser forgot to send mouse up? Let's fix it
+        if (ev.type === BobrilPointerType.Mouse && ev.button === 0 && pointersDown[ev.id] != null) {
+            ev.button = 1;
+            b.emitEvent("!PointerUp", ev, target, node);
+            ev.button = 0;
+        }
         if (firstPointerDown === ev.id) {
             mouseEnterAndLeave(ev);
             if (!diffLess(firstPointerDownX, ev.x, Consts.MoveOverIsNotTap) || !diffLess(firstPointerDownY, ev.y, Consts.MoveOverIsNotTap))
@@ -306,11 +353,11 @@ const enum Consts {
             mouseEnterAndLeave(ev);
             firstPointerDown = -1;
             if (ev.type == BobrilPointerType.Touch && !tapCanceled) {
-                if (now() - firstPointerDownTime < Consts.TabShouldBeShorterThanMs) {
+                if (now() - firstPointerDownTime < Consts.TapShouldBeShorterThanMs) {
                     b.emitEvent("!PointerCancel", ev, target, node);
-                    var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-                    var handled = invokeMouseOwner(onClickText, param) || b.bubble(node, onClickText, param);
-                    toBust.push([ev.x, ev.y, now() + Consts.MaxBustDelay, handled ? 1 : 0]);
+                    var handled = invokeMouseOwner(onClickText, ev) || (b.bubble(node, onClickText, ev) != null);
+                    var delay = (b.ieVersion()) ? Consts.MaxBustDelayForIE : Consts.MaxBustDelay;
+                    toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                     return handled;
                 }
             }
@@ -353,8 +400,7 @@ const enum Consts {
     function createHandlerMouse(handlerName: string) {
         return (ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode) => {
             if (firstPointerDown != ev.id && !noPointersDown()) return false;
-            var param: IBobrilMouseEvent = { x: ev.x, y: ev.y };
-            if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
+            if (invokeMouseOwner(handlerName, ev) || b.bubble(node, handlerName, ev)) {
                 return true;
             }
             return false;
@@ -366,9 +412,16 @@ const enum Consts {
         addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
     }
 
-    function createHandler(handlerName: string) {
+    function decodeButton(ev: MouseEvent): number {
+        return ev.which || ev.button;
+    }
+
+    function createHandler(handlerName: string, allButtons?: boolean) {
         return (ev: MouseEvent, target: Node, node: IBobrilCacheNode) => {
-            var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY };
+            let button = decodeButton(ev) || 1;
+            // Ignore non left mouse click/dblclick event, but not for contextmenu event
+            if (!allButtons && button !== 1) return false;
+            var param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
             if (invokeMouseOwner(handlerName, param) || b.bubble(node, handlerName, param)) {
                 preventDefault(ev);
                 return true;
@@ -377,18 +430,82 @@ const enum Consts {
         };
     }
 
+    function nodeOnPoint(x: number, y: number): IBobrilCacheNode {
+        var target = <HTMLElement>document.elementFromPoint(x, y);
+        var node = b.deref(target);
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(x, y, target, node);
+            node = fixed[1];
+        }
+        return node;
+    }
+
+    function handleSelectStart(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+        while (node) {
+            var s = node.style;
+            if (s) {
+                var us = s.userSelect;
+                if (us === "none") {
+                    preventDefault(ev);
+                    return true;
+                }
+                if (us) {
+                    break;
+                }
+            }
+            node = node.parent;
+        }
+        return false;
+    }
+
+    addEvent5("selectstart", handleSelectStart);
+
     // click must have higher priority over onchange detection
     addEvent5("click", createHandler(onClickText));
     addEvent5("dblclick", createHandler("onDoubleClick"));
+    addEvent5("contextmenu", createHandler("onContextMenu", true));
+
+    let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
+    function handleMouseWheel(ev: any, target: Node, node: IBobrilCacheNode): boolean {
+        if (hasPointerEventsNoneB(node)) {
+            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            target = fixed[0];
+            node = fixed[1];
+        }
+        let button = ev.button + 1;
+        let buttons = ev.buttons;
+        if (button === 0 && buttons) {
+            button = 1;
+            while (!(buttons & 1)) { buttons = buttons >> 1; button++; }
+        }
+        let dx = 0, dy: number;
+        if (wheelSupport == "mousewheel") {
+            dy = - 1 / 40 * ev.wheelDelta;
+            ev.wheelDeltaX && (dx = - 1 / 40 * ev.wheelDeltaX);
+        } else {
+            dx = ev.deltaX;
+            dy = ev.deltaY;
+        }
+        var param: IBobrilMouseWheelEvent = { dx, dy, x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail };
+        if (invokeMouseOwner("onMouseWheel", param) || b.bubble(node, "onMouseWheel", param)) {
+            preventDefault(ev);
+            return true;
+        }
+        return false;
+    }
+    addEvent5(wheelSupport, handleMouseWheel);
 
     b.pointersDownCount = () => Object.keys(pointersDown).length;
     b.firstPointerDownId = () => firstPointerDown;
     b.ignoreClick = (x: number, y: number) => {
-        toBust.push([x, y, now() + Consts.MaxBustDelay, 1]);
+        var delay = (b.ieVersion()) ? Consts.MaxBustDelayForIE : Consts.MaxBustDelay;
+        toBust.push([x, y, now() + delay, 1]);
     };
 
     b.registerMouseOwner = registerMouseOwner;
     b.isMouseOwner = isMouseOwner;
     b.isMouseOwnerEvent = isMouseOwnerEvent;
     b.releaseMouseOwner = releaseMouseOwner;
+    b.nodeOnPoint = nodeOnPoint;
+    b.revalidateMouseIn = revalidateMouseIn;
 })(b, window, document);

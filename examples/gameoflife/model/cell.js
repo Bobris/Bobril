@@ -9,7 +9,6 @@ var GameOfLifeApp;
             return this.positionX == cell.positionX && this.positionY == cell.positionY;
         };
         return Cell;
-    })();
+    }());
     GameOfLifeApp.Cell = Cell;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=cell.js.map

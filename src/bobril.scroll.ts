@@ -1,40 +1,27 @@
-﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.scroll.d.ts"/>
 
 ((b: IBobrilStatic, window: Window) => {
-    var scroll = "scroll";
-    var callbacks: Array<() => void> = [];
+    var callbacks: Array<(info: IBobrilScroll) => void> = [];
 
-    function emitOnScroll() {
+    function emitOnScroll(ev: Event, target: Node, node: IBobrilCacheNode) {
+        let info: IBobrilScroll = {
+            node
+        };
         for (var i = 0; i < callbacks.length; i++) {
-            callbacks[i]();
+            callbacks[i](info);
         }
         return false;
     }
 
-    b.addEvent(scroll, 100, emitOnScroll);
+    // capturing event to hear everything
+    b.addEvent("^scroll", 10, emitOnScroll);
 
-    function registerScrollable(el: Element): void {
-        if (el.addEventListener) {
-            el.addEventListener(scroll, emitOnScroll);
-        } else {
-            (<MSEventAttachmentTarget><any>el).attachEvent("on" + scroll, emitOnScroll);
-        }
-	}
-	
-    function unregisterScrollable(el: Element): void {
-        if (el.removeEventListener) {
-            el.removeEventListener(scroll, emitOnScroll);
-        } else {
-            (<MSEventAttachmentTarget><any>el).detachEvent("on" + scroll, emitOnScroll);
-        }
-    }
-
-    function addOnScroll(callback: () => void): void {
+    function addOnScroll(callback: (info?: IBobrilScroll) => void): void {
         callbacks.push(callback);
     }
-	
-    function removeOnScroll(callback: () => void): void {
+
+    function removeOnScroll(callback: (info?: IBobrilScroll) => void): void {
         for (var i = 0; i < callbacks.length; i++) {
             if (callbacks[i] === callback) {
                 callbacks.splice(i, 1);
@@ -43,11 +30,11 @@
         }
 	}
 
-    var isHtml = /^(?:html)$/i;
-    var isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
-// inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js	
+    const isHtml = /^(?:html)$/i;
+    const isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
+// inspired by https://github.com/litera/jquery-scrollintoview/blob/master/jquery.scrollintoview.js
     function isScrollable(el: Element): [boolean, boolean] {
-        var styles:any = (window.getComputedStyle ? window.getComputedStyle(el) : (<any>el).currentStyle);
+        var styles:any = window.getComputedStyle(el);
         var res:[boolean, boolean] = [true, true];
         if (!isHtml.test(el.nodeName)) {
             res[0] = isScrollOrAuto.test(styles.overflowX);
@@ -60,18 +47,11 @@
 
     // returns standart X,Y order
     function getWindowScroll(): [number, number] {
-        var top = window.pageYOffset;
         var left = window.pageXOffset;
-        if (top === undefined) { // IE8
-            var de = document.documentElement;
-            top = de.scrollTop;
-            left = de.scrollLeft;
-        }
+        var top = window.pageYOffset;
         return [left, top];
     }
 
-    b.registerScrollable = registerScrollable;
-    b.unregisterScrollable = unregisterScrollable;
     b.addOnScroll = addOnScroll;
     b.removeOnScroll = removeOnScroll;
     b.isScrollable = isScrollable;

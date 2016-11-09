@@ -1,4 +1,5 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.router.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
 /// <reference path="../../src/bobril.vg.d.ts"/>
@@ -22,8 +23,8 @@ var TeamRolePoll;
         render: function (ctx, me) {
             me.tag = "div";
             me.children = [
-                ctx.data.poll.questions.map(function (question, index) {
-                    return h("div", b.link(h("a", question[ctx.data.poll.lang]), "question", { idx: '' + index }));
+                ctx.data.questions.map(function (question, index) {
+                    return h("div", b.link(h("a", question[ctx.cfg.lang]), "question", { idx: '' + index }));
                 }),
                 h("div", me.data.activeRouteHandler())
             ];
@@ -50,9 +51,7 @@ var TeamRolePoll;
             if (ctx.data.isEven)
                 me.className = "even";
             me.children = [
-                ctx.data.answer,
-                ' [' + ctx.data.value + ']',
-                h("br"),
+                ctx.data.answer, ' [' + ctx.data.value + ']', h("br"),
                 rangeInput(ctx.data.value, ctx.data.onChange)
             ];
         }
@@ -115,21 +114,27 @@ var TeamRolePoll;
         render: function (ctx, me) {
             var idx = +ctx.data.routeParams.idx;
             var question = polldata[idx];
-            var lang = ctx.data.poll.lang;
+            var lang = ctx.cfg.lang;
             me.tag = "div";
             me.children = [
                 h("h3", question[lang]),
-                h("ul", question.answers.map(function (ans, ansIdx) { return h("li", {
-                    component: Answer,
-                    data: {
-                        answer: ans[lang],
-                        value: getAnswerValue(ctx.data.poll.answers, idx, ansIdx),
-                        onChange: createHandler(ctx.data.poll.answers, idx, ansIdx),
-                        isEven: (ansIdx % 2 != 0)
-                    }
-                }); })),
-                idx > 0 ? b.link(h("a", " " + localize('Previous', lang) + " "), "question", { idx: '' + (idx - 1) }) : h("span"),
-                (idx + 1) < polldata.length ? b.link(h("a", " " + localize('Next', lang) + " "), "question", { idx: '' + (idx + 1) }) : b.link(h("a", localize('Result', lang)), "result")
+                h("ul", question.answers.map(function (ans, ansIdx) {
+                    return h("li", {
+                        component: Answer,
+                        data: {
+                            answer: ans[lang],
+                            value: getAnswerValue(ctx.data.poll.answers, idx, ansIdx),
+                            onChange: createHandler(ctx.data.poll.answers, idx, ansIdx),
+                            isEven: (ansIdx % 2 != 0)
+                        }
+                    });
+                })),
+                idx > 0
+                    ? b.link(h("a", " " + localize('Previous', lang) + " "), "question", { idx: '' + (idx - 1) })
+                    : h("span"),
+                (idx + 1) < polldata.length
+                    ? b.link(h("a", " " + localize('Next', lang) + " "), "question", { idx: '' + (idx + 1) })
+                    : b.link(h("a", localize('Result', lang)), "result")
             ];
         }
     };
@@ -148,7 +153,7 @@ var TeamRolePoll;
                 {
                     data: {
                         path: ["rect", 0, 0, 3 * value, 20],
-                        fill: "#00BB11"
+                        fill: "#00BB11",
                     }
                 }
             ]
@@ -159,12 +164,14 @@ var TeamRolePoll;
             me.tag = "div";
             var rolepoints = evaluteResult(ctx.data.poll.questions, ctx.data.poll.answers);
             var sum = rolepoints.reduce(function (prev, current) { return (current.value) + prev; }, 0);
-            var lang = ctx.data.poll.lang;
+            var lang = ctx.cfg.lang;
             if (rolepoints.length == 0)
                 me.children = [h("p", localize('NoData', lang))];
             else
                 me.children = [
-                    h("table", rolepoints.map(function (r) { return h("tr", h("td", getRoleName(ctx.data.poll.role, lang, r.id)), h("td", Math.round(r.value * 100 / sum) + '%'), h("td", createBar(r.value))); }))
+                    h("table", rolepoints.map(function (r) {
+                        return h("tr", h("td", getRoleName(ctx.data.poll.role, lang, r.id)), h("td", Math.round(r.value * 100 / sum) + '%'), h("td", createBar(r.value)));
+                    }))
                 ];
         }
     };
@@ -179,14 +186,20 @@ var TeamRolePoll;
             return true;
         }
     };
+    var cfg = {
+        lang: 'cz'
+    };
     function switchLanguage(lang) {
-        pollData.lang = lang;
+        cfg.lang = lang;
         b.invalidate();
     }
     var App = {
+        init: function (ctx) {
+            ctx.cfg = cfg;
+        },
         render: function (ctx, me) {
             me.tag = "div";
-            var lang = ctx.data.poll.lang;
+            var lang = ctx.cfg.lang;
             me.children = [
                 h("h1", localize('Title', lang)),
                 me.data.activeRouteHandler(),
@@ -212,18 +225,17 @@ var TeamRolePoll;
     };
     var pollData = {
         questions: polldata,
-        lang: 'cz',
         role: roledata,
         answers: {}
     };
     b.routes(b.route({ handler: App, data: { poll: pollData } }, [
-        b.route({ name: "questions", data: { poll: pollData }, handler: PollPage }),
-        b.route({ name: "question", url: "/question/:idx", data: { poll: pollData }, handler: QuestionPage, keyBuilder: function (p) {
-            return p["idx"];
-        } }),
+        b.route({ name: "questions", data: { questions: pollData.questions }, handler: PollPage }),
+        b.route({
+            name: "question", url: "/question/:idx", data: { poll: pollData },
+            handler: QuestionPage, keyBuilder: function (p) { return p["idx"]; }
+        }),
         b.route({ name: "result", data: { poll: pollData }, handler: ResultPage }),
-        b.routeDefault({ handler: PollPage, data: { poll: pollData } }),
+        b.routeDefault({ handler: PollPage, data: { questions: pollData.questions } }),
         b.routeNotFound({ name: "notFound", handler: NotFound })
     ]));
 })(TeamRolePoll || (TeamRolePoll = {}));
-//# sourceMappingURL=app.js.map

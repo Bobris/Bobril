@@ -1,4 +1,4 @@
-﻿/// <reference path="bobril.d.ts"/>
+/// <reference path="bobril.d.ts"/>
 /// <reference path="bobril.onkey.d.ts"/>
 
 ((b: IBobrilStatic) => {
@@ -47,7 +47,7 @@
         return false;
     }
     var addEvent = b.addEvent;
-    addEvent("keydown", 500, emitOnKeyDown);
-    addEvent("keyup", 500, emitOnKeyUp);
-    addEvent("keypress", 500, emitOnKeyPress);
+    addEvent("keydown", 50, emitOnKeyDown);
+    addEvent("keyup", 50, emitOnKeyUp);
+    addEvent("keypress", 50, emitOnKeyPress);
 })(b);

@@ -1,4 +1,6 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
+/// <reference path="../../src/bobril.focus.d.ts"/>
 var InputApp;
 (function (InputApp) {
     function h(tag) {
@@ -25,6 +27,7 @@ var InputApp;
     // Model
     var frame = 0;
     var value = "Change this";
+    var firstInput = null;
     function setValue(v) {
         value = v;
         b.invalidate();
@@ -32,6 +35,10 @@ var InputApp;
     var checked = false;
     function setChecked(v) {
         checked = v;
+        if (v) {
+            b.select(firstInput, 5, 3);
+            b.focus(firstInput);
+        }
         b.invalidate();
     }
     var radio1 = false;
@@ -64,9 +71,16 @@ var InputApp;
         valuearea = v;
         b.invalidate();
     }
+    var selectionStart = -1;
+    var selectionEnd = -1;
     var OnChangeComponent = {
         onChange: function (ctx, v) {
             ctx.data.onChange(v);
+        },
+        onSelectionChange: function (ctx, event) {
+            selectionStart = event.startPosition;
+            selectionEnd = event.endPosition;
+            b.invalidate();
         }
     };
     function textInput(value, onChange) {
@@ -118,19 +132,23 @@ var InputApp;
             component: OnChangeComponent
         };
     }
+    function withRef(node, setter) {
+        node.ref = setter;
+        return node;
+    }
     b.init(function () {
         frame++;
         return [
             h("h1", "Input Bobril sample"),
             layoutPair([
-                textInput(value, setValue),
+                withRef(textInput(value, setValue), function (n) { return firstInput = n; }),
                 h("p", "Entered: ", value),
                 h("label", checkbox(checked, setChecked), "Checkbox"),
                 h("p", "Checked: ", checked ? "Yes" : "No"),
                 h("label", radiobox("g1", radio1, setRadio1), "Radio 1"),
                 h("label", radiobox("g1", radio2, setRadio2), "Radio 2"),
                 h("p", "Radio1: ", radio1 ? "Yes" : "No", " Radio2: ", radio2 ? "Yes" : "No"),
-                h("p", "Frame: " + frame)
+                h("p", "Frame: " + frame + " Selection:" + selectionStart + " - " + selectionEnd)
             ], [
                 layoutPair([
                     combobox(option, setOption, [["A", "Angular"], ["B", "Bobril"], ["C", "Cecil"]])
@@ -156,4 +174,3 @@ var InputApp;
         ];
     });
 })(InputApp || (InputApp = {}));
-//# sourceMappingURL=app.js.map

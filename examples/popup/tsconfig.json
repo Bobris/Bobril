@@ -8,15 +8,12 @@
         "removeComments": true,
         "noLib": false
     },
+    "compileOnSave": false,
     "filesGlob": [
         "./**/*.ts",
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "./button.ts",
-        "./canvas.ts",
-        "./gameControlPanel.ts",
-        "./header.ts",
-        "./spinner.ts"
+        "./app.ts"
     ]
 }

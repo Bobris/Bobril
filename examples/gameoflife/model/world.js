@@ -62,7 +62,6 @@ var GameOfLifeApp;
             this.lifeCells = nextGenerationLifeCell;
         };
         return World;
-    })();
+    }());
     GameOfLifeApp.World = World;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=world.js.map

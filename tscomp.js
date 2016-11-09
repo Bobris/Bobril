@@ -2,7 +2,7 @@ var ts = require("typescript");
 var fs = require("graceful-fs");
 var path = require("path");
 
-var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.d.ts");
+var defaultLibFilename = ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(require.resolve("typescript"))), "lib.es6.d.ts");
 var lastLibVersion;
 var lastLibPrecompiled;
 var fc = Object.create(null);
@@ -24,7 +24,7 @@ function getFileFromCache(fileName) {
 	}
 	fci = { content: text, mtime: mtime, refs: refs };
 	fc[fileName] = fci;
-	return fci;	
+	return fci;
 }
 
 function latestTime(fileNames) {
@@ -40,7 +40,7 @@ function latestTime(fileNames) {
 
 function createCompilerHost(currentDirectory) {
 	function getCanonicalFileName(fileName) {
-		return ts.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
+		return fileName.toLowerCase();
 	}
 	function getSourceFile(filename, languageVersion, onError) {
 		if (filename===defaultLibFilename && languageVersion===lastLibVersion) {
@@ -82,23 +82,34 @@ function createCompilerHost(currentDirectory) {
 	}
 	return {
 		getSourceFile: getSourceFile,
-		getDefaultLibFilename: function (options) { return defaultLibFilename; },
+		getDefaultLibFileName: function (options) { return defaultLibFilename; },
 		writeFile: writeFile,
 		getCurrentDirectory: function () { return currentDirectory; },
-		useCaseSensitiveFileNames: function () { return ts.sys.useCaseSensitiveFileNames; },
+		useCaseSensitiveFileNames: function () { return false; },
 		getCanonicalFileName: getCanonicalFileName,
-		getNewLine: function () { return '\n'; }
+		getNewLine: function () { return '\n'; },
+        fileExists: function(fileName) {
+			try {
+				getFileFromCache(fileName);
+				return true;
+			} catch (e) {
+			}
+			return false;
+		},
+        readFile: function(fileName) {
+			return getFileFromCache(fileName).content;
+		}	
 	};
 }
 
 function reportDiagnostic(diagnostic) {
 	var output = "";
 	if (diagnostic.file) {
-		var loc = diagnostic.file.getLineAndCharacterFromPosition(diagnostic.start);
-		output += diagnostic.file.filename + "(" + loc.line + "," + loc.character + "): ";
+		var loc = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+		output += diagnostic.file.fileName + "(" + (loc.line+1) + "," + (loc.character+1) + "): ";
 	}
 	var category = ts.DiagnosticCategory[diagnostic.category].toLowerCase();
-	output += category + " TS" + diagnostic.code + ": " + diagnostic.messageText + ts.sys.newLine;
+	output += category + " TS" + diagnostic.code + ": " + ts.flattenDiagnosticMessageText(diagnostic.messageText, ts.sys.newLine) + ts.sys.newLine;
 	ts.sys.write(output);
 }
 
@@ -108,65 +119,79 @@ function reportDiagnostics(diagnostics) {
 	}
 }
 
-/// string|string[], boolean, boolean, string?
-function typeScriptCompile(fileNames, commonJs, sourceMap, currentDirectory) {
-	var curDir = currentDirectory || ts.sys.getCurrentDirectory();
+/// string
+function typeScriptCompile(tsconfig, rebuild) {
+	var curDir = ts.sys.getCurrentDirectory();
+	if (!path.isAbsolute(tsconfig)) tsconfig = path.join(curDir, tsconfig);
+	curDir = path.dirname(tsconfig);
+	var tsconfigjson = ts.readConfigFile(tsconfig,function(fn) { return ts.sys.readFile(fn, 'utf-8') })['config'];
+	tsconfigjson["compilerOptions"]["moduleResolution"]="node";
+	tsconfigjson["compilerOptions"]["target"]="es5";
+	tsconfigjson["compilerOptions"]["module"]="commonjs";
+	var host = createCompilerHost(curDir);
+	var tscmd = ts.parseJsonConfigFileContent(tsconfigjson, host, curDir);
+	if (tscmd.errors.length) {
+		reportDiagnostics(tscmd.errors);
+		return 1;
+	}
+	var fileNames = tscmd.fileNames;
 	if (!Array.isArray(fileNames)) fileNames=[fileNames];
 
-	var outputName = fileNames[0].substr(0,fileNames[0].length-3)+".js";
-	var outtime = 0;
-	try {
-		outtime = fs.statSync(outputName).mtime.getTime();
-	}
-	catch (e) { console.log(e); }
-	if (sourceMap) {
+	var outtime = 1e306;
+	for(var i = 0; i < fileNames.length; i++)
+	{
+		var fn=fileNames[i];
+		if (fn.substr(fn.length-5,5)===".d.ts")
+			continue;
+		var outputName = fn.substr(0,fn.length-3)+".js";
 		try {
-			outtime = Math.min(outtime, fs.statSync(outputName+".map").mtime.getTime());
+			outtime = Math.min(outtime, fs.statSync(outputName).mtime.getTime());
 		}
-		catch (e) { console.log(e); }
+		catch (e) { console.log(e); outtime = 0; }
+		if (tscmd.options.sourceMap) {
+			try {
+				outtime = Math.min(outtime, fs.statSync(outputName+".map").mtime.getTime());
+			}
+			catch (e) { console.log(e); outtime = 0; }
+		}
 	}
-	
+
 	var sourcetime = 0;
 	try {
 		sourcetime = latestTime(fileNames);
 	}
 	catch(e) {
 		console.log(e);
-		sourcetime = (new Date()).getTime(); 
+		sourcetime = (new Date()).getTime();
 	}
-	
-	if (sourcetime < outtime) {
+
+	if (!rebuild && sourcetime < outtime) {
 		return;
 	}
-	
-	var compilerOptions = {
-		sourceMap: sourceMap,
-		target: 0 /* ES3 */,
-		module: commonJs? 1 /* CommonJs */ : 0 /* None */,
-		noImplicitAny: true,
-		suppressImplicitAnyIndexErrors: true,
-		noEmitOnError: true
-	};
 
-	var program = ts.createProgram(fileNames, compilerOptions, createCompilerHost(curDir));
-	var errors = program.getDiagnostics();
-	var exitStatus;
-	if (errors.length) {
-		exitStatus = 1 /* AllOutputGenerationSkipped */;
-	} else {
-		var checker = program.getTypeChecker(true);
-		errors = checker.getDiagnostics();
-		if (checker.isEmitBlocked()) {
-			exitStatus = 1 /* AllOutputGenerationSkipped */;
-		} else {
-			var emitOutput = checker.emitFiles();
-			var emitErrors = emitOutput.diagnostics;
-			exitStatus = emitOutput.emitResultStatus;
-			errors = ts.concatenate(errors, emitErrors);
+	var program = ts.createProgram(fileNames, tscmd.options, host);
+	var diagnostics = program.getSyntacticDiagnostics();
+	reportDiagnostics(diagnostics);
+	if (diagnostics.length === 0) {
+		var diagnostics = program.getGlobalDiagnostics();
+		reportDiagnostics(diagnostics);
+		if (diagnostics.length === 0) {
+			var diagnostics = program.getSemanticDiagnostics();
+			reportDiagnostics(diagnostics);
 		}
 	}
-	reportDiagnostics(errors);
-	return exitStatus;
+	if (tscmd.options.noEmit) {
+		return diagnostics.length ? 2 : 0;
+	}
+	var emitOutput = program.emit();
+	reportDiagnostics(emitOutput.diagnostics);
+	if (emitOutput.emitSkipped) {
+		return 3;
+	}
+	if (diagnostics.length > 0 || emitOutput.diagnostics.length > 0) {
+		return 0;
+	}
+	return 0;
 }
 
 module.exports = typeScriptCompile;

@@ -1,66 +1,12 @@
 /// <reference path="bobril.d.ts"/>
 if (typeof DEBUG === "undefined")
     DEBUG = true;
-// IE8 [].map polyfill Reference: http://es5.github.io/#x15.4.4.19
-if (!Array.prototype.map) {
-    Array.prototype.map = function (callback, thisArg) {
-        var a, k;
-        // ReSharper disable once ConditionIsAlwaysConst
-        if (DEBUG && this == null) {
-            throw new TypeError("this==null");
-        }
-        var o = Object(this);
-        var len = o.length >>> 0;
-        if (DEBUG && typeof callback != "function") {
-            throw new TypeError(callback + " isn't func");
-        }
-        a = new Array(len);
-        k = 0;
-        while (k < len) {
-            var kValue, mappedValue;
-            if (k in o) {
-                kValue = o[k];
-                mappedValue = callback.call(thisArg, kValue, k, o);
-                a[k] = mappedValue;
-            }
-            k++;
-        }
-        return a;
-    };
-}
-// Object create polyfill
-if (!Object.create) {
-    Object.create = function (o) {
-        function f() {
-        }
-        f.prototype = o;
-        return new f();
-    };
-}
-// Object keys polyfill
-if (!Object.keys) {
-    Object.keys = (function (obj) {
-        var keys = [];
-        for (var i in obj) {
-            if (obj.hasOwnProperty(i)) {
-                keys.push(i);
-            }
-        }
-        return keys;
-    });
-}
-// Array isArray polyfill
-if (!Array.isArray) {
-    var objectToString = {}.toString;
-    Array.isArray = (function (a) { return objectToString.call(a) === "[object Array]"; });
-}
 b = (function (window, document) {
     function assert(shoudBeTrue, messageIfFalse) {
         if (DEBUG && !shoudBeTrue)
             throw Error(messageIfFalse || "assertion failed");
     }
     var isArray = Array.isArray;
-    var objectKeys = Object.keys;
     function createTextNode(content) {
         return document.createTextNode(content);
     }
@@ -68,9 +14,32 @@ b = (function (window, document) {
         return document.createElement(name);
     }
     var hasTextContent = "textContent" in createTextNode("");
-    var hasRemovePropertyInStyle = "removeProperty" in createElement("a").style;
     function isObject(value) {
         return typeof value === "object";
+    }
+    function flatten(a) {
+        if (!isArray(a)) {
+            if (a == null || a === false || a === true)
+                return [];
+            return [a];
+        }
+        a = a.slice(0);
+        var alen = a.length;
+        for (var i = 0; i < alen;) {
+            var item = a[i];
+            if (isArray(item)) {
+                a.splice.apply(a, [i, 1].concat(item));
+                alen = a.length;
+                continue;
+            }
+            if (item == null || item === false || item === true) {
+                a.splice(i, 1);
+                alen--;
+                continue;
+            }
+            i++;
+        }
+        return a;
     }
     var inSvg = false;
     var updateCall = [];
@@ -87,7 +56,7 @@ b = (function (window, document) {
     function newHashObj() {
         return Object.create(null);
     }
-    var vendors = ["webkit", "Moz", "ms", "o"];
+    var vendors = ["Webkit", "Moz", "ms", "O"];
     var testingDivStyle = document.createElement("div").style;
     function testPropExistence(name) {
         return typeof testingDivStyle[name] === "string";
@@ -99,6 +68,8 @@ b = (function (window, document) {
         columnCount: true,
         flex: true,
         flexGrow: true,
+        flexNegative: true,
+        flexPositive: true,
         flexShrink: true,
         fontWeight: true,
         lineClamp: true,
@@ -106,9 +77,10 @@ b = (function (window, document) {
         opacity: true,
         order: true,
         orphans: true,
+        strokeDashoffset: true,
         widows: true,
         zIndex: true,
-        zoom: true
+        zoom: true,
     };
     function renamer(newName) {
         return function (style, value, oldName) {
@@ -134,10 +106,6 @@ b = (function (window, document) {
     }
     function ieVersion() {
         return document.documentMode;
-    }
-    var onIE8 = ieVersion() === 8;
-    if (onIE8) {
-        mapping.cssFloat = renamer("styleFloat");
     }
     function shimStyle(newValue) {
         var k = Object.keys(newValue);
@@ -178,10 +146,7 @@ b = (function (window, document) {
         }
     }
     function removeProperty(s, name) {
-        if (hasRemovePropertyInStyle)
-            s[name] = "";
-        else
-            s.removeAttribute(name);
+        s[name] = "";
     }
     function updateStyle(n, el, newStyle, oldStyle) {
         var s = el.style;
@@ -253,8 +218,6 @@ b = (function (window, document) {
                     else
                         el.setAttribute(attrName, newAttr);
                 }
-                else if (onIE8 && attrName === "type" && el.nodeName === "input") {
-                }
                 else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
                 }
@@ -299,6 +262,10 @@ b = (function (window, document) {
     function setRef(ref, value) {
         if (ref == null)
             return;
+        if (typeof ref === "function") {
+            ref(value);
+            return;
+        }
         var ctx = ref[0];
         var refs = ctx.refs;
         if (!refs) {
@@ -308,35 +275,59 @@ b = (function (window, document) {
         refs[ref[1]] = value;
     }
     function createNode(n, parentNode, createInto, createBefore) {
-        var c = n;
-        c.parent = parentNode;
+        var c = {
+            tag: n.tag,
+            key: n.key,
+            ref: n.ref,
+            className: n.className,
+            style: n.style,
+            attrs: n.attrs,
+            children: n.children,
+            component: n.component,
+            data: n.data,
+            cfg: n.cfg,
+            parent: parentNode,
+            element: undefined,
+            ctx: undefined
+        };
         var backupInSvg = inSvg;
         var component = c.component;
         var el;
-        setRef(n.ref, n);
-        var createBeforeNode = b.isArray(createBefore) ? createBefore[0] : createBefore;
+        setRef(c.ref, c);
         if (component) {
             var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             c.ctx = ctx;
             if (component.init) {
-                component.init(ctx, n, createInto, createBeforeNode);
+                component.init(ctx, c);
             }
             if (component.render) {
-                component.render(ctx, n);
+                component.render(ctx, c);
             }
-            if (c.element)
-                return c;
         }
-        if (n.tag === "") {
-            c.element = createTextNode(c.children);
-            createInto.insertBefore(c.element, createBeforeNode);
+        var tag = c.tag;
+        var children = c.children;
+        if (tag === undefined) {
+            if (typeof children === "string") {
+                el = createTextNode(children);
+                c.element = el;
+                createInto.insertBefore(el, createBefore);
+            }
+            else {
+                createChildren(c, createInto, createBefore);
+            }
+            if (component) {
+                if (component.postRender) {
+                    component.postRender(c.ctx, c);
+                }
+                pushInitCallback(c, false);
+            }
             return c;
         }
-        else if (n.tag === "/") {
-            var htmltext = n.children;
-            if (htmltext === "")
-                htmltext = " ";
-            if (createBeforeNode == null) {
+        else if (tag === "/") {
+            var htmltext = children;
+            if (htmltext === "") {
+            }
+            else if (createBefore == null) {
                 var before = createInto.lastChild;
                 createInto.insertAdjacentHTML("beforeend", htmltext);
                 c.element = [];
@@ -352,8 +343,8 @@ b = (function (window, document) {
                 }
             }
             else {
-                el = createBeforeNode;
-                var elprev = createBeforeNode.previousSibling;
+                el = createBefore;
+                var elprev = createBefore.previousSibling;
                 var removeEl = false;
                 var parent = createInto;
                 if (!el.insertAdjacentHTML) {
@@ -372,30 +363,32 @@ b = (function (window, document) {
                     newElements.push(elprev);
                     elprev = elprev.nextSibling;
                 }
-                n.element = newElements;
+                c.element = newElements;
                 if (removeEl) {
                     parent.removeChild(el);
                 }
             }
+            if (component) {
+                if (component.postRender) {
+                    component.postRender(c.ctx, c);
+                }
+                pushInitCallback(c, false);
+            }
             return c;
         }
-        else if (inSvg || n.tag === "svg") {
-            el = document.createElementNS("http://www.w3.org/2000/svg", n.tag);
+        else if (inSvg || tag === "svg") {
+            el = document.createElementNS("http://www.w3.org/2000/svg", tag);
             inSvg = true;
         }
         else if (!el) {
-            el = createElement(n.tag);
+            el = createElement(tag);
         }
-        if (onIE8 && n.tag === "input" && "type" in n.attrs) {
-            // On IE8 input.type has to be written before writing adding to document
-            el.type = c.attrs.type;
-        }
-        createInto.insertBefore(el, createBeforeNode);
+        createInto.insertBefore(el, createBefore);
         c.element = el;
-        createChildren(c);
+        createChildren(c, el, null);
         if (component) {
             if (component.postRender) {
-                component.postRender(c.ctx, n);
+                component.postRender(c.ctx, c);
             }
         }
         if (c.attrs)
@@ -412,24 +405,23 @@ b = (function (window, document) {
     function normalizeNode(n) {
         var t = typeof n;
         if (t === "string") {
-            return { tag: "", children: n };
+            return { children: n };
         }
         if (t === "boolean")
             return null;
         return n;
     }
-    function createChildren(c) {
+    function createChildren(c, createInto, createBefore) {
         var ch = c.children;
-        var element = c.element;
         if (!ch)
             return;
         if (!isArray(ch)) {
             if (typeof ch === "string") {
                 if (hasTextContent) {
-                    element.textContent = ch;
+                    createInto.textContent = ch;
                 }
                 else {
-                    element.innerText = ch;
+                    createInto.innerText = ch;
                 }
                 return;
             }
@@ -450,7 +442,7 @@ b = (function (window, document) {
                 l--;
                 continue;
             }
-            var j = ch[i] = createNode(item, c, element, null);
+            ch[i] = createNode(item, c, createInto, createBefore);
             i++;
         }
         c.children = ch;
@@ -469,10 +461,8 @@ b = (function (window, document) {
                 component.destroy(c.ctx, c, c.element);
         }
     }
-    function removeNode(c) {
-        destroyNode(c);
+    function removeNodeRecursive(c) {
         var el = c.element;
-        c.parent = null;
         if (isArray(el)) {
             var pa = el[0].parentNode;
             if (pa) {
@@ -481,13 +471,59 @@ b = (function (window, document) {
                 }
             }
         }
-        else {
+        else if (el != null) {
             var p = el.parentNode;
             if (p)
                 p.removeChild(el);
         }
+        else {
+            var ch = c.children;
+            if (isArray(ch)) {
+                for (var i = 0, l = ch.length; i < l; i++) {
+                    removeNodeRecursive(ch[i]);
+                }
+            }
+        }
+    }
+    function removeNode(c) {
+        destroyNode(c);
+        removeNodeRecursive(c);
     }
     var roots = Object.create(null);
+    function nodeContainsNode(c, n, resIndex, res) {
+        var el = c.element;
+        var ch = c.children;
+        if (isArray(el)) {
+            for (var ii = 0; ii < el.length; ii++) {
+                if (el[ii] === n) {
+                    res.push(c);
+                    if (isArray(ch)) {
+                        return ch;
+                    }
+                    return null;
+                }
+            }
+        }
+        else if (el == null) {
+            if (isArray(ch)) {
+                for (var i = 0; i < ch.length; i++) {
+                    var result = nodeContainsNode(ch[i], n, resIndex, res);
+                    if (result !== undefined) {
+                        res.splice(resIndex, 0, c);
+                        return result;
+                    }
+                }
+            }
+        }
+        else if (el === n) {
+            res.push(c);
+            if (isArray(ch)) {
+                return ch;
+            }
+            return null;
+        }
+        return undefined;
+    }
     function vdomPath(n) {
         var res = [];
         if (n == null)
@@ -510,15 +546,14 @@ b = (function (window, document) {
         rootFound2: for (j = 0; j < rootElements.length; j++) {
             if (n === rootElements[j]) {
                 var rc = roots[rootIds[j]].c;
-                if (typeof rc !== "string")
-                    for (var k = 0; k < rc.length; k++) {
-                        var rck = rc[k];
-                        if (rck.element === currentNode) {
-                            res.push(rck);
-                            currentCacheArray = rck.children;
-                            break rootFound2;
-                        }
+                for (var k = 0; k < rc.length; k++) {
+                    var rck = rc[k];
+                    var findResult = nodeContainsNode(rck, currentNode, res.length, res);
+                    if (findResult !== undefined) {
+                        currentCacheArray = findResult;
+                        break rootFound2;
                     }
+                }
             }
         }
         while (nodeStack.length) {
@@ -526,9 +561,9 @@ b = (function (window, document) {
             if (currentCacheArray && currentCacheArray.length)
                 for (var i = 0, l = currentCacheArray.length; i < l; i++) {
                     var bn = currentCacheArray[i];
-                    if (bn.element === currentNode) {
-                        res.push(bn);
-                        currentCacheArray = bn.children;
+                    var findResult = nodeContainsNode(bn, currentNode, res.length, res);
+                    if (findResult !== undefined) {
+                        currentCacheArray = findResult;
                         currentNode = null;
                         break;
                     }
@@ -541,69 +576,124 @@ b = (function (window, document) {
         return res;
     }
     function getCacheNode(n) {
-        var s = vdomPath(n);
-        if (s.length == 0)
-            return null;
-        return s[s.length - 1];
+        var p = vdomPath(n);
+        var currentNode = null;
+        while (currentNode === null && p.length > 0) {
+            currentNode = p.pop();
+        }
+        return currentNode;
     }
-    function updateNode(n, c) {
+    function finishUpdateNode(n, c, component) {
+        if (component) {
+            if (component.postRender) {
+                component.postRender(c.ctx, n, c);
+            }
+        }
+        c.data = n.data;
+        pushInitCallback(c, true);
+    }
+    function updateNode(n, c, createInto, createBefore, deepness) {
         var component = n.component;
         var backupInSvg = inSvg;
         var bigChange = false;
-        if (component && c.ctx != null) {
+        var ctx = c.ctx;
+        if (component && ctx != null) {
+            if (ctx[ctxInvalidated] === frameCounter) {
+                deepness = Math.max(deepness, ctx[ctxDeepness]);
+            }
             if (component.id !== c.component.id) {
                 bigChange = true;
             }
             else {
-                c.ctx.cfg = findCfg(c.parent);
+                if (c.parent != undefined)
+                    ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
-                    if (!component.shouldChange(c.ctx, n, c))
+                    if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                        if (isArray(c.children))
+                            selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
                         return c;
-                c.ctx.data = n.data || {};
+                    }
+                ctx.data = n.data || {};
                 c.component = component;
-                if (component.render)
-                    component.render(c.ctx, n, c);
+                if (component.render) {
+                    n = assign({}, n); // need to clone me because it should not be modified for next updates
+                    component.render(ctx, n, c);
+                }
                 c.cfg = n.cfg;
             }
         }
         if (DEBUG) {
-            if (!((n.ref == null && c.ref == null) || ((n.ref != null && c.ref != null && n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1])))) {
+            if (!((n.ref == null && c.ref == null) ||
+                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" ||
+                    n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
                 if (window.console && console.warn)
                     console.warn("ref changed in child in update");
             }
         }
-        var el;
-        if (bigChange || (component && c.ctx == null)) {
+        var newChildren = n.children;
+        var cachedChildren = c.children;
+        var tag = n.tag;
+        if (bigChange || (component && ctx == null)) {
         }
-        else if (n.tag === "/") {
-            if (c.tag === "/" && c.children === n.children)
+        else if (tag === "/") {
+            if (c.tag === "/" && cachedChildren === newChildren) {
+                finishUpdateNode(n, c, component);
                 return c;
+            }
         }
-        else if (n.tag === c.tag) {
-            if (n.tag === "") {
-                if (c.children !== n.children) {
-                    c.children = n.children;
-                    el = c.element;
-                    if (hasTextContent) {
-                        el.textContent = c.children;
-                    }
-                    else {
-                        el.nodeValue = c.children;
+        else if (tag === c.tag) {
+            if (tag === undefined) {
+                if (typeof newChildren === "string" && typeof cachedChildren === "string") {
+                    if (newChildren !== cachedChildren) {
+                        var el = c.element;
+                        if (hasTextContent) {
+                            el.textContent = newChildren;
+                        }
+                        else {
+                            el.nodeValue = newChildren;
+                        }
+                        c.children = newChildren;
                     }
                 }
+                else {
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(c.children, createInto, createBefore);
+                    }
+                    else {
+                        c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
+                    }
+                }
+                finishUpdateNode(n, c, component);
                 return c;
             }
             else {
-                if (n.tag === "svg") {
+                if (tag === "svg") {
                     inSvg = true;
                 }
-                updateChildrenNode(n, c);
-                if (component) {
-                    if (component.postRender) {
-                        component.postRender(c.ctx, n, c);
+                var el = c.element;
+                if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
+                    if (newChildren !== cachedChildren) {
+                        if (hasTextContent) {
+                            el.textContent = newChildren;
+                        }
+                        else {
+                            el.innerText = newChildren;
+                        }
+                        cachedChildren = newChildren;
                     }
                 }
-                el = c.element;
+                else {
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(c.children, el, createBefore);
+                    }
+                    else {
+                        cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
+                    }
+                }
+                c.children = cachedChildren;
+                finishUpdateNode(n, c, component);
                 if (c.attrs || n.attrs)
                     c.attrs = updateElement(c, el, n.attrs || {}, c.attrs || {});
                 updateStyle(c, el, n.style, c.style);
@@ -613,18 +703,48 @@ b = (function (window, document) {
                     setClassName(el, className || "");
                     c.className = className;
                 }
-                c.data = n.data;
                 inSvg = backupInSvg;
-                pushInitCallback(c, true);
                 return c;
             }
         }
-        el = c.element;
-        if (isArray(el))
-            el = el[0];
-        var r = createNode(n, c.parent, (el.parentNode), c.element);
+        var parEl = c.element;
+        if (isArray(parEl))
+            parEl = parEl[0];
+        if (parEl == null)
+            parEl = createInto;
+        else
+            parEl = parEl.parentNode;
+        var r = createNode(n, c.parent, parEl, getDomNode(c));
         removeNode(c);
         return r;
+    }
+    function getDomNode(c) {
+        var el = c.element;
+        if (el != null) {
+            if (isArray(el))
+                return el[0];
+            return el;
+        }
+        var ch = c.children;
+        if (!isArray(ch))
+            return null;
+        for (var i = 0; i < ch.length; i++) {
+            el = getDomNode(ch[i]);
+            if (el)
+                return el;
+        }
+        return null;
+    }
+    function findNextNode(a, i, len, def) {
+        while (++i < len) {
+            var ai = a[i];
+            if (ai == null)
+                continue;
+            var n = getDomNode(ai);
+            if (n != null)
+                return n;
+        }
+        return def;
     }
     function callPostCallbacks() {
         var count = updateInstance.length;
@@ -640,21 +760,49 @@ b = (function (window, document) {
         updateCall = [];
         updateInstance = [];
     }
-    function updateChildren(element, newChildren, cachedChildren, parentNode) {
+    function updateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness) {
+        cachedChildren[cachedIndex] = updateNode(newNode, cachedChildren[cachedIndex], element, findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore), deepness);
+    }
+    function reorderInUpdateChildrenRec(c, element, before) {
+        var el = c.element;
+        if (el != null) {
+            if (isArray(el)) {
+                for (var i = 0; i < el.length; i++) {
+                    element.insertBefore(el[i], before);
+                }
+            }
+            else
+                element.insertBefore(el, before);
+            return;
+        }
+        var ch = c.children;
+        if (!isArray(ch))
+            return null;
+        for (var i = 0; i < ch.length; i++) {
+            reorderInUpdateChildrenRec(ch[i], element, before);
+        }
+    }
+    function reorderInUpdateChildren(cachedChildren, cachedIndex, cachedLength, createBefore, element) {
+        var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
+        var cur = cachedChildren[cachedIndex];
+        var what = getDomNode(cur);
+        if (what != null && what !== before) {
+            reorderInUpdateChildrenRec(cur, element, before);
+        }
+    }
+    function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness) {
+        var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
+        var cur = cachedChildren[cachedIndex];
+        var what = getDomNode(cur);
+        if (what != null && what !== before) {
+            reorderInUpdateChildrenRec(cur, element, before);
+        }
+        cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
+    }
+    function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
         if (newChildren == null)
             newChildren = [];
         if (!isArray(newChildren)) {
-            if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
-                if (newChildren === cachedChildren)
-                    return cachedChildren;
-                if (hasTextContent) {
-                    element.textContent = newChildren;
-                }
-                else {
-                    element.innerText = newChildren;
-                }
-                return newChildren;
-            }
             newChildren = [newChildren];
         }
         if (cachedChildren == null)
@@ -664,33 +812,37 @@ b = (function (window, document) {
                 element.removeChild(element.firstChild);
             cachedChildren = [];
         }
-        newChildren = newChildren.slice(0);
-        var newLength = newChildren.length;
-        var cachedLength = cachedChildren.length;
+        var newCh = newChildren;
+        newCh = newCh.slice(0);
+        var newLength = newCh.length;
         var newIndex;
         for (newIndex = 0; newIndex < newLength;) {
-            var item = newChildren[newIndex];
+            var item = newCh[newIndex];
             if (isArray(item)) {
-                newChildren.splice.apply(newChildren, [newIndex, 1].concat(item));
-                newLength = newChildren.length;
+                newCh.splice.apply(newCh, [newIndex, 1].concat(item));
+                newLength = newCh.length;
                 continue;
             }
             item = normalizeNode(item);
             if (item == null) {
-                newChildren.splice(newIndex, 1);
+                newCh.splice(newIndex, 1);
                 newLength--;
                 continue;
             }
-            newChildren[newIndex] = item;
+            newCh[newIndex] = item;
             newIndex++;
         }
-        var newEnd = newLength;
+        return updateChildrenCore(element, newCh, cachedChildren, parentNode, createBefore, deepness);
+    }
+    function updateChildrenCore(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
+        var newEnd = newChildren.length;
+        var cachedLength = cachedChildren.length;
         var cachedEnd = cachedLength;
-        newIndex = 0;
+        var newIndex = 0;
         var cachedIndex = 0;
         while (newIndex < newEnd && cachedIndex < cachedEnd) {
             if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
-                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 newIndex++;
                 cachedIndex++;
                 continue;
@@ -699,7 +851,7 @@ b = (function (window, document) {
                 if (newChildren[newEnd - 1].key === cachedChildren[cachedEnd - 1].key) {
                     newEnd--;
                     cachedEnd--;
-                    cachedChildren[cachedEnd] = updateNode(newChildren[newEnd], cachedChildren[cachedEnd]);
+                    updateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness);
                     if (newIndex < newEnd && cachedIndex < cachedEnd)
                         continue;
                 }
@@ -707,21 +859,19 @@ b = (function (window, document) {
             }
             if (newIndex < newEnd && cachedIndex < cachedEnd) {
                 if (newChildren[newIndex].key === cachedChildren[cachedEnd - 1].key) {
-                    element.insertBefore(cachedChildren[cachedEnd - 1].element, cachedChildren[cachedIndex].element);
                     cachedChildren.splice(cachedIndex, 0, cachedChildren[cachedEnd - 1]);
                     cachedChildren.splice(cachedEnd, 1);
-                    cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                    reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                     newIndex++;
                     cachedIndex++;
                     continue;
                 }
                 if (newChildren[newEnd - 1].key === cachedChildren[cachedIndex].key) {
-                    element.insertBefore(cachedChildren[cachedIndex].element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element);
                     cachedChildren.splice(cachedEnd, 0, cachedChildren[cachedIndex]);
                     cachedChildren.splice(cachedIndex, 1);
                     cachedEnd--;
                     newEnd--;
-                    cachedChildren[cachedEnd] = updateNode(newChildren[newEnd], cachedChildren[cachedEnd]);
+                    reorderAndUpdateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness);
                     continue;
                 }
             }
@@ -731,8 +881,9 @@ b = (function (window, document) {
             if (newIndex === newEnd) {
                 return cachedChildren;
             }
+            // Only work left is to add new nodes
             while (newIndex < newEnd) {
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element));
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
                 cachedIndex++;
                 cachedEnd++;
                 cachedLength++;
@@ -741,6 +892,7 @@ b = (function (window, document) {
             return cachedChildren;
         }
         if (newIndex === newEnd) {
+            // Only work left is to remove old nodes
             while (cachedIndex < cachedEnd) {
                 cachedEnd--;
                 removeNode(cachedChildren[cachedEnd]);
@@ -810,7 +962,7 @@ b = (function (window, document) {
             var akpos = cachedKeys[key];
             if (akpos === undefined) {
                 // New key
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, cachedChildren[cachedIndex].element));
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
                 delta++;
                 newIndex++;
                 cachedIndex++;
@@ -829,7 +981,7 @@ b = (function (window, document) {
             }
             if (cachedIndex === akpos + delta) {
                 // Inplace update
-                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 newIndex++;
                 cachedIndex++;
             }
@@ -838,14 +990,14 @@ b = (function (window, document) {
                 cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
                 delta++;
                 cachedChildren[akpos + delta] = null;
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[cachedIndex + 1].element);
-                cachedChildren[cachedIndex] = updateNode(newChildren[newIndex], cachedChildren[cachedIndex]);
+                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
                 cachedIndex++;
                 cachedEnd++;
                 cachedLength++;
                 newIndex++;
             }
         }
+        // remove old keyed cached nodes
         while (cachedIndex < cachedEnd) {
             if (cachedChildren[cachedIndex] === null) {
                 cachedChildren.splice(cachedIndex, 1);
@@ -862,10 +1014,11 @@ b = (function (window, document) {
             }
             cachedIndex++;
         }
+        // add new keyed nodes
         while (newIndex < newEnd) {
             key = newChildren[newIndex].key;
             if (key != null) {
-                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, cachedEnd === cachedLength ? null : cachedChildren[cachedEnd].element));
+                cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
                 cachedEnd++;
                 cachedLength++;
                 delta++;
@@ -895,7 +1048,7 @@ b = (function (window, document) {
                     newIndex++;
                     continue;
                 }
-                cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element, deepness);
                 keyLess--;
                 newIndex++;
                 cachedIndex = newIndex;
@@ -921,22 +1074,22 @@ b = (function (window, document) {
                 assert(key === cachedChildren[cachedIndex].key);
                 cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex + 1, 1);
-                element.insertBefore(cachedChildren[newIndex].element, cachedChildren[newIndex + 1].element);
+                reorderInUpdateChildren(cachedChildren, newIndex, cachedLength, createBefore, element);
+                // just moving keyed node it was already updated before
                 newIndex++;
                 cachedIndex = newIndex;
                 continue;
             }
             if (cachedIndex < cachedEnd) {
-                element.insertBefore(cachedChildren[cachedIndex].element, cachedChildren[newIndex].element);
                 cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex + 1, 1);
-                cachedChildren[newIndex] = updateNode(newChildren[newIndex], cachedChildren[newIndex]);
+                reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element, deepness);
                 keyLess--;
                 newIndex++;
                 cachedIndex++;
             }
             else {
-                cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode, element, newIndex === cachedLength ? null : cachedChildren[newIndex].element));
+                cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore)));
                 cachedEnd++;
                 cachedLength++;
                 newIndex++;
@@ -950,16 +1103,11 @@ b = (function (window, document) {
         }
         return cachedChildren;
     }
-    function updateChildrenNode(n, c) {
-        c.children = updateChildren(c.element, n.children, c.children, c);
-    }
     var hasNativeRaf = false;
     var nativeRaf = window.requestAnimationFrame;
     if (nativeRaf) {
-        nativeRaf(function (param) {
-            if (param === +param)
-                hasNativeRaf = true;
-        });
+        nativeRaf(function (param) { if (param === +param)
+            hasNativeRaf = true; });
     }
     var now = Date.now || (function () { return (new Date).getTime(); });
     var startTime = now();
@@ -979,15 +1127,19 @@ b = (function (window, document) {
         }
     }
     var ctxInvalidated = "$invalidated";
-    var fullRecreateRequested = false;
+    var ctxDeepness = "$deepness";
+    var fullRecreateRequested = true;
     var scheduled = false;
+    var initializing = true;
     var uptime = 0;
-    var frame = 0;
+    var frameCounter = 0;
     var lastFrameDuration = 0;
     var renderFrameBegin = 0;
     var regEvents = {};
-    var registryEvents = {};
+    var registryEvents;
     function addEvent(name, priority, callback) {
+        if (registryEvents == null)
+            registryEvents = {};
         var list = registryEvents[name] || [];
         list.push({ priority: priority, callback: callback });
         registryEvents[name] = list;
@@ -1004,27 +1156,25 @@ b = (function (window, document) {
     function addListener(el, name) {
         if (name[0] == "!")
             return;
+        var capture = (name[0] == "^");
+        var eventName = name;
+        if (capture) {
+            eventName = name.slice(1);
+        }
         function enhanceEvent(ev) {
             ev = ev || window.event;
             var t = ev.target || ev.srcElement || el;
             var n = getCacheNode(t);
             emitEvent(name, ev, t, n);
         }
-        if (("on" + name) in window)
+        if (("on" + eventName) in window)
             el = window;
-        if (el.addEventListener) {
-            el.addEventListener(name, enhanceEvent);
-        }
-        else {
-            el.attachEvent("on" + name, enhanceEvent);
-        }
+        el.addEventListener(eventName, enhanceEvent, capture);
     }
-    var eventsCaptured = false;
     function initEvents() {
-        if (eventsCaptured)
+        if (registryEvents == null)
             return;
-        eventsCaptured = true;
-        var eventNames = objectKeys(registryEvents);
+        var eventNames = Object.keys(registryEvents);
         for (var j = 0; j < eventNames.length; j++) {
             var eventName = eventNames[j];
             var arr = registryEvents[eventName];
@@ -1037,30 +1187,67 @@ b = (function (window, document) {
             addListener(body, eventNames[i]);
         }
     }
-    function selectedUpdate(cache) {
-        for (var i = 0; i < cache.length; i++) {
+    function selectedUpdate(cache, element, createBefore) {
+        var len = cache.length;
+        for (var i = 0; i < len; i++) {
             var node = cache[i];
-            if (node.ctx != null && node.ctx[ctxInvalidated] === frame) {
-                cache[i] = updateNode(cloneNode(node), node);
+            var ctx = node.ctx;
+            if (ctx != null && ctx[ctxInvalidated] === frameCounter) {
+                var cloned = { data: ctx.data, component: node.component };
+                cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness]);
             }
             else if (isArray(node.children)) {
-                selectedUpdate(node.children);
+                var backupInSvg = inSvg;
+                if (node.tag === "svg")
+                    inSvg = true;
+                selectedUpdate(node.children, node.element || element, findNextNode(cache, i, len, createBefore));
+                inSvg = backupInSvg;
             }
         }
     }
-    var afterFrameCallback = function () {
-    };
+    var beforeFrameCallback = function () { };
+    var afterFrameCallback = function () { };
+    function setBeforeFrame(callback) {
+        var res = beforeFrameCallback;
+        beforeFrameCallback = callback;
+        return res;
+    }
     function setAfterFrame(callback) {
         var res = afterFrameCallback;
         afterFrameCallback = callback;
         return res;
     }
+    function findLastNode(children) {
+        for (var i = children.length - 1; i >= 0; i--) {
+            var c = children[i];
+            var el = c.element;
+            if (el != null) {
+                if (isArray(el)) {
+                    var l = el.length;
+                    if (l === 0)
+                        continue;
+                    return el[l - 1];
+                }
+                return el;
+            }
+            var ch = c.children;
+            if (!isArray(ch))
+                continue;
+            var res = findLastNode(ch);
+            if (res != null)
+                return res;
+        }
+        return null;
+    }
     function update(time) {
         renderFrameBegin = now();
         initEvents();
-        frame++;
+        frameCounter++;
+        ignoringShouldChange = nextIgnoreShouldChange;
+        nextIgnoreShouldChange = false;
         uptime = time;
         scheduled = false;
+        beforeFrameCallback();
         var fullRefresh = false;
         if (fullRecreateRequested) {
             fullRecreateRequested = false;
@@ -1072,39 +1259,57 @@ b = (function (window, document) {
             if (!r)
                 continue;
             var rc = r.c;
+            var insertBefore = findLastNode(rc);
+            if (insertBefore != null)
+                insertBefore = insertBefore.nextSibling;
             if (fullRefresh) {
                 var newChildren = r.f();
+                if (newChildren === undefined)
+                    break;
                 r.e = r.e || document.body;
-                r.c = updateChildren(r.e, newChildren, rc, null);
+                r.c = updateChildren(r.e, newChildren, rc, null, insertBefore, 1e6);
             }
             else {
-                if (typeof rc !== "string")
-                    selectedUpdate(rc);
+                selectedUpdate(rc, r.e, insertBefore);
             }
         }
         callPostCallbacks();
-        afterFrameCallback(roots["0"].c);
+        var r0 = roots["0"];
+        afterFrameCallback(r0 ? r0.c : null);
         lastFrameDuration = now() - renderFrameBegin;
     }
-    function invalidate(ctx) {
-        if (fullRecreateRequested)
-            return;
+    var nextIgnoreShouldChange = false;
+    var ignoringShouldChange = false;
+    function ignoreShouldChange() {
+        nextIgnoreShouldChange = true;
+        invalidate();
+    }
+    function invalidate(ctx, deepness) {
         if (ctx != null) {
-            ctx[ctxInvalidated] = frame + 1;
+            if (deepness == undefined)
+                deepness = 1e6;
+            if (ctx[ctxInvalidated] !== frameCounter + 1) {
+                ctx[ctxInvalidated] = frameCounter + 1;
+                ctx[ctxDeepness] = deepness;
+            }
+            else {
+                if (deepness > ctx[ctxDeepness])
+                    ctx[ctxDeepness] = deepness;
+            }
         }
         else {
             fullRecreateRequested = true;
         }
-        if (scheduled)
+        if (scheduled || initializing)
             return;
         scheduled = true;
         requestAnimationFrame(update);
     }
     var lastRootId = 0;
-    function addRoot(factory, element) {
+    function addRoot(factory, element, parent) {
         lastRootId++;
         var rootId = "" + lastRootId;
-        roots[rootId] = { f: factory, e: element, c: [] };
+        roots[rootId] = { f: factory, e: element, c: [], p: parent };
         invalidate();
         return rootId;
     }
@@ -1113,17 +1318,30 @@ b = (function (window, document) {
         if (!root)
             return;
         if (root.c.length) {
-            root.c = updateChildren(root.e, [], root.c, null);
+            root.c = updateChildren(root.e, [], root.c, null, null, 1e9);
         }
         delete roots[id];
     }
     function getRoots() {
         return roots;
     }
+    function finishInitialize() {
+        initializing = false;
+        invalidate();
+    }
+    var beforeInit = finishInitialize;
     function init(factory, element) {
         removeRoot("0");
-        roots["0"] = { f: factory, e: element, c: [] };
-        invalidate();
+        roots["0"] = { f: factory, e: element, c: [], p: undefined };
+        initializing = true;
+        beforeInit();
+        beforeInit = finishInitialize;
+    }
+    function setBeforeInit(callback) {
+        var prevBeforeInit = beforeInit;
+        beforeInit = function () {
+            callback(prevBeforeInit);
+        };
     }
     function bubbleEvent(node, name, param) {
         while (node) {
@@ -1133,7 +1351,7 @@ b = (function (window, document) {
                 var m = c[name];
                 if (m) {
                     if (m.call(c, ctx, param))
-                        return true;
+                        return ctx;
                 }
                 m = c.shouldStopBubble;
                 if (m) {
@@ -1143,37 +1361,48 @@ b = (function (window, document) {
             }
             node = node.parent;
         }
-        return false;
+        return null;
     }
     function broadcastEventToNode(node, name, param) {
         if (!node)
-            return false;
+            return null;
         var c = node.component;
         if (c) {
             var ctx = node.ctx;
-            if (c.shouldStopBroadcast(ctx, name, param))
-                return false;
             var m = c[name];
             if (m) {
                 if (m.call(c, ctx, param))
-                    return true;
+                    return ctx;
+            }
+            m = c.shouldStopBroadcast;
+            if (m) {
+                if (m.call(c, ctx, name, param))
+                    return null;
             }
         }
-        return broadcastEvent(node, name, param);
-    }
-    function broadcastEvent(node, name, param) {
-        if (!node)
-            return false;
         var ch = node.children;
         if (isArray(ch)) {
             for (var i = 0; i < ch.length; i++) {
-                if (broadcastEventToNode(ch[i], name, param))
-                    return true;
+                var res = broadcastEventToNode(ch[i], name, param);
+                if (res != null)
+                    return res;
             }
         }
-        else {
-            return broadcastEventToNode(ch, name, param);
+        return null;
+    }
+    function broadcastEvent(name, param) {
+        var k = Object.keys(roots);
+        for (var i = 0; i < k.length; i++) {
+            var ch = roots[k[i]].c;
+            if (ch != null) {
+                for (var j = 0; j < ch.length; j++) {
+                    var res = broadcastEventToNode(ch[j], name, param);
+                    if (res != null)
+                        return res;
+                }
+            }
         }
+        return null;
     }
     function merge(f1, f2) {
         var _this = this;
@@ -1191,6 +1420,7 @@ b = (function (window, document) {
     var emptyObject = {};
     function mergeComponents(c1, c2) {
         var res = Object.create(c1);
+        res.super = c1;
         for (var i in c2) {
             if (!(i in emptyObject)) {
                 var m = c2[i];
@@ -1226,15 +1456,25 @@ b = (function (window, document) {
         node.component = mergeComponents(comp, methods);
         return node;
     }
-    function assign(target, source) {
+    function assign(target) {
+        var sources = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            sources[_i - 1] = arguments[_i];
+        }
         if (target == null)
             target = {};
-        if (source != null)
-            for (var propname in source) {
-                if (!source.hasOwnProperty(propname))
-                    continue;
-                target[propname] = source[propname];
+        var totalArgs = arguments.length;
+        for (var i = 1; i < totalArgs; i++) {
+            var source = arguments[i];
+            if (source == null)
+                continue;
+            var keys = Object.keys(source);
+            var totalKeys = keys.length;
+            for (var j = 0; j < totalKeys; j++) {
+                var key = keys[j];
+                target[key] = source[key];
             }
+        }
         return target;
     }
     function preventDefault(event) {
@@ -1258,12 +1498,12 @@ b = (function (window, document) {
         return a;
     }
     function cloneNode(node) {
-        var r = b.assign({}, node);
+        var r = assign({}, node);
         if (r.attrs) {
-            r.attrs = b.assign({}, r.attrs);
+            r.attrs = assign({}, r.attrs);
         }
         if (isObject(r.style)) {
-            r.style = b.assign({}, r.style);
+            r.style = assign({}, r.style);
         }
         var ch = r.children;
         if (ch) {
@@ -1287,18 +1527,22 @@ b = (function (window, document) {
         addRoot: addRoot,
         removeRoot: removeRoot,
         getRoots: getRoots,
+        setBeforeFrame: setBeforeFrame,
         setAfterFrame: setAfterFrame,
+        setBeforeInit: setBeforeInit,
         isArray: isArray,
         uptime: function () { return uptime; },
         lastFrameDuration: function () { return lastFrameDuration; },
         now: now,
-        frame: function () { return frame; },
+        frame: function () { return frameCounter; },
         assign: assign,
         ieVersion: ieVersion,
         invalidate: invalidate,
+        ignoreShouldChange: ignoreShouldChange,
         invalidated: function () { return scheduled; },
         preventDefault: preventDefault,
         vdomPath: vdomPath,
+        getDomNode: getDomNode,
         deref: getCacheNode,
         addEvent: addEvent,
         emitEvent: emitEvent,
@@ -1306,7 +1550,9 @@ b = (function (window, document) {
         broadcast: broadcastEvent,
         preEnhance: preEnhance,
         postEnhance: postEnhance,
-        cloneNode: cloneNode
+        cloneNode: cloneNode,
+        shimStyle: shimStyle,
+        flatten: flatten,
+        mergeComponents: mergeComponents
     };
 })(window, document);
-//# sourceMappingURL=bobril.js.map

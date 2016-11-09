@@ -19,7 +19,7 @@ var OnKeyApp;
             return (this.down ? "KeyDown " : "KeyUp ") + "Shift: " + v.shift + " Ctrl: " + v.ctrl + " Alt: " + v.alt + " Meta: " + v.meta + " Which: " + v.which;
         };
         return KeyUpDown;
-    })();
+    }());
     var KeyPress = (function () {
         function KeyPress(value) {
             this.value = value;
@@ -29,7 +29,7 @@ var OnKeyApp;
             return "KeyPress CharCode: " + v.charCode;
         };
         return KeyPress;
-    })();
+    }());
     var evs = [];
     function addEvent(e) {
         evs.unshift(e);
@@ -58,7 +58,7 @@ var OnKeyApp;
         return [
             {
                 tag: "div",
-                attrs: { tabindex: "0" },
+                attrs: { tabindex: 0 },
                 data: { onAdd: addEvent },
                 component: TrackKeys,
                 children: [
@@ -70,4 +70,3 @@ var OnKeyApp;
         ];
     });
 })(OnKeyApp || (OnKeyApp = {}));
-//# sourceMappingURL=app.js.map

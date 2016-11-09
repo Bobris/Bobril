@@ -2,7 +2,7 @@
 /// <reference path="bobril.mouse.d.ts"/>
 /// <reference path="bobril.swipe.d.ts"/>
 (function (b) {
-    var valid = false;
+    var pointerId;
     var startX;
     var startY;
     var lastX;
@@ -11,7 +11,7 @@
     var totalY;
     function handlePointerDown(ev, target, node) {
         if (b.pointersDownCount() == 1) {
-            valid = true;
+            pointerId = ev.id;
             startX = ev.x;
             startY = ev.y;
             lastX = startX;
@@ -20,11 +20,11 @@
             totalY = 0;
         }
         else
-            valid = false;
+            pointerId = null;
         return false;
     }
     function handlePointerMove(ev, target, node) {
-        if (valid) {
+        if (ev.id === pointerId) {
             totalX += Math.abs(ev.x - lastX);
             totalY += Math.abs(ev.y - lastY);
             lastX = ev.x;
@@ -33,7 +33,8 @@
         return false;
     }
     function handlePointerUp(ev, target, node) {
-        if (valid) {
+        if (ev.id === pointerId) {
+            pointerId = null;
             var deltaX = Math.abs(ev.x - startX);
             var deltaY = Math.abs(ev.y - startY);
             if (deltaX < 75)
@@ -45,9 +46,8 @@
             if (totalY > deltaX * 0.7)
                 return false; // too much shaking hand
             var method = "onSwipe" + (ev.x > startX ? "Right" : "Left");
-            var param = { x: ev.x, y: ev.y };
             b.ignoreClick(ev.x, ev.y);
-            b.bubble(node, method, param);
+            b.bubble(node, method, ev);
         }
         return false;
     }
@@ -56,4 +56,3 @@
     addEvent("!PointerMove", 70, handlePointerMove);
     addEvent("!PointerUp", 70, handlePointerUp);
 })(b);
-//# sourceMappingURL=bobril.swipe.js.map

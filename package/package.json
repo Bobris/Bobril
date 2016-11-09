@@ -1,0 +1,15 @@
+{
+  "name": "bobril",
+  "version": "4.49.1",
+  "description": "Component Oriented MVC Framework with virtual DOM and CSS",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "typescript": {
+    "main": "index.ts"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Boris Letocha",
+  "license": "MIT"
+}

@@ -9,7 +9,9 @@ var GameOfLifeApp;
         }
         GameController.init = function (ctx) {
             ctx.nextTickTime = b.uptime();
-            ctx.world = new GameOfLifeApp.World(ctx.data.startLiveCell.map(function (cordinates) { return new GameOfLifeApp.Cell(cordinates[0], cordinates[1]); }));
+            ctx.world = new GameOfLifeApp.World(ctx.data.startLiveCell.map(function (cordinates) {
+                return new GameOfLifeApp.Cell(cordinates[0], cordinates[1]);
+            }));
             this.data = ctx.data;
         };
         GameController.render = function (ctx, me) {
@@ -46,7 +48,6 @@ var GameOfLifeApp;
             ];
         };
         return GameController;
-    })();
+    }());
     GameOfLifeApp.GameController = GameController;
 })(GameOfLifeApp || (GameOfLifeApp = {}));
-//# sourceMappingURL=gamecontroller.js.map

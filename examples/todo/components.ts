@@ -27,11 +27,11 @@ module TodoApp {
             me.tag = "div";
             me.className = "main";
             me.children = [
-                { 
-                    component: Heading 
+                {
+                    component: Heading
                 },
                 {
-                    component: TaskCreate, 
+                    component: TaskCreate,
                     data: {
                         isWholeListCompleted: ctx.data.tasks.getItemsCount() > 0 && ctx.data.tasks.isWholeListCompleted(),
                         addNewTask(name: string) {
@@ -46,13 +46,13 @@ module TodoApp {
                     }
                 },
                 {
-                    component: TaskList, 
+                    component: TaskList,
                     data: {
                         tasks: ctx.data.tasks,
                         filter: ctx.filter
                     }
                 },
-                { 
+                {
                     component: Footer,
                     data: {
                         tasksCount: ctx.data.tasks.getItemsCount(),
@@ -92,80 +92,81 @@ module TodoApp {
         }
     }
 
+    function createInputElement(ctx: ITaskCreateCtx): IBobrilNode {
+        return {
+            tag: "input",
+            className: "task-name",
+            attrs: {
+                placeholder: "What needs to be done?",
+                value: ctx.newTaskName
+            },
+            component: {
+                onKeyUp(ctx: ITaskCreateCtx, event: IKeyDownUpEvent): boolean {
+                    var handler = new KeyDownUpHandler();
+                    return handler.handleEcsEnter(
+                        event,
+                        () => {
+                            // cancel the task adding controls (i.e. clear the input)
+                            ctx.newTaskName = "";
+                            b.invalidate();
+                            return true;
+                        },
+                        () => {
+                            ctx.newTaskName = ctx.newTaskName.trim();
+                            if (ctx.newTaskName) {
+                                ctx.data.addNewTask(ctx.newTaskName);
+                                b.invalidate();
+                                ctx.newTaskName = "";
+                            }
+                            return true;
+                        });
+                },
+                onChange(ctx: ITaskCreateCtx, value: string): boolean {
+                    ctx.newTaskName = value;
+                    return true;
+                },
+                postInitDom(ctx: Object, me: IBobrilNode, element: HTMLElement) {
+                    element.focus();
+                }
+            },
+            data: ctx.data
+        };
+    }
+
+    function createSetAllCheckboxElement(ctx: ITaskCreateCtx): IBobrilNode {
+        return {
+            tag: "input",
+            className: "set-all-tasks",
+            attrs: {
+                type: "checkbox",
+                value: ctx.data.isWholeListCompleted
+            },
+            component: {
+                onChange(ctx: ISetAllCheckboxCtx, value: string) {
+                    if (value) {
+                        ctx.data.markAllTasksAsCompleted();
+                    } else {
+                        ctx.data.markAllTasksAsActive();
+                    }
+                    b.invalidate();
+                }
+            },
+            data: {
+                markAllTasksAsCompleted: ctx.data.markAllTasksAsCompleted,
+                markAllTasksAsActive: ctx.data.markAllTasksAsActive
+            }
+        };
+    }
+
     var TaskCreate: IBobrilComponent = {
         render(ctx: ITaskCreateCtx, me: IBobrilNode): void {
             ctx.newTaskName = ctx.newTaskName || "";
             me.tag = "div";
             me.className = "input-wrapper";
             me.children = [
-                this.createInputElement(ctx),
-                this.createSetAllCheckboxElement(ctx)
+                createInputElement(ctx),
+                createSetAllCheckboxElement(ctx)
             ];
-        },
-
-        createInputElement(ctx: ITaskCreateCtx): IBobrilNode {
-            return {
-                tag: "input",
-                className: "task-name",
-                attrs: {
-                    placeholder: "What needs to be done?",
-                    value: ctx.newTaskName
-                },
-                component: {
-                    onKeyUp(ctx: ITaskCreateCtx, event: IKeyDownUpEvent): boolean {
-                        var handler = new KeyDownUpHandler();
-                        return handler.handleEcsEnter(
-                            event,
-                            () => {
-                                // cancel the task adding controls (i.e. clear the input)
-                                ctx.newTaskName = "";
-                                b.invalidate();
-                                return true;
-                            },
-                            () => {
-                                ctx.newTaskName = ctx.newTaskName.trim();
-                                if (ctx.newTaskName) {
-                                    ctx.data.addNewTask(ctx.newTaskName);
-                                    b.invalidate();
-                                    ctx.newTaskName = "";
-                                }
-                                return true;
-                            });
-                    },
-                    onChange(ctx: ITaskCreateCtx, value: string) {
-                        ctx.newTaskName = value;
-                    },
-                    postInitDom(ctx: Object, me: IBobrilNode, element: HTMLElement) {
-                        element.focus();
-                    }
-                },
-                data: ctx.data
-            };
-        },
-
-        createSetAllCheckboxElement(ctx: ITaskCreateCtx): IBobrilNode {
-            return {
-                tag: "input",
-                className: "set-all-tasks",
-                attrs: {
-                    type: "checkbox",
-                    value: ctx.data.isWholeListCompleted
-                },
-                component: {
-                    onChange(ctx: ISetAllCheckboxCtx, value: string) {
-                        if (value) {
-                            ctx.data.markAllTasksAsCompleted();
-                        } else {
-                            ctx.data.markAllTasksAsActive();
-                        }
-                        b.invalidate();
-                    }
-                },
-                data: {
-                    markAllTasksAsCompleted: ctx.data.markAllTasksAsCompleted,
-                    markAllTasksAsActive: ctx.data.markAllTasksAsActive
-                }
-            };
         }
     }
 
@@ -179,6 +180,32 @@ module TodoApp {
         editingTaskId: number;
     }
 
+    function createTaskElements(ctx: ITaskListCtx): Array<IBobrilNode> {
+        var res: Array<IBobrilNode> = [];
+        var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
+        var tasks = ctx.data.tasks;
+
+        for (var i = 0; i < taskItems.length; i++) {
+            var task = taskItems[i];
+            res.push({
+                component: TaskItem,
+                data: {
+                    id: task.id,
+                    name: task.name,
+                    completed: task.completed,
+                    justEditing: task.id === ctx.editingTaskId,
+                    cancelNewValue() { ctx.editingTaskId = -1; },
+                    saveNewValue(taskId: number, value: string) { tasks.setTaskName(taskId, value); ctx.editingTaskId = -1; },
+                    markTaskAsCompleted(taskId: number) { tasks.markTaskAsCompleted(taskId); },
+                    markTaskAsActive(taskId: number) { tasks.markTaskAsActive(taskId); },
+                    setEditingMode(taskId: number) { ctx.editingTaskId = taskId; },
+                    removeTask(taskId: number) { tasks.removeTask(taskId); }
+                }
+            });
+        }
+        return res;
+    }
+
     var TaskList: IBobrilComponent = {
         init(ctx: ITaskListCtx, me: IBobrilNode): void {
             ctx.editingTaskId = -1;
@@ -186,34 +213,7 @@ module TodoApp {
         render(ctx: ITaskListCtx, me: IBobrilNode): void {
             me.tag = "ul";
             me.className = "todo-list";
-            me.children = this.createTaskElements(ctx);
-        },
-
-        createTaskElements(ctx: ITaskListCtx): Array<IBobrilNode> {
-            var res: Array<IBobrilNode> = [];
-            var taskItems = ctx.data.tasks.getFilteredItems(ctx.data.filter);
-            var tasks = ctx.data.tasks;
-
-            for (var i = 0; i < taskItems.length; i++) {
-                var task = taskItems[i];
-                res.push({
-                    component: TaskItem,
-                    data: {
-                        id: task.id,
-                        name: task.name,
-                        completed: task.completed,
-                        justEditing: task.id === ctx.editingTaskId,
-                        cancelNewValue() { ctx.editingTaskId = -1; },
-                        saveNewValue(taskId: number, value: string) { tasks.setTaskName(taskId, value); ctx.editingTaskId = -1; },
-                        markTaskAsCompleted(taskId: number) { tasks.markTaskAsCompleted(taskId); },
-                        markTaskAsActive(taskId: number) { tasks.markTaskAsActive(taskId); },
-                        setEditingMode(taskId: number) { ctx.editingTaskId = taskId; },
-                        removeTask(taskId: number) { tasks.removeTask(taskId); }
-                    }
-                });
-            }
-
-            return res;
+            me.children = createTaskElements(ctx);
         }
     }
 
@@ -276,8 +276,8 @@ module TodoApp {
                         }
                     }
                 },
-                ctx.data.justEditing && { 
-                    component: EditingInput, 
+                ctx.data.justEditing && {
+                    component: EditingInput,
                     data: {
                         taskId: ctx.data.id,
                         oldValue: ctx.data.name,
@@ -380,7 +380,7 @@ module TodoApp {
                             ctx.newValue = "";
                             b.invalidate();
                             return true;
-                        }, 
+                        },
                         () => {
                             ctx.newValue = ctx.newValue.trim();
                             if (ctx.newValue) {
@@ -393,8 +393,7 @@ module TodoApp {
                 },
                 onChange(ctx: IEditingInputCtx, value: string) {
                     ctx.newValue = value;
-                },
-                data: ctx.data
+                }
             }
         }
     }
@@ -411,11 +410,57 @@ module TodoApp {
         data: IFooterData;
     }
 
+    function createItemsLeftInfo(ctx: IFooterCtx): IBobrilNode {
+        var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
+        var text = itemsLeftCount === 1
+            ? itemsLeftCount + " item left"
+            : itemsLeftCount + " items left";
+        return {
+            tag: "div",
+            className: "items-left-info",
+            children: text
+        };
+    }
+
+    function createFilterButtons(): IBobrilNode {
+        return {
+            tag: "div",
+            className: "filter",
+            children: [
+                b.link({ tag: "a", children: "All" }, "all"),
+                b.link({ tag: "a", children: "Active" }, "active"),
+                b.link({ tag: "a", children: "Completed" }, "completed")
+            ]
+        };
+    }
+
+    function createClearCompleted(ctx: IFooterCtx): IBobrilNode {
+        var numberOfCompletedTasks = ctx.data.completedTasksCount;
+        var text = "Clear completed (" + numberOfCompletedTasks + ")";
+        var className = "clear-completed-button";
+        if (numberOfCompletedTasks < 1) {
+            className += " hidden";
+        }
+        return {
+            tag: "div",
+            className: className,
+            children: text,
+            component: {
+                onClick(ctx: IFooterCtx): boolean {
+                    ctx.data.removeCompletedTasks();
+                    b.invalidate();
+                    return true;
+                }
+            },
+            data: ctx.data
+        };
+    }
+
     var Footer: IBobrilComponent = {
         render(ctx: IFooterCtx, me: IBobrilNode): void {
-            var itemsLeftInfo = this.createItemsLeftInfo(ctx);
-            var filterButtons = this.createFilterButtons();
-            var clearAllButton = this.createClearCompleted(ctx);
+            var itemsLeftInfo = createItemsLeftInfo(ctx);
+            var filterButtons = createFilterButtons();
+            var clearAllButton = createClearCompleted(ctx);
 
             me.tag = "div";
             me.className = "footer";
@@ -428,52 +473,6 @@ module TodoApp {
                     className: "cleaner"
                 }
             ];
-        },
-
-        createItemsLeftInfo(ctx: IFooterCtx): IBobrilNode {
-            var itemsLeftCount = ctx.data.tasksCount - ctx.data.completedTasksCount;
-            var text = itemsLeftCount === 1
-                ? itemsLeftCount + " item left"
-                : itemsLeftCount + " items left";
-            return {
-                tag: "div",
-                className: "items-left-info",
-                children: text
-            };
-        },
-
-        createFilterButtons(): IBobrilNode {
-            return {
-                tag: "div",
-                className: "filter",
-                children: [
-                    b.link({ tag: "a", children: "All" }, "all"),
-                    b.link({ tag: "a", children: "Active" }, "active"),
-                    b.link({ tag: "a", children: "Completed" }, "completed")
-                ]
-            };
-        },
-
-        createClearCompleted(ctx: IFooterCtx): IBobrilNode {
-            var numberOfCompletedTasks = ctx.data.completedTasksCount;
-            var text = "Clear completed (" + numberOfCompletedTasks + ")";
-            var className = "clear-completed-button";
-            if (numberOfCompletedTasks < 1) {
-                className += " hidden";
-            }
-            return {
-                tag: "div",
-                className: className,
-                children: text,
-                component: {
-                    onClick(ctx: IFooterCtx): boolean {
-                        ctx.data.removeCompletedTasks();
-                        b.invalidate();
-                        return true;
-                    }
-                },
-                data: ctx.data
-            };
         }
     }
 

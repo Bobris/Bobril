@@ -1,5 +1,7 @@
 /// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
 /// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.swipe.d.ts"/>
 var MouseApp;
 (function (MouseApp) {
     function d(style, content) {
@@ -47,6 +49,10 @@ var MouseApp;
             ctx.data.onAdd(new EventWrapper(event, "Double Click"));
             return ctx.data.stopPropagation;
         },
+        onContextMenu: function (ctx, event) {
+            ctx.data.onAdd(new EventWrapper(event, "Context Menu"));
+            return ctx.data.stopPropagation;
+        },
         onMouseDown: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Mouse Down"));
             return ctx.data.stopPropagation;
@@ -62,6 +68,10 @@ var MouseApp;
         onSwipeRight: function (ctx, event) {
             ctx.data.onAdd(new EventWrapper(event, "Swipe right"));
             return ctx.data.stopPropagation;
+        },
+        onMouseWheel: function (ctx, event) {
+            ctx.data.onAdd(new EventWheelWrapper(event, "Wheel"));
+            return ctx.data.stopPropagation;
         }
     };
     function e(ev) {
@@ -76,10 +86,20 @@ var MouseApp;
             this.eventName = eventName;
         }
         EventWrapper.prototype.toString = function () {
-            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y;
+            return this.eventName + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
         };
         return EventWrapper;
-    })();
+    }());
+    var EventWheelWrapper = (function () {
+        function EventWheelWrapper(ev, eventName) {
+            this.ev = ev;
+            this.eventName = eventName;
+        }
+        EventWheelWrapper.prototype.toString = function () {
+            return this.eventName + " dx: " + this.ev.dx + " dy: " + this.ev.dy + " ClientX: " + this.ev.x + " ClientY: " + this.ev.y + " Button:" + this.ev.button + " Shift:" + this.ev.shift + " Crtl:" + this.ev.ctrl + " Alt:" + this.ev.alt + " Meta:" + this.ev.meta;
+        };
+        return EventWheelWrapper;
+    }());
     var TextEvent = (function () {
         function TextEvent(eventName) {
             this.eventName = eventName;
@@ -88,7 +108,7 @@ var MouseApp;
             return this.eventName;
         };
         return TextEvent;
-    })();
+    }());
     var events = [];
     function addEvent(ev) {
         events.push(ev);
@@ -100,28 +120,25 @@ var MouseApp;
     b.init(function () {
         return [
             layoutPair([{
-                tag: "button",
-                style: { fontSize: "2em", marginBottom: "10px" },
-                children: "Click button",
-                component: TrackClick,
-                data: {
-                    onAdd: addEvent,
-                    stopPropagation: true
-                }
-            }, {
-                tag: "button",
-                style: { fontSize: "2em", marginBottom: "10px" },
-                children: "Does not stop prop",
-                component: TrackClick,
-                data: {
-                    onAdd: addEvent,
-                    stopPropagation: false
-                }
-            }], [
-                d({ height: "2em" }, h("label", [checkbox(v1, function (v) {
-                    v1 = v;
-                    addEvent(new TextEvent("slow onChange"));
-                }), "Slow click checkbox"])),
+                    tag: "button",
+                    style: { fontSize: "2em", marginBottom: "10px" },
+                    children: "Click button",
+                    component: TrackClick,
+                    data: {
+                        onAdd: addEvent,
+                        stopPropagation: true
+                    }
+                }, {
+                    tag: "button",
+                    style: { fontSize: "2em", marginBottom: "10px" },
+                    children: "Does not stop prop",
+                    component: TrackClick,
+                    data: {
+                        onAdd: addEvent,
+                        stopPropagation: false
+                    }
+                }], [
+                d({ height: "2em" }, h("label", [checkbox(v1, function (v) { v1 = v; addEvent(new TextEvent("slow onChange")); }), "Slow click checkbox"])),
                 d({ height: "2em" }, comp({
                     onClick: function () {
                         v2 = !v2;
@@ -130,9 +147,9 @@ var MouseApp;
                         return true;
                     }
                 }, h("label", [checkbox(v2, function (v) {
-                    v2 = v;
-                    addEvent(new TextEvent("fast onChange"));
-                }), "Fast click checkbox"])))
+                        v2 = v;
+                        addEvent(new TextEvent("fast onChange"));
+                    }), "Fast click checkbox"])))
             ]),
             {
                 tag: "div",
@@ -141,9 +158,9 @@ var MouseApp;
                 data: {
                     onAdd: addEvent
                 },
-                children: [{ tag: "div", children: "Click here or swipe!", style: { fontSize: "2em" } }].concat(events.map(function (ev) { return e(ev); }))
+                children: [{ tag: "div", children: "Click here or swipe!", style: { fontSize: "2em" } }]
+                    .concat(events.map(function (ev) { return e(ev); }))
             }
         ];
     });
 })(MouseApp || (MouseApp = {}));
-//# sourceMappingURL=app.js.map

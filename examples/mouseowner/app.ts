@@ -7,6 +7,9 @@ module MouseOwnerApp {
             ctx.backColor = "#f0f0f0";
         },
         render(ctx: any, me: IBobrilNode): void {
+            me.tag = "div";
+            me.style = b.assign({}, ctx.data.style);
+            me.children = ctx.data.children;
             me.style.backgroundColor = ctx.backColor;
         },
         onMouseDown(ctx: any): boolean {
@@ -30,10 +33,12 @@ module MouseOwnerApp {
     b.init(() => {
         return twice({
             tag: "div",
-            style: { height: "500px", width: "500px", border: "solid 1px", position: "relative", cssFloat: "left" },
+            style: { height: 500, width: 500, border: "solid 1px", position: "relative", cssFloat: "left" },
             children: {
-                tag: "div", component: button, style: { width: "120px", height: "20px", position: "absolute", border: "1px solid #000", left: "190px", top: "240px" },
-                children: "Click and drag out"
+                component: button, data: {
+                    style: { width: 120, height: 20, position: "absolute", border: "1px solid #000", left: 190, top: 240 },
+                    children: "Click and drag out"
+                }
             }
         });
     });

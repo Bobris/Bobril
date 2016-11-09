@@ -1,11 +1,11 @@
 {
     "version": "1.4.1",
     "compilerOptions": {
-        "target": "es5",
+        "target": "es6",
         "module": "commonjs",
         "declaration": false,
-        "noImplicitAny": false,
-        "removeComments": true,
+        "noImplicitAny": true,
+        "removeComments": false,
         "noLib": false
     },
     "filesGlob": [

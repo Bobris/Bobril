@@ -5,7 +5,7 @@ module GameOfLifeApp{
     describe('Game Of Life model tests', () =>{
         describe('World', () =>{
             var world: World;
-
+            
             describe('Constructor', () =>{
                 it('Creat empty word when seed is not defined',() => {
                     world = new World();

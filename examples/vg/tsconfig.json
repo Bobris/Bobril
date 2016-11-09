@@ -4,10 +4,11 @@
         "target": "es5",
         "module": "commonjs",
         "declaration": false,
-        "noImplicitAny": false,
-        "removeComments": true,
+        "noImplicitAny": true,
+        "removeComments": false,
         "noLib": false
     },
+    "compileOnSave": false,
     "filesGlob": [
         "./**/*.ts",
         "!./node_modules/**/*.ts"

@@ -1,0 +1,10 @@
+{
+  "name": "sample",
+  "version": "1.0.0",
+  "typescript": {
+    "main": "app.ts"
+  },
+  "bobril": {
+    "title": "Bobril Convert 3D Position"
+  }
+}
