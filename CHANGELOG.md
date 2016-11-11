@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+4.49.2
+--
+
+Fixes
+-
+
+Workaround for IE10 pointer events not triggeing over body/html without focus.
+
 4.49.1
 --
 
