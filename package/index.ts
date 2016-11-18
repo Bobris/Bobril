@@ -1486,6 +1486,10 @@ function addListener(el: EventTarget, name: string) {
     if (name[0] == "!") return;
     var capture = (name[0] == "^");
     var eventName = name;
+    if (name[0] == "@") {
+        eventName = name.slice(1);
+        el = document;
+    }
     if (capture) {
         eventName = name.slice(1);
     }
@@ -2802,7 +2806,7 @@ if (window.onpointerdown !== undefined) {
 } else if (window.onmspointerdown !== undefined) {
     for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
         var name = pointersEventNames[i];
-        addEvent5("MS" + name, buildHandlerPointer(name));
+        addEvent5("@MS" + name, buildHandlerPointer(name));
     }
 } else {
     if ((<any>window).ontouchstart !== undefined) {
