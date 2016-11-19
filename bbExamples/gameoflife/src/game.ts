@@ -14,19 +14,19 @@ export class Game {
 
     move() {
         let newWorld = this.worldFactory();
-        let frequency = new Collections.Dictionary((cell: ICell) => cell.getId());
+        let deadCellFrequency = new Collections.Dictionary((cell: ICell) => cell.getId());
         this.world.getLiveCells().forEach(liveCell => {
             let liveNeigborsCount = this.world.getLiveNeighbors(liveCell).length;
             if (liveNeigborsCount === 2 || liveNeigborsCount === 3)
                 newWorld.addLiveCell(liveCell);
             this.world.getDeadNeighbors(liveCell).forEach(deadCell => {
-                if (frequency.containsKey(deadCell))
-                    frequency.setValue(deadCell, <number>frequency.getValue(deadCell) + 1);
+                if (deadCellFrequency.containsKey(deadCell))
+                    deadCellFrequency.setValue(deadCell, <number>deadCellFrequency.getValue(deadCell) + 1);
                 else
-                    frequency.setValue(deadCell, 1);
+                    deadCellFrequency.setValue(deadCell, 1);
             });
         });
-        frequency.forEach((cell, count) => {
+        deadCellFrequency.forEach((cell, count) => {
             if (count === 3)
                 newWorld.addLiveCell(cell);
         });
