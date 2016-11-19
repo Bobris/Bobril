@@ -10,3 +10,11 @@ export function createCellMock(name: string) {
     cell.getId.and.returnValue(name);
     return cell;
 }
+
+export function createCellsMock(count: number) {
+    let cells: ICell[] = new Array();
+    for (let i = 0; i < count; i++) {
+        cells.push(createCellMock(i.toString()));
+    }
+    return cells;
+}
