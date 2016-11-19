@@ -21,6 +21,7 @@
     ],
     "compileOnSave": false,
     "files": [
+        "C:/Users/Longer/AppData/Roaming/npm/node_modules/bobril-build/typings/jasmine/jasmine.d.ts",
         "node_modules/bobril/jsx.d.ts"
     ]
 }

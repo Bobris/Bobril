@@ -1,6 +1,6 @@
 ﻿import * as b from 'bobril';
-import { World } from './model/world';
-import { Cell } from './model/cell';
+import { World } from './model/world_old';
+import { Cell } from './model/cell_old';
 import { GameControlPanel } from './components/gameControlPanel';
 import { Canvas } from './components/canvas';
 

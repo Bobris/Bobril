@@ -1,5 +1,5 @@
 ﻿import * as b from 'bobril';
-import { Cell } from '../model/cell';
+import { Cell } from '../model/cell_old';
 
 export interface ICanvasData {
     lifeCels: Cell[];

@@ -1,8 +1,9 @@
-﻿export class Cell {
-    constructor(public positionX: number, public positionY: number) {
-    }
+export interface ICell {
+    getId(): string;
+}
 
-    equelTo(cell: Cell): boolean {
-        return this.positionX === cell.positionX && this.positionY === cell.positionY;
+export class Cell implements ICell {
+    getId() {
+        return '';
     }
 }
