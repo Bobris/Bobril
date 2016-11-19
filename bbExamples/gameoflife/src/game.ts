@@ -36,4 +36,8 @@ export class Game {
     getLiveCells(): ICell[] {
         return this.world.getLiveCells();
     }
+
+    addLiveCell(cell: ICell) {
+        this.world.addLiveCell(cell);
+    }
 }

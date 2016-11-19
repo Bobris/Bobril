@@ -1,6 +1,7 @@
 ﻿import * as b from 'bobril';
-import { World } from './model/world_old';
-import { Cell } from './model/cell_old';
+import { Game } from './game';
+import { Cell } from './model/cell';
+import { WorldFactory } from './model/worldFactory';
 import { GameControlPanel } from './components/gameControlPanel';
 import { Canvas } from './components/canvas';
 
@@ -14,17 +15,17 @@ export interface IGameOfLifeData {
 
 interface IGameOfLifeCtx extends b.IBobrilCtx {
     nextTickTime: number;
-    world: World;
+    game: Game;
     data: IGameOfLifeData;
 }
 
 export const GameController = b.createComponent<IGameOfLifeData>({
     init(ctx: IGameOfLifeCtx) {
-        ctx.nextTickTime = b.uptime();
-        ctx.world = new World(
-            ctx.data.startLiveCell.map(cordinates =>
-                new Cell(cordinates[0], cordinates[1]))
-        );
+        ctx.nextTickTime = b.uptime();        
+        ctx.game = new Game(WorldFactory);
+        ctx.data.startLiveCell.forEach(cordinates =>
+            ctx.game.addLiveCell(new Cell(cordinates[0], cordinates[1])));       
+
         this.data = ctx.data;
     },
 
@@ -32,7 +33,7 @@ export const GameController = b.createComponent<IGameOfLifeData>({
         let a = b.uptime();
         while (a > ctx.nextTickTime) {
             if (this.data.runing) {
-                ctx.world.tick();
+                ctx.game.move();
             }
             ctx.nextTickTime = b.uptime() + this.data.delay;
         }
@@ -53,7 +54,7 @@ export const GameController = b.createComponent<IGameOfLifeData>({
                 }
             }),
             Canvas({
-                lifeCels: ctx.world.lifeCells,
+                lifeCels: ctx.game.getLiveCells(),
                 width: ctx.data.width,
                 height: ctx.data.height
             })

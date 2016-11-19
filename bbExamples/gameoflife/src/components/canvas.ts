@@ -1,8 +1,8 @@
 ﻿import * as b from 'bobril';
-import { Cell } from '../model/cell_old';
+import { ICell, Cell } from '../model/cell';
 
 export interface ICanvasData {
-    lifeCels: Cell[];
+    lifeCels: ICell[];
     width: number;
     height: number;
 }
@@ -20,8 +20,8 @@ export const Canvas = b.createComponent<ICanvasData>({
             children: ctx.data.lifeCels.map((cell: Cell) => {
                 return {
                     tag: 'rect', attrs: {
-                        x: cell.positionX * (5) + ctx.data.width / 2,
-                        y: cell.positionY * (5) + ctx.data.height / 2,
+                        x: cell.x * (5) + ctx.data.width / 2,
+                        y: cell.y * (5) + ctx.data.height / 2,
                         width: 3, 
                         height: 3, 
                         fill: 'red'
@@ -29,5 +29,5 @@ export const Canvas = b.createComponent<ICanvasData>({
                 };
             })
         };
-    },
+    }
 });

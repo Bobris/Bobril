@@ -28,10 +28,18 @@ describe('Game', () => {
         });
 
         it('getLiveCells will return values from nextIterationWorld after move', () => {
-            let nextIterationLiveCell = createCellMock('nextIterationLiveCell');            
+            let nextIterationLiveCell = createCellMock('nextIterationLiveCell');
             nextIterationWorld.getLiveCells.and.returnValue([nextIterationLiveCell]);
             game.move();
             expect(game.getLiveCells()).toEqual([nextIterationLiveCell]);
+        });
+    });
+
+    describe('addLiveCell', () => {
+        it('Will call addLiveCell in world', () => {
+            let newCell = createCellMock('newCell');
+            game.addLiveCell(newCell);
+            expect(currentWorld.addLiveCell).toHaveBeenCalledWith(newCell);
         });
     });
 
