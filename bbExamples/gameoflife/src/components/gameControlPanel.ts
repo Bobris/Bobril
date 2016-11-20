@@ -1,13 +1,12 @@
 ﻿import * as b from 'bobril';
-import { IButtonData, Button } from './button';
-import { ISpinnerData, Spinner } from './spinner';
+import { Button, Feature, ButtonType, Slider, Paper } from 'bobril-m';
 
 export interface IGameControlPanelData {
     running: boolean;
     onStart: Function;
     onStop: Function;
-    delay: number;
-    onDelayChange: (value: number) => void;
+    speed: number;
+    onSpeedChange: (value: number) => void;
 }
 
 interface IGameControlPanelCtx extends b.IBobrilCtx {
@@ -19,31 +18,28 @@ export const GameControlPanel = b.createComponent<IGameControlPanelData>({
         me.tag = 'div';
         me.children = [
             Button({
-                content: 'Start',
+                children: 'Start',
                 disabled: ctx.data.running,
-                onClick: () => {
+                action: () => {
                     ctx.data.onStart();
-                }
+                },
+                feature: Feature.Primary,
+                type: ButtonType.Raised
             }),
             Button({
-                content: 'Stop',
+                children: 'Stop',
                 disabled: !ctx.data.running,
-                onClick: () => {
+                action: () => {
                     ctx.data.onStop();
-                }
+                },
+                feature: Feature.Secondary,
+                type: ButtonType.Raised
             }),
-            {
-                tag: 'span',
-                children: ' Next round delay: '
-            },
-            Spinner({
-                value: ctx.data.delay,
-                min: 0,
-                max: 200,
-                step: 10,
-                onChange: (value: number) => {
-                    ctx.data.onDelayChange(value);
-                }
+            Slider({
+                min: 1,
+                max: 100,
+                value: ctx.data.speed,
+                onChange: (value: number) => { ctx.data.onSpeedChange(value); }
             })
         ];
     }

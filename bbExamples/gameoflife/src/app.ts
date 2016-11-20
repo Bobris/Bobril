@@ -19,10 +19,7 @@ b.init(() => {
     return [
         Header({ content: 'Game of life' }),
         GameController({
-            runing: true,
-            width: 700,
-            height: 350,
-            delay: 100,
+            runing: true,            
             startLiveCell: startLiveCell
         })
     ];

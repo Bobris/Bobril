@@ -6,57 +6,55 @@ import { GameControlPanel } from './components/gameControlPanel';
 import { Canvas } from './components/canvas';
 
 export interface IGameOfLifeData {
-    runing: boolean;
-    delay: number;
+    runing: boolean;    
     startLiveCell: Array<Array<number>>;
-    width: number;
-    height: number;
 }
 
 interface IGameOfLifeCtx extends b.IBobrilCtx {
     nextTickTime: number;
     game: Game;
     data: IGameOfLifeData;
+    runing: boolean;
+    speed: number;
+    height: number;
+    width: number;
 }
 
 export const GameController = b.createComponent<IGameOfLifeData>({
     init(ctx: IGameOfLifeCtx) {
-        ctx.nextTickTime = b.uptime();        
+        ctx.nextTickTime = b.uptime();
         ctx.game = new Game(WorldFactory);
-        ctx.data.startLiveCell.forEach(cordinates =>
-            ctx.game.addLiveCell(new Cell(cordinates[0], cordinates[1])));       
-
-        this.data = ctx.data;
+        ctx.data.startLiveCell.forEach(cordinates => ctx.game.addLiveCell(new Cell(cordinates[0], cordinates[1])));
+        ctx.runing = ctx.data.runing;
+        ctx.speed = 10;
     },
-
     render(ctx: IGameOfLifeCtx, me: b.IBobrilNode) {
         let a = b.uptime();
         while (a > ctx.nextTickTime) {
-            if (this.data.runing) {
+            if (ctx.runing) {
                 ctx.game.move();
             }
-            ctx.nextTickTime = b.uptime() + this.data.delay;
+            ctx.nextTickTime = b.uptime() + (1 / ctx.speed) * 1000;
         }
-
+        me.style = { height: '100%', width: '100%' };
         me.tag = 'div';
         me.children = [
             GameControlPanel({
-                running: this.data.runing,
+                running: ctx.runing,
                 onStart: () => {
-                    this.data.runing = true;
+                    ctx.runing = true;
                 },
                 onStop: () => {
-                    this.data.runing = false;
+                    ctx.runing = false;
                 },
-                delay: this.data.delay,
-                onDelayChange: (value: number) => {
-                    this.data.delay = value;
+                speed: ctx.speed,
+                onSpeedChange: (value: number) => {
+                    ctx.speed = value;
                 }
             }),
             Canvas({
                 lifeCels: ctx.game.getLiveCells(),
-                width: ctx.data.width,
-                height: ctx.data.height
+                onAddCell: cell => ctx.game.addLiveCell(cell)
             })
         ];
     }

@@ -16,6 +16,13 @@ describe('World', () => {
         world.addLiveCell(liveNeighborCell);
     });
 
+    describe('addLiveCell', () => {
+        it('Will not add same cell multipletime', () => {
+            world.addLiveCell(liveNeighborCell);
+            expect(world.getLiveCells()).toEqual([liveNeighborCell]);
+        });
+    });
+
     describe('getLiveCells', () => {
         it('Will return all added cells', () => {
             expect(world.getLiveCells()).toEqual([liveNeighborCell]);
@@ -23,7 +30,7 @@ describe('World', () => {
     });
 
     describe('getLiveNeighbors', () => {
-        it('Will return live cells in contact with given cell', () => {            
+        it('Will return live cells in contact with given cell', () => {
             expect(world.getLiveNeighbors(currentCell)).toEqual([liveNeighborCell]);
         });
     });
