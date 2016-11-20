@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "declaration": false,
+        "lib": [
+            "es5",
+            "dom",
+            "es2015.core",
+            "es2015.promise"
+        ],
+        "removeComments": false,
+        "noLib": false,
+        "preserveConstEnums": false,
+        "jsx": "react",
+        "reactNamespace": "b"
+    },
+    "include": [
+        "**/*"
+    ],
+    "compileOnSave": false,
+    "files": [
+        "C:/Users/Longer/AppData/Roaming/npm/node_modules/bobril-build/typings/jasmine/jasmine.d.ts",
+        "node_modules/bobril/jsx.d.ts"
+    ]
+}

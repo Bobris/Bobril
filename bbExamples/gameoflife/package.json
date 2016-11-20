@@ -1,0 +1,22 @@
+{
+  "name": "gameoflife",
+  "version": "2.0.0",
+  "description": "Game of life by LongerP",
+  "typescript": {
+    "main": "src/app.ts"
+  },
+  "dependencies": {
+    "bobril": "*",
+    "bobril-m": "^0.7.0",
+    "typescript-collections": "*"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bobril": {
+    "title": "Game of life"
+  },
+  "author": "LongerP",
+  "license": "ISC"
+}
