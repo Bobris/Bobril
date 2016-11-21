@@ -3043,7 +3043,7 @@ function nodePagePos(node) {
     return res;
 }
 exports.nodePagePos = nodePagePos;
-var cachedConvertPointFromPageToNode;
+var cachedConvertPointFromClientToNode;
 var CSSMatrix = (function () {
     function CSSMatrix(data) {
         this.data = data;
@@ -3168,28 +3168,29 @@ function getTransformationMatrix(element) {
         }
     }
     var rect = element.getBoundingClientRect();
-    transformationMatrix = identity.translate(window.pageXOffset + rect.left - left, window.pageYOffset + rect.top - top, 0).multiply(transformationMatrix);
+    transformationMatrix = identity.translate(rect.left - left, rect.top - top, 0).multiply(transformationMatrix);
     return transformationMatrix;
 }
-function convertPointFromPageToNode(node, pageX, pageY) {
+function convertPointFromClientToNode(node, pageX, pageY) {
     var element = getDomNode(node);
-    if (cachedConvertPointFromPageToNode == null) {
+    if (cachedConvertPointFromClientToNode == null) {
         var conv_1 = window.webkitConvertPointFromPageToNode;
         if (conv_1) {
-            cachedConvertPointFromPageToNode = function (element, x, y) {
-                var res = conv_1(element, new WebKitPoint(x, y));
+            cachedConvertPointFromClientToNode = function (element, x, y) {
+                var scr = getWindowScroll();
+                var res = conv_1(element, new WebKitPoint(scr[0] + x, scr[1] + y));
                 return [res.x, res.y];
             };
         }
         else {
-            cachedConvertPointFromPageToNode = function (element, x, y) {
+            cachedConvertPointFromClientToNode = function (element, x, y) {
                 return getTransformationMatrix(element).inverse().transformPoint(x, y);
             };
         }
     }
-    return cachedConvertPointFromPageToNode(element, pageX, pageY);
+    return cachedConvertPointFromClientToNode(element, pageX, pageY);
 }
-exports.convertPointFromPageToNode = convertPointFromPageToNode;
+exports.convertPointFromClientToNode = convertPointFromClientToNode;
 ;
 var lastDndId = 0;
 var dnds = [];

@@ -1,6 +1,15 @@
 CHANGELOG
 ===
 
+5.0.0
+--
+
+BREAKING CHANGE
+--
+
+Method `convertPointFromPageToNode` was renamed to `convertPointFromClientToNode` - it did correct transformation but it was needed to correct by window scroll. Now you need just pass x,y from mouse event (which always where in Client coordinates) and it will be converted correctly in all cases.
+This method was used rarely and even in example it was used wrongly. So I don't expect breaking existing apps, or complex fixing.
+
 4.49.2
 --
 

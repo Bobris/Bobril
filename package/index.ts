@@ -3267,7 +3267,7 @@ export function nodePagePos(node: IBobrilCacheNode): [number, number] {
     return res;
 }
 
-var cachedConvertPointFromPageToNode: (element: Node | null, x: number, y: number) => [number, number];
+var cachedConvertPointFromClientToNode: (element: Node | null, x: number, y: number) => [number, number];
 
 type Point = [number, number];
 class CSSMatrix {
@@ -3391,26 +3391,27 @@ function getTransformationMatrix(element: Node) {
         }
     }
     var rect = (<HTMLElement>element).getBoundingClientRect();
-    transformationMatrix = identity.translate(window.pageXOffset + rect.left - left, window.pageYOffset + rect.top - top, 0).multiply(transformationMatrix);
+    transformationMatrix = identity.translate(rect.left - left, rect.top - top, 0).multiply(transformationMatrix);
     return transformationMatrix;
 }
 
-export function convertPointFromPageToNode(node: IBobrilCacheNode, pageX: number, pageY: number): [number, number] {
+export function convertPointFromClientToNode(node: IBobrilCacheNode, pageX: number, pageY: number): [number, number] {
     let element = getDomNode(node);
-    if (cachedConvertPointFromPageToNode == null) {
+    if (cachedConvertPointFromClientToNode == null) {
         let conv = window.webkitConvertPointFromPageToNode;
         if (conv) {
-            cachedConvertPointFromPageToNode = (element: Node, x: number, y: number) => {
-                let res = conv(element, new WebKitPoint(x, y));
+            cachedConvertPointFromClientToNode = (element: Node, x: number, y: number) => {
+                let scr = getWindowScroll();
+                let res = conv(element, new WebKitPoint(scr[0] + x, scr[1] + y));
                 return [res.x, res.y];
             }
         } else {
-            cachedConvertPointFromPageToNode = (element: Node, x: number, y: number) => {
+            cachedConvertPointFromClientToNode = (element: Node, x: number, y: number) => {
                 return getTransformationMatrix(element).inverse().transformPoint(x, y);
             }
         }
     }
-    return cachedConvertPointFromPageToNode(element, pageX, pageY);
+    return cachedConvertPointFromClientToNode(element, pageX, pageY);
 };
 
 // Bobril.Dnd

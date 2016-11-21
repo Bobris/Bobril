@@ -247,7 +247,7 @@ export declare function removeOnScroll(callback: (info?: IBobrilScroll) => void)
 export declare function isScrollable(el: Element): [boolean, boolean];
 export declare function getWindowScroll(): [number, number];
 export declare function nodePagePos(node: IBobrilCacheNode): [number, number];
-export declare function convertPointFromPageToNode(node: IBobrilCacheNode, pageX: number, pageY: number): [number, number];
+export declare function convertPointFromClientToNode(node: IBobrilCacheNode, pageX: number, pageY: number): [number, number];
 export declare const enum DndOp {
     None = 0,
     Link = 1,

@@ -52,8 +52,7 @@ export const Canvas = b.createComponent<ICanvasData>({
 });
 
 function addCell(ctx: ICanvasCtx, x: number, y: number) {
-    const position = b.convertPointFromPageToNode(ctx.me, x, y);
-    const scroll = b.getWindowScroll();
-    let cell = ctx.cellPositonConverter.getCellFromPositon(position[0] + scroll[0], position[1] + scroll[1]);
+    const position = b.convertPointFromClientToNode(ctx.me, x, y);
+    let cell = ctx.cellPositonConverter.getCellFromPositon(position[0], position[1]);
     ctx.data.onAddCell(cell);
 }
