@@ -1229,6 +1229,11 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return null;
     }
 
+     function syncUpdate() {
+        invalidate();
+        update(now() - startTime);
+    }
+
     function update(time: number) {
         renderFrameBegin = now();
         initEvents();
@@ -1542,6 +1547,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         cloneNode: cloneNode,
         shimStyle: shimStyle,
         flatten: flatten,
-        mergeComponents: mergeComponents
+        syncUpdate: syncUpdate,
+        mergeComponents: mergeComponents,
+        
     };
 })(window, document);
