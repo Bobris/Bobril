@@ -1229,7 +1229,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return null;
     }
 
-     function syncUpdate() {
+    function syncUpdate() {
         invalidate();
         update(now() - startTime);
     }
@@ -1548,7 +1548,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         shimStyle: shimStyle,
         flatten: flatten,
         syncUpdate: syncUpdate,
-        mergeComponents: mergeComponents,
-        
+        mergeComponents: mergeComponents
     };
 })(window, document);

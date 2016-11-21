@@ -1239,6 +1239,10 @@ b = (function (window, document) {
         }
         return null;
     }
+    function syncUpdate() {
+        invalidate();
+        update(now() - startTime);
+    }
     function update(time) {
         renderFrameBegin = now();
         initEvents();
@@ -1553,6 +1557,7 @@ b = (function (window, document) {
         cloneNode: cloneNode,
         shimStyle: shimStyle,
         flatten: flatten,
+        syncUpdate: syncUpdate,
         mergeComponents: mergeComponents
     };
 })(window, document);
