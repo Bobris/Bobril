@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+5.0.2
+--
+
+Fixes
+-
+
+Fix pointer events for IE10 (Correctly detect pointer type and use correct position system).
+
 5.0.1
 --
 

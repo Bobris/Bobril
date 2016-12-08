@@ -2518,9 +2518,9 @@ if (ieVersion() && ieVersion() < 11) {
     }
 }
 function type2Bobril(t) {
-    if (t == "mouse")
+    if (t === "mouse" || t === 4)
         return 0 /* Mouse */;
-    if (t == "pen")
+    if (t === "pen" || t === 3)
         return 2 /* Pen */;
     return 1 /* Touch */;
 }
@@ -2538,7 +2538,7 @@ function pointerEventsNoneFix(x, y, target, node) {
 function buildHandlerPointer(name) {
     return function handlePointerDown(ev, target, node) {
         if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
             target = fixed[0];
             node = fixed[1];
         }

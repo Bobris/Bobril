@@ -2721,8 +2721,8 @@ if (ieVersion() && ieVersion() < 11) {
 }
 
 function type2Bobril(t: any): BobrilPointerType {
-    if (t == "mouse") return BobrilPointerType.Mouse;
-    if (t == "pen") return BobrilPointerType.Pen;
+    if (t === "mouse" || t === 4) return BobrilPointerType.Mouse;
+    if (t === "pen" || t === 3) return BobrilPointerType.Pen;
     return BobrilPointerType.Touch;
 }
 
@@ -2741,7 +2741,7 @@ function pointerEventsNoneFix(x: number, y: number, target: Node | undefined, no
 function buildHandlerPointer(name: string) {
     return function handlePointerDown(ev: PointerEvent, target: Node, node: IBobrilCacheNode | undefined): boolean {
         if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
             target = fixed[0];
             node = fixed[1];
         }
