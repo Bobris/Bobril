@@ -661,8 +661,8 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
             }
             var newElements: Array<Node> = [];
             while (elprev !== el) {
-                newElements.push(elprev);
-                elprev = elprev.nextSibling;
+                newElements.push(elprev!);
+                elprev = elprev!.nextSibling;
             }
             c.element = newElements;
             if (removeEl) {
@@ -3015,8 +3015,10 @@ function decodeButton(ev: MouseEvent): number {
 
 function createHandler(handlerName: string, allButtons?: boolean) {
     return (ev: MouseEvent, target: Node, node: IBobrilCacheNode | undefined) => {
+        target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+        node = deref(target);
         if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
             target = fixed[0];
             node = fixed[1];
         }
@@ -3359,7 +3361,7 @@ class CSSMatrix {
 function getTransformationMatrix(element: Node) {
     var identity = CSSMatrix.identity();
     var transformationMatrix = identity;
-    var x = element;
+    var x: Node | null = element;
     var doc = x.ownerDocument.documentElement;
     while (x != undefined && x !== doc && x.nodeType != 1) x = x.parentNode;
     while (x != undefined && x !== doc) {

@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+5.0.1
+--
+
+Fixes
+-
+
+Better workaround for IE onClick pointerEvents none. Fix TS 2.1 compilation errors.
+
 5.0.0
 --
 

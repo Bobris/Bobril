@@ -1652,7 +1652,7 @@ function merge(f1, f2) {
     return function () {
         var params = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            params[_i - 0] = arguments[_i];
+            params[_i] = arguments[_i];
         }
         var result = f1.apply(this, params);
         if (result)
@@ -2511,7 +2511,8 @@ if (ieVersion() && ieVersion() < 11) {
         "click", "dblclick", "drag", "dragend",
         "dragenter", "dragleave", "dragover", "dragstart",
         "drop", "mousedown", "mousemove", "mouseout",
-        "mouseover", "mouseup", "mousewheel", "scroll", "wheel"];
+        "mouseover", "mouseup", "mousewheel", "scroll", "wheel"
+    ];
     for (i = 0; i < mouseEvents.length; ++i) {
         addEvent(mouseEvents[i], 1, pointerThroughIE);
     }
@@ -2798,8 +2799,10 @@ function decodeButton(ev) {
 }
 function createHandler(handlerName, allButtons) {
     return function (ev, target, node) {
+        target = document.elementFromPoint(ev.clientX, ev.clientY);
+        node = deref(target);
         if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
+            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
             target = fixed[0];
             node = fixed[1];
         }
