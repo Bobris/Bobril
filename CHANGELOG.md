@@ -1,6 +1,16 @@
 CHANGELOG
 ===
 
+6.0.0
+--
+
+New Features
+-
+
+b.styleDef and b.styleDefEx are now typed for nice intellisence.
+
+But it is also possible breaking change, by not allowing some obvious bugs in style definitions.
+
 5.0.2
 --
 

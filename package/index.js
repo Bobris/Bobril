@@ -4418,7 +4418,7 @@ function beforeFrame() {
             var flattenPseudo = newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
             flattenStyle(style_1, flattenPseudo, ssstyle, undefined);
-            var extractedInlStyle = null;
+            var extractedInlStyle;
             if (style_1["pointerEvents"]) {
                 extractedInlStyle = newHashObj();
                 extractedInlStyle["pointerEvents"] = style_1["pointerEvents"];
@@ -4564,13 +4564,13 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     else {
         nameHint = "b-" + globalCounter++;
     }
-    allStyles[nameHint] = { name: nameHint, realname: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
+    allStyles[nameHint] = { name: nameHint, realname: nameHint, parent: parent, style: style, inlStyle: undefined, pseudo: pseudo };
     invalidateStyles();
     return nameHint;
 }
 exports.styleDefEx = styleDefEx;
 function selectorStyleDef(selector, style, pseudo) {
-    allStyles["b-" + globalCounter++] = { name: null, realname: null, parent: selector, style: style, inlStyle: null, pseudo: pseudo };
+    allStyles["b-" + globalCounter++] = { name: null, realname: null, parent: selector, style: style, inlStyle: undefined, pseudo: pseudo };
     invalidateStyles();
 }
 exports.selectorStyleDef = selectorStyleDef;
@@ -4967,3 +4967,4 @@ function createElement(name, props) {
 }
 exports.createElement = createElement;
 exports.__spread = exports.assign;
+;
