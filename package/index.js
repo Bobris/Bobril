@@ -1338,6 +1338,7 @@ function emitEvent(name, ev, target, node) {
     return false;
 }
 exports.emitEvent = emitEvent;
+var listeningEventDeepness = 0;
 function addListener(el, name) {
     if (name[0] == "!")
         return;
@@ -1354,7 +1355,9 @@ function addListener(el, name) {
         ev = ev || window.event;
         var t = ev.target || ev.srcElement || el;
         var n = deref(t);
+        listeningEventDeepness++;
         emitEvent(name, ev, t, n);
+        listeningEventDeepness--;
     }
     if (("on" + eventName) in window)
         el = window;
@@ -2799,12 +2802,14 @@ function decodeButton(ev) {
 }
 function createHandler(handlerName, allButtons) {
     return function (ev, target, node) {
-        target = document.elementFromPoint(ev.clientX, ev.clientY);
-        node = deref(target);
-        if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
-            target = fixed[0];
-            node = fixed[1];
+        if (listeningEventDeepness == 1) {
+            target = document.elementFromPoint(ev.clientX, ev.clientY);
+            node = deref(target);
+            if (hasPointerEventsNoneB(node)) {
+                var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
+                target = fixed[0];
+                node = fixed[1];
+            }
         }
         var button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event

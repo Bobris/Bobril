@@ -1482,6 +1482,8 @@ export function emitEvent(name: string, ev: any, target: Node | undefined, node:
     return false;
 }
 
+let listeningEventDeepness = 0;
+
 function addListener(el: EventTarget, name: string) {
     if (name[0] == "!") return;
     var capture = (name[0] == "^");
@@ -1497,7 +1499,9 @@ function addListener(el: EventTarget, name: string) {
         ev = ev || window.event;
         var t = ev.target || ev.srcElement || el;
         var n = deref(<any>t);
+        listeningEventDeepness++;
         emitEvent(name, ev, <Node>t, n);
+        listeningEventDeepness--;
     }
     if (("on" + eventName) in window) el = window;
     el.addEventListener(eventName, enhanceEvent, capture);
@@ -3015,12 +3019,14 @@ function decodeButton(ev: MouseEvent): number {
 
 function createHandler(handlerName: string, allButtons?: boolean) {
     return (ev: MouseEvent, target: Node, node: IBobrilCacheNode | undefined) => {
-        target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
-        node = deref(target);
-        if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
-            target = fixed[0];
-            node = fixed[1];
+        if (listeningEventDeepness == 1) { // Fix target node only for browser triggered events
+            target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+            node = deref(target);
+            if (hasPointerEventsNoneB(node)) {
+                var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
+                target = fixed[0];
+                node = fixed[1];
+            }
         }
         let button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
