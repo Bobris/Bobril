@@ -3019,7 +3019,7 @@ function decodeButton(ev: MouseEvent): number {
 
 function createHandler(handlerName: string, allButtons?: boolean) {
     return (ev: MouseEvent, target: Node, node: IBobrilCacheNode | undefined) => {
-        if (listeningEventDeepness == 1) { // Fix target node only for browser triggered events
+        if (listeningEventDeepness == 1 && (node != null || target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)) { // Fix target node only for browser triggered events + crazy heuristic to ignore click in pure-upload
             target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
             node = deref(target);
             if (hasPointerEventsNoneB(node)) {

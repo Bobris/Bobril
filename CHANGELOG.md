@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+5.0.4
+--
+
+Fixes
+-
+
+Another attempt to fix similar case as in 5.0.3
+
 5.0.3
 --
 
