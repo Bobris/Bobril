@@ -15,13 +15,15 @@ export type IDisposableLike = IDisposable | IDisposeFunction;
 
 export interface IBobrilRoot {
     // Factory function
-    f: () => IBobrilChildren;
+    f: (rootData: IBobrilRoot) => IBobrilChildren;
     // Root element
     e: HTMLElement | undefined;
-    // Virtual Dom Cache
-    c: IBobrilCacheNode[];
+    // Virtual Dom Cache - just for backwards compatibility true cache is in n
+    c: IBobrilCacheChildren;
     // Optional Logical parent
     p: IBobrilCacheNode | undefined;
+    // Virtual Dom Cache Node
+    n: IBobrilCacheNode | undefined;
 }
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -861,16 +863,13 @@ export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[
     if (!n || nodeStack.length === 0) return res;
     var currentCacheArray: IBobrilChildren | null = null;
     var currentNode = nodeStack.pop() !;
-    rootFound2: for (j = 0; j < rootElements.length; j++) {
+    for (j = 0; j < rootElements.length; j++) {
         if (n === rootElements[j]) {
-            var rc = roots[rootIds[j]].c;
-            for (var k = 0; k < rc.length; k++) {
-                var rck = rc[k];
-                var findResult = nodeContainsNode(rck, currentNode, res.length, res);
-                if (findResult !== undefined) {
-                    currentCacheArray = findResult;
-                    break rootFound2;
-                }
+            var rn = roots[rootIds[j]].n!;
+            var findResult = nodeContainsNode(rn, currentNode, res.length, res);
+            if (findResult !== undefined) {
+                currentCacheArray = findResult;
+                break;
             }
         }
     }
@@ -1048,7 +1047,8 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
     return r;
 }
 
-export function getDomNode(c: IBobrilCacheNode): Node | null {
+export function getDomNode(c: IBobrilCacheNode | undefined): Node | null {
+    if (c === undefined) return null;
     var el: Node | Node[] | null | undefined = c.element;
     if (el != null) {
         if (isArray(el)) return el[0];
@@ -1562,29 +1562,6 @@ export function setAfterFrame(callback: (root: IBobrilCacheChildren | null) => v
     return res;
 }
 
-function findLastNode(children: IBobrilCacheNode[]): Node | null {
-    for (var i = children.length - 1; i >= 0; i--) {
-        var c = children[i];
-        var el = c.element;
-        if (el != null) {
-            if (isArray(el)) {
-                var l = el.length;
-                if (l === 0)
-                    continue;
-                return el[l - 1];
-            }
-            return <Node>el;
-        }
-        var ch = c.children;
-        if (!isArray(ch))
-            continue;
-        var res = findLastNode(ch);
-        if (res != null)
-            return res;
-    }
-    return null;
-}
-
 function isLogicalParent(parent: IBobrilCacheNode, child: IBobrilCacheNode | null | undefined, rootIds: string[]): boolean {
     while (child != null) {
         if (parent === child) return true;
@@ -1593,8 +1570,7 @@ function isLogicalParent(parent: IBobrilCacheNode, child: IBobrilCacheNode | nul
             for (var i = 0; i < rootIds.length; i++) {
                 var r = roots[rootIds[i]];
                 if (!r) continue;
-                var rc = r.c;
-                if (rc.indexOf(child) >= 0) {
+                if (r.n === child) {
                     p = r.p;
                     break;
                 }
@@ -1614,6 +1590,15 @@ function update(time: number) {
     internalUpdate(time);
 }
 
+var rootIds: string[] | undefined;
+
+const RootComponent = createVirtualComponent<IBobrilRoot>({
+    render(ctx: IBobrilCtx, me: IBobrilNode) {
+        const r = (ctx.data as IBobrilRoot);
+        me.children = r.f(r);
+    }
+});
+
 function internalUpdate(time: number) {
     renderFrameBegin = now();
     initEvents();
@@ -1629,25 +1614,27 @@ function internalUpdate(time: number) {
         fullRecreateRequested = false;
         fullRefresh = true;
     }
-    var rootIds = Object.keys(roots);
+    rootIds = Object.keys(roots);
     for (var i = 0; i < rootIds.length; i++) {
         var r = roots[rootIds[i]];
         if (!r) continue;
-        var rc = r.c;
-        var insertBefore = findLastNode(rc);
-        if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-        if (insertBefore != null) insertBefore = insertBefore.nextSibling;
-        if (fullRefresh) {
-            var newChildren = r.f();
-            if (newChildren === undefined)
-                break;
-            r.e = r.e || document.body;
-            r.c = updateChildren(r.e, newChildren, rc, undefined, insertBefore, 1e6);
+        var rc = r.n;
+        var insertBefore: Node | null = null;
+        for (var j = i + 1; j < rootIds.length; j++) {
+            insertBefore = getDomNode(roots[rootIds[j]].n);
+            if (insertBefore != null) break;
         }
-        else {
-            selectedUpdate(rc, r.e!, insertBefore);
+        if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
+        var node = RootComponent(r);
+        if (r.e === undefined) r.e = document.body;
+        if (rc) {
+            updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : 0);
+        } else {
+            r.n = createNode(node, undefined, r.e, insertBefore);
+            r.c = r.n.children;
         }
     }
+    rootIds = undefined;
     callPostCallbacks();
     let r0 = roots["0"];
     afterFrameCallback(r0 ? r0.c : null);
@@ -1689,21 +1676,38 @@ export var invalidate = (ctx?: Object, deepness?: number) => {
 
 var lastRootId = 0;
 
-export function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string {
+export function addRoot(factory: (root: IBobrilRoot) => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string {
     lastRootId++;
     var rootId = "" + lastRootId;
-    roots[rootId] = { f: factory, e: element, c: [], p: parent };
-    invalidate();
+    roots[rootId] = { f: factory, e: element, c: [], p: parent, n: undefined };
+    if (rootIds != null) {
+        rootIds.push(rootId);
+    } else {
+        firstInvalidate();
+    }
     return rootId;
 }
 
 export function removeRoot(id: string): void {
     var root = roots[id];
     if (!root) return;
-    if (root.c.length) {
-        root.c = <any>updateChildren(root.e!, <any>[], root.c, undefined, null, 1e9);
-    }
+    if (root.n)
+        removeNode(root.n);
     delete roots[id];
+}
+
+export function updateRoot(id: string, factory?: (root: IBobrilRoot) => IBobrilChildren) {
+    assert(rootIds != null, "updateRoot could be called only from render");
+    var root = roots[id];
+    assert(root != null);
+
+    if (factory != null)
+        root.f = factory;
+    let rootNode = root.n;
+    if (rootNode == null) return;
+    let ctx = rootNode.ctx;
+    (<any>ctx)[ctxInvalidated] = frameCounter;
+    (<any>ctx)[ctxDeepness] = 1e6;
 }
 
 export function getRoots(): IBobrilRoots {
@@ -1717,12 +1721,17 @@ function finishInitialize() {
 
 var beforeInit: () => void = finishInitialize;
 
-export function init(factory: () => any, element?: HTMLElement) {
-    removeRoot("0");
-    roots["0"] = { f: factory, e: element, c: [], p: undefined };
+function firstInvalidate() {
     initializing = true;
     beforeInit();
     beforeInit = finishInitialize;
+}
+
+export function init(factory: () => any, element?: HTMLElement) {
+    assert(rootIds == null, "init should not be called from render");
+    removeRoot("0");
+    roots["0"] = { f: factory, e: element, c: [], p: undefined, n: undefined };
+    firstInvalidate();
 }
 
 export function setBeforeInit(callback: (cb: () => void) => void): void {
@@ -1784,13 +1793,11 @@ function broadcastEventToNode(node: IBobrilCacheNode | null | undefined, name: s
 export function broadcast(name: string, param: any): IBobrilCtx | undefined {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
-        var ch = roots[k[i]].c;
+        var ch = roots[k[i]].n;
         if (ch != null) {
-            for (var j = 0; j < ch.length; j++) {
-                var res = broadcastEventToNode(ch[j], name, param);
-                if (res != null)
-                    return res;
-            }
+            var res = broadcastEventToNode(ch, name, param);
+            if (res != null)
+                return res;
         }
     }
     return undefined;

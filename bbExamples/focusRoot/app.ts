@@ -36,29 +36,42 @@ let button = b.createVirtualComponent<IButtonData>({
 });
 
 function createDialog() {
+    let dialogctx: b.IBobrilCtx;
+    let lastChild: string;
     let myself = b.addRoot(() => ({
-        tag: "div",
-        style: { position: "relative", top: 10, left: 10, width: 200, height: 100, background: "#eee", padding: 5 },
-        children: [
-            textInput(),
-            textInput(),
-            button({ action: () => { b.removeRoot(myself); } }, "Close"),
-            button({
-                action: () => {
-                    createDialog();
-                }
-            }, "Dialog")
-        ],
         component: {
             init(ctx: b.IBobrilCtx) {
+                dialogctx = ctx;
                 b.registerFocusRoot(ctx);
+            },
+            render(ctx: b.IBobrilCtx, me: b.IBobrilNode) {
+                me.tag = "div";
+                me.style = { position: "relative", top: 10, left: 10, width: 200, height: 100, background: "#eee", padding: 5 };
+                me.children = [
+                    "Frame: " + b.frame(),
+                    textInput(),
+                    textInput(),
+                    button({ action: () => { b.removeRoot(myself); } }, "Close"),
+                    button({ action: () => { b.invalidate(dialogctx, 0); } }, "Invalidate"),
+                    button({ action: () => { b.invalidate(dialogctx); } }, "Deep Invalidate"),
+                    button({ action: () => { b.invalidate(); } }, "Root Invalidate"),
+                    button({
+                        action: () => {
+                            lastChild = createDialog();
+                        }
+                    }, "Dialog")
+                ];
+                if (b.getRoots()[lastChild] != null)
+                    b.updateRoot(lastChild);
             }
         }
     }));
+    return myself;
 }
 
 b.init(() => {
     return [
+        "Frame: " + b.frame(),
         textInput(),
         textInput(),
         button({

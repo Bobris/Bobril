@@ -1,6 +1,14 @@
 CHANGELOG
 ===
 
+5.1.0
+--
+
+New features
+-
+
+New function `updateRoot` to force rendering of some root and optinally update its factory. `addRoot` does not wait for next frame anymore, but shows it in same frame. Root factory also gets its `IBobrilRoot` as first parameter. 
+
 5.0.3
 --
 

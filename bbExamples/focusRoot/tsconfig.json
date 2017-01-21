@@ -1,14 +1,22 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
-        "jsx": "react",
-        "reactNamespace": "b"
+        "declaration": false,
+        "lib": [
+            "es5",
+            "dom",
+            "es2015.core",
+            "es2015.promise"
+        ],
+        "removeComments": false,
+        "noLib": false,
+        "preserveConstEnums": false
     },
     "compileOnSave": false,
-    "files": [
-        "app.ts",
-        "node_modules/bobril/jsx.d.ts"
+    "files": [],
+    "include": [
+        "**/*"
     ]
 }
