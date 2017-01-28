@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+5.2.0
+--
+
+Changing behaviour click and dblclick event are now listened in capturing stage, so Bobril could react to them before Nonbobril code.
+
 5.1.0
 --
 

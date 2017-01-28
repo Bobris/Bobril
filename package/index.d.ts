@@ -12,10 +12,11 @@ export interface IDisposable {
 export declare type IDisposeFunction = (ctx?: any) => void;
 export declare type IDisposableLike = IDisposable | IDisposeFunction;
 export interface IBobrilRoot {
-    f: () => IBobrilChildren;
+    f: (rootData: IBobrilRoot) => IBobrilChildren;
     e: HTMLElement | undefined;
-    c: IBobrilCacheNode[];
+    c: IBobrilCacheChildren;
     p: IBobrilCacheNode | undefined;
+    n: IBobrilCacheNode | undefined;
 }
 export declare type IBobrilRoots = {
     [id: string]: IBobrilRoot;
@@ -149,7 +150,7 @@ export declare function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLi
 export declare function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[];
 export declare function deref(n: Node): IBobrilCacheNode | undefined;
 export declare function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number): IBobrilCacheNode;
-export declare function getDomNode(c: IBobrilCacheNode): Node | null;
+export declare function getDomNode(c: IBobrilCacheNode | undefined): Node | null;
 export declare function callPostCallbacks(): void;
 export declare function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode | undefined, createBefore: Node | null, deepness: number): IBobrilCacheNode[];
 export declare const now: () => number;
@@ -161,8 +162,9 @@ export declare function syncUpdate(): void;
 export declare function ignoreShouldChange(): void;
 export declare function setInvalidate(inv: (ctx?: Object, deepness?: number) => void): (ctx?: Object, deepness?: number) => void;
 export declare var invalidate: (ctx?: Object | undefined, deepness?: number | undefined) => void;
-export declare function addRoot(factory: () => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string;
+export declare function addRoot(factory: (root: IBobrilRoot) => IBobrilChildren, element?: HTMLElement, parent?: IBobrilCacheNode): string;
 export declare function removeRoot(id: string): void;
+export declare function updateRoot(id: string, factory?: (root: IBobrilRoot) => IBobrilChildren): void;
 export declare function getRoots(): IBobrilRoots;
 export declare function init(factory: () => any, element?: HTMLElement): void;
 export declare function setBeforeInit(callback: (cb: () => void) => void): void;

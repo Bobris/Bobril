@@ -2999,7 +2999,7 @@ function bustingClick(ev: MouseEvent, _target: Node, _node: IBobrilCacheNode): b
     return false;
 }
 
-var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
+var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "^click"];
 var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
 for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
     addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
@@ -3078,8 +3078,8 @@ function handleSelectStart(ev: any, _target: Node, node: IBobrilCacheNode | unde
 addEvent5("selectstart", handleSelectStart);
 
 // click must have higher priority over onchange detection
-addEvent5("click", createHandler(onClickText));
-addEvent5("dblclick", createHandler("onDoubleClick"));
+addEvent5("^click", createHandler(onClickText));
+addEvent5("^dblclick", createHandler("onDoubleClick"));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 
 let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";

@@ -698,16 +698,13 @@ function vdomPath(n) {
         return res;
     var currentCacheArray = null;
     var currentNode = nodeStack.pop();
-    rootFound2: for (j = 0; j < rootElements.length; j++) {
+    for (j = 0; j < rootElements.length; j++) {
         if (n === rootElements[j]) {
-            var rc = roots[rootIds[j]].c;
-            for (var k = 0; k < rc.length; k++) {
-                var rck = rc[k];
-                var findResult = nodeContainsNode(rck, currentNode, res.length, res);
-                if (findResult !== undefined) {
-                    currentCacheArray = findResult;
-                    break rootFound2;
-                }
+            var rn = roots[rootIds[j]].n;
+            var findResult = nodeContainsNode(rn, currentNode, res.length, res);
+            if (findResult !== undefined) {
+                currentCacheArray = findResult;
+                break;
             }
         }
     }
@@ -904,6 +901,8 @@ function updateNode(n, c, createInto, createBefore, deepness) {
 }
 exports.updateNode = updateNode;
 function getDomNode(c) {
+    if (c === undefined)
+        return null;
     var el = c.element;
     if (el != null) {
         if (exports.isArray(el))
@@ -1418,28 +1417,6 @@ function setAfterFrame(callback) {
     return res;
 }
 exports.setAfterFrame = setAfterFrame;
-function findLastNode(children) {
-    for (var i = children.length - 1; i >= 0; i--) {
-        var c = children[i];
-        var el = c.element;
-        if (el != null) {
-            if (exports.isArray(el)) {
-                var l = el.length;
-                if (l === 0)
-                    continue;
-                return el[l - 1];
-            }
-            return el;
-        }
-        var ch = c.children;
-        if (!exports.isArray(ch))
-            continue;
-        var res = findLastNode(ch);
-        if (res != null)
-            return res;
-    }
-    return null;
-}
 function isLogicalParent(parent, child, rootIds) {
     while (child != null) {
         if (parent === child)
@@ -1450,8 +1427,7 @@ function isLogicalParent(parent, child, rootIds) {
                 var r = roots[rootIds[i]];
                 if (!r)
                     continue;
-                var rc = r.c;
-                if (rc.indexOf(child) >= 0) {
+                if (r.n === child) {
                     p = r.p;
                     break;
                 }
@@ -1469,6 +1445,13 @@ function update(time) {
     scheduled = false;
     internalUpdate(time);
 }
+var rootIds;
+var RootComponent = createVirtualComponent({
+    render: function (ctx, me) {
+        var r = ctx.data;
+        me.children = r.f(r);
+    }
+});
 function internalUpdate(time) {
     renderFrameBegin = exports.now();
     initEvents();
@@ -1484,28 +1467,32 @@ function internalUpdate(time) {
         fullRecreateRequested = false;
         fullRefresh = true;
     }
-    var rootIds = Object.keys(roots);
+    rootIds = Object.keys(roots);
     for (var i = 0; i < rootIds.length; i++) {
         var r = roots[rootIds[i]];
         if (!r)
             continue;
-        var rc = r.c;
-        var insertBefore = findLastNode(rc);
+        var rc = r.n;
+        var insertBefore = null;
+        for (var j = i + 1; j < rootIds.length; j++) {
+            insertBefore = getDomNode(roots[rootIds[j]].n);
+            if (insertBefore != null)
+                break;
+        }
         if (focusRootTop)
             inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-        if (insertBefore != null)
-            insertBefore = insertBefore.nextSibling;
-        if (fullRefresh) {
-            var newChildren = r.f();
-            if (newChildren === undefined)
-                break;
-            r.e = r.e || document.body;
-            r.c = updateChildren(r.e, newChildren, rc, undefined, insertBefore, 1e6);
+        var node = RootComponent(r);
+        if (r.e === undefined)
+            r.e = document.body;
+        if (rc) {
+            updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : 0);
         }
         else {
-            selectedUpdate(rc, r.e, insertBefore);
+            r.n = createNode(node, undefined, r.e, insertBefore);
+            r.c = r.n.children;
         }
     }
+    rootIds = undefined;
     callPostCallbacks();
     var r0 = roots["0"];
     afterFrameCallback(r0 ? r0.c : null);
@@ -1549,8 +1536,13 @@ var lastRootId = 0;
 function addRoot(factory, element, parent) {
     lastRootId++;
     var rootId = "" + lastRootId;
-    roots[rootId] = { f: factory, e: element, c: [], p: parent };
-    exports.invalidate();
+    roots[rootId] = { f: factory, e: element, c: [], p: parent, n: undefined };
+    if (rootIds != null) {
+        rootIds.push(rootId);
+    }
+    else {
+        firstInvalidate();
+    }
     return rootId;
 }
 exports.addRoot = addRoot;
@@ -1558,12 +1550,25 @@ function removeRoot(id) {
     var root = roots[id];
     if (!root)
         return;
-    if (root.c.length) {
-        root.c = updateChildren(root.e, [], root.c, undefined, null, 1e9);
-    }
+    if (root.n)
+        removeNode(root.n);
     delete roots[id];
 }
 exports.removeRoot = removeRoot;
+function updateRoot(id, factory) {
+    assert(rootIds != null, "updateRoot could be called only from render");
+    var root = roots[id];
+    assert(root != null);
+    if (factory != null)
+        root.f = factory;
+    var rootNode = root.n;
+    if (rootNode == null)
+        return;
+    var ctx = rootNode.ctx;
+    ctx[ctxInvalidated] = frameCounter;
+    ctx[ctxDeepness] = 1e6;
+}
+exports.updateRoot = updateRoot;
 function getRoots() {
     return roots;
 }
@@ -1573,12 +1578,16 @@ function finishInitialize() {
     exports.invalidate();
 }
 var beforeInit = finishInitialize;
-function init(factory, element) {
-    removeRoot("0");
-    roots["0"] = { f: factory, e: element, c: [], p: undefined };
+function firstInvalidate() {
     initializing = true;
     beforeInit();
     beforeInit = finishInitialize;
+}
+function init(factory, element) {
+    assert(rootIds == null, "init should not be called from render");
+    removeRoot("0");
+    roots["0"] = { f: factory, e: element, c: [], p: undefined, n: undefined };
+    firstInvalidate();
 }
 exports.init = init;
 function setBeforeInit(callback) {
@@ -1639,13 +1648,11 @@ function broadcastEventToNode(node, name, param) {
 function broadcast(name, param) {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
-        var ch = roots[k[i]].c;
+        var ch = roots[k[i]].n;
         if (ch != null) {
-            for (var j = 0; j < ch.length; j++) {
-                var res = broadcastEventToNode(ch[j], name, param);
-                if (res != null)
-                    return res;
-            }
+            var res = broadcastEventToNode(ch, name, param);
+            if (res != null)
+                return res;
         }
     }
     return undefined;
@@ -2778,7 +2785,7 @@ function bustingClick(ev, _target, _node) {
     }
     return false;
 }
-var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"];
+var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "^click"];
 var bustingEventHandlers = [bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick];
 for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
     addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
@@ -2852,8 +2859,8 @@ function handleSelectStart(ev, _target, node) {
 }
 addEvent5("selectstart", handleSelectStart);
 // click must have higher priority over onchange detection
-addEvent5("click", createHandler(onClickText));
-addEvent5("dblclick", createHandler("onDoubleClick"));
+addEvent5("^click", createHandler(onClickText));
+addEvent5("^dblclick", createHandler("onDoubleClick"));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 var wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
 function handleMouseWheel(ev, target, node) {
