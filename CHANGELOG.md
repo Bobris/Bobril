@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+5.2.1
+--
+
+Fixed regresion with removingRoots during frame render.
+
 5.2.0
 --
 

@@ -1621,7 +1621,9 @@ function internalUpdate(time: number) {
         var rc = r.n;
         var insertBefore: Node | null = null;
         for (var j = i + 1; j < rootIds.length; j++) {
-            insertBefore = getDomNode(roots[rootIds[j]].n);
+            let rafter = roots[rootIds[j]];
+            if (rafter === undefined) continue;
+            insertBefore = getDomNode(rafter.n);
             if (insertBefore != null) break;
         }
         if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);

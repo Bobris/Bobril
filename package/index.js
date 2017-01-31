@@ -1475,7 +1475,10 @@ function internalUpdate(time) {
         var rc = r.n;
         var insertBefore = null;
         for (var j = i + 1; j < rootIds.length; j++) {
-            insertBefore = getDomNode(roots[rootIds[j]].n);
+            var rafter = roots[rootIds[j]];
+            if (rafter === undefined)
+                continue;
+            insertBefore = getDomNode(rafter.n);
             if (insertBefore != null)
                 break;
         }
