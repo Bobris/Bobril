@@ -1633,8 +1633,9 @@ function internalUpdate(time: number) {
             updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : 0);
         } else {
             r.n = createNode(node, undefined, r.e, insertBefore);
-            r.c = r.n.children;
+            rc = r.n;
         }
+        r.c = rc.children;
     }
     rootIds = undefined;
     callPostCallbacks();

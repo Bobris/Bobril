@@ -1492,8 +1492,9 @@ function internalUpdate(time) {
         }
         else {
             r.n = createNode(node, undefined, r.e, insertBefore);
-            r.c = r.n.children;
+            rc = r.n;
         }
+        r.c = rc.children;
     }
     rootIds = undefined;
     callPostCallbacks();
