@@ -181,7 +181,8 @@ function shimStyle(newValue) {
                 }
                 if (mi === undefined) {
                     mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
-                    if (DEBUG && window.console && console.warn)
+                    if (DEBUG && window.console && console.warn
+                        && ["overflowScrolling"].indexOf(ki) < 0)
                         console.warn("Style property " + ki + " is not supported in this browser");
                 }
             }

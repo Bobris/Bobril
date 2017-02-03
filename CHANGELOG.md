@@ -1,6 +1,13 @@
 CHANGELOG
 ===
 
+5.3.0
+--
+
+White list "overflowScrolling" style property to be always ok to use even on browsers does not supporting it.
+
+Fix root.c to contain root children again.
+
 5.2.1
 --
 

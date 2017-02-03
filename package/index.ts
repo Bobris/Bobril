@@ -371,7 +371,9 @@ function shimStyle(newValue: any) {
                 }
                 if (mi === undefined) {
                     mi = ((<any>isUnitlessNumber)[ki] === true) ? null : pxadder;
-                    if (DEBUG && window.console && console.warn) console.warn("Style property " + ki + " is not supported in this browser");
+                    if (DEBUG && window.console && console.warn
+                        && ["overflowScrolling"].indexOf(ki) < 0) // whitelist rare but usefull
+                        console.warn("Style property " + ki + " is not supported in this browser");
                 }
             }
             mapping[ki] = mi;
