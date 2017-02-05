@@ -124,12 +124,21 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return (<any>document).documentMode;
     }
 
+    function linearGradientStyleShim(style: any, value: any, name: string) {
+        var testEl = document.createElement('div').style;
+        testEl.cssText = name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase() + ": " + value;
+        if (testEl[name].length < 1)
+            style[name] = "-webkit-" + value;
+    }
+
     function shimStyle(newValue: any) {
         var k = Object.keys(newValue);
         for (var i = 0, l = k.length; i < l; i++) {
             var ki = k[i];
             var mi = mapping[ki];
             var vi = newValue[ki];
+            if(("" + vi).indexOf("gradient") > -1)
+                mi = linearGradientStyleShim;
             if (vi === undefined) continue;  // don't want to map undefined
             if (mi === undefined) {
                 if (DEBUG) {
