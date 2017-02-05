@@ -19,7 +19,7 @@ var Automata;
                 ];
             }
             var Component = {
-                render: function (ctx, me, oldMe) {
+                render(ctx, me, oldMe) {
                     me.tag = 'div';
                     me.className = 'help';
                     me.style = {

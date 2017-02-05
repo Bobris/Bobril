@@ -33,7 +33,7 @@ module SandboxApp {
         },
         postInitDom(ctx: any, me: IBobrilNode, element: HTMLElement) {
             ctx.selfelement = element;
-            element.addEventListener("paste",(ev: any) => {
+            element.addEventListener("paste", (ev: any) => {
                 var cbData: any;
                 if (ev.clipboardData) {
                     cbData = ev.clipboardData;
@@ -76,7 +76,7 @@ module SandboxApp {
 
     b.init(() => {
         b.invalidate();
-        return [
+        return <IBobrilNode[]>[
             { tag: "h1", children: "Paste Image Sample" },
             { tag: "p", children: "Try to paste image into edit box using Ctrl+V (tested Chrome,Firefox,IE11)" },
             {

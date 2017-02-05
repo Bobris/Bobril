@@ -5,7 +5,7 @@ var Automata;
         var MidPoint;
         (function (MidPoint) {
             var Component = {
-                render: function (ctx, me, oldMe) {
+                render(ctx, me, oldMe) {
                     var midPoint = ctx.data.midPoint;
                     me.tag = 'circle';
                     me.className = 'edge-mid-point';
@@ -15,20 +15,20 @@ var Automata;
                         r: 4
                     };
                 },
-                onPointerDown: function (ctx, event) {
+                onPointerDown(ctx, event) {
                     b.registerMouseOwner(ctx);
                     ctx.downPoint = new Automata.Models.Point(event.x, event.y);
                     var midPoint = ctx.data.midPoint;
                     ctx.prevPoint = new Automata.Models.Point(midPoint.x, midPoint.y);
                     return true;
                 },
-                onPointerUp: function (ctx, event) {
+                onPointerUp(ctx, event) {
                     if (b.isMouseOwner(ctx)) {
                         b.releaseMouseOwner();
                     }
                     return true;
                 },
-                onPointerMove: function (ctx, event) {
+                onPointerMove(ctx, event) {
                     if (!b.isMouseOwner(ctx)) {
                         return false;
                     }
@@ -38,14 +38,14 @@ var Automata;
                     b.invalidate();
                     return true;
                 },
-                onDoubleClick: function (ctx, event) {
+                onDoubleClick(ctx, event) {
                     ctx.data.resetMidPoint();
                     b.invalidate();
                     return true;
                 }
             };
             function Get(data) {
-                return { component: Component, data: data };
+                return { component: Component, data };
             }
             MidPoint.Get = Get;
         })(MidPoint = Components.MidPoint || (Components.MidPoint = {}));

@@ -17,7 +17,6 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "app.ts",
-        "node_modules/bobril/jsx.d.ts"
+        "app.ts"
     ]
 }

@@ -5,11 +5,11 @@ var FreeDrawApp;
 (function (FreeDrawApp) {
     var globPointerCounter = 0;
     var FreeDrawComp = {
-        init: function (ctx) {
+        init(ctx) {
             ctx.pointers = Object.create(null);
             ctx.retained = [];
         },
-        render: function (ctx, me) {
+        render(ctx, me) {
             var ch = [];
             var now = b.now();
             function drawPointer(p) {
@@ -29,7 +29,7 @@ var FreeDrawApp;
             }
             me.children = { data: { width: "100%", height: "100%" }, component: b.vg, children: ch };
         },
-        onPointerDown: function (ctx, param) {
+        onPointerDown(ctx, param) {
             ctx.pointers[param.id] = {
                 gid: "" + globPointerCounter++,
                 startx: param.x,
@@ -42,7 +42,7 @@ var FreeDrawApp;
             b.invalidate();
             return true;
         },
-        onPointerMove: function (ctx, param) {
+        onPointerMove(ctx, param) {
             var p = ctx.pointers[param.id];
             if (p === undefined)
                 return false;
@@ -54,7 +54,7 @@ var FreeDrawApp;
             }
             return true;
         },
-        onPointerUp: function (ctx, param) {
+        onPointerUp(ctx, param) {
             var p = ctx.pointers[param.id];
             if (p === undefined)
                 return false;
@@ -68,12 +68,12 @@ var FreeDrawApp;
             b.invalidate();
             return true;
         },
-        onPointerCancel: function (ctx, param) {
+        onPointerCancel(ctx, param) {
             delete ctx.pointers[param.id];
             return true;
         }
     };
-    b.init(function () {
+    b.init(() => {
         return [
             {
                 tag: "div", style: { touchAction: "none", width: "100%", height: "100%" }, component: FreeDrawComp

@@ -2,19 +2,19 @@ var Automata;
 (function (Automata) {
     var Models;
     (function (Models) {
-        var Automaton = (function () {
-            function Automaton() {
+        class Automaton {
+            constructor() {
                 this.states = new Array();
                 this.transitions = new Array();
             }
-            Automaton.prototype.addState = function (point) {
+            addState(point) {
                 var state = new Models.State(point);
                 state.isStart = this.states.length === 0;
                 state.name = this.getStateName();
                 this.states.push(state);
                 return state;
-            };
-            Automaton.prototype.removeState = function (state) {
+            }
+            removeState(state) {
                 var index = this.states.indexOf(state);
                 if (index < 0) {
                     return null;
@@ -26,24 +26,24 @@ var Automata;
                 }
                 this.states.splice(index, 1);
                 return null;
-            };
-            Automaton.prototype.addTransition = function (start, end, midPoint) {
-                if (this.transitions.some(function (e) { return e.from === start && e.to === end; })) {
+            }
+            addTransition(start, end, midPoint) {
+                if (this.transitions.some((e) => e.from === start && e.to === end)) {
                     return;
                 }
                 var transition = new Models.Transition(start, end, midPoint);
                 this.transitions.push(transition);
                 return transition;
-            };
-            Automaton.prototype.removeTransition = function (transition) {
+            }
+            removeTransition(transition) {
                 var index = this.transitions.indexOf(transition);
                 if (index < 0) {
                     return;
                 }
                 this.transitions.splice(index, 1);
                 return;
-            };
-            Automaton.prototype.getStateName = function () {
+            }
+            getStateName() {
                 var idx = 1;
                 var exists = true;
                 var name = null;
@@ -59,8 +59,8 @@ var Automata;
                     idx++;
                 }
                 return name;
-            };
-            Automaton.prototype.moveState = function (state, toPoint) {
+            }
+            moveState(state, toPoint) {
                 for (var i = 0; i < this.transitions.length; i++) {
                     var transition = this.transitions[i];
                     if (transition.from === state) {
@@ -71,9 +71,8 @@ var Automata;
                     }
                 }
                 state.point = toPoint;
-            };
-            return Automaton;
-        }());
+            }
+        }
         Models.Automaton = Automaton;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));
