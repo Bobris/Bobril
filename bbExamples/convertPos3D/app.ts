@@ -45,7 +45,7 @@ const FreeDrawComp = b.createVirtualComponent<void>({
         me.children = ch;
     },
     onPointerDown(ctx: IFreeDrawCtx, param: b.IBobrilPointerEvent): boolean {
-        const pos = b.convertPointFromPageToNode(ctx.me, param.x, param.y);
+        const pos = b.convertPointFromClientToNode(ctx.me, param.x, param.y);
         console.log(param, pos);
         ctx.pointers[param.id] = {
             gid: "" + globPointerCounter++,
@@ -60,7 +60,7 @@ const FreeDrawComp = b.createVirtualComponent<void>({
         return true;
     },
     onPointerMove(ctx: IFreeDrawCtx, param: b.IBobrilPointerEvent): boolean {
-        const pos = b.convertPointFromPageToNode(ctx.me, param.x, param.y);
+        const pos = b.convertPointFromClientToNode(ctx.me, param.x, param.y);
         var p = ctx.pointers[param.id];
         if (p === undefined) return false;
         if (p.lastx != pos[0] || p.lasty != pos[1]) {
@@ -72,7 +72,7 @@ const FreeDrawComp = b.createVirtualComponent<void>({
         return true;
     },
     onPointerUp(ctx: IFreeDrawCtx, param: b.IBobrilPointerEvent) {
-        const pos = b.convertPointFromPageToNode(ctx.me, param.x, param.y);
+        const pos = b.convertPointFromClientToNode(ctx.me, param.x, param.y);
         var p = ctx.pointers[param.id];
         if (p === undefined) return false;
         if (p.lastx != pos[0] || p.lasty != pos[1]) {

@@ -6,24 +6,20 @@
 /// <reference path="polldata.ts"/>
 var TeamRolePoll;
 (function (TeamRolePoll) {
-    function h(tag) {
-        var args = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
-        }
+    function h(tag, ...args) {
         return { tag: tag, children: args };
     }
     var NotFound = {
-        render: function (ctx, me) {
+        render(ctx, me) {
             me.tag = "div";
             me.children = h("p", "This page does not exist please continue by clicking links above");
         }
     };
     var PollPage = {
-        render: function (ctx, me) {
+        render(ctx, me) {
             me.tag = "div";
             me.children = [
-                ctx.data.questions.map(function (question, index) {
+                ctx.data.questions.map((question, index) => {
                     return h("div", b.link(h("a", question[ctx.cfg.lang]), "question", { idx: '' + index }));
                 }),
                 h("div", me.data.activeRouteHandler())
@@ -31,7 +27,7 @@ var TeamRolePoll;
         }
     };
     var OnChangeComponent = {
-        onChange: function (ctx, v) {
+        onChange(ctx, v) {
             ctx.data.onChange(v);
         }
     };
@@ -45,7 +41,7 @@ var TeamRolePoll;
         };
     }
     var Answer = {
-        render: function (ctx, me) {
+        render(ctx, me) {
             me.tag = "div";
             me.style = "padding:10px 10px 10px 10px";
             if (ctx.data.isEven)
@@ -60,7 +56,7 @@ var TeamRolePoll;
         return 100 * qindex + aindex;
     }
     function createHandler(answers, qindex, aindex) {
-        return function (v) {
+        return (v) => {
             answers[createAnswerKey(qindex, aindex)] = v;
             b.invalidate();
         };
@@ -74,7 +70,7 @@ var TeamRolePoll;
     function evaluteResult(questions, answers) {
         var maxAnswers = 10;
         var rolePoints = ({});
-        questions.map(function (q, qidx) {
+        questions.map((q, qidx) => {
             var weight = 0;
             for (var aidx = 0; aidx < maxAnswers; aidx++) {
                 weight += +getAnswerValue(answers, qidx, aidx);
@@ -97,7 +93,7 @@ var TeamRolePoll;
                 idPointsArray.push({ id: r, value: rolePoints[r] });
             }
         }
-        return idPointsArray.sort(function (a, b) {
+        return idPointsArray.sort((a, b) => {
             if (a.value < b.value)
                 return 1;
             if (a.valueOf > b.value)
@@ -111,24 +107,22 @@ var TeamRolePoll;
         return key;
     }
     var QuestionPage = {
-        render: function (ctx, me) {
+        render(ctx, me) {
             var idx = +ctx.data.routeParams.idx;
             var question = polldata[idx];
             var lang = ctx.cfg.lang;
             me.tag = "div";
             me.children = [
                 h("h3", question[lang]),
-                h("ul", question.answers.map(function (ans, ansIdx) {
-                    return h("li", {
-                        component: Answer,
-                        data: {
-                            answer: ans[lang],
-                            value: getAnswerValue(ctx.data.poll.answers, idx, ansIdx),
-                            onChange: createHandler(ctx.data.poll.answers, idx, ansIdx),
-                            isEven: (ansIdx % 2 != 0)
-                        }
-                    });
-                })),
+                h("ul", question.answers.map((ans, ansIdx) => h("li", {
+                    component: Answer,
+                    data: {
+                        answer: ans[lang],
+                        value: getAnswerValue(ctx.data.poll.answers, idx, ansIdx),
+                        onChange: createHandler(ctx.data.poll.answers, idx, ansIdx),
+                        isEven: (ansIdx % 2 != 0)
+                    }
+                }))),
                 idx > 0
                     ? b.link(h("a", " " + localize('Previous', lang) + " "), "question", { idx: '' + (idx - 1) })
                     : h("span"),
@@ -160,28 +154,26 @@ var TeamRolePoll;
         };
     }
     var ResultPage = {
-        render: function (ctx, me) {
+        render(ctx, me) {
             me.tag = "div";
             var rolepoints = evaluteResult(ctx.data.poll.questions, ctx.data.poll.answers);
-            var sum = rolepoints.reduce(function (prev, current) { return (current.value) + prev; }, 0);
+            var sum = rolepoints.reduce((prev, current) => (current.value) + prev, 0);
             var lang = ctx.cfg.lang;
             if (rolepoints.length == 0)
                 me.children = [h("p", localize('NoData', lang))];
             else
                 me.children = [
-                    h("table", rolepoints.map(function (r) {
-                        return h("tr", h("td", getRoleName(ctx.data.poll.role, lang, r.id)), h("td", Math.round(r.value * 100 / sum) + '%'), h("td", createBar(r.value)));
-                    }))
+                    h("table", rolepoints.map(r => h("tr", h("td", getRoleName(ctx.data.poll.role, lang, r.id)), h("td", Math.round(r.value * 100 / sum) + '%'), h("td", createBar(r.value)))))
                 ];
         }
     };
     var ActionButton = {
-        render: function (ctx, me) {
+        render(ctx, me) {
             me.tag = "button";
             me.style = ctx.data.active ? 'background-color:#00BB11;' : '';
             me.children = ctx.data.label;
         },
-        onClick: function (ctx, event) {
+        onClick(ctx, event) {
             ctx.data.perform();
             return true;
         }
@@ -194,10 +186,10 @@ var TeamRolePoll;
         b.invalidate();
     }
     var App = {
-        init: function (ctx) {
+        init(ctx) {
             ctx.cfg = cfg;
         },
-        render: function (ctx, me) {
+        render(ctx, me) {
             me.tag = "div";
             var lang = ctx.cfg.lang;
             me.children = [
@@ -209,7 +201,7 @@ var TeamRolePoll;
                     data: {
                         label: "CZ",
                         active: lang == "cz",
-                        perform: function () { return switchLanguage("cz"); }
+                        perform: () => switchLanguage("cz")
                     }
                 },
                 {
@@ -217,7 +209,7 @@ var TeamRolePoll;
                     data: {
                         label: "EN",
                         active: lang == "en",
-                        perform: function () { return switchLanguage("en"); }
+                        perform: () => switchLanguage("en")
                     }
                 }
             ];
@@ -232,7 +224,7 @@ var TeamRolePoll;
         b.route({ name: "questions", data: { questions: pollData.questions }, handler: PollPage }),
         b.route({
             name: "question", url: "/question/:idx", data: { poll: pollData },
-            handler: QuestionPage, keyBuilder: function (p) { return p["idx"]; }
+            handler: QuestionPage, keyBuilder(p) { return p["idx"]; }
         }),
         b.route({ name: "result", data: { poll: pollData }, handler: ResultPage }),
         b.routeDefault({ handler: PollPage, data: { questions: pollData.questions } }),

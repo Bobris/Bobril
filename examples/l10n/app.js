@@ -9,19 +9,19 @@ var L10nApp;
         pathToIntlMessageFormatJs: 'intl-messageformat.min.js',
         pathToIntlMessageFormatLocaleData: 'intlmfdata/',
         defaultLocale: 'en-US',
-        pathToTranslation: function (l) { return 'translations/' + l + ".js"; }
+        pathToTranslation: (l) => 'translations/' + l + ".js"
     });
     function buttonLocale(name) {
         return {
             tag: "button", children: name, component: {
-                onClick: function () {
+                onClick: () => {
                     b.setLocale(name).then(b.invalidate);
                 }
             }
         };
     }
-    setInterval(function () { return b.invalidate(); }, 1000);
-    b.init(function () {
+    setInterval(() => b.invalidate(), 1000);
+    b.init(() => {
         return [
             { tag: "h1", children: b.t(0) },
             {
