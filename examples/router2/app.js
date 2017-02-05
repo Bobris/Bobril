@@ -2,7 +2,11 @@
 /// <reference path="../../src/bobril.router.d.ts"/>
 var Router2App;
 (function (Router2App) {
-    function h(tag, ...args) {
+    function h(tag) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
         return { tag: tag, children: args };
     }
     function a(node, prop, value) {
@@ -20,7 +24,7 @@ var Router2App;
         { name: "Mars", image: "http://mars.jpl.nasa.gov/images/PIA02653-br2.jpg" }
     ];
     var About = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = [
                 h("h3", "About"),
@@ -31,19 +35,19 @@ var Router2App;
         }
     };
     var Empty = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "Welcome");
         }
     };
     var NotFound = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "This page does not exist please continue by clicking links above");
         }
     };
     var SelectPlanet = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = h("p", "Select planet to show on left");
         }
@@ -67,10 +71,10 @@ var Router2App;
     }
     var transitionGroupComp = {
         id: "TransitionGroup",
-        init(ctx, me) {
+        init: function (ctx, me) {
             ctx.list = [];
         },
-        render(ctx, me, oldMe) {
+        render: function (ctx, me, oldMe) {
             var curNodes = me.children;
             if (curNodes == null)
                 curNodes = [];
@@ -79,7 +83,7 @@ var Router2App;
             function build(node, rootCtx, animCtx) {
                 node = b.assign({}, node);
                 b.postEnhance(node, {
-                    render(ctx, me, oldMe) {
+                    render: function (ctx, me, oldMe) {
                         me.style = me.style || {};
                         if (!animCtx.live) {
                             me.style.position = "absolute";
@@ -178,18 +182,18 @@ var Router2App;
                     list[i].node = b.cloneNode(list[i].nodeClone);
                 }
             }
-            me.children = list.map((item) => item.node);
+            me.children = list.map(function (item) { return item.node; });
         }
     };
     function relativeTransitionGroup(node) {
         return { tag: "div", style: { position: "relative" }, children: node, component: transitionGroupComp };
     }
     var PlanetList = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "table";
             me.children = h("tr", [
                 h("td", [
-                    ctx.data.planets.map((planet) => {
+                    ctx.data.planets.map(function (planet) {
                         return h("div", b.link(h("a", planet.name), "planet", { name: planet.name }));
                     })
                 ]),
@@ -199,7 +203,7 @@ var Router2App;
         }
     };
     var PlanetImage = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             var name = ctx.data.routeParams.name;
             var planet = null;
             for (var i = 0; i < planetData.length; i++) {
@@ -220,7 +224,7 @@ var Router2App;
         }
     };
     var App = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = [
                 h("h1", "Advanced Router sample"),
@@ -231,7 +235,7 @@ var Router2App;
     };
     b.routes(b.route({ handler: App }, [
         b.route({ name: "planets", data: { planets: planetData }, handler: PlanetList }, [
-            b.route({ name: "planet", url: "/planet/:name", handler: PlanetImage, keyBuilder(p) { return p["name"]; } }),
+            b.route({ name: "planet", url: "/planet/:name", handler: PlanetImage, keyBuilder: function (p) { return p["name"]; } }),
             b.routeDefault({ handler: SelectPlanet })
         ]),
         b.route({ name: "about", handler: About }),

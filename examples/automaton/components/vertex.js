@@ -5,7 +5,7 @@ var Automata;
         var Vertex;
         (function (Vertex) {
             var Component = {
-                render(ctx, me, oldMe) {
+                render: function (ctx, me, oldMe) {
                     var state = ctx.data.state;
                     me.tag = 'g';
                     me.className = ctx.data.isSelected ? 'vertex selected' : 'vertex';
@@ -41,7 +41,7 @@ var Automata;
                         }
                     ];
                 },
-                onClick(ctx, event) {
+                onClick: function (ctx, event) {
                     if (ctx.data.dragMode === Automata.Models.DragMode.NewEdge) {
                         return true;
                     }
@@ -49,7 +49,7 @@ var Automata;
                     b.invalidate();
                     return true;
                 },
-                onPointerDown(ctx, event) {
+                onPointerDown: function (ctx, event) {
                     if (ctx.data.dragMode === Automata.Models.DragMode.Move) {
                         b.registerMouseOwner(ctx);
                         ctx.downPoint = new Automata.Models.Point(event.x, event.y);
@@ -61,7 +61,7 @@ var Automata;
                         return true;
                     }
                 },
-                onPointerUp(ctx, event) {
+                onPointerUp: function (ctx, event) {
                     if (ctx.data.dragMode === Automata.Models.DragMode.Move) {
                         if (b.isMouseOwner(ctx)) {
                             b.releaseMouseOwner();
@@ -75,7 +75,7 @@ var Automata;
                         }
                     }
                 },
-                onPointerMove(ctx, event) {
+                onPointerMove: function (ctx, event) {
                     if (ctx.data.dragMode === Automata.Models.DragMode.Move) {
                         if (!b.isMouseOwner(ctx)) {
                             return false;
@@ -103,7 +103,7 @@ var Automata;
                 }
             };
             function Get(data) {
-                return { component: Component, data };
+                return { component: Component, data: data };
             }
             Vertex.Get = Get;
         })(Vertex = Components.Vertex || (Components.Vertex = {}));

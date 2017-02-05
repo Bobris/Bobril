@@ -1,21 +1,22 @@
 var TodoApp;
 (function (TodoApp) {
-    class Task {
-        constructor(id, name, completed) {
+    var Task = (function () {
+        function Task(id, name, completed) {
             this.id = id;
             this.name = name;
             this.completed = completed;
         }
-        setStatus(completed) {
+        Task.prototype.setStatus = function (completed) {
             this.completed = completed;
-        }
-        setName(name) {
+        };
+        Task.prototype.setName = function (name) {
             this.name = name;
-        }
-    }
+        };
+        return Task;
+    }());
     TodoApp.Task = Task;
-    class Tasks {
-        constructor() {
+    var Tasks = (function () {
+        function Tasks() {
             this.storageItemsKey = "todoApp.taskListItems";
             this.storageCounterKey = "todoApp.taskListCounter";
             this.filterAll = "all";
@@ -24,11 +25,11 @@ var TodoApp;
             this.items = [];
             this.counter = 0;
         }
-        saveToStorage() {
+        Tasks.prototype.saveToStorage = function () {
             localStorage.setItem(this.storageItemsKey, JSON.stringify(this.items));
             localStorage.setItem(this.storageCounterKey, JSON.stringify(this.counter));
-        }
-        restoreFromStorage() {
+        };
+        Tasks.prototype.restoreFromStorage = function () {
             var storageItems = JSON.parse(localStorage.getItem(this.storageItemsKey));
             if (storageItems) {
                 for (var i = 0; i < storageItems.length; i++) {
@@ -40,46 +41,47 @@ var TodoApp;
             if (typeof (counter) === "number") {
                 this.counter = counter;
             }
-        }
-        getFilteredItems(filter) {
-            return this.items.filter((item, index, array) => {
-                return filter === this.filterAll ||
-                    filter === this.filterActive && !item.completed ||
-                    filter === this.filterCompleted && item.completed;
+        };
+        Tasks.prototype.getFilteredItems = function (filter) {
+            var _this = this;
+            return this.items.filter(function (item, index, array) {
+                return filter === _this.filterAll ||
+                    filter === _this.filterActive && !item.completed ||
+                    filter === _this.filterCompleted && item.completed;
             });
-        }
-        getItemsCount() {
+        };
+        Tasks.prototype.getItemsCount = function () {
             return this.items.length;
-        }
-        addTask(name) {
+        };
+        Tasks.prototype.addTask = function (name) {
             this.items.push(new Task(++this.counter, name, false));
             this.saveToStorage();
-        }
-        markTaskAsCompleted(id) {
+        };
+        Tasks.prototype.markTaskAsCompleted = function (id) {
             this.setTaskStatus(id, true);
             this.saveToStorage();
-        }
-        markAllTasksAsCompleted() {
+        };
+        Tasks.prototype.markAllTasksAsCompleted = function () {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsCompleted(this.items[i].id);
             }
             this.saveToStorage();
-        }
-        markTaskAsActive(id) {
+        };
+        Tasks.prototype.markTaskAsActive = function (id) {
             this.setTaskStatus(id, false);
             this.saveToStorage();
-        }
-        markAllTasksAsActive() {
+        };
+        Tasks.prototype.markAllTasksAsActive = function () {
             for (var i = 0; i < this.items.length; i++) {
                 this.markTaskAsActive(this.items[i].id);
             }
             this.saveToStorage();
-        }
-        removeTask(id) {
-            this.removeTasksByPredicate((item) => { return item.id === id; });
+        };
+        Tasks.prototype.removeTask = function (id) {
+            this.removeTasksByPredicate(function (item) { return item.id === id; });
             this.saveToStorage();
-        }
-        getNumberOfCompletedTasks() {
+        };
+        Tasks.prototype.getNumberOfCompletedTasks = function () {
             var res = 0;
             for (var i = 0; i < this.items.length; i++) {
                 if (this.items[i].completed) {
@@ -87,42 +89,43 @@ var TodoApp;
                 }
             }
             return res;
-        }
-        removeCompletedTasks() {
-            this.removeTasksByPredicate((item) => { return item.completed; });
+        };
+        Tasks.prototype.removeCompletedTasks = function () {
+            this.removeTasksByPredicate(function (item) { return item.completed; });
             this.saveToStorage();
-        }
-        setTaskStatus(taskId, status) {
+        };
+        Tasks.prototype.setTaskStatus = function (taskId, status) {
             this.findTaskById(taskId).setStatus(status);
             this.saveToStorage();
-        }
-        setTaskName(taskId, name) {
+        };
+        Tasks.prototype.setTaskName = function (taskId, name) {
             this.findTaskById(taskId).setName(name);
             this.saveToStorage();
-        }
-        isWholeListCompleted() {
-            return this.items.every((currentValue, index, array) => {
+        };
+        Tasks.prototype.isWholeListCompleted = function () {
+            return this.items.every(function (currentValue, index, array) {
                 return currentValue.completed;
             });
-        }
-        isTaskCompleted(taskId) {
+        };
+        Tasks.prototype.isTaskCompleted = function (taskId) {
             return this.findTaskById(taskId).completed;
-        }
-        findTaskById(taskId) {
+        };
+        Tasks.prototype.findTaskById = function (taskId) {
             for (var i = 0; i < this.items.length; i++) {
                 if (this.items[i].id === taskId) {
                     return this.items[i];
                 }
             }
             return null;
-        }
-        removeTasksByPredicate(predicate) {
+        };
+        Tasks.prototype.removeTasksByPredicate = function (predicate) {
             for (var i = this.items.length - 1; i >= 0; i--) {
                 if (predicate(this.items[i])) {
                     this.items.splice(i, 1);
                 }
             }
-        }
-    }
+        };
+        return Tasks;
+    }());
     TodoApp.Tasks = Tasks;
 })(TodoApp || (TodoApp = {}));

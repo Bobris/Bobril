@@ -29,7 +29,8 @@ var StyleApp;
                     b.style({ tag: "div" }, inline, iconTran),
                     b.style({ tag: "div", component: { onClick: function () { l = !l; b.invalidate(); return true; } } }, inline, l && iconShine, l || iconOff),
                     b.style({ tag: "div", children: "float" }, leftfloat),
-                    b.style({ tag: "div", children: "float2" }, leftfloat)]
+                    b.style({ tag: "div", children: "float2" }, leftfloat)
+                ]
             },
             {
                 tag: "div", children: [

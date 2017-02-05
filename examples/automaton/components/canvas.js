@@ -5,7 +5,7 @@ var Automata;
         var Canvas;
         (function (Canvas) {
             var Component = {
-                render(ctx, me, oldMe) {
+                render: function (ctx, me, oldMe) {
                     me.tag = 'div';
                     me.className = 'canvas';
                     me.style = {
@@ -18,7 +18,7 @@ var Automata;
                 }
             };
             function Get(data) {
-                return { component: Component, data };
+                return { component: Component, data: data };
             }
             Canvas.Get = Get;
         })(Canvas = Components.Canvas || (Components.Canvas = {}));

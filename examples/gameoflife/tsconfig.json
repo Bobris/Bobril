@@ -1,26 +1,19 @@
 {
-    "version": "1.4.1",
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
+        "moduleResolution": "node",
         "declaration": false,
-        "noImplicitAny": true,
+        "lib": [
+            "es5",
+            "dom",
+            "es2015.core",
+            "es2015.promise"
+        ],
         "removeComments": false,
-        "noLib": false
-    },
-    "filesGlob": [
-        "./**/*.ts",
-        "!./node_modules/**/*.ts"
-    ],
-    "files": [
-        "./app.ts",
-        "./components/button.ts",
-        "./components/canvas.ts",
-        "./components/gameControlPanel.ts",
-        "./components/header.ts",
-        "./components/spinner.ts",
-        "./gameController.ts",
-        "./model/cell.ts",
-        "./model/world.ts"
-    ]
+        "noLib": false,
+        "preserveConstEnums": false,
+        "jsx": "react",
+        "reactNamespace": "b"
+    }
 }

@@ -1,10 +1,10 @@
 var DynamicDataTableApp;
 (function (DynamicDataTableApp) {
+    var SortOrder;
     (function (SortOrder) {
         SortOrder[SortOrder["ASC"] = 0] = "ASC";
         SortOrder[SortOrder["DESC"] = 1] = "DESC";
-    })(DynamicDataTableApp.SortOrder || (DynamicDataTableApp.SortOrder = {}));
-    var SortOrder = DynamicDataTableApp.SortOrder;
+    })(SortOrder = DynamicDataTableApp.SortOrder || (DynamicDataTableApp.SortOrder = {}));
     var SortModel = (function () {
         function SortModel(sortByIndex, sortOrder) {
             this.sortByIndex = sortByIndex;

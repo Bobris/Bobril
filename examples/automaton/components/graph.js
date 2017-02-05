@@ -28,10 +28,10 @@ var Automata;
                 if (!transitions || !transitions.length) {
                     return null;
                 }
-                return transitions.map((transition) => {
+                return transitions.map(function (transition) {
                     return Components.Edge.Get({
-                        transition,
-                        transitionSelected,
+                        transition: transition,
+                        transitionSelected: transitionSelected,
                         isSelected: selectedTransition === transition
                     });
                 });
@@ -40,7 +40,7 @@ var Automata;
                 var scr = transition.screenPoint;
                 var trTo = transition.to ? transition.to.point : new Automata.Models.Point(scr.x - rect.left, scr.y - rect.top);
                 transition.midPoint = null;
-                return `M${transition.from.point}L${trTo}`;
+                return "M" + transition.from.point + "L" + trTo;
             }
             function getLoop(rect, transition) {
                 var from = transition.from.point;
@@ -52,7 +52,7 @@ var Automata;
                 var c1 = new Automata.Models.Point(point.x, point.y).addVector(perpendicuar, -0.4);
                 var c2 = new Automata.Models.Point(point.x, point.y).addVector(perpendicuar, 0.4);
                 transition.midPoint = point;
-                return `M${from}Q${c1},${point}Q${c2},${from}`;
+                return "M" + from + "Q" + c1 + "," + point + "Q" + c2 + "," + from;
             }
             function getNewEdge(rect, transition) {
                 if (!transition || !transition.from) {
@@ -73,12 +73,12 @@ var Automata;
                 if (!states || !states.length) {
                     return null;
                 }
-                return states.map((state) => {
+                return states.map(function (state) {
                     return Components.Vertex.Get({
-                        state,
-                        onMove,
-                        addTransition,
-                        stateSelected,
+                        state: state,
+                        onMove: onMove,
+                        addTransition: addTransition,
+                        stateSelected: stateSelected,
                         newTransition: ctx.newTransition,
                         dragMode: ctx.dragMode,
                         isSelected: ctx.selectedState == state
@@ -95,19 +95,19 @@ var Automata;
                 }
             }
             var Component = {
-                init(ctx, me) {
+                init: function (ctx, me) {
                     ctx.dragMode = Automata.Models.DragMode.Move;
                     b.invalidate();
                 },
-                render(ctx, me, oldMe) {
+                render: function (ctx, me, oldMe) {
                     var automaton = ctx.data.automaton;
                     me.tag = 'svg';
                     me.attrs = { tabindex: 0 };
                     me.style = { width: '100%', height: '100%', outline: 'none' };
                     me.children = [
-                        getEdges(automaton.transitions, ctx.selectedTransition, (transition) => { ctx.selectedTransition = transition; ctx.selectedState = null; }),
+                        getEdges(automaton.transitions, ctx.selectedTransition, function (transition) { ctx.selectedTransition = transition; ctx.selectedState = null; }),
                         getNewEdge(ctx.rectangle, ctx.newTransition),
-                        getVertices(ctx, (state, toPoint) => automaton.moveState(state, toPoint), () => addTransition(ctx), (state) => { ctx.selectedState = state; ctx.selectedTransition = null; }),
+                        getVertices(ctx, function (state, toPoint) { return automaton.moveState(state, toPoint); }, function () { return addTransition(ctx); }, function (state) { ctx.selectedState = state; ctx.selectedTransition = null; }),
                         {
                             tag: 'defs',
                             children: [
@@ -117,7 +117,7 @@ var Automata;
                         }
                     ];
                 },
-                onClick(ctx, event) {
+                onClick: function (ctx, event) {
                     if (ctx.dragMode === Automata.Models.DragMode.NewEdge) {
                         return true;
                     }
@@ -126,7 +126,7 @@ var Automata;
                     b.invalidate();
                     return true;
                 },
-                onDoubleClick(ctx, event) {
+                onDoubleClick: function (ctx, event) {
                     var automaton = ctx.data.automaton;
                     var state = automaton.addState(new Automata.Models.Point(event.x - ctx.rectangle.left, event.y - ctx.rectangle.top));
                     ctx.selectedState = state;
@@ -134,12 +134,12 @@ var Automata;
                     b.invalidate();
                     return true;
                 },
-                postInitDom(ctx, me, element) {
+                postInitDom: function (ctx, me, element) {
                     if (element.focus) {
                         element.focus();
                     }
                 },
-                postUpdateDom(ctx, me, element) {
+                postUpdateDom: function (ctx, me, element) {
                     ctx.rectangle = element.getBoundingClientRect();
                     if (b.ieVersion() === undefined) {
                         return;
@@ -148,7 +148,7 @@ var Automata;
                     element.removeChild(defs);
                     element.appendChild(defs);
                 },
-                onPointerMove(ctx, event) {
+                onPointerMove: function (ctx, event) {
                     if (ctx.dragMode === Automata.Models.DragMode.NewEdge) {
                         ctx.newTransition.to = null;
                         ctx.newTransition.screenPoint = new Automata.Models.Point(event.x, event.y);
@@ -160,13 +160,13 @@ var Automata;
                     }
                     return false;
                 },
-                onPointerUp(ctx, event) {
+                onPointerUp: function (ctx, event) {
                     if (ctx.dragMode === Automata.Models.DragMode.NewEdge) {
                         ctx.newTransition.from = null;
                     }
                     return true;
                 },
-                onKeyDown(ctx, event) {
+                onKeyDown: function (ctx, event) {
                     if (event.ctrl && ctx.dragMode === Automata.Models.DragMode.Move) {
                         ctx.dragMode = Automata.Models.DragMode.NewEdge;
                         ctx.newTransition = new Automata.Models.NewTransition(null, null);
@@ -174,7 +174,7 @@ var Automata;
                     }
                     return true;
                 },
-                onKeyUp(ctx, event) {
+                onKeyUp: function (ctx, event) {
                     if (!event.ctrl && ctx.dragMode === Automata.Models.DragMode.NewEdge) {
                         ctx.dragMode = Automata.Models.DragMode.Move;
                         ctx.newTransition = null;
@@ -194,7 +194,7 @@ var Automata;
                 }
             };
             function Get(data) {
-                return { component: Component, data };
+                return { component: Component, data: data };
             }
             Graph.Get = Get;
         })(Graph = Components.Graph || (Components.Graph = {}));

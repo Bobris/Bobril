@@ -1,3 +1,7 @@
+/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.vg.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.media.d.ts"/>
 var LibSizeApp;
 (function (LibSizeApp) {
     function h(tag) {

@@ -14,14 +14,14 @@ var Automata;
     automaton.addTransition(automaton.states[3], automaton.states[2]);
     automaton.addTransition(automaton.states[4], automaton.states[1], new Automata.Models.Point(330, 100));
     automaton.addTransition(automaton.states[4], automaton.states[4], new Automata.Models.Point(510, 150));
-    b.init(() => [
+    b.init(function () { return [
         {
             tag: 'h2',
             children: 'Automaton (Bobril Demo)'
         },
         Automata.Components.Canvas.Get({
-            content: Automata.Components.Graph.Get({ automaton })
+            content: Automata.Components.Graph.Get({ automaton: automaton })
         }),
         Automata.Components.Help.Get()
-    ]);
+    ]; });
 })(Automata || (Automata = {}));

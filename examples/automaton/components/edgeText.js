@@ -5,7 +5,7 @@ var Automata;
         var EdgeText;
         (function (EdgeText) {
             var Component = {
-                render(ctx, me, oldMe) {
+                render: function (ctx, me, oldMe) {
                     var transition = ctx.data.transition;
                     me.tag = 'g';
                     me.children = [
@@ -16,7 +16,7 @@ var Automata;
                                 x: transition.midPoint.x + transition.textPosition.x,
                                 y: transition.midPoint.y + transition.textPosition.y
                             },
-                            children: `${transition.from.name} → ${transition.to.name}`
+                            children: transition.from.name + " \u2192 " + transition.to.name
                         },
                         {
                             tag: 'path',
@@ -27,20 +27,20 @@ var Automata;
                         }
                     ];
                 },
-                onPointerDown(ctx, event) {
+                onPointerDown: function (ctx, event) {
                     b.registerMouseOwner(ctx);
                     ctx.downPoint = new Automata.Models.Point(event.x, event.y);
                     var textPosition = ctx.data.transition.textPosition;
                     ctx.prevPoint = new Automata.Models.Point(textPosition.x, textPosition.y);
                     return true;
                 },
-                onPointerUp(ctx, event) {
+                onPointerUp: function (ctx, event) {
                     if (b.isMouseOwner(ctx)) {
                         b.releaseMouseOwner();
                     }
                     return true;
                 },
-                onPointerMove(ctx, event) {
+                onPointerMove: function (ctx, event) {
                     if (!b.isMouseOwner(ctx)) {
                         return false;
                     }
@@ -51,7 +51,7 @@ var Automata;
                     b.invalidate();
                     return true;
                 },
-                postUpdateDom(ctx, me, element) {
+                postUpdateDom: function (ctx, me, element) {
                     var midPoint = ctx.data.transition.midPoint;
                     var bbox = element.getBBox();
                     var x;
@@ -65,11 +65,11 @@ var Automata;
                         y = midPoint.y;
                     }
                     var textLine = element.childNodes[1];
-                    textLine.setAttribute('d', `M${midPoint}L${x},${y}`);
+                    textLine.setAttribute('d', "M" + midPoint + "L" + x + "," + y);
                 }
             };
             function Get(data) {
-                return { component: Component, data };
+                return { component: Component, data: data };
             }
             EdgeText.Get = Get;
         })(EdgeText = Components.EdgeText || (Components.EdgeText = {}));

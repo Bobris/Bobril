@@ -2,21 +2,22 @@ var Automata;
 (function (Automata) {
     var Models;
     (function (Models) {
-        class Vector {
-            constructor(from, to) {
+        var Vector = (function () {
+            function Vector(from, to) {
                 this.x = to.x - from.x;
                 this.y = to.y - from.y;
             }
-            getLength() {
+            Vector.prototype.getLength = function () {
                 return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
-            }
-            getPerpendicular() {
+            };
+            Vector.prototype.getPerpendicular = function () {
                 return new Vector(new Models.Point(0, 0), new Models.Point(-this.y, this.x));
-            }
-            toString() {
+            };
+            Vector.prototype.toString = function () {
                 return this.x + ',' + this.y;
-            }
-        }
+            };
+            return Vector;
+        }());
         Models.Vector = Vector;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));

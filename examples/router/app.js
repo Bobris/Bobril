@@ -2,32 +2,36 @@
 /// <reference path="../../src/bobril.router.d.ts"/>
 var RouterApp;
 (function (RouterApp) {
-    function h(tag, ...args) {
+    function h(tag) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
         return { tag: tag, children: args };
     }
     var Page1 = {
         id: "Page1",
-        init(ctx, me) {
+        init: function (ctx, me) {
             ctx.ticks = 0;
-            ctx.timer = setInterval(() => { ctx.ticks++; b.invalidate(); }, 1000);
+            ctx.timer = setInterval(function () { ctx.ticks++; b.invalidate(); }, 1000);
         },
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = [h("h3", "Page1"), h("p", "Ticks :" + ctx.ticks)];
         },
-        destroy(ctx, me) {
+        destroy: function (ctx, me) {
             clearInterval(ctx.timer);
         }
     };
     var Page2 = {
         id: "Page2",
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = h("h3", "Page2");
         }
     };
     var App = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             me.children = [
                 h("h1", "Basic Router sample"),

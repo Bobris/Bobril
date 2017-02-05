@@ -1,19 +1,19 @@
 {
-    "version": "1.4.1",
     "compilerOptions": {
-        "target": "es6",
+        "target": "es5",
         "module": "commonjs",
+        "moduleResolution": "node",
         "declaration": false,
-        "noImplicitAny": false,
-        "removeComments": true,
-        "noLib": false
-    },
-    "compileOnSave": false,
-    "filesGlob": [
-        "./**/*.ts",
-        "!./node_modules/**/*.ts"
-    ],
-    "files": [
-        "./app.ts"
-    ]
+        "lib": [
+            "es5",
+            "dom",
+            "es2015.core",
+            "es2015.promise"
+        ],
+        "removeComments": false,
+        "noLib": false,
+        "preserveConstEnums": false,
+        "jsx": "react",
+        "reactNamespace": "b"
+    }
 }

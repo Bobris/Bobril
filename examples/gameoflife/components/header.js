@@ -1,12 +1,12 @@
 /// <reference path="../../../src/bobril.d.ts"/>
 var GameOfLifeApp;
 (function (GameOfLifeApp) {
+    var HeaderLevel;
     (function (HeaderLevel) {
         HeaderLevel[HeaderLevel["H1"] = 0] = "H1";
         HeaderLevel[HeaderLevel["H2"] = 1] = "H2";
         HeaderLevel[HeaderLevel["H3"] = 2] = "H3";
-    })(GameOfLifeApp.HeaderLevel || (GameOfLifeApp.HeaderLevel = {}));
-    var HeaderLevel = GameOfLifeApp.HeaderLevel;
+    })(HeaderLevel = GameOfLifeApp.HeaderLevel || (GameOfLifeApp.HeaderLevel = {}));
     var Header = (function () {
         function Header() {
         }

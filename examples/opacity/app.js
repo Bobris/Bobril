@@ -11,7 +11,8 @@ var OpacityApp;
                             onChange(constant);
                             b.invalidate();
                         } } } },
-                content]
+                content
+            ]
         };
     }
     b.init(function () {

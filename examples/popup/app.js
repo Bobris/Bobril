@@ -1,3 +1,10 @@
+/// <reference path="../../src/bobril.d.ts"/>
+/// <reference path="../../src/bobril.onchange.d.ts"/>
+/// <reference path="../../src/bobril.mouse.d.ts"/>
+/// <reference path="../../src/bobril.onkey.d.ts"/>
+/// <reference path="../../src/bobril.focus.d.ts"/>
+/// <reference path="../../src/bobril.media.d.ts"/>
+/// <reference path="../../src/bobril.promise.d.ts"/>
 var PopupApp;
 (function (PopupApp) {
     function d(style, content) {
@@ -46,7 +53,7 @@ var PopupApp;
         return style;
     }
     var ButtonComp = {
-        render(ctx, me) {
+        render: function (ctx, me) {
             me.tag = "div";
             ctx.disabled = ctx.data.action === null;
             ctx.down = ctx.hover && ctx.mousedown || ctx.keydown;
@@ -54,29 +61,29 @@ var PopupApp;
             me.attrs = { tabindex: ctx.disabled ? -1 : 0 };
             me.children = ctx.data.content;
         },
-        onFocus(ctx) {
+        onFocus: function (ctx) {
             if (ctx.disabled)
                 return false;
             ctx.focused = true;
             b.invalidate(ctx);
             return false;
         },
-        onBlur(ctx) {
+        onBlur: function (ctx) {
             ctx.focused = false;
             b.invalidate(ctx);
             return false;
         },
-        onMouseEnter(ctx) {
+        onMouseEnter: function (ctx) {
             ctx.hover = true;
             b.invalidate(ctx);
             return false;
         },
-        onMouseLeave(ctx) {
+        onMouseLeave: function (ctx) {
             ctx.hover = false;
             b.invalidate(ctx);
             return false;
         },
-        onMouseDown(ctx) {
+        onMouseDown: function (ctx) {
             if (ctx.disabled)
                 return true;
             ctx.mousedown = true;
@@ -84,7 +91,7 @@ var PopupApp;
             b.invalidate(ctx);
             return false;
         },
-        onMouseUp(ctx) {
+        onMouseUp: function (ctx) {
             if (ctx.disabled)
                 return true;
             ctx.mousedown = false;
@@ -97,10 +104,10 @@ var PopupApp;
             }
             return false;
         },
-        onClick() {
+        onClick: function () {
             return true;
         },
-        onKeyDown(ctx, param) {
+        onKeyDown: function (ctx, param) {
             if (ctx.disabled)
                 return false;
             if (param.which == 32 || param.which == 13) {
@@ -109,7 +116,7 @@ var PopupApp;
                 return true;
             }
         },
-        onKeyUp(ctx, param) {
+        onKeyUp: function (ctx, param) {
             if (ctx.disabled)
                 return false;
             if (param.which == 32 || param.which == 13) {
@@ -122,6 +129,7 @@ var PopupApp;
             }
         }
     };
+    // pass action=null to paint disabled button
     function button(content, action) {
         return {
             data: { action: action, content: content },
@@ -139,14 +147,15 @@ var PopupApp;
         b.postEnhance(node, component);
         return node;
     }
-    function layoutPair(left, right, leftWidth = "50%") {
+    function layoutPair(left, right, leftWidth) {
+        if (leftWidth === void 0) { leftWidth = "50%"; }
         return d({ display: "table", width: "100%" }, [
             d({ display: "table-cell", verticalAlign: "top", width: leftWidth }, left),
             d({ display: "table-cell", verticalAlign: "top" }, right)
         ]);
     }
     function checkbox(value, onChange) {
-        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: (ctx, v) => onChange(v) } };
+        return { tag: "input", attrs: { type: "checkbox", value: value }, component: { onChange: function (ctx, v) { return onChange(v); } } };
     }
     var PopupButtonStyle;
     (function (PopupButtonStyle) {
@@ -157,29 +166,29 @@ var PopupApp;
     })(PopupButtonStyle || (PopupButtonStyle = {}));
     function innerpopup(cfg, title, width, buttons, hideAction, content) {
         var buttonNodes = [];
-        var defaultAction = () => false;
-        var cancelAction = () => false;
+        var defaultAction = function () { return false; };
+        var cancelAction = function () { return false; };
         for (var i = 0; i < buttons.length; i++) {
             if (i > 0)
                 buttonNodes.push(" ");
             var bb = buttons[i];
-            var action = () => true;
+            var action = function () { return true; };
             if (bb.action)
                 action = bb.action;
-            action = ((act) => () => {
+            action = (function (act) { return function () {
                 var res = act();
                 if (typeof res === "boolean") {
                     if (res)
                         hideAction();
                 }
                 else {
-                    res.then((v) => {
+                    res.then(function (v) {
                         if (v)
                             hideAction();
                     });
                 }
                 return true;
-            })(action);
+            }; })(action);
             if ((bb.style & PopupButtonStyle.Default) != 0)
                 defaultAction = action;
             if ((bb.style & PopupButtonStyle.Cancel) != 0)
@@ -200,13 +209,13 @@ var PopupApp;
                 display: "table"
             },
             component: {
-                init(ctx) {
+                init: function (ctx) {
                     ctx.cfg = ctx.data.cfg;
                 },
-                render(ctx) {
+                render: function (ctx) {
                     ctx.cfg = ctx.data.cfg;
                 },
-                onKeyDown(ctx, param) {
+                onKeyDown: function (ctx, param) {
                     if (param.which == 13) {
                         return defaultAction();
                     }
@@ -215,10 +224,10 @@ var PopupApp;
                     }
                     return false;
                 },
-                shouldStopBubble() {
+                shouldStopBubble: function () {
                     return true;
                 },
-                postInitDom(ctx, me) {
+                postInitDom: function (ctx, me) {
                     b.focus(me);
                 }
             },
@@ -253,7 +262,7 @@ var PopupApp;
                                     border: "#000 solid 1px"
                                 }, h("td", title)),
                                 comp({
-                                    onClick() {
+                                    onClick: function () {
                                         return cancelAction();
                                     }
                                 }, style({
@@ -298,13 +307,13 @@ var PopupApp;
             tag: "span",
             data: { title: title, width: width, buttons: buttons, hideAction: hideAction, content: content },
             component: {
-                init(ctx, me) {
-                    ctx.rid = b.addRoot(() => {
+                init: function (ctx, me) {
+                    ctx.rid = b.addRoot(function () {
                         var c = ctx.data;
                         return innerpopup(ctx.cfg, c.title, c.width, c.buttons, c.hideAction, c.content);
                     });
                 },
-                destroy(ctx) {
+                destroy: function (ctx) {
                     b.removeRoot(ctx.rid);
                 }
             }
@@ -321,7 +330,7 @@ var PopupApp;
                 value: value
             },
             component: {
-                onChange(ctx, v) {
+                onChange: function (ctx, v) {
                     change(v);
                 }
             }
@@ -330,7 +339,7 @@ var PopupApp;
     var v1 = false, v2 = false, v3 = false, v4 = false, v5 = false, v6 = false;
     var v6resolver;
     var s1 = "", s2 = "";
-    b.init(() => {
+    b.init(function () {
         return {
             tag: "div",
             cfg: {
@@ -340,10 +349,10 @@ var PopupApp;
             children: [
                 h("h1", "Popup sample"),
                 h("div", [
-                    button("Enabled", () => {
+                    button("Enabled", function () {
                         v1 = true;
                         b.invalidate();
-                        setTimeout(() => {
+                        setTimeout(function () {
                             v1 = false;
                             b.invalidate();
                         }, 1000);
@@ -351,41 +360,41 @@ var PopupApp;
                     button(v1 ? "Enabled" : "Disabled", v1 ? undefined : null)
                 ]),
                 h("div", [v1 && "Clicked"]),
-                d({}, [button("Show popup", () => {
+                d({}, [button("Show popup", function () {
                         v2 = true;
                         b.invalidate();
                     }),
                     v2 && popup("First popup", "300px", [{
-                            content: "Ok", style: PopupButtonStyle.Default, action: () => {
+                            content: "Ok", style: PopupButtonStyle.Default, action: function () {
                                 v3 = true;
                                 b.invalidate();
                                 return true;
                             }
                         }, {
-                            content: "Cancel", style: PopupButtonStyle.Cancel, action: () => {
+                            content: "Cancel", style: PopupButtonStyle.Cancel, action: function () {
                                 if (v5) {
                                     v6 = true;
                                     b.invalidate();
-                                    return new Promise((resolve, reject) => {
+                                    return new Promise(function (resolve, reject) {
                                         v6resolver = resolve;
                                     });
                                 }
                                 return true;
                             }
-                        }], () => {
+                        }], function () {
                         v2 = false;
                         b.invalidate();
-                    }, [layoutPair(h("label", "First:"), input(s1, (v) => s1 = v), "40%"),
-                        layoutPair(h("label", "Second:"), input(s2, (v) => s2 = v), "40%"),
-                        h("div", h("label", [checkbox(v5, (v) => {
+                    }, [layoutPair(h("label", "First:"), input(s1, function (v) { return s1 = v; }), "40%"),
+                        layoutPair(h("label", "Second:"), input(s2, function (v) { return s2 = v; }), "40%"),
+                        h("div", h("label", [checkbox(v5, function (v) {
                                 v5 = v;
                                 b.invalidate();
                             }), "Annoying cancel"])),
-                        button("Show nested popup", () => {
+                        button("Show nested popup", function () {
                             v4 = true;
                             b.invalidate();
                         }),
-                        v4 && popup("Nested", "200px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }], () => {
+                        v4 && popup("Nested", "200px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }], function () {
                             v4 = false;
                             b.invalidate();
                         }, [
@@ -393,24 +402,24 @@ var PopupApp;
                         ]),
                         "",
                         v6 && popup("Annoying", "150px", [{
-                                content: "Yes", style: PopupButtonStyle.Default, action: () => {
+                                content: "Yes", style: PopupButtonStyle.Default, action: function () {
                                     v6resolver(true);
                                     v6resolver = null;
                                     return true;
                                 }
                             }, {
-                                content: "No", style: PopupButtonStyle.Cancel, action: () => {
+                                content: "No", style: PopupButtonStyle.Cancel, action: function () {
                                     v6resolver(false);
                                     v6resolver = null;
                                     return true;
                                 }
-                            }], () => {
+                            }], function () {
                             v6 = false;
                             b.invalidate();
                         }, h("p", "Are you sure to lose all data?"))
                     ]),
                     "",
-                    v3 && popup("Info", "150px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }], () => {
+                    v3 && popup("Info", "150px", [{ content: "Ok", style: PopupButtonStyle.DefaultCancel }], function () {
                         v3 = false;
                         b.invalidate();
                     }, h("p", "Selected Ok"))

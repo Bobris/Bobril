@@ -2,8 +2,8 @@ var Automata;
 (function (Automata) {
     var Models;
     (function (Models) {
-        class Transition {
-            constructor(from, to, midPoint) {
+        var Transition = (function () {
+            function Transition(from, to, midPoint) {
                 this.from = from;
                 this.to = to;
                 this.midPoint = midPoint;
@@ -15,16 +15,16 @@ var Automata;
                 }
                 this.textPosition = new Models.Point(-10, -10);
             }
-            isLoop() {
+            Transition.prototype.isLoop = function () {
                 return this.from === this.to;
-            }
-            resetMidPoint() {
+            };
+            Transition.prototype.resetMidPoint = function () {
                 if (this.isLoop()) {
                     return;
                 }
                 this.midPoint.setCoords((this.from.point.x + this.to.point.x) / 2, (this.from.point.y + this.to.point.y) / 2);
-            }
-            stateMoved(from, oldTo, newTo) {
+            };
+            Transition.prototype.stateMoved = function (from, oldTo, newTo) {
                 if (this.isLoop()) {
                     this.midPoint.setCoords(this.midPoint.x + 0.5 * (newTo.x - oldTo.x), this.midPoint.y + 0.5 * (newTo.y - oldTo.y));
                     return;
@@ -40,8 +40,8 @@ var Automata;
                     var ydist = (newTo.y - oldTo.y) * scale;
                     this.midPoint.setCoords(this.midPoint.x + xdist, this.midPoint.y + ydist);
                 }
-            }
-            moveMidPoint(point) {
+            };
+            Transition.prototype.moveMidPoint = function (point) {
                 if (this.isLoop()) {
                     var vect = new Models.Vector(this.from.point, point);
                     var dist = vect.getLength();
@@ -66,8 +66,9 @@ var Automata;
                         this.midPoint = point;
                     }
                 }
-            }
-        }
+            };
+            return Transition;
+        }());
         Models.Transition = Transition;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));

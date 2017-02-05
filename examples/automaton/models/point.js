@@ -2,27 +2,28 @@ var Automata;
 (function (Automata) {
     var Models;
     (function (Models) {
-        class Point {
-            constructor(x, y) {
+        var Point = (function () {
+            function Point(x, y) {
                 this.x = x;
                 this.y = y;
             }
-            addVector(vector, scale) {
+            Point.prototype.addVector = function (vector, scale) {
                 this.x += vector.x * scale;
                 this.y += vector.y * scale;
                 return this;
-            }
-            setCoords(x, y) {
+            };
+            Point.prototype.setCoords = function (x, y) {
                 this.x = x;
                 this.y = y;
-            }
-            equals(other) {
+            };
+            Point.prototype.equals = function (other) {
                 return this.x === other.x && this.y === other.y;
-            }
-            toString() {
+            };
+            Point.prototype.toString = function () {
                 return this.x + ',' + this.y;
-            }
-        }
+            };
+            return Point;
+        }());
         Models.Point = Point;
     })(Models = Automata.Models || (Automata.Models = {}));
 })(Automata || (Automata = {}));
