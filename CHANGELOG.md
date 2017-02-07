@@ -1,6 +1,12 @@
 CHANGELOG
 ===
 
+5.3.1
+--
+
+Another fix of phantom clicks at 0,0 now for Edge with checkbox.
+Also fixed sole number in children rare case.
+
 5.3.0
 --
 

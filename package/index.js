@@ -431,8 +431,10 @@ function createNode(n, parentNode, createInto, createBefore) {
     var tag = c.tag;
     var children = c.children;
     var inSvgForeignObject = false;
-    if (isNumber(children))
+    if (isNumber(children)) {
         children = "" + children;
+        c.children = children;
+    }
     if (tag === undefined) {
         if (isString(children)) {
             el = createTextNode(children);
@@ -2814,7 +2816,7 @@ function decodeButton(ev) {
 }
 function createHandler(handlerName, allButtons) {
     return function (ev, target, node) {
-        if (listeningEventDeepness == 1 && (node != null || target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)) {
+        if (listeningEventDeepness == 1 && (target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)) {
             target = document.elementFromPoint(ev.clientX, ev.clientY);
             node = deref(target);
             if (hasPointerEventsNoneB(node)) {
