@@ -613,8 +613,10 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
     var tag = c.tag;
     var children = c.children;
     var inSvgForeignObject = false;
-    if (isNumber(children))
+    if (isNumber(children)) {
         children = "" + children;
+        c.children = children;
+    }
     if (tag === undefined) {
         if (isString(children)) {
             el = createTextNode(<string>children);
