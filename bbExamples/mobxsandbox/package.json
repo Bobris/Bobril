@@ -1,0 +1,19 @@
+{
+  "name": "mobxsandbox",
+  "version": "0.1",
+  "typescript": {
+    "main": "src/app.ts"
+  },
+  "dependencies": {
+    "bobril": "*",
+    "mobx": "^3.1.0"
+  },
+  "scripts": {
+    "test": "bb test"
+  },
+  "bobril": {
+    "title": "Mobx sandbox"
+  },
+  "author": "Bobris",
+  "license": "MIT"
+}
