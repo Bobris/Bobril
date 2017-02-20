@@ -579,6 +579,12 @@ export function unregisterFocusRoot(ctx: IBobrilCtx) {
     }
 }
 
+let currentCtx: IBobrilCtx | undefined;
+
+export function getCurrentCtx() {
+    return currentCtx;
+}
+
 export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefined, createInto: Element, createBefore: Node | null): IBobrilCacheNode {
     var c = <IBobrilCacheNode>{ // This makes CacheNode just one object class = fast
         tag: n.tag,
@@ -603,12 +609,15 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
     if (component) {
         var ctx: IBobrilCtx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
         c.ctx = ctx;
+        currentCtx = ctx;
         if (component.init) {
             component.init(ctx, c);
         }
+        beforeRenderCallback(n, RenderPhase.Create);
         if (component.render) {
             component.render(ctx, c);
         }
+        currentCtx = undefined;
     }
     var tag = c.tag;
     var children = c.children;
@@ -906,14 +915,16 @@ export function deref(n: Node): IBobrilCacheNode | undefined {
 function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent | null | undefined) {
     if (component) {
         if (component.postRender) {
-            component.postRender(c.ctx!, n, c);
+            currentCtx = c.ctx!;
+            component.postRender(currentCtx, n, c);
+            currentCtx = undefined;
         }
     }
     c.data = n.data;
     pushUpdateCallback(c);
 }
 
-export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number): IBobrilCacheNode {
+export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number, inSelectedUpdate?: boolean): IBobrilCacheNode {
     var component = n.component;
     var backupInSvg = inSvg;
     var backupInNotFocusable = inNotFocusable;
@@ -926,10 +937,13 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
         if (component.id !== c.component.id) {
             bigChange = true;
         } else {
+            currentCtx = ctx;
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
+            beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
             if (component.shouldChange)
                 if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                    currentCtx = undefined;
                     if (isArray(c.children)) {
                         if (c.tag === "svg") {
                             inSvg = true;
@@ -950,6 +964,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
                 component.render(ctx, n, c);
             }
             c.cfg = n.cfg;
+            currentCtx = undefined;
         }
     }
     if (DEBUG) {
@@ -1081,8 +1096,10 @@ export function callPostCallbacks() {
     var count = updateInstance.length;
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i];
-        updateCall[i].call(n.component, n.ctx, n, n.element);
+        currentCtx = n.ctx;
+        updateCall[i].call(n.component, currentCtx, n, n.element);
     }
+    currentCtx = undefined;
     updateCall = [];
     updateInstance = [];
 }
@@ -1535,7 +1552,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
         var ctx = node.ctx;
         if (ctx != null && (<any>ctx)[ctxInvalidated] === frameCounter) {
             var cloned: IBobrilNode = { data: ctx.data, component: node.component };
-            cache[i] = updateNode(cloned, node, element, createBefore, (<any>ctx)[ctxDeepness]);
+            cache[i] = updateNode(cloned, node, element, createBefore, (<any>ctx)[ctxDeepness], true);
         } else if (isArray(node.children)) {
             var backupInSvg = inSvg;
             var backupInNotFocusable = inNotFocusable;
@@ -1551,8 +1568,21 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
     }
 }
 
+export const enum RenderPhase {
+    Create,
+    Update,
+    LocalUpdate
+}
+
+var beforeRenderCallback: (node: IBobrilNode, phase: RenderPhase) => void = () => { };
 var beforeFrameCallback: () => void = () => { };
 var afterFrameCallback: (root: IBobrilCacheChildren | null) => void = () => { };
+
+export function setBeforeRender(callback: (node: IBobrilNode, phase: RenderPhase) => void): (node: IBobrilNode, phase: RenderPhase) => void {
+    var res = beforeRenderCallback;
+    beforeRenderCallback = callback;
+    return res;
+}
 
 export function setBeforeFrame(callback: () => void): () => void {
     var res = beforeFrameCallback;

@@ -397,6 +397,11 @@ function unregisterFocusRoot(ctx) {
     }
 }
 exports.unregisterFocusRoot = unregisterFocusRoot;
+var currentCtx;
+function getCurrentCtx() {
+    return currentCtx;
+}
+exports.getCurrentCtx = getCurrentCtx;
 function createNode(n, parentNode, createInto, createBefore) {
     var c = {
         tag: n.tag,
@@ -421,12 +426,15 @@ function createNode(n, parentNode, createInto, createBefore) {
     if (component) {
         var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
         c.ctx = ctx;
+        currentCtx = ctx;
         if (component.init) {
             component.init(ctx, c);
         }
+        beforeRenderCallback(n, 0 /* Create */);
         if (component.render) {
             component.render(ctx, c);
         }
+        currentCtx = undefined;
     }
     var tag = c.tag;
     var children = c.children;
@@ -741,13 +749,15 @@ exports.deref = deref;
 function finishUpdateNode(n, c, component) {
     if (component) {
         if (component.postRender) {
-            component.postRender(c.ctx, n, c);
+            currentCtx = c.ctx;
+            component.postRender(currentCtx, n, c);
+            currentCtx = undefined;
         }
     }
     c.data = n.data;
     pushUpdateCallback(c);
 }
-function updateNode(n, c, createInto, createBefore, deepness) {
+function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) {
     var component = n.component;
     var backupInSvg = inSvg;
     var backupInNotFocusable = inNotFocusable;
@@ -761,10 +771,13 @@ function updateNode(n, c, createInto, createBefore, deepness) {
             bigChange = true;
         }
         else {
+            currentCtx = ctx;
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
+            beforeRenderCallback(n, inSelectedUpdate ? 2 /* LocalUpdate */ : 1 /* Update */);
             if (component.shouldChange)
                 if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
+                    currentCtx = undefined;
                     if (exports.isArray(c.children)) {
                         if (c.tag === "svg") {
                             inSvg = true;
@@ -787,6 +800,7 @@ function updateNode(n, c, createInto, createBefore, deepness) {
                 component.render(ctx, n, c);
             }
             c.cfg = n.cfg;
+            currentCtx = undefined;
         }
     }
     if (DEBUG) {
@@ -938,8 +952,10 @@ function callPostCallbacks() {
     var count = updateInstance.length;
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i];
-        updateCall[i].call(n.component, n.ctx, n, n.element);
+        currentCtx = n.ctx;
+        updateCall[i].call(n.component, currentCtx, n, n.element);
     }
+    currentCtx = undefined;
     updateCall = [];
     updateInstance = [];
 }
@@ -1388,7 +1404,7 @@ function selectedUpdate(cache, element, createBefore) {
         var ctx = node.ctx;
         if (ctx != null && ctx[ctxInvalidated] === frameCounter) {
             var cloned = { data: ctx.data, component: node.component };
-            cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness]);
+            cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness], true);
         }
         else if (exports.isArray(node.children)) {
             var backupInSvg = inSvg;
@@ -1406,8 +1422,15 @@ function selectedUpdate(cache, element, createBefore) {
         }
     }
 }
+var beforeRenderCallback = function () { };
 var beforeFrameCallback = function () { };
 var afterFrameCallback = function () { };
+function setBeforeRender(callback) {
+    var res = beforeRenderCallback;
+    beforeRenderCallback = callback;
+    return res;
+}
+exports.setBeforeRender = setBeforeRender;
 function setBeforeFrame(callback) {
     var res = beforeFrameCallback;
     beforeFrameCallback = callback;

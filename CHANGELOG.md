@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+5.4.0
+--
+
+Secret project needs to know what is currently rendering. Call custom method before each render.
+
 5.3.1
 --
 

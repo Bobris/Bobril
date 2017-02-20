@@ -145,17 +145,24 @@ export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNo
 export declare function ieVersion(): any;
 export declare function registerFocusRoot(ctx: IBobrilCtx): void;
 export declare function unregisterFocusRoot(ctx: IBobrilCtx): void;
+export declare function getCurrentCtx(): IBobrilCtx | undefined;
 export declare function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefined, createInto: Element, createBefore: Node | null): IBobrilCacheNode;
 export declare function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike): void;
 export declare function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[];
 export declare function deref(n: Node): IBobrilCacheNode | undefined;
-export declare function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number): IBobrilCacheNode;
+export declare function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number, inSelectedUpdate?: boolean): IBobrilCacheNode;
 export declare function getDomNode(c: IBobrilCacheNode | undefined): Node | null;
 export declare function callPostCallbacks(): void;
 export declare function updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilCacheNode | undefined, createBefore: Node | null, deepness: number): IBobrilCacheNode[];
 export declare const now: () => number;
 export declare function addEvent(name: string, priority: number, callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean): void;
 export declare function emitEvent(name: string, ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined): boolean;
+export declare const enum RenderPhase {
+    Create = 0,
+    Update = 1,
+    LocalUpdate = 2,
+}
+export declare function setBeforeRender(callback: (node: IBobrilNode, phase: RenderPhase) => void): (node: IBobrilNode, phase: RenderPhase) => void;
 export declare function setBeforeFrame(callback: () => void): () => void;
 export declare function setAfterFrame(callback: (root: IBobrilCacheChildren | null) => void): (root: IBobrilCacheChildren | null) => void;
 export declare function syncUpdate(): void;
