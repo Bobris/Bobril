@@ -369,7 +369,7 @@ export declare function getRoutes(): IRoute[];
 export declare function getActiveRoutes(): IRoute[];
 export declare function getActiveParams(): Params;
 export declare type IBobrilStyleDef = string;
-export declare type IBobrilStyle = Object | IBobrilStyleDef | boolean;
+export declare type IBobrilStyle = Object | IBobrilStyleDef | boolean | null | undefined;
 export declare type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
 export declare function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode;
 export declare function styleDef(style: any, pseudo?: {

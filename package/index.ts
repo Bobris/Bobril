@@ -4697,7 +4697,7 @@ export function getActiveParams() {
 // definition for Bobril defined class
 export type IBobrilStyleDef = string;
 // object case if for inline style declaration, undefined, null, true and false values are ignored
-export type IBobrilStyle = Object | IBobrilStyleDef | boolean;
+export type IBobrilStyle = Object | IBobrilStyleDef | boolean | null | undefined;
 // place inline styles at end for optimal speed
 export type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
 

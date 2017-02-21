@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+5.5.0
+--
+
+Fixed missing null | undefined option in IBobrilStyle
+
 5.4.0
 --
 
