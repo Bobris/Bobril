@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.0.0
+--
+
+Breaking change is that it requires TypeScript 2.2. Improvements for BobX. Fixed spelling where possible without breaking compatibility.
+
 5.5.0
 --
 

@@ -86,16 +86,7 @@ export interface IBobrilNodeCommon {
     component?: IBobrilComponent;
     data?: any;
 }
-export interface IBobrilNodeWithTag extends IBobrilNodeCommon {
-    tag: string;
-}
-export interface IBobrilNodeWithComponent extends IBobrilNodeCommon {
-    component: IBobrilComponent;
-}
-export interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
-    children: IBobrilChildren;
-}
-export declare type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;
+export declare type IBobrilNode = IBobrilNodeCommon & object;
 export interface IBobrilCacheNode {
     tag: string | undefined;
     key: string | undefined;
@@ -161,6 +152,7 @@ export declare const enum RenderPhase {
     Create = 0,
     Update = 1,
     LocalUpdate = 2,
+    Destroy = 3,
 }
 export declare function setBeforeRender(callback: (node: IBobrilNode, phase: RenderPhase) => void): (node: IBobrilNode, phase: RenderPhase) => void;
 export declare function setBeforeFrame(callback: () => void): () => void;
@@ -352,7 +344,7 @@ export interface IRouteConfig {
     handler: IRouteHandler;
     keyBuilder?: (params: Params) => string;
 }
-export declare function routes(rootroutes: IRoute | IRoute[]): void;
+export declare function routes(rootRoutes: IRoute | IRoute[]): void;
 export declare function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRoute;
 export declare function routeDefault(config: IRouteConfig): IRoute;
 export declare function routeNotFound(config: IRouteConfig): IRoute;

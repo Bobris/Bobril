@@ -1,11 +1,12 @@
 // Bobril.Core
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 ;
 if (typeof DEBUG === "undefined")
     DEBUG = true;
 // PureFuncs: assert, isArray, isObject, flatten
-function assert(shoudBeTrue, messageIfFalse) {
-    if (DEBUG && !shoudBeTrue)
+function assert(shouldBeTrue, messageIfFalse) {
+    if (DEBUG && !shouldBeTrue)
         throw Error(messageIfFalse || "assertion failed");
 }
 exports.isArray = Array.isArray;
@@ -66,17 +67,17 @@ function flatten(a) {
         return [a];
     }
     a = a.slice(0);
-    var alen = a.length;
-    for (var i_2 = 0; i_2 < alen;) {
+    var aLen = a.length;
+    for (var i_2 = 0; i_2 < aLen;) {
         var item = a[i_2];
         if (exports.isArray(item)) {
             a.splice.apply(a, [i_2, 1].concat(item));
-            alen = a.length;
+            aLen = a.length;
             continue;
         }
         if (item == null || item === false || item === true) {
             a.splice(i_2, 1);
-            alen--;
+            aLen--;
             continue;
         }
         i_2++;
@@ -90,7 +91,7 @@ var updateCall = [];
 var updateInstance = [];
 var setValueCallback = function (el, _node, newValue, oldValue) {
     if (newValue !== oldValue)
-        el[tvalue] = newValue;
+        el[tValue] = newValue;
 };
 function setSetValue(callback) {
     var prev = setValueCallback;
@@ -134,7 +135,7 @@ function renamer(newName) {
     };
 }
 ;
-function renamerpx(newName) {
+function renamerPx(newName) {
     return function (style, value, oldName) {
         if (isNumber(value)) {
             style[newName] = value + "px";
@@ -145,7 +146,7 @@ function renamerpx(newName) {
         style[oldName] = undefined;
     };
 }
-function pxadder(style, value, name) {
+function pxAdder(style, value, name) {
     if (isNumber(value))
         style[name] = value + "px";
 }
@@ -169,18 +170,18 @@ function shimStyle(newValue) {
                     console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
             }
             if (testPropExistence(ki)) {
-                mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                mi = (isUnitlessNumber[ki] === true) ? null : pxAdder;
             }
             else {
                 var titleCaseKi = ki.replace(/^\w/, function (match) { return match.toUpperCase(); });
                 for (var j = 0; j < vendors.length; j++) {
                     if (testPropExistence(vendors[j] + titleCaseKi)) {
-                        mi = ((isUnitlessNumber[ki] === true) ? renamer : renamerpx)(vendors[j] + titleCaseKi);
+                        mi = ((isUnitlessNumber[ki] === true) ? renamer : renamerPx)(vendors[j] + titleCaseKi);
                         break;
                     }
                 }
                 if (mi === undefined) {
-                    mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                    mi = (isUnitlessNumber[ki] === true) ? null : pxAdder;
                     if (DEBUG && window.console && console.warn
                         && ["overflowScrolling"].indexOf(ki) < 0)
                         console.warn("Style property " + ki + " is not supported in this browser");
@@ -259,9 +260,9 @@ function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
                 newAttr = -1;
                 wasTabindex = true;
             }
-            else if (attrName === tvalue && !inSvg) {
+            else if (attrName === tValue && !inSvg) {
                 if (isFunction(newAttr)) {
-                    oldAttrs[bvalue] = newAttr;
+                    oldAttrs[bValue] = newAttr;
                     newAttr = newAttr();
                 }
                 valueOldAttr = oldAttr;
@@ -293,7 +294,7 @@ function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
             if (oldAttrs[attrName] !== undefined) {
                 if (notFocusable && attrName === tabindexStr)
                     continue;
-                if (attrName === bvalue)
+                if (attrName === bValue)
                     continue;
                 oldAttrs[attrName] = undefined;
                 el.removeAttribute(attrName);
@@ -305,7 +306,7 @@ function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
             if (oldAttrs[attrName] !== undefined && !(attrName in newAttrs)) {
                 if (notFocusable && attrName === tabindexStr)
                     continue;
-                if (attrName === bvalue)
+                if (attrName === bValue)
                     continue;
                 oldAttrs[attrName] = undefined;
                 el.removeAttribute(attrName);
@@ -430,7 +431,8 @@ function createNode(n, parentNode, createInto, createBefore) {
         if (component.init) {
             component.init(ctx, c);
         }
-        beforeRenderCallback(n, 0 /* Create */);
+        if (beforeRenderCallback !== emptyBeforeRenderCallback)
+            beforeRenderCallback(n, 0 /* Create */);
         if (component.render) {
             component.render(ctx, c);
         }
@@ -461,12 +463,13 @@ function createNode(n, parentNode, createInto, createBefore) {
         return c;
     }
     else if (tag === "/") {
-        var htmltext = children;
-        if (htmltext === "") {
+        var htmlText = children;
+        if (htmlText === "") {
+            // nothing needs to be created
         }
         else if (createBefore == null) {
             var before = createInto.lastChild;
-            createInto.insertAdjacentHTML("beforeend", htmltext);
+            createInto.insertAdjacentHTML("beforeend", htmlText);
             c.element = [];
             if (before) {
                 before = before.nextSibling;
@@ -481,24 +484,24 @@ function createNode(n, parentNode, createInto, createBefore) {
         }
         else {
             el = createBefore;
-            var elprev = createBefore.previousSibling;
+            var elPrev = createBefore.previousSibling;
             var removeEl = false;
             var parent = createInto;
             if (!el.insertAdjacentHTML) {
                 el = parent.insertBefore(createEl("i"), el);
                 removeEl = true;
             }
-            el.insertAdjacentHTML("beforebegin", htmltext);
-            if (elprev) {
-                elprev = elprev.nextSibling;
+            el.insertAdjacentHTML("beforebegin", htmlText);
+            if (elPrev) {
+                elPrev = elPrev.nextSibling;
             }
             else {
-                elprev = parent.firstChild;
+                elPrev = parent.firstChild;
             }
             var newElements = [];
-            while (elprev !== el) {
-                newElements.push(elprev);
-                elprev = elprev.nextSibling;
+            while (elPrev !== el) {
+                newElements.push(elPrev);
+                elPrev = elPrev.nextSibling;
             }
             c.element = newElements;
             if (removeEl) {
@@ -604,6 +607,9 @@ function destroyNode(c) {
     var component = c.component;
     if (component) {
         var ctx = c.ctx;
+        currentCtx = ctx;
+        if (beforeRenderCallback !== emptyBeforeRenderCallback)
+            beforeRenderCallback(c, 3 /* Destroy */);
         if (component.destroy)
             component.destroy(ctx, c, c.element);
         var disposables = ctx.disposables;
@@ -774,7 +780,8 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             currentCtx = ctx;
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
-            beforeRenderCallback(n, inSelectedUpdate ? 2 /* LocalUpdate */ : 1 /* Update */);
+            if (beforeRenderCallback !== emptyBeforeRenderCallback)
+                beforeRenderCallback(n, inSelectedUpdate ? 2 /* LocalUpdate */ : 1 /* Update */);
             if (component.shouldChange)
                 if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
                     currentCtx = undefined;
@@ -818,6 +825,7 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
         newChildren = "" + newChildren;
     }
     if (bigChange || (component && ctx == null)) {
+        // it is big change of component.id or old one was not even component => recreate
     }
     else if (tag === "/") {
         if (c.tag === "/" && cachedChildren === newChildren) {
@@ -1160,8 +1168,8 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
             if (key == null)
                 break;
         }
-        var akpos = cachedKeys[key];
-        if (akpos === undefined) {
+        var akPos = cachedKeys[key];
+        if (akPos === undefined) {
             // New key
             cachedChildren.splice(cachedIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)));
             delta++;
@@ -1180,17 +1188,17 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
             cachedLength--;
             continue;
         }
-        if (cachedIndex === akpos + delta) {
-            // Inplace update
+        if (cachedIndex === akPos + delta) {
+            // In-place update
             updateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
             newIndex++;
             cachedIndex++;
         }
         else {
             // Move
-            cachedChildren.splice(cachedIndex, 0, cachedChildren[akpos + delta]);
+            cachedChildren.splice(cachedIndex, 0, cachedChildren[akPos + delta]);
             delta++;
-            cachedChildren[akpos + delta] = null;
+            cachedChildren[akPos + delta] = null;
             reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, cachedIndex, cachedLength, createBefore, element, deepness);
             cachedIndex++;
             cachedEnd++;
@@ -1232,7 +1240,7 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
         return cachedChildren;
     // calculate common (old and new) keyless
     keyLess = (keyLess - Math.abs(deltaKeyless)) >> 1;
-    // reorder just nonkeyed nodes
+    // reorder just nodes without keys
     newIndex = backupNewIndex;
     cachedIndex = backupCachedIndex;
     while (newIndex < newEnd) {
@@ -1422,7 +1430,8 @@ function selectedUpdate(cache, element, createBefore) {
         }
     }
 }
-var beforeRenderCallback = function () { };
+var emptyBeforeRenderCallback = function () { };
+var beforeRenderCallback = emptyBeforeRenderCallback;
 var beforeFrameCallback = function () { };
 var afterFrameCallback = function () { };
 function setBeforeRender(callback) {
@@ -1886,6 +1895,7 @@ exports.asap = (function () {
             }
             callbacks.push(callback);
         };
+        // Browsers that support postMessage
     }
     else if (!window.setImmediate && window.postMessage && window.addEventListener) {
         var MESSAGE_PREFIX = "basap" + Math.random(), hasPostMessage = false;
@@ -1903,6 +1913,7 @@ exports.asap = (function () {
                 window.postMessage(MESSAGE_PREFIX, "*");
             }
         };
+        // IE browsers without postMessage
     }
     else if (!window.setImmediate && onreadystatechange in document.createElement('script')) {
         var scriptEl;
@@ -1919,6 +1930,7 @@ exports.asap = (function () {
                 document.body.appendChild(scriptEl);
             }
         };
+        // All other browsers
     }
     else {
         var timeout;
@@ -2007,7 +2019,7 @@ if (!window.Promise) {
         function resolve(newValue) {
             try {
                 if (newValue === this)
-                    throw new TypeError('Promise selfresolve');
+                    throw new TypeError('Promise self resolve');
                 if (Object(newValue) === newValue) {
                     var then = newValue.then;
                     if (typeof then === 'function') {
@@ -2134,38 +2146,38 @@ if (ieVersion() === 9) {
 }
 else {
     (function () {
-        var teststyle = document.createElement("div").style;
-        teststyle.cssText = "background:-webkit-linear-gradient(top,red,red)";
-        if (teststyle.background.length > 0) {
+        var testStyle = document.createElement("div").style;
+        testStyle.cssText = "background:-webkit-linear-gradient(top,red,red)";
+        if (testStyle.background.length > 0) {
             (function () {
                 var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/ig;
-                var revdirs = { top: "bottom", bottom: "top", left: "right", right: "left" };
-                function gradientWebkitter(style, value, name) {
+                var revDirs = { top: "bottom", bottom: "top", left: "right", right: "left" };
+                function gradientWebkitConvertor(style, value, name) {
                     if (startsWithGradient.test(value)) {
                         var pos = value.indexOf("(to ");
                         if (pos > 0) {
                             pos += 4;
-                            var posend = value.indexOf(",", pos);
-                            var dir = value.slice(pos, posend);
-                            dir = dir.split(" ").map(function (v) { return revdirs[v] || v; }).join(" ");
-                            value = value.slice(0, pos - 3) + dir + value.slice(posend);
+                            var posEnd = value.indexOf(",", pos);
+                            var dir = value.slice(pos, posEnd);
+                            dir = dir.split(" ").map(function (v) { return revDirs[v] || v; }).join(" ");
+                            value = value.slice(0, pos - 3) + dir + value.slice(posEnd);
                         }
                         value = "-webkit-" + value;
                     }
                     style[name] = value;
                 }
                 ;
-                setStyleShim("background", gradientWebkitter);
+                setStyleShim("background", gradientWebkitConvertor);
             })();
         }
     })();
 }
 // Bobril.OnChange
-var bvalue = "b$value";
+var bValue = "b$value";
 var bSelectionStart = "b$selStart";
 var bSelectionEnd = "b$selEnd";
-var tvalue = "value";
-function isCheckboxlike(el) {
+var tValue = "value";
+function isCheckboxLike(el) {
     var t = el.type;
     return t === "checkbox" || t === "radio";
 }
@@ -2205,7 +2217,7 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
     if (node.ctx === undefined)
         node.ctx = { me: node };
     if (oldValue === undefined) {
-        node.ctx[bvalue] = newValue;
+        node.ctx[bValue] = newValue;
     }
     var isMultiSelect = isSelect && el.multiple;
     var emitDiff = false;
@@ -2213,7 +2225,7 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
         var options = el.options;
         var currentMulti = selectedArray(options);
         if (!stringArrayEqual(newValue, currentMulti)) {
-            if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue) || !stringArrayEqual(newValue, node.ctx[bvalue])) {
+            if (oldValue === undefined || stringArrayEqual(currentMulti, oldValue) || !stringArrayEqual(newValue, node.ctx[bValue])) {
                 for (var j = 0; j < options.length; j++) {
                     options[j].selected = stringArrayContains(newValue, options[j].value);
                 }
@@ -2228,10 +2240,10 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
         }
     }
     else if (isInput || isSelect) {
-        if (isInput && isCheckboxlike(el)) {
+        if (isInput && isCheckboxLike(el)) {
             var currentChecked = el.checked;
             if (newValue !== currentChecked) {
-                if (oldValue === undefined || currentChecked === oldValue || newValue !== node.ctx[bvalue]) {
+                if (oldValue === undefined || currentChecked === oldValue || newValue !== node.ctx[bValue]) {
                     el.checked = newValue;
                 }
                 else {
@@ -2241,25 +2253,25 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
         }
         else {
             var isCombobox = isSelect && el.size < 2;
-            var currentValue = (el[tvalue]);
+            var currentValue = (el[tValue]);
             if (newValue !== currentValue) {
-                if (oldValue === undefined || currentValue === oldValue || newValue !== node.ctx[bvalue]) {
+                if (oldValue === undefined || currentValue === oldValue || newValue !== node.ctx[bValue]) {
                     if (isSelect) {
                         if (newValue === "") {
                             el.selectedIndex = isCombobox ? 0 : -1;
                         }
                         else {
-                            el[tvalue] = newValue;
+                            el[tValue] = newValue;
                         }
                         if (newValue !== "" || isCombobox) {
-                            currentValue = (el[tvalue]);
+                            currentValue = (el[tValue]);
                             if (newValue !== currentValue) {
                                 emitDiff = true;
                             }
                         }
                     }
                     else {
-                        el[tvalue] = newValue;
+                        el[tValue] = newValue;
                     }
                 }
                 else {
@@ -2272,7 +2284,7 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
         emitOnChange(undefined, el, node);
     }
     else {
-        node.ctx[bvalue] = newValue;
+        node.ctx[bValue] = newValue;
     }
 });
 function emitOnChange(ev, target, node) {
@@ -2284,7 +2296,7 @@ function emitOnChange(ev, target, node) {
         return false;
     }
     var c = node.component;
-    var hasProp = node.attrs && node.attrs[bvalue];
+    var hasProp = node.attrs && node.attrs[bValue];
     var hasOnChange = c && c.onChange != null;
     var hasPropOrOnChange = hasProp || hasOnChange;
     var hasOnSelectionChange = c && c.onSelectionChange != null;
@@ -2296,15 +2308,15 @@ function emitOnChange(ev, target, node) {
     var isMultiSelect = isSelect && target.multiple;
     if (hasPropOrOnChange && isMultiSelect) {
         var vs = selectedArray(target.options);
-        if (!stringArrayEqual(ctx[bvalue], vs)) {
-            ctx[bvalue] = vs;
+        if (!stringArrayEqual(ctx[bValue], vs)) {
+            ctx[bValue] = vs;
             if (hasProp)
                 hasProp(vs);
             if (hasOnChange)
                 c.onChange(ctx, vs);
         }
     }
-    else if (hasPropOrOnChange && isCheckboxlike(target)) {
+    else if (hasPropOrOnChange && isCheckboxLike(target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(function () {
@@ -2316,29 +2328,29 @@ function emitOnChange(ev, target, node) {
             var radios = document.getElementsByName(target.name);
             for (var j = 0; j < radios.length; j++) {
                 var radio = radios[j];
-                var radionode = deref(radio);
-                if (!radionode)
+                var radioNode = deref(radio);
+                if (!radioNode)
                     continue;
-                var rbhasProp = node.attrs[bvalue];
-                var radiocomponent = radionode.component;
-                var rbhasOnChange = radiocomponent && radiocomponent.onChange != null;
-                if (!rbhasProp && !rbhasOnChange)
+                var rbHasProp = node.attrs[bValue];
+                var radioComponent = radioNode.component;
+                var rbHasOnChange = radioComponent && radioComponent.onChange != null;
+                if (!rbHasProp && !rbHasOnChange)
                     continue;
-                var radioctx = radionode.ctx;
+                var radioCtx = radioNode.ctx;
                 var vrb = radio.checked;
-                if (radioctx[bvalue] !== vrb) {
-                    radioctx[bvalue] = vrb;
-                    if (rbhasProp)
-                        rbhasProp(vrb);
-                    if (rbhasOnChange)
-                        radiocomponent.onChange(radioctx, vrb);
+                if (radioCtx[bValue] !== vrb) {
+                    radioCtx[bValue] = vrb;
+                    if (rbHasProp)
+                        rbHasProp(vrb);
+                    if (rbHasOnChange)
+                        radioComponent.onChange(radioCtx, vrb);
                 }
             }
         }
         else {
             var vb = target.checked;
-            if (ctx[bvalue] !== vb) {
-                ctx[bvalue] = vb;
+            if (ctx[bValue] !== vb) {
+                ctx[bValue] = vb;
                 if (hasProp)
                     hasProp(vb);
                 if (hasOnChange)
@@ -2349,8 +2361,8 @@ function emitOnChange(ev, target, node) {
     else {
         if (hasPropOrOnChange) {
             var v = target.value;
-            if (ctx[bvalue] !== v) {
-                ctx[bvalue] = v;
+            if (ctx[bValue] !== v) {
+                ctx[bValue] = v;
                 if (hasProp)
                     hasProp(v);
                 if (hasOnChange)
@@ -2456,6 +2468,11 @@ function emitOnKeyPress(ev, _target, node) {
 addEvent("keydown", 50, emitOnKeyDown);
 addEvent("keyup", 50, emitOnKeyUp);
 addEvent("keypress", 50, emitOnKeyPress);
+var MoveOverIsNotTap = 13;
+var TapShouldBeShorterThanMs = 750;
+var MaxBustDelay = 500;
+var MaxBustDelayForIE = 800;
+var BustDistance = 50;
 var ownerCtx = null;
 var invokingOwner;
 var onClickText = "onClick";
@@ -2660,9 +2677,9 @@ else {
 }
 for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
     (function (name) {
-        var onname = "on" + name;
+        var onName = "on" + name;
         addEvent("!" + name, 50, function (ev, _target, node) {
-            return invokeMouseOwner(onname, ev) || (bubble(node, onname, ev) != null);
+            return invokeMouseOwner(onName, ev) || (bubble(node, onName, ev) != null);
         });
     })(pointersEventNames[j]);
 }
@@ -2765,7 +2782,7 @@ function bustingPointerMove(ev, target, node) {
     }
     if (firstPointerDown === ev.id) {
         mouseEnterAndLeave(ev);
-        if (!diffLess(firstPointerDownX, ev.x, 13 /* MoveOverIsNotTap */) || !diffLess(firstPointerDownY, ev.y, 13 /* MoveOverIsNotTap */))
+        if (!diffLess(firstPointerDownX, ev.x, MoveOverIsNotTap) || !diffLess(firstPointerDownY, ev.y, MoveOverIsNotTap))
             tapCanceled = true;
     }
     else if (noPointersDown()) {
@@ -2779,10 +2796,10 @@ function bustingPointerUp(ev, target, node) {
         mouseEnterAndLeave(ev);
         firstPointerDown = -1;
         if (ev.type == 1 /* Touch */ && !tapCanceled) {
-            if (exports.now() - firstPointerDownTime < 750 /* TapShouldBeShorterThanMs */) {
+            if (exports.now() - firstPointerDownTime < TapShouldBeShorterThanMs) {
                 emitEvent("!PointerCancel", ev, target, node);
                 var handled = invokeMouseOwner(onClickText, ev) || (bubble(node, onClickText, ev) != null);
-                var delay = (ieVersion()) ? 800 /* MaxBustDelayForIE */ : 500 /* MaxBustDelay */;
+                var delay = (ieVersion()) ? MaxBustDelayForIE : MaxBustDelay;
                 toBust.push([ev.x, ev.y, exports.now() + delay, handled ? 1 : 0]);
                 return handled;
             }
@@ -2806,7 +2823,7 @@ function bustingClick(ev, _target, _node) {
             i--;
             continue;
         }
-        if (diffLess(j[0], ev.clientX, 50 /* BustDistance */) && diffLess(j[1], ev.clientY, 50 /* BustDistance */)) {
+        if (diffLess(j[0], ev.clientX, BustDistance) && diffLess(j[1], ev.clientY, BustDistance)) {
             toBust.splice(i, 1);
             if (j[3])
                 preventDefault(ev);
@@ -2928,26 +2945,26 @@ addEvent5(wheelSupport, handleMouseWheel);
 exports.pointersDownCount = function () { return Object.keys(pointersDown).length; };
 exports.firstPointerDownId = function () { return firstPointerDown; };
 exports.ignoreClick = function (x, y) {
-    var delay = ieVersion() ? 800 /* MaxBustDelayForIE */ : 500 /* MaxBustDelay */;
+    var delay = ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
     toBust.push([x, y, exports.now() + delay, 1]);
 };
 // Bobril.Focus
 var currentActiveElement = undefined;
 var currentFocusedNode = undefined;
-var nodestack = [];
+var nodeStack = [];
 function emitOnFocusChange(inFocus) {
     var newActiveElement = (document.hasFocus() || inFocus) ? document.activeElement : undefined;
     if (newActiveElement !== currentActiveElement) {
         currentActiveElement = newActiveElement;
-        var newstack = vdomPath(currentActiveElement);
+        var newStack = vdomPath(currentActiveElement);
         var common = 0;
-        while (common < nodestack.length && common < newstack.length && nodestack[common] === newstack[common])
+        while (common < nodeStack.length && common < newStack.length && nodeStack[common] === newStack[common])
             common++;
-        var i = nodestack.length - 1;
+        var i = nodeStack.length - 1;
         var n;
         var c;
         if (i >= common) {
-            n = nodestack[i];
+            n = nodeStack[i];
             if (n) {
                 c = n.component;
                 if (c && c.onBlur)
@@ -2956,7 +2973,7 @@ function emitOnFocusChange(inFocus) {
             i--;
         }
         while (i >= common) {
-            n = nodestack[i];
+            n = nodeStack[i];
             if (n) {
                 c = n.component;
                 if (c && c.onFocusOut)
@@ -2965,8 +2982,8 @@ function emitOnFocusChange(inFocus) {
             i--;
         }
         i = common;
-        while (i + 1 < newstack.length) {
-            n = newstack[i];
+        while (i + 1 < newStack.length) {
+            n = newStack[i];
             if (n) {
                 c = n.component;
                 if (c && c.onFocusIn)
@@ -2974,8 +2991,8 @@ function emitOnFocusChange(inFocus) {
             }
             i++;
         }
-        if (i < newstack.length) {
-            n = newstack[i];
+        if (i < newStack.length) {
+            n = newStack[i];
             if (n) {
                 c = n.component;
                 if (c && c.onFocus)
@@ -2983,8 +3000,8 @@ function emitOnFocusChange(inFocus) {
             }
             i++;
         }
-        nodestack = newstack;
-        currentFocusedNode = nodestack.length == 0 ? undefined : null2undefined(nodestack[nodestack.length - 1]);
+        nodeStack = newStack;
+        currentFocusedNode = nodeStack.length == 0 ? undefined : null2undefined(nodeStack[nodeStack.length - 1]);
     }
     return false;
 }
@@ -3072,14 +3089,14 @@ function isScrollable(el) {
     return res;
 }
 exports.isScrollable = isScrollable;
-// returns standart X,Y order
+// returns standard X,Y order
 function getWindowScroll() {
     var left = window.pageXOffset;
     var top = window.pageYOffset;
     return [left, top];
 }
 exports.getWindowScroll = getWindowScroll;
-// returns node offset on page in standart X,Y order
+// returns node offset on page in standard X,Y order
 function nodePagePos(node) {
     var rect = getDomNode(node).getBoundingClientRect();
     var res = getWindowScroll();
@@ -3219,11 +3236,11 @@ function getTransformationMatrix(element) {
 function convertPointFromClientToNode(node, pageX, pageY) {
     var element = getDomNode(node);
     if (cachedConvertPointFromClientToNode == null) {
-        var conv_1 = window.webkitConvertPointFromPageToNode;
-        if (conv_1) {
+        var nativeConvert_1 = window.webkitConvertPointFromPageToNode;
+        if (nativeConvert_1) {
             cachedConvertPointFromClientToNode = function (element, x, y) {
                 var scr = getWindowScroll();
-                var res = conv_1(element, new WebKitPoint(scr[0] + x, scr[1] + y));
+                var res = nativeConvert_1(element, new WebKitPoint(scr[0] + x, scr[1] + y));
                 return [res.x, res.y];
             };
         }
@@ -3239,13 +3256,13 @@ exports.convertPointFromClientToNode = convertPointFromClientToNode;
 ;
 var lastDndId = 0;
 var dnds = [];
-var systemdnd = null;
+var systemDnd = null;
 var rootId = null;
 var bodyCursorBackup;
 var userSelectBackup;
-var shimedStyle = { userSelect: '' };
-shimStyle(shimedStyle);
-var shimedStyleKeys = Object.keys(shimedStyle);
+var shimmedStyle = { userSelect: '' };
+shimStyle(shimmedStyle);
+var shimedStyleKeys = Object.keys(shimmedStyle);
 var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 var DndCtx = function (pointerId) {
     this.id = ++lastDndId;
@@ -3373,7 +3390,7 @@ dndProto.setEnabledOps = function (ops) {
     this.enabledOperations = ops;
 };
 dndProto.cancelDnd = function () {
-    dndmoved(undefined, this);
+    dndMoved(undefined, this);
     this.destroy();
 };
 dndProto.destroy = function () {
@@ -3387,8 +3404,8 @@ dndProto.destroy = function () {
             break;
         }
     }
-    if (systemdnd === this) {
-        systemdnd = null;
+    if (systemDnd === this) {
+        systemDnd = null;
     }
     if (dnds.length === 0 && rootId != null) {
         removeRoot(rootId);
@@ -3428,7 +3445,7 @@ function handlePointerDown(ev, _target, node) {
             }
             if (dnd.distanceToStart <= 0) {
                 dnd.beforeDrag = false;
-                dndmoved(node, dnd);
+                dndMoved(node, dnd);
             }
             lazyCreateRoot();
         }
@@ -3438,7 +3455,7 @@ function handlePointerDown(ev, _target, node) {
     }
     return false;
 }
-function dndmoved(node, dnd) {
+function dndMoved(node, dnd) {
     dnd.overNode = node;
     dnd.targetCtx = bubble(node, "onDragOver", dnd);
     if (dnd.targetCtx == null) {
@@ -3469,7 +3486,7 @@ function handlePointerMove(ev, _target, node) {
         dnd.beforeDrag = false;
     }
     updateDndFromPointerEvent(dnd, ev);
-    dndmoved(node, dnd);
+    dndMoved(node, dnd);
     dnd.lastX = ev.x;
     dnd.lastY = ev.y;
     return true;
@@ -3480,7 +3497,7 @@ function handlePointerUp(ev, _target, node) {
         return false;
     if (!dnd.beforeDrag) {
         updateDndFromPointerEvent(dnd, ev);
-        dndmoved(node, dnd);
+        dndMoved(node, dnd);
         var t = dnd.targetCtx;
         if (t && bubble(t.me, "onDrop", dnd)) {
             dnd.destroy();
@@ -3516,13 +3533,13 @@ function updateFromNative(dnd, ev) {
     dnd.totalX += Math.abs(dnd.x - dnd.lastX);
     dnd.totalY += Math.abs(dnd.y - dnd.lastY);
     var node = nodeOnPoint(dnd.x, dnd.y); // Needed to correctly emulate pointerEvents:none
-    dndmoved(node, dnd);
+    dndMoved(node, dnd);
     dnd.lastX = dnd.x;
     dnd.lastY = dnd.y;
 }
 var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
 function handleDragStart(ev, _target, node) {
-    var dnd = systemdnd;
+    var dnd = systemDnd;
     if (dnd != null) {
         dnd.destroy();
     }
@@ -3530,13 +3547,13 @@ function handleDragStart(ev, _target, node) {
     if (activePointerIds.length > 0) {
         dnd = pointer2Dnd[activePointerIds[0]];
         dnd.system = true;
-        systemdnd = dnd;
+        systemDnd = dnd;
     }
     else {
         var startX = ev.clientX, startY = ev.clientY;
         dnd = new DndCtx(-1);
         dnd.system = true;
-        systemdnd = dnd;
+        systemDnd = dnd;
         dnd.x = startX;
         dnd.y = startY;
         dnd.lastX = startX;
@@ -3591,12 +3608,12 @@ function handleDragStart(ev, _target, node) {
             style.padding = paddingBackup;
         }, 0);
     }
-    var datas = dnd.data;
-    var dataKeys = Object.keys(datas);
+    var data = dnd.data;
+    var dataKeys = Object.keys(data);
     for (var i = 0; i < dataKeys.length; i++) {
         try {
             var k = dataKeys[i];
-            var d = datas[k];
+            var d = data[k];
             if (!isString(d))
                 d = JSON.stringify(d);
             ev.dataTransfer.setData(k, d);
@@ -3614,11 +3631,11 @@ function setDropEffect(ev, op) {
     ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][op];
 }
 function handleDragOver(ev, _target, _node) {
-    var dnd = systemdnd;
+    var dnd = systemDnd;
     if (dnd == null) {
         dnd = new DndCtx(-1);
         dnd.system = true;
-        systemdnd = dnd;
+        systemDnd = dnd;
         dnd.x = ev.clientX;
         dnd.y = ev.clientY;
         dnd.startX = dnd.x;
@@ -3636,10 +3653,10 @@ function handleDragOver(ev, _target, _node) {
                 break;
         }
         dnd.enabledOperations = eff;
-        var dttypes = dt.types;
-        if (dttypes) {
-            for (var i = 0; i < dttypes.length; i++) {
-                var tt = dttypes[i];
+        var dtTypes = dt.types;
+        if (dtTypes) {
+            for (var i = 0; i < dtTypes.length; i++) {
+                var tt = dtTypes[i];
                 if (tt === "text/plain")
                     tt = "Text";
                 else if (tt === "text/uri-list")
@@ -3664,22 +3681,22 @@ function handleDrag(ev, _target, _node) {
     var x = ev.clientX;
     var y = ev.clientY;
     var m = getMedia();
-    if (systemdnd != null && (x === 0 && y === 0 || x < 0 || y < 0 || x >= m.width || y >= m.height)) {
-        systemdnd.x = 0;
-        systemdnd.y = 0;
-        systemdnd.operation = 0 /* None */;
-        broadcast("onDrag", systemdnd);
+    if (systemDnd != null && (x === 0 && y === 0 || x < 0 || y < 0 || x >= m.width || y >= m.height)) {
+        systemDnd.x = 0;
+        systemDnd.y = 0;
+        systemDnd.operation = 0 /* None */;
+        broadcast("onDrag", systemDnd);
     }
     return false;
 }
 function handleDragEnd(_ev, _target, _node) {
-    if (systemdnd != null) {
-        systemdnd.destroy();
+    if (systemDnd != null) {
+        systemDnd.destroy();
     }
     return false;
 }
 function handleDrop(ev, _target, _node) {
-    var dnd = systemdnd;
+    var dnd = systemDnd;
     if (dnd == null)
         return false;
     dnd.x = ev.clientX;
@@ -3755,9 +3772,9 @@ function emitOnHashChange() {
 addEvent("hashchange", 10, emitOnHashChange);
 var myAppHistoryDeepness = 0;
 var programPath = '';
-function push(path, inapp) {
+function push(path, inApp) {
     var l = window.location;
-    if (inapp) {
+    if (inApp) {
         programPath = path;
         l.hash = path.substring(1);
         myAppHistoryDeepness++;
@@ -3766,9 +3783,9 @@ function push(path, inapp) {
         l.href = path;
     }
 }
-function replace(path, inapp) {
+function replace(path, inApp) {
     var l = window.location;
-    if (inapp) {
+    if (inApp) {
         programPath = path;
         l.replace(l.pathname + l.search + path);
     }
@@ -3980,11 +3997,11 @@ function rootNodeFactory() {
     }
     var fn = noop;
     for (var i = 0; i < activeRoutes.length; i++) {
-        (function (fninner, r, routeParams, i) {
-            fn = function (otherdata) {
+        (function (fnInner, r, routeParams, i) {
+            fn = function (otherData) {
                 var data = r.data || {};
-                exports.assign(data, otherdata);
-                data.activeRouteHandler = fninner;
+                exports.assign(data, otherData);
+                data.activeRouteHandler = fnInner;
                 data.routeParams = routeParams;
                 var handler = r.handler;
                 var res;
@@ -4041,12 +4058,12 @@ function registerRoutes(url, rs) {
             registerRoutes(u, r.children);
     }
 }
-function routes(rootroutes) {
-    if (!exports.isArray(rootroutes)) {
-        rootroutes = [rootroutes];
+function routes(rootRoutes) {
+    if (!exports.isArray(rootRoutes)) {
+        rootRoutes = [rootRoutes];
     }
-    registerRoutes("/", rootroutes);
-    rootRoutes = rootroutes;
+    registerRoutes("/", rootRoutes);
+    rootRoutes = rootRoutes;
     init(rootNodeFactory);
 }
 exports.routes = routes;
@@ -4375,7 +4392,7 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
     if (isString(style)) {
         var externalStyle = allStyles[style];
         if (externalStyle === undefined) {
-            throw new Error("uknown style " + style);
+            throw new Error("Unknown style " + style);
         }
         flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
     }
@@ -4417,7 +4434,7 @@ function beforeFrame() {
         firstStyles = false;
     }
     if (rebuildStyles) {
-        // Hack around bug in Chrome to not have FOUC
+        // Hack around bug in Chrome to not have flash of unstyled content
         if (frameCounter === 1 && "webkitAnimation" in dbs) {
             firstStyles = true;
             dbs.opacity = "0";
@@ -4436,30 +4453,30 @@ function beforeFrame() {
                 if (dynSprite.height == null)
                     dynSprite.height = image.height;
                 var lastUrl = recolorAndClip(image, colorStr, dynSprite.width, dynSprite.height, dynSprite.left, dynSprite.top);
-                var stDef = allStyles[dynSprite.styleid];
+                var stDef = allStyles[dynSprite.styleId];
                 stDef.style = { backgroundImage: "url(" + lastUrl + ")", width: dynSprite.width, height: dynSprite.height, backgroundPosition: 0 };
             }
         }
-        var stylestr = injectedCss;
+        var styleStr = injectedCss;
         for (var key in allStyles) {
             var ss = allStyles[key];
             var parent_1 = ss.parent;
             var name_1 = ss.name;
-            var sspseudo = ss.pseudo;
-            var ssstyle = ss.style;
-            if (isFunction(ssstyle) && ssstyle.length === 0) {
-                _a = ssstyle(), ssstyle = _a[0], sspseudo = _a[1];
+            var ssPseudo = ss.pseudo;
+            var ssStyle = ss.style;
+            if (isFunction(ssStyle) && ssStyle.length === 0) {
+                _a = ssStyle(), ssStyle = _a[0], ssPseudo = _a[1];
             }
-            if (isString(ssstyle) && sspseudo == null) {
-                ss.realname = ssstyle;
+            if (isString(ssStyle) && ssPseudo == null) {
+                ss.realName = ssStyle;
                 assert(name_1 != null, "Cannot link existing class to selector");
                 continue;
             }
-            ss.realname = name_1;
+            ss.realName = name_1;
             var style_1 = newHashObj();
             var flattenPseudo = newHashObj();
-            flattenStyle(undefined, flattenPseudo, undefined, sspseudo);
-            flattenStyle(style_1, flattenPseudo, ssstyle, undefined);
+            flattenStyle(undefined, flattenPseudo, undefined, ssPseudo);
+            flattenStyle(style_1, flattenPseudo, ssStyle, undefined);
             var extractedInlStyle = null;
             if (style_1["pointerEvents"]) {
                 extractedInlStyle = newHashObj();
@@ -4477,21 +4494,21 @@ function beforeFrame() {
             shimStyle(style_1);
             var cssStyle = inlineStyleToCssDeclaration(style_1);
             if (cssStyle.length > 0)
-                stylestr += (name_1 == null ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n";
+                styleStr += (name_1 == null ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n";
             for (var key2 in flattenPseudo) {
-                var sspi = flattenPseudo[key2];
-                shimStyle(sspi);
-                stylestr += (name_1 == null ? parent_1 + ":" + key2 : buildCssRule(parent_1, name_1 + ":" + key2))
-                    + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
+                var item = flattenPseudo[key2];
+                shimStyle(item);
+                styleStr += (name_1 == null ? parent_1 + ":" + key2 : buildCssRule(parent_1, name_1 + ":" + key2))
+                    + " {" + inlineStyleToCssDeclaration(item) + "}\n";
             }
         }
         var styleElement = document.createElement("style");
         styleElement.type = 'text/css';
         if (styleElement.styleSheet) {
-            styleElement.styleSheet.cssText = stylestr;
+            styleElement.styleSheet.cssText = styleStr;
         }
         else {
-            styleElement.appendChild(document.createTextNode(stylestr));
+            styleElement.appendChild(document.createTextNode(styleStr));
         }
         var head = document.head || document.getElementsByTagName('head')[0];
         if (htmlStyle != null) {
@@ -4526,18 +4543,19 @@ function style(node) {
         }
         var s = ca[i];
         if (s == null || s === true || s === false || s === '') {
+            // skip
         }
         else if (isString(s)) {
             var sd = allStyles[s];
             if (className == null)
-                className = sd.realname;
+                className = sd.realName;
             else
-                className = className + " " + sd.realname;
-            var inls = sd.inlStyle;
-            if (inls) {
+                className = className + " " + sd.realName;
+            var inlS = sd.inlStyle;
+            if (inlS) {
                 if (inlineStyle == null)
                     inlineStyle = {};
-                inlineStyle = exports.assign(inlineStyle, inls);
+                inlineStyle = exports.assign(inlineStyle, inlS);
             }
         }
         else if (exports.isArray(s)) {
@@ -4606,13 +4624,13 @@ function styleDefEx(parent, style, pseudo, nameHint) {
     else {
         nameHint = "b-" + globalCounter++;
     }
-    allStyles[nameHint] = { name: nameHint, realname: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
+    allStyles[nameHint] = { name: nameHint, realName: nameHint, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
     invalidateStyles();
     return nameHint;
 }
 exports.styleDefEx = styleDefEx;
 function selectorStyleDef(selector, style, pseudo) {
-    allStyles["b-" + globalCounter++] = { name: null, realname: null, parent: selector, style: style, inlStyle: null, pseudo: pseudo };
+    allStyles["b-" + globalCounter++] = { name: null, realName: null, parent: selector, style: style, inlStyle: null, pseudo: pseudo };
     invalidateStyles();
 }
 exports.selectorStyleDef = selectorStyleDef;
@@ -4622,7 +4640,7 @@ function invalidateStyles() {
 }
 exports.invalidateStyles = invalidateStyles;
 function updateSprite(spDef) {
-    var stDef = allStyles[spDef.styleid];
+    var stDef = allStyles[spDef.styleId];
     var style = { backgroundImage: "url(" + spDef.url + ")", width: spDef.width, height: spDef.height };
     style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
     stDef.style = style;
@@ -4638,55 +4656,55 @@ function recolorAndClip(image, colorStr, width, height, left, top) {
     canvas.height = height;
     var ctx = canvas.getContext("2d");
     ctx.drawImage(image, -left, -top);
-    var imgdata = ctx.getImageData(0, 0, width, height);
-    var imgd = imgdata.data;
+    var imgData = ctx.getImageData(0, 0, width, height);
+    var imgDataData = imgData.data;
     var rgba = rgbaRegex.exec(colorStr);
-    var cred, cgreen, cblue, calpha;
+    var cRed, cGreen, cBlue, cAlpha;
     if (rgba) {
-        cred = parseInt(rgba[1], 10);
-        cgreen = parseInt(rgba[2], 10);
-        cblue = parseInt(rgba[3], 10);
-        calpha = Math.round(parseFloat(rgba[4]) * 255);
+        cRed = parseInt(rgba[1], 10);
+        cGreen = parseInt(rgba[2], 10);
+        cBlue = parseInt(rgba[3], 10);
+        cAlpha = Math.round(parseFloat(rgba[4]) * 255);
     }
     else {
-        cred = parseInt(colorStr.substr(1, 2), 16);
-        cgreen = parseInt(colorStr.substr(3, 2), 16);
-        cblue = parseInt(colorStr.substr(5, 2), 16);
-        calpha = parseInt(colorStr.substr(7, 2), 16) || 0xff;
+        cRed = parseInt(colorStr.substr(1, 2), 16);
+        cGreen = parseInt(colorStr.substr(3, 2), 16);
+        cBlue = parseInt(colorStr.substr(5, 2), 16);
+        cAlpha = parseInt(colorStr.substr(7, 2), 16) || 0xff;
     }
-    if (calpha === 0xff) {
-        for (var i = 0; i < imgd.length; i += 4) {
+    if (cAlpha === 0xff) {
+        for (var i = 0; i < imgDataData.length; i += 4) {
             // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
-            var red = imgd[i];
-            if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
-                imgd[i] = cred;
-                imgd[i + 1] = cgreen;
-                imgd[i + 2] = cblue;
+            var red = imgDataData[i];
+            if (red === imgDataData[i + 1] && red === imgDataData[i + 2] && (red === 0x80 || imgDataData[i + 3] < 0xff && red > 0x70)) {
+                imgDataData[i] = cRed;
+                imgDataData[i + 1] = cGreen;
+                imgDataData[i + 2] = cBlue;
             }
         }
     }
     else {
-        for (var i = 0; i < imgd.length; i += 4) {
-            var red = imgd[i];
-            var alpha = imgd[i + 3];
-            if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || alpha < 0xff && red > 0x70)) {
+        for (var i = 0; i < imgDataData.length; i += 4) {
+            var red = imgDataData[i];
+            var alpha = imgDataData[i + 3];
+            if (red === imgDataData[i + 1] && red === imgDataData[i + 2] && (red === 0x80 || alpha < 0xff && red > 0x70)) {
                 if (alpha === 0xff) {
-                    imgd[i] = cred;
-                    imgd[i + 1] = cgreen;
-                    imgd[i + 2] = cblue;
-                    imgd[i + 3] = calpha;
+                    imgDataData[i] = cRed;
+                    imgDataData[i + 1] = cGreen;
+                    imgDataData[i + 2] = cBlue;
+                    imgDataData[i + 3] = cAlpha;
                 }
                 else {
                     alpha = alpha * (1.0 / 255);
-                    imgd[i] = Math.round(cred * alpha);
-                    imgd[i + 1] = Math.round(cgreen * alpha);
-                    imgd[i + 2] = Math.round(cblue * alpha);
-                    imgd[i + 3] = Math.round(calpha * alpha);
+                    imgDataData[i] = Math.round(cRed * alpha);
+                    imgDataData[i + 1] = Math.round(cGreen * alpha);
+                    imgDataData[i + 2] = Math.round(cBlue * alpha);
+                    imgDataData[i + 3] = Math.round(cAlpha * alpha);
                 }
             }
         }
     }
-    ctx.putImageData(imgdata, 0, 0);
+    ctx.putImageData(imgData, 0, 0);
     return canvas.toDataURL();
 }
 var lastFuncId = 0;
@@ -4708,9 +4726,9 @@ function sprite(url, color, width, height, left, top) {
     var key = url + ":" + colorId + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
     var spDef = allSprites[key];
     if (spDef)
-        return spDef.styleid;
-    var styleid = emptyStyleDef(url);
-    spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+        return spDef.styleId;
+    var styleId = emptyStyleDef(url);
+    spDef = { styleId: styleId, url: url, width: width, height: height, left: left, top: top };
     if (isVarColor) {
         spDef.color = color;
         spDef.lastColor = '';
@@ -4747,7 +4765,7 @@ function sprite(url, color, width, height, left, top) {
         updateSprite(spDef);
     }
     allSprites[key] = spDef;
-    return styleid;
+    return styleId;
 }
 exports.sprite = sprite;
 var bundlePath = window['bobrilBPath'] || 'bundle.png';
@@ -4760,12 +4778,12 @@ function spriteb(width, height, left, top) {
     var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
     var spDef = allSprites[key];
     if (spDef)
-        return spDef.styleid;
-    var styleid = styleDef({ width: 0, height: 0 });
-    spDef = { styleid: styleid, url: url, width: width, height: height, left: left, top: top };
+        return spDef.styleId;
+    var styleId = styleDef({ width: 0, height: 0 });
+    spDef = { styleId: styleId, url: url, width: width, height: height, left: left, top: top };
     updateSprite(spDef);
     allSprites[key] = spDef;
-    return styleid;
+    return styleId;
 }
 exports.spriteb = spriteb;
 function spritebc(color, width, height, left, top) {
@@ -4977,7 +4995,7 @@ function createElement(name, props) {
             return res;
         }
         var attrs = {};
-        var someattrs = false;
+        var someAttrs = false;
         for (var n in props) {
             if (!props.hasOwnProperty(n))
                 continue;
@@ -4989,10 +5007,10 @@ function createElement(name, props) {
                 res[n] = props[n];
                 continue;
             }
-            someattrs = true;
+            someAttrs = true;
             attrs[n] = props[n];
         }
-        if (someattrs)
+        if (someAttrs)
             res.attrs = attrs;
         return res;
     }
