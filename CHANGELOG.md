@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.0.1
+--
+
+Fixed regression with rootRoutes.
+
 6.0.0
 --
 

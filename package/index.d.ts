@@ -344,7 +344,7 @@ export interface IRouteConfig {
     handler: IRouteHandler;
     keyBuilder?: (params: Params) => string;
 }
-export declare function routes(rootRoutes: IRoute | IRoute[]): void;
+export declare function routes(root: IRoute | IRoute[]): void;
 export declare function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRoute;
 export declare function routeDefault(config: IRouteConfig): IRoute;
 export declare function routeNotFound(config: IRouteConfig): IRoute;

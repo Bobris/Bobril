@@ -4411,12 +4411,12 @@ function registerRoutes(url: string, rs: Array<IRoute>): void {
     }
 }
 
-export function routes(rootRoutes: IRoute | IRoute[]): void {
-    if (!isArray(rootRoutes)) {
-        rootRoutes = <IRoute[]>[rootRoutes];
+export function routes(root: IRoute | IRoute[]): void {
+    if (!isArray(root)) {
+        root = <IRoute[]>[root];
     }
-    registerRoutes("/", <IRoute[]>rootRoutes);
-    rootRoutes = <IRoute[]>rootRoutes;
+    registerRoutes("/", <IRoute[]>root);
+    rootRoutes = <IRoute[]>root;
     init(rootNodeFactory);
 }
 

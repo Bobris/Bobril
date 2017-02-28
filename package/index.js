@@ -4058,12 +4058,12 @@ function registerRoutes(url, rs) {
             registerRoutes(u, r.children);
     }
 }
-function routes(rootRoutes) {
-    if (!exports.isArray(rootRoutes)) {
-        rootRoutes = [rootRoutes];
+function routes(root) {
+    if (!exports.isArray(root)) {
+        root = [root];
     }
-    registerRoutes("/", rootRoutes);
-    rootRoutes = rootRoutes;
+    registerRoutes("/", root);
+    rootRoutes = root;
     init(rootNodeFactory);
 }
 exports.routes = routes;
