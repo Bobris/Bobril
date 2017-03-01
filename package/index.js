@@ -1481,10 +1481,19 @@ function update(time) {
     internalUpdate(time);
 }
 var rootIds;
+;
 var RootComponent = createVirtualComponent({
-    render: function (ctx, me) {
+    init: function (ctx) {
         var r = ctx.data;
-        me.children = r.f(r);
+        ctx.c = r.f(r);
+    },
+    shouldChange: function (ctx) {
+        var r = ctx.data;
+        ctx.c = r.f(r);
+        return ctx.c !== undefined;
+    },
+    render: function (ctx, me) {
+        me.children = ctx.c;
     }
 });
 function internalUpdate(time) {

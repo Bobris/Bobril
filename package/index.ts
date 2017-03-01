@@ -1621,10 +1621,20 @@ function update(time: number) {
 
 var rootIds: string[] | undefined;
 
+interface RootCtx extends IBobrilCtx { c: IBobrilChildren };
+
 const RootComponent = createVirtualComponent<IBobrilRoot>({
-    render(ctx: IBobrilCtx, me: IBobrilNode) {
+    init(ctx: RootCtx) {
         const r = (ctx.data as IBobrilRoot);
-        me.children = r.f(r);
+        ctx.c = r.f(r);
+    },
+    shouldChange(ctx: RootCtx) {
+        const r = (ctx.data as IBobrilRoot);
+        ctx.c = r.f(r);
+        return ctx.c !== undefined;
+    },
+    render(ctx: RootCtx, me: IBobrilNode) {
+        me.children = ctx.c;
     }
 });
 

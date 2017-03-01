@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.0.2
+--
+
+Fixed rare regression with router clearing page in back action.
+
 6.0.1
 --
 
