@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.1.0
+--
+
+Add way to specify ctx as class for component.
+
 6.0.2
 --
 

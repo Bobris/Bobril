@@ -18,6 +18,9 @@ export interface IBobrilRoot {
     p: IBobrilCacheNode | undefined;
     n: IBobrilCacheNode | undefined;
 }
+export declare type ICtxClass = {
+    new (): BobrilCtx;
+};
 export declare type IBobrilRoots = {
     [id: string]: IBobrilRoot;
 };
@@ -31,6 +34,7 @@ export interface IBobrilAttributes {
 export interface IBobrilComponent {
     super?: IBobrilComponent;
     id?: string;
+    ctxClass?: ICtxClass;
     init?(ctx: IBobrilCtx, me: IBobrilCacheNode): void;
     render?(ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
     postRender?(ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
@@ -104,6 +108,16 @@ export interface IBobrilCacheNode {
 }
 export interface IBobrilCtx {
     data?: any;
+    me: IBobrilCacheNode;
+    cfg?: any;
+    refs?: {
+        [name: string]: IBobrilCacheNode | null;
+    };
+    disposables?: IDisposableLike[];
+}
+export declare class BobrilCtx implements IBobrilCtx {
+    constructor();
+    data: any;
     me: IBobrilCacheNode;
     cfg?: any;
     refs?: {

@@ -26,6 +26,8 @@ export interface IBobrilRoot {
     n: IBobrilCacheNode | undefined;
 }
 
+export type ICtxClass = { new (): BobrilCtx; };
+
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
 
 export interface IBobrilAttributes {
@@ -42,6 +44,7 @@ export interface IBobrilComponent {
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;
+    ctxClass?: ICtxClass;
     // called before new node in virtual dom should be created, me members (tag, attrs, children, ...) could be modified, ctx is initialized to { data: me.data||{}, me: me, cfg: fromParent }
     init?(ctx: IBobrilCtx, me: IBobrilCacheNode): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
@@ -159,6 +162,21 @@ export interface IBobrilCtx {
     data?: any;
     me: IBobrilCacheNode;
     // properties passed from parent component automatically, but could be extended for children to IBobrilNode.cfg
+    cfg?: any;
+    refs?: { [name: string]: IBobrilCacheNode | null };
+    disposables?: IDisposableLike[];
+}
+
+export class BobrilCtx implements IBobrilCtx {
+    constructor() {
+        this.data = undefined;
+        (this as any).me = undefined;
+        this.cfg = undefined;
+        this.refs = undefined;
+        this.disposables = undefined;
+    }
+    data: any;
+    me: IBobrilCacheNode;
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode | null };
     disposables?: IDisposableLike[];
@@ -595,7 +613,15 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
     var el: Node | undefined;
     setRef(c.ref, c);
     if (component) {
-        var ctx: IBobrilCtx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
+        var ctx: IBobrilCtx;
+        if (component.ctxClass) {
+            ctx = new component.ctxClass();
+            ctx.me = c;
+        } else {
+            ctx = { data: undefined, me: c, cfg: undefined };
+        }
+        ctx.data = c.data || {};
+        ctx.cfg = findCfg(parentNode);
         c.ctx = ctx;
         currentCtx = ctx;
         if (component.init) {
@@ -1666,11 +1692,18 @@ function internalUpdate(time: number) {
             if (insertBefore != null) break;
         }
         if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-        var node = RootComponent(r);
         if (r.e === undefined) r.e = document.body;
         if (rc) {
-            updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : 0);
+            if (fullRefresh) {
+                let node = RootComponent(r);
+                updateNode(node, rc, r.e, insertBefore, 1e6);
+            }
+            else {
+                if (isArray(r.c))
+                    selectedUpdate(r.c, r.e, insertBefore)
+            }
         } else {
+            let node = RootComponent(r);
             r.n = createNode(node, undefined, r.e, insertBefore);
             rc = r.n;
         }

@@ -2,6 +2,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
+var BobrilCtx = (function () {
+    function BobrilCtx() {
+        this.data = undefined;
+        this.me = undefined;
+        this.cfg = undefined;
+        this.refs = undefined;
+        this.disposables = undefined;
+    }
+    return BobrilCtx;
+}());
+exports.BobrilCtx = BobrilCtx;
 if (typeof DEBUG === "undefined")
     DEBUG = true;
 // PureFuncs: assert, isArray, isObject, flatten
@@ -425,7 +436,16 @@ function createNode(n, parentNode, createInto, createBefore) {
     var el;
     setRef(c.ref, c);
     if (component) {
-        var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
+        var ctx;
+        if (component.ctxClass) {
+            ctx = new component.ctxClass();
+            ctx.me = c;
+        }
+        else {
+            ctx = { data: undefined, me: c, cfg: undefined };
+        }
+        ctx.data = c.data || {};
+        ctx.cfg = findCfg(parentNode);
         c.ctx = ctx;
         currentCtx = ctx;
         if (component.init) {
@@ -1528,13 +1548,20 @@ function internalUpdate(time) {
         }
         if (focusRootTop)
             inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-        var node = RootComponent(r);
         if (r.e === undefined)
             r.e = document.body;
         if (rc) {
-            updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : 0);
+            if (fullRefresh) {
+                var node = RootComponent(r);
+                updateNode(node, rc, r.e, insertBefore, 1e6);
+            }
+            else {
+                if (exports.isArray(r.c))
+                    selectedUpdate(r.c, r.e, insertBefore);
+            }
         }
         else {
+            var node = RootComponent(r);
             r.n = createNode(node, undefined, r.e, insertBefore);
             rc = r.n;
         }
