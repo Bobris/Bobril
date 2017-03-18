@@ -117,6 +117,7 @@ export interface IBobrilCtx {
 }
 export declare class BobrilCtx implements IBobrilCtx {
     constructor();
+    $bobxCtx: object | undefined;
     data: any;
     me: IBobrilCacheNode;
     cfg?: any;
@@ -151,6 +152,7 @@ export declare function ieVersion(): any;
 export declare function registerFocusRoot(ctx: IBobrilCtx): void;
 export declare function unregisterFocusRoot(ctx: IBobrilCtx): void;
 export declare function getCurrentCtx(): IBobrilCtx | undefined;
+export declare function setCurrentCtx(ctx: IBobrilCtx | undefined): void;
 export declare function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefined, createInto: Element, createBefore: Node | null): IBobrilCacheNode;
 export declare function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike): void;
 export declare function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[];
@@ -172,6 +174,7 @@ export declare function setBeforeRender(callback: (node: IBobrilNode, phase: Ren
 export declare function setBeforeFrame(callback: () => void): () => void;
 export declare function setAfterFrame(callback: (root: IBobrilCacheChildren | null) => void): (root: IBobrilCacheChildren | null) => void;
 export declare function syncUpdate(): void;
+export declare function deferSyncUpdate(): void;
 export declare function ignoreShouldChange(): void;
 export declare function setInvalidate(inv: (ctx?: Object, deepness?: number) => void): (ctx?: Object, deepness?: number) => void;
 export declare var invalidate: (ctx?: Object | undefined, deepness?: number | undefined) => void;

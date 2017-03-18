@@ -174,7 +174,9 @@ export class BobrilCtx implements IBobrilCtx {
         this.cfg = undefined;
         this.refs = undefined;
         this.disposables = undefined;
+        this.$bobxCtx = undefined;
     }
+    $bobxCtx: object | undefined;
     data: any;
     me: IBobrilCacheNode;
     cfg?: any;
@@ -589,6 +591,10 @@ let currentCtx: IBobrilCtx | undefined;
 
 export function getCurrentCtx() {
     return currentCtx;
+}
+
+export function setCurrentCtx(ctx: IBobrilCtx | undefined) {
+    currentCtx = ctx;
 }
 
 export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefined, createInto: Element, createBefore: Node | null): IBobrilCacheNode {
@@ -1522,7 +1528,7 @@ export function emitEvent(name: string, ev: any, target: Node | undefined, node:
     return false;
 }
 
-let listeningEventDeepness = 0;
+var listeningEventDeepness = 0;
 
 function addListener(el: EventTarget, name: string) {
     if (name[0] == "!") return;
@@ -1542,6 +1548,8 @@ function addListener(el: EventTarget, name: string) {
         listeningEventDeepness++;
         emitEvent(name, ev, <Node>t, n);
         listeningEventDeepness--;
+        if (listeningEventDeepness == 0 && deferSyncUpdateRequested)
+            syncUpdate();
     }
     if (("on" + eventName) in window) el = window;
     el.addEventListener(eventName, enhanceEvent, capture);
@@ -1636,8 +1644,19 @@ function isLogicalParent(parent: IBobrilCacheNode, child: IBobrilCacheNode | nul
     return false;
 }
 
+var deferSyncUpdateRequested = false;
+
 export function syncUpdate() {
+    deferSyncUpdateRequested = false;
     internalUpdate(now() - startTime);
+}
+
+export function deferSyncUpdate() {
+    if (listeningEventDeepness > 0) {
+        deferSyncUpdateRequested = true;
+        return;
+    }
+    syncUpdate();
 }
 
 function update(time: number) {
@@ -1694,9 +1713,9 @@ function internalUpdate(time: number) {
         if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
         if (r.e === undefined) r.e = document.body;
         if (rc) {
-            if (fullRefresh) {
+            if (fullRefresh || (rc.ctx as any)[ctxInvalidated] === frameCounter) {
                 let node = RootComponent(r);
-                updateNode(node, rc, r.e, insertBefore, 1e6);
+                updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : (rc.ctx as any)[ctxDeepness]);
             }
             else {
                 if (isArray(r.c))
@@ -1704,8 +1723,8 @@ function internalUpdate(time: number) {
             }
         } else {
             let node = RootComponent(r);
-            r.n = createNode(node, undefined, r.e, insertBefore);
-            rc = r.n;
+            rc = createNode(node, undefined, r.e, insertBefore);
+            r.n = rc;
         }
         r.c = rc.children;
     }
@@ -1775,7 +1794,6 @@ export function updateRoot(id: string, factory?: (root: IBobrilRoot) => IBobrilC
     assert(rootIds != null, "updateRoot could be called only from render");
     var root = roots[id];
     assert(root != null);
-
     if (factory != null)
         root.f = factory;
     let rootNode = root.n;

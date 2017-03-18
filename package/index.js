@@ -9,6 +9,7 @@ var BobrilCtx = (function () {
         this.cfg = undefined;
         this.refs = undefined;
         this.disposables = undefined;
+        this.$bobxCtx = undefined;
     }
     return BobrilCtx;
 }());
@@ -414,6 +415,10 @@ function getCurrentCtx() {
     return currentCtx;
 }
 exports.getCurrentCtx = getCurrentCtx;
+function setCurrentCtx(ctx) {
+    currentCtx = ctx;
+}
+exports.setCurrentCtx = setCurrentCtx;
 function createNode(n, parentNode, createInto, createBefore) {
     var c = {
         tag: n.tag,
@@ -1404,6 +1409,8 @@ function addListener(el, name) {
         listeningEventDeepness++;
         emitEvent(name, ev, t, n);
         listeningEventDeepness--;
+        if (listeningEventDeepness == 0 && deferSyncUpdateRequested)
+            syncUpdate();
     }
     if (("on" + eventName) in window)
         el = window;
@@ -1492,10 +1499,20 @@ function isLogicalParent(parent, child, rootIds) {
     }
     return false;
 }
+var deferSyncUpdateRequested = false;
 function syncUpdate() {
+    deferSyncUpdateRequested = false;
     internalUpdate(exports.now() - startTime);
 }
 exports.syncUpdate = syncUpdate;
+function deferSyncUpdate() {
+    if (listeningEventDeepness > 0) {
+        deferSyncUpdateRequested = true;
+        return;
+    }
+    syncUpdate();
+}
+exports.deferSyncUpdate = deferSyncUpdate;
 function update(time) {
     scheduled = false;
     internalUpdate(time);
@@ -1551,9 +1568,9 @@ function internalUpdate(time) {
         if (r.e === undefined)
             r.e = document.body;
         if (rc) {
-            if (fullRefresh) {
+            if (fullRefresh || rc.ctx[ctxInvalidated] === frameCounter) {
                 var node = RootComponent(r);
-                updateNode(node, rc, r.e, insertBefore, 1e6);
+                updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : rc.ctx[ctxDeepness]);
             }
             else {
                 if (exports.isArray(r.c))
@@ -1562,8 +1579,8 @@ function internalUpdate(time) {
         }
         else {
             var node = RootComponent(r);
-            r.n = createNode(node, undefined, r.e, insertBefore);
-            rc = r.n;
+            rc = createNode(node, undefined, r.e, insertBefore);
+            r.n = rc;
         }
         r.c = rc.children;
     }

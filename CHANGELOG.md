@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.2.0
+--
+
+Fix for Bobx. And some possible API for future. deferSyncUpdate function for merging syncUpdates during events.
+
 6.1.0
 --
 
