@@ -12,7 +12,8 @@
         ],
         "removeComments": false,
         "noLib": false,
-        "preserveConstEnums": false
+        "preserveConstEnums": false,
+        "experimentalDecorators": true
     },
     "compileOnSave": false,
     "files": [],

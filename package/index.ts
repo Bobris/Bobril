@@ -2900,7 +2900,19 @@ function buildHandlerMouse(name: string) {
     }
 }
 
-if (window.onpointerdown !== undefined) {
+function listenMouse() {
+    addEvent5("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
+    addEvent5("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
+    addEvent5("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
+}
+
+if ((<any>window).ontouchstart !== undefined) {
+    addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
+    addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
+    addEvent5("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
+    addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
+    listenMouse();
+} else if (window.onpointerdown !== undefined) {
     for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
         var name = pointersEventNames[i];
         addEvent5(name.toLowerCase(), buildHandlerPointer(name));
@@ -2911,15 +2923,7 @@ if (window.onpointerdown !== undefined) {
         addEvent5("@MS" + name, buildHandlerPointer(name));
     }
 } else {
-    if ((<any>window).ontouchstart !== undefined) {
-        addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0]/*"PointerDown"*/));
-        addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1]/*"PointerMove"*/));
-        addEvent5("touchend", buildHandlerTouch(pointersEventNames[2]/*"PointerUp"*/));
-        addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3]/*"PointerCancel"*/));
-    }
-    addEvent5("mousedown", buildHandlerMouse(pointersEventNames[0]/*"PointerDown"*/));
-    addEvent5("mousemove", buildHandlerMouse(pointersEventNames[1]/*"PointerMove"*/));
-    addEvent5("mouseup", buildHandlerMouse(pointersEventNames[2]/*"PointerUp"*/));
+    listenMouse();
 }
 
 for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {

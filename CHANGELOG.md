@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.2.1
+--
+
+Fix for some platforms broken PointerEvents, so Touch events has now higher priority.
+
 6.2.0
 --
 
