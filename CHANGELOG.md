@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.3.0
+--
+
+Added way to skip render by setting tag to "-". Changed behavior of RenderPhases for easier Bobx integration.
+
 6.2.1
 --
 

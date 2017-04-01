@@ -464,6 +464,11 @@ function createNode(n, parentNode, createInto, createBefore) {
         currentCtx = undefined;
     }
     var tag = c.tag;
+    if (tag === "-") {
+        c.tag = undefined;
+        c.children = undefined;
+        return c;
+    }
     var children = c.children;
     var inSvgForeignObject = false;
     if (isNumber(children)) {
@@ -487,7 +492,7 @@ function createNode(n, parentNode, createInto, createBefore) {
         }
         return c;
     }
-    else if (tag === "/") {
+    if (tag === "/") {
         var htmlText = children;
         if (htmlText === "") {
             // nothing needs to be created
@@ -541,12 +546,12 @@ function createNode(n, parentNode, createInto, createBefore) {
         }
         return c;
     }
-    else if (inSvg || tag === "svg") {
+    if (inSvg || tag === "svg") {
         el = document.createElementNS("http://www.w3.org/2000/svg", tag);
         inSvgForeignObject = tag === "foreignObject";
         inSvg = !inSvgForeignObject;
     }
-    else if (!el) {
+    else {
         el = createEl(tag);
     }
     createInto.insertBefore(el, createBefore);
@@ -788,15 +793,33 @@ function finishUpdateNode(n, c, component) {
     c.data = n.data;
     pushUpdateCallback(c);
 }
+function finishUpdateNodeWithoutChange(c, createInto, createBefore) {
+    currentCtx = undefined;
+    if (exports.isArray(c.children)) {
+        var backupInSvg = inSvg;
+        var backupInNotFocusable = inNotFocusable;
+        if (c.tag === "svg") {
+            inSvg = true;
+        }
+        else if (inSvg && c.tag === "foreignObject")
+            inSvg = false;
+        if (inNotFocusable && focusRootTop === c)
+            inNotFocusable = false;
+        selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
+        inSvg = backupInSvg;
+        inNotFocusable = backupInNotFocusable;
+    }
+    pushUpdateEverytimeCallback(c);
+}
 function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) {
     var component = n.component;
-    var backupInSvg = inSvg;
-    var backupInNotFocusable = inNotFocusable;
     var bigChange = false;
     var ctx = c.ctx;
     if (component && ctx != null) {
+        var locallyInvalidated = false;
         if (ctx[ctxInvalidated] === frameCounter) {
             deepness = Math.max(deepness, ctx[ctxDeepness]);
+            locallyInvalidated = true;
         }
         if (component.id !== c.component.id) {
             bigChange = true;
@@ -805,28 +828,15 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             currentCtx = ctx;
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
-            if (beforeRenderCallback !== emptyBeforeRenderCallback)
-                beforeRenderCallback(n, inSelectedUpdate ? 2 /* LocalUpdate */ : 1 /* Update */);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
-                    currentCtx = undefined;
-                    if (exports.isArray(c.children)) {
-                        if (c.tag === "svg") {
-                            inSvg = true;
-                        }
-                        else if (inSvg && c.tag === "foreignObject")
-                            inSvg = false;
-                        if (inNotFocusable && focusRootTop === c)
-                            inNotFocusable = false;
-                        selectedUpdate(c.children, c.element || createInto, c.element != null ? null : createBefore);
-                        inSvg = backupInSvg;
-                        inNotFocusable = backupInNotFocusable;
-                    }
-                    pushUpdateEverytimeCallback(c);
+                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange && !locallyInvalidated) {
+                    finishUpdateNodeWithoutChange(c, createInto, createBefore);
                     return c;
                 }
             ctx.data = n.data || {};
             c.component = component;
+            if (beforeRenderCallback !== emptyBeforeRenderCallback)
+                beforeRenderCallback(n, inSelectedUpdate ? 2 /* LocalUpdate */ : 1 /* Update */);
             if (component.render) {
                 n = exports.assign({}, n); // need to clone me because it should not be modified for next updates
                 component.render(ctx, n, c);
@@ -846,6 +856,12 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
     var newChildren = n.children;
     var cachedChildren = c.children;
     var tag = n.tag;
+    if (tag === "-") {
+        finishUpdateNodeWithoutChange(c, createInto, createBefore);
+        return c;
+    }
+    var backupInSvg = inSvg;
+    var backupInNotFocusable = inNotFocusable;
     if (isNumber(newChildren)) {
         newChildren = "" + newChildren;
     }
@@ -1518,19 +1534,16 @@ function update(time) {
     internalUpdate(time);
 }
 var rootIds;
-;
 var RootComponent = createVirtualComponent({
-    init: function (ctx) {
-        var r = ctx.data;
-        ctx.c = r.f(r);
-    },
-    shouldChange: function (ctx) {
-        var r = ctx.data;
-        ctx.c = r.f(r);
-        return ctx.c !== undefined;
-    },
     render: function (ctx, me) {
-        me.children = ctx.c;
+        var r = ctx.data;
+        var c = r.f(r);
+        if (c === undefined) {
+            me.tag = "-"; // Skip render when root factory returns undefined
+        }
+        else {
+            me.children = c;
+        }
     }
 });
 function internalUpdate(time) {

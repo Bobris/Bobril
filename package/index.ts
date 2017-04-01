@@ -641,6 +641,11 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
         currentCtx = undefined;
     }
     var tag = c.tag;
+    if (tag === "-") { // Skip update
+        c.tag = undefined;
+        c.children = undefined;
+        return c;
+    }
     var children = c.children;
     var inSvgForeignObject = false;
     if (isNumber(children)) {
@@ -662,7 +667,8 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
             pushInitCallback(c);
         }
         return c;
-    } else if (tag === "/") {
+    }
+    if (tag === "/") {
         var htmlText = <string>children;
         if (htmlText === "") {
             // nothing needs to be created
@@ -712,14 +718,15 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
             pushInitCallback(c);
         }
         return c;
-    } else if (inSvg || tag === "svg") {
-        el = <any>document.createElementNS("http://www.w3.org/2000/svg", tag);
+    }
+    if (inSvg || tag === "svg") {
+        el = document.createElementNS("http://www.w3.org/2000/svg", tag);
         inSvgForeignObject = tag === "foreignObject";
         inSvg = !inSvgForeignObject;
-    } else if (!el) {
+    } else {
         el = createEl(tag);
     }
-    createInto.insertBefore(el!, createBefore);
+    createInto.insertBefore(el, createBefore);
     c.element = el;
     createChildren(c, <Element>el, null);
     if (component) {
@@ -948,15 +955,31 @@ function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobri
     pushUpdateCallback(c);
 }
 
+function finishUpdateNodeWithoutChange(c: IBobrilCacheNode, createInto: Element, createBefore: Node | null) {
+    currentCtx = undefined;
+    if (isArray(c.children)) {
+        const backupInSvg = inSvg;
+        const backupInNotFocusable = inNotFocusable;
+        if (c.tag === "svg") {
+            inSvg = true;
+        } else if (inSvg && c.tag === "foreignObject") inSvg = false;
+        if (inNotFocusable && focusRootTop === c)
+            inNotFocusable = false;
+        selectedUpdate(<IBobrilCacheNode[]>c.children, <Element>c.element || createInto, c.element != null ? null : createBefore);
+        inSvg = backupInSvg;
+        inNotFocusable = backupInNotFocusable;
+    }
+    pushUpdateEverytimeCallback(c);
+}
 export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node | null, deepness: number, inSelectedUpdate?: boolean): IBobrilCacheNode {
     var component = n.component;
-    var backupInSvg = inSvg;
-    var backupInNotFocusable = inNotFocusable;
     var bigChange = false;
     var ctx = c.ctx;
     if (component && ctx != null) {
+        let locallyInvalidated = false;
         if ((<any>ctx)[ctxInvalidated] === frameCounter) {
             deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
+            locallyInvalidated = true;
         }
         if (component.id !== c.component.id) {
             bigChange = true;
@@ -964,26 +987,15 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             currentCtx = ctx;
             if (c.parent != undefined)
                 ctx.cfg = findCfg(c.parent);
-            if (beforeRenderCallback !== emptyBeforeRenderCallback)
-                beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange) {
-                    currentCtx = undefined;
-                    if (isArray(c.children)) {
-                        if (c.tag === "svg") {
-                            inSvg = true;
-                        } else if (inSvg && c.tag === "foreignObject") inSvg = false;
-                        if (inNotFocusable && focusRootTop === c)
-                            inNotFocusable = false;
-                        selectedUpdate(<IBobrilCacheNode[]>c.children, <Element>c.element || createInto, c.element != null ? null : createBefore);
-                        inSvg = backupInSvg;
-                        inNotFocusable = backupInNotFocusable;
-                    }
-                    pushUpdateEverytimeCallback(c);
+                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange && !locallyInvalidated) {
+                    finishUpdateNodeWithoutChange(c, createInto, createBefore);
                     return c;
                 }
             (<any>ctx).data = n.data || {};
             c.component = component;
+            if (beforeRenderCallback !== emptyBeforeRenderCallback)
+                beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
             if (component.render) {
                 n = assign({}, n); // need to clone me because it should not be modified for next updates
                 component.render(ctx, n, c);
@@ -1002,6 +1014,12 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
     var newChildren = n.children;
     var cachedChildren = c.children;
     var tag = n.tag;
+    if (tag === "-") {
+        finishUpdateNodeWithoutChange(c, createInto, createBefore);
+        return c;
+    }
+    const backupInSvg = inSvg;
+    const backupInNotFocusable = inNotFocusable;
     if (isNumber(newChildren)) {
         newChildren = "" + newChildren;
     }
@@ -1666,20 +1684,15 @@ function update(time: number) {
 
 var rootIds: string[] | undefined;
 
-interface RootCtx extends IBobrilCtx { c: IBobrilChildren };
-
 const RootComponent = createVirtualComponent<IBobrilRoot>({
-    init(ctx: RootCtx) {
+    render(ctx: IBobrilCtx, me: IBobrilNode) {
         const r = (ctx.data as IBobrilRoot);
-        ctx.c = r.f(r);
-    },
-    shouldChange(ctx: RootCtx) {
-        const r = (ctx.data as IBobrilRoot);
-        ctx.c = r.f(r);
-        return ctx.c !== undefined;
-    },
-    render(ctx: RootCtx, me: IBobrilNode) {
-        me.children = ctx.c;
+        let c = r.f(r);
+        if (c === undefined) {
+            me.tag = "-"; // Skip render when root factory returns undefined
+        } else {
+            me.children = c;
+        }
     }
 });
 
