@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.3.1
+--
+
+Fix TSX definitions.
+
 6.3.0
 --
 
