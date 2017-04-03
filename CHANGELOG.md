@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.3.2
+--
+
+Fixed rare crash with input element without component.
+
 6.3.1
 --
 

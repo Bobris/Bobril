@@ -181,6 +181,7 @@
             }
             var s = ca[i];
             if (s == null || typeof s === "boolean" || s === '') {
+                // skip
             }
             else if (typeof s === "string") {
                 var sd = allStyles[s];

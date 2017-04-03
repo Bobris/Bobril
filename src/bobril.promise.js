@@ -21,6 +21,7 @@
                 }
                 callbacks.push(callback);
             };
+            // Browsers that support postMessage
         }
         else if (!window.setImmediate && window.postMessage && window.addEventListener) {
             var MESSAGE_PREFIX = "basap" + Math.random(), hasPostMessage = false;
@@ -38,6 +39,7 @@
                     window.postMessage(MESSAGE_PREFIX, "*");
                 }
             };
+            // IE browsers without postMessage
         }
         else if (!window.setImmediate && onreadystatechange in document.createElement('script')) {
             var scriptEl;
@@ -54,6 +56,7 @@
                     document.body.appendChild(scriptEl);
                 }
             };
+            // All other browsers
         }
         else {
             var timeout;

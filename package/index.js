@@ -2280,8 +2280,10 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
         prevSetValueCallback(el, node, newValue, oldValue);
         return;
     }
-    if (node.ctx === undefined)
+    if (node.ctx === undefined) {
         node.ctx = { me: node };
+        node.component = {};
+    }
     if (oldValue === undefined) {
         node.ctx[bValue] = newValue;
     }

@@ -44,7 +44,10 @@
             prevSetValueCallback(el, node, newValue, oldValue);
             return;
         }
-        if (node.ctx === undefined) node.ctx = {};
+        if (node.ctx === undefined) {
+            node.ctx = { me: node };
+            node.component = {};
+        }
         if (oldValue === undefined) {
             (<any>node.ctx)[bvalue] = newValue;
         }
@@ -216,7 +219,7 @@
         if (f) emitOnChange(ev, <Node>f.element, f);
         return false;
     }
-    
+
     // click here must have lower priority (higher number) over mouse handlers
     var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
     for (var i = 0; i < events.length; i++)

@@ -93,7 +93,8 @@
             "click", "dblclick", "drag", "dragend",
             "dragenter", "dragleave", "dragover", "dragstart",
             "drop", "mousedown", "mousemove", "mouseout",
-            "mouseover", "mouseup", "mousewheel", "scroll", "wheel"];
+            "mouseover", "mouseup", "mousewheel", "scroll", "wheel"
+        ];
         for (i = 0; i < mouseEvents.length; ++i) {
             addEvent(mouseEvents[i], 1, pointerThroughIE);
         }

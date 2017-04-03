@@ -104,6 +104,8 @@ interface IBobrilStatic {
     flatten(a:any|any[]): any[];
 	// merged component methods calls methods from c1 and if they don't return trueish value it continue with calling c2 method
     mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent;
+    // call imidiate render
+    syncUpdate(): void;
 }
 
 interface IBobrilAttributes {

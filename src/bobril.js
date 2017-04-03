@@ -326,6 +326,7 @@ b = (function (window, document) {
         else if (tag === "/") {
             var htmltext = children;
             if (htmltext === "") {
+                // nothing needs to be created
             }
             else if (createBefore == null) {
                 var before = createInto.lastChild;
@@ -634,6 +635,7 @@ b = (function (window, document) {
         var cachedChildren = c.children;
         var tag = n.tag;
         if (bigChange || (component && ctx == null)) {
+            // it is big change of component.id or old one was not even component => recreate
         }
         else if (tag === "/") {
             if (c.tag === "/" && cachedChildren === newChildren) {
@@ -1413,7 +1415,7 @@ b = (function (window, document) {
         return function () {
             var params = [];
             for (var _i = 0; _i < arguments.length; _i++) {
-                params[_i - 0] = arguments[_i];
+                params[_i] = arguments[_i];
             }
             var result = f1.apply(_this, params);
             if (result)

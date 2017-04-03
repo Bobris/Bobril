@@ -2440,7 +2440,10 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, new
         prevSetValueCallback(el, node, newValue, oldValue);
         return;
     }
-    if (node.ctx === undefined) node.ctx = { me: node };
+    if (node.ctx === undefined) {
+        node.ctx = { me: node };
+        node.component = {};
+    }
     if (oldValue === undefined) {
         (<any>node.ctx)[bValue] = newValue;
     }
