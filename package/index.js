@@ -845,14 +845,6 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             currentCtx = undefined;
         }
     }
-    if (DEBUG) {
-        if (!((n.ref == null && c.ref == null) ||
-            ((n.ref != null && c.ref != null && (isFunction(n.ref) || isFunction(c.ref) ||
-                n.ref[0] === c.ref[0] && n.ref[1] === c.ref[1]))))) {
-            if (window.console && console.warn)
-                console.warn("ref changed in child in update");
-        }
-    }
     var newChildren = n.children;
     var cachedChildren = c.children;
     var tag = n.tag;

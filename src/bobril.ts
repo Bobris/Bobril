@@ -618,13 +618,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 c.cfg = n.cfg;
             }
         }
-        if (DEBUG) {
-            if (!((n.ref == null && c.ref == null) ||
-                ((n.ref != null && c.ref != null && (typeof n.ref === "function" || typeof c.ref === "function" ||
-                    (<[IBobrilCtx, string]>n.ref)[0] === (<[IBobrilCtx, string]>c.ref)[0] && (<[IBobrilCtx, string]>n.ref)[1] === (<[IBobrilCtx, string]>c.ref)[1]))))) {
-                if (window.console && console.warn) console.warn("ref changed in child in update");
-            }
-        }
         var newChildren = n.children;
         var cachedChildren = c.children;
         var tag = n.tag;

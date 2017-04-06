@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+6.3.3
+--
+
+Removed useless warning message about change of "ref" in updateNode. It actually just made confusion than any help.
+
 6.3.2
 --
 
