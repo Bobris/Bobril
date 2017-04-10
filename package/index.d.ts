@@ -19,7 +19,7 @@ export interface IBobrilRoot {
     n: IBobrilCacheNode | undefined;
 }
 export declare type ICtxClass = {
-    new (): BobrilCtx;
+    new <TData>(data?: TData, me?: IBobrilCacheNode): BobrilCtx<TData>;
 };
 export declare type IBobrilRoots = {
     [id: string]: IBobrilRoot;
@@ -115,10 +115,10 @@ export interface IBobrilCtx {
     };
     disposables?: IDisposableLike[];
 }
-export declare class BobrilCtx implements IBobrilCtx {
-    constructor();
+export declare class BobrilCtx<TData> implements IBobrilCtx {
+    constructor(data?: TData, me?: IBobrilCacheNode);
     $bobxCtx: object | undefined;
-    data: any;
+    data: TData;
     me: IBobrilCacheNode;
     cfg?: any;
     refs?: {
@@ -172,6 +172,7 @@ export declare const enum RenderPhase {
 }
 export declare function setBeforeRender(callback: (node: IBobrilNode, phase: RenderPhase) => void): (node: IBobrilNode, phase: RenderPhase) => void;
 export declare function setBeforeFrame(callback: () => void): () => void;
+export declare function setReallyBeforeFrame(callback: () => void): () => void;
 export declare function setAfterFrame(callback: (root: IBobrilCacheChildren | null) => void): (root: IBobrilCacheChildren | null) => void;
 export declare function syncUpdate(): void;
 export declare function deferSyncUpdate(): void;

@@ -3,9 +3,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
 var BobrilCtx = (function () {
-    function BobrilCtx() {
-        this.data = undefined;
-        this.me = undefined;
+    function BobrilCtx(data, me) {
+        this.data = data;
+        this.me = me;
         this.cfg = undefined;
         this.refs = undefined;
         this.disposables = undefined;
@@ -443,13 +443,15 @@ function createNode(n, parentNode, createInto, createBefore) {
     if (component) {
         var ctx;
         if (component.ctxClass) {
-            ctx = new component.ctxClass();
-            ctx.me = c;
+            ctx = new component.ctxClass(c.data || {}, c);
+            if (ctx.data === undefined)
+                ctx.data = c.data || {};
+            if (ctx.me === undefined)
+                ctx.me = c;
         }
         else {
-            ctx = { data: undefined, me: c, cfg: undefined };
+            ctx = { data: c.data || {}, me: c, cfg: undefined };
         }
-        ctx.data = c.data || {};
         ctx.cfg = findCfg(parentNode);
         c.ctx = ctx;
         currentCtx = ctx;
@@ -1468,6 +1470,7 @@ function selectedUpdate(cache, element, createBefore) {
 var emptyBeforeRenderCallback = function () { };
 var beforeRenderCallback = emptyBeforeRenderCallback;
 var beforeFrameCallback = function () { };
+var reallyBeforeFrameCallback = function () { };
 var afterFrameCallback = function () { };
 function setBeforeRender(callback) {
     var res = beforeRenderCallback;
@@ -1481,6 +1484,12 @@ function setBeforeFrame(callback) {
     return res;
 }
 exports.setBeforeFrame = setBeforeFrame;
+function setReallyBeforeFrame(callback) {
+    var res = reallyBeforeFrameCallback;
+    reallyBeforeFrameCallback = callback;
+    return res;
+}
+exports.setReallyBeforeFrame = setReallyBeforeFrame;
 function setAfterFrame(callback) {
     var res = afterFrameCallback;
     afterFrameCallback = callback;
@@ -1541,6 +1550,7 @@ var RootComponent = createVirtualComponent({
 function internalUpdate(time) {
     renderFrameBegin = exports.now();
     initEvents();
+    reallyBeforeFrameCallback();
     frameCounter++;
     ignoringShouldChange = nextIgnoreShouldChange;
     nextIgnoreShouldChange = false;

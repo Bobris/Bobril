@@ -169,7 +169,7 @@ export interface IBobrilCtx {
 
 export class BobrilCtx<TData> implements IBobrilCtx {
     constructor(data?: TData, me?: IBobrilCacheNode) {
-        this.data = data;
+        this.data = data!;
         (this as any).me = me;
         this.cfg = undefined;
         this.refs = undefined;
@@ -622,8 +622,8 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
         var ctx: IBobrilCtx;
         if (component.ctxClass) {
             ctx = new component.ctxClass(c.data || {}, c);
-            ctx.data = ctx.data || c.data || {};
-            ctx.me = ctx.me || c;
+            if (ctx.data === undefined) ctx.data = c.data || {};
+            if (ctx.me === undefined) ctx.me = c;
         } else {
             ctx = { data: c.data || {}, me: c, cfg: undefined };
         }
@@ -1616,6 +1616,7 @@ export const enum RenderPhase {
 const emptyBeforeRenderCallback = () => { };
 var beforeRenderCallback: (node: IBobrilNode, phase: RenderPhase) => void = emptyBeforeRenderCallback;
 var beforeFrameCallback: () => void = () => { };
+var reallyBeforeFrameCallback: () => void = () => { };
 var afterFrameCallback: (root: IBobrilCacheChildren | null) => void = () => { };
 
 export function setBeforeRender(callback: (node: IBobrilNode, phase: RenderPhase) => void): (node: IBobrilNode, phase: RenderPhase) => void {
@@ -1627,6 +1628,12 @@ export function setBeforeRender(callback: (node: IBobrilNode, phase: RenderPhase
 export function setBeforeFrame(callback: () => void): () => void {
     var res = beforeFrameCallback;
     beforeFrameCallback = callback;
+    return res;
+}
+
+export function setReallyBeforeFrame(callback: () => void): () => void {
+    var res = reallyBeforeFrameCallback;
+    reallyBeforeFrameCallback = callback;
     return res;
 }
 
@@ -1692,6 +1699,7 @@ const RootComponent = createVirtualComponent<IBobrilRoot>({
 function internalUpdate(time: number) {
     renderFrameBegin = now();
     initEvents();
+    reallyBeforeFrameCallback();
     frameCounter++;
     ignoringShouldChange = nextIgnoreShouldChange;
     nextIgnoreShouldChange = false;

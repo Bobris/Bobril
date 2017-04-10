@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.0.0
+--
+
+BobrilCtx is now generic and also Bobril pass data and me to its constructor. Added reallyBeforeFrame callback where you can invalidate still same frame.
+
 6.3.3
 --
 
