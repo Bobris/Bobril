@@ -26,7 +26,7 @@ export interface IBobrilRoot {
     n: IBobrilCacheNode | undefined;
 }
 
-export type ICtxClass = { new (): BobrilCtx; };
+export type ICtxClass = { new <TData>(data?: TData, me?: IBobrilCacheNode): BobrilCtx<TData>; };
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
 
@@ -167,17 +167,17 @@ export interface IBobrilCtx {
     disposables?: IDisposableLike[];
 }
 
-export class BobrilCtx implements IBobrilCtx {
-    constructor() {
-        this.data = undefined;
-        (this as any).me = undefined;
+export class BobrilCtx<TData> implements IBobrilCtx {
+    constructor(data?: TData, me?: IBobrilCacheNode) {
+        this.data = data;
+        (this as any).me = me;
         this.cfg = undefined;
         this.refs = undefined;
         this.disposables = undefined;
         this.$bobxCtx = undefined;
     }
     $bobxCtx: object | undefined;
-    data: any;
+    data: TData;
     me: IBobrilCacheNode;
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode | null };
@@ -621,12 +621,12 @@ export function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode | undefi
     if (component) {
         var ctx: IBobrilCtx;
         if (component.ctxClass) {
-            ctx = new component.ctxClass();
-            ctx.me = c;
+            ctx = new component.ctxClass(c.data || {}, c);
+            ctx.data = ctx.data || c.data || {};
+            ctx.me = ctx.me || c;
         } else {
-            ctx = { data: undefined, me: c, cfg: undefined };
+            ctx = { data: c.data || {}, me: c, cfg: undefined };
         }
-        ctx.data = c.data || {};
         ctx.cfg = findCfg(parentNode);
         c.ctx = ctx;
         currentCtx = ctx;
