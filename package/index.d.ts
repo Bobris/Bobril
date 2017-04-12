@@ -315,13 +315,13 @@ export interface IDndCtx {
     pointerid: number;
     data: any;
     targetCtx: any;
-    dragView: any;
+    dragView: ((dnd: IDndCtx) => IBobrilChildren) | undefined;
     destroy(): void;
 }
 export interface IDndStartCtx extends IDndCtx {
     addData(type: string, data: any): boolean;
     setEnabledOps(ops: DndEnabledOps): void;
-    setDragNodeView(view: (dnd: IDndCtx) => IBobrilNode): void;
+    setDragNodeView(view: (dnd: IDndCtx) => IBobrilChildren): void;
 }
 export interface IDndOverCtx extends IDndCtx {
     setOperation(operation: DndOp): void;

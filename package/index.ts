@@ -3610,7 +3610,7 @@ export interface IDndCtx {
 export interface IDndStartCtx extends IDndCtx {
     addData(type: string, data: any): boolean;
     setEnabledOps(ops: DndEnabledOps): void;
-    setDragNodeView(view: (dnd: IDndCtx) => IBobrilNode): void;
+    setDragNodeView(view: (dnd: IDndCtx) => IBobrilChildren): void;
 }
 
 export interface IDndOverCtx extends IDndCtx {
