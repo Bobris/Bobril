@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.1.0
+--
+
+Loosened type definition for setDragNodeView to allow any IBobrilChildren as Dnd view.
+
 7.0.0
 --
 
@@ -133,7 +138,7 @@ Better workaround for IE onClick pointerEvents none. Fix TS 2.1 compilation erro
 --
 
 BREAKING CHANGE
---
+-
 
 Method `convertPointFromPageToNode` was renamed to `convertPointFromClientToNode` - it did correct transformation but it was needed to correct by window scroll. Now you need just pass x,y from mouse event (which always where in Client coordinates) and it will be converted correctly in all cases.
 This method was used rarely and even in example it was used wrongly. So I don't expect breaking existing apps, or complex fixing.
@@ -144,7 +149,7 @@ This method was used rarely and even in example it was used wrongly. So I don't 
 Fixes
 -
 
-Workaround for IE10 pointer events not triggeing over body/html without focus.
+Workaround for IE10 pointer events not triggering over body/html without focus.
 
 4.49.1
 --
@@ -246,7 +251,7 @@ Make it again correctly strict. Old PhantomJs tests pass again.
 New features
 -
 
-Exported setBeforeInit to window.b so bobril-g11n could be dynamicaly linked to Bobril. This allows to reuse bobril-g11n also in bobril native.
+Exported setBeforeInit to window.b so bobril-g11n could be dynamically linked to Bobril. This allows to reuse bobril-g11n also in bobril native.
 
 4.43.0
 --
@@ -277,7 +282,7 @@ New features
 Fixed
 -
 
-Dynamicaly created image has now backgroundPosition zero.
+Dynamically created image has now backgroundPosition zero.
 
 4.41.1
 --
@@ -307,6 +312,6 @@ Background position for sprite is set every time, so it cannot be wrongly inheri
 New Features
 -
 
-New component function `postUpdateDomEverytime` which if exists is called in every frame regardles shouldUpdate or local invalidate.
+New component function `postUpdateDomEverytime` which if exists is called in every frame regardless shouldUpdate or local invalidate.
 When both function `postUpdateDom` and `postUpdateDomEverytime` exists then they are called in this order. In all cases from children to parent order (nothing changed).
-Usecase for this function could be updating layout even-though parent prevented child update with returning `false` from `shouldUpdate`.
+Use case for this function could be updating layout even-though parent prevented child update with returning `false` from `shouldUpdate`.

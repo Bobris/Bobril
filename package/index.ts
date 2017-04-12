@@ -3603,7 +3603,7 @@ export interface IDndCtx {
     pointerid: number;
     data: any;
     targetCtx: any;
-    dragView: any;
+    dragView: ((dnd: IDndCtx) => IBobrilChildren) | undefined;
     destroy(): void;
 }
 
@@ -3641,7 +3641,7 @@ var DndCtx = function (this: IDndCtx, pointerId: number) {
     this.cursor = null;
     this.overNode = undefined;
     this.targetCtx = null;
-    this.dragView = null;
+    this.dragView = undefined;
     this.startX = 0;
     this.startY = 0;
     this.distanceToStart = 10;
@@ -3678,7 +3678,7 @@ var DndComp: IBobrilComponent = {
         var dnd: IDndCtx = ctx.data;
         me.tag = "div";
         me.style = { position: "absolute", left: dnd.x, top: dnd.y };
-        me.children = (<any>dnd).dragView(dnd);
+        me.children = dnd.dragView!(dnd);
     }
 };
 
@@ -3704,7 +3704,7 @@ var DndRootComp: IBobrilComponent = {
         for (var i = 0; i < dnds.length; i++) {
             var dnd = dnds[i];
             if (dnd.beforeDrag) continue;
-            if ((<any>dnd).dragView != null && (dnd.x != 0 || dnd.y != 0)) {
+            if (dnd.dragView != null && (dnd.x != 0 || dnd.y != 0)) {
                 res.push({ key: "" + dnd.id, data: dnd, component: DndComp });
             }
         }
@@ -3731,7 +3731,7 @@ dndProto.setOperation = function (this: IDndCtx, operation: DndOp): void {
     this.operation = operation;
 }
 
-dndProto.setDragNodeView = function (this: IDndCtx, view: (dnd: IDndCtx) => IBobrilNode): void {
+dndProto.setDragNodeView = function (this: IDndCtx, view: ((dnd: IDndCtx) => IBobrilChildren) | undefined): void {
     this.dragView = view;
 }
 
