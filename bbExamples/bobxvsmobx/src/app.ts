@@ -106,15 +106,102 @@ function noneClassObservableChange() {
     console.log(counter.c);
 }
 
-mobxObservableChange();
-bobxObservableChange();
-noneObservableChange();
-mobxClassObservableChange();
-bobxClassObservableChange();
-noneClassObservableChange();
-mobxObservableChange();
-bobxObservableChange();
-noneObservableChange();
-mobxClassObservableChange();
-bobxClassObservableChange();
-noneClassObservableChange();
+function mobxArrayPush() {
+    console.time("Mobx push 1000 empty objects into array");
+    let a = mobx.observable([]);
+    for (let i = 0; i < 1000; i++) {
+        a.push({ b: i });
+    }
+    console.timeEnd("Mobx push 1000 empty objects into array");
+}
+
+function bobxArrayPush() {
+    console.time("Bobx push 1000 empty objects into array");
+    let a = bobx.observable([]);
+    for (let i = 0; i < 1000; i++) {
+        a.push({ b: i });
+    }
+    console.timeEnd("Bobx push 1000 empty objects into array");
+}
+
+function noneArrayPush() {
+    console.time("None push 1000 empty objects into array");
+    let a = [];
+    for (let i = 0; i < 1000; i++) {
+        a.push({ b: i });
+    }
+    console.timeEnd("None push 1000 empty objects into array");
+}
+
+function mobxComputed() {
+    console.time("Mobx computed +1");
+    class C {
+        @mobx.observable a: number;
+        @mobx.observable b: number;
+        @mobx.computed get sum() { return this.a + this.b; }
+    }
+    let c = new C();
+    c.a = 1;
+    c.b = 2;
+    let s = 0;
+    for (let i = 0; i < 1000; i++) {
+        c.a = i;
+        s += c.sum;
+    }
+    console.timeEnd("Mobx computed +1");
+    console.log(s);
+}
+
+function bobxComputed() {
+    console.time("Bobx computed +1");
+    class C {
+        @bobx.observable a: number;
+        @bobx.observable b: number;
+        @bobx.computed get sum() { return this.a + this.b; }
+    }
+    let c = new C();
+    c.a = 1;
+    c.b = 2;
+    let s = 0;
+    for (let i = 0; i < 1000; i++) {
+        c.a = i;
+        s += c.sum;
+    }
+    console.timeEnd("Bobx computed +1");
+    console.log(s);
+}
+
+function noneComputed() {
+    console.time("None computed +1");
+    class C {
+        a: number;
+        b: number;
+        get sum() { return this.a + this.b; }
+    }
+    let c = new C();
+    c.a = 1;
+    c.b = 2;
+    let s = 0;
+    for (let i = 0; i < 1000; i++) {
+        c.a = i;
+        s += c.sum;
+    }
+    console.timeEnd("None computed +1");
+    console.log(s);
+}
+
+noneComputed();
+bobxComputed();
+mobxComputed();
+noneComputed();
+bobxComputed();
+mobxComputed();
+//noneArrayPush();
+//bobxArrayPush();
+//mobxArrayPush();
+//mobxObservableChange();
+//bobxObservableChange();
+//noneObservableChange();
+//mobxClassObservableChange();
+//bobxClassObservableChange();
+//noneClassObservableChange();

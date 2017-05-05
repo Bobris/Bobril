@@ -6,8 +6,8 @@
   },
   "dependencies": {
     "bobril": "*",
-    "bobx": "^0.5.0",
-    "mobx": "^3.1.0"
+    "bobx": "*",
+    "mobx": "*"
   },
   "scripts": {
     "test": "bb test"
