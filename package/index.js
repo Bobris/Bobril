@@ -1,5 +1,5 @@
-// Bobril.Core
 "use strict";
+// Bobril.Core
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
 var BobrilCtx = (function () {
@@ -750,6 +750,8 @@ function vdomPath(n) {
     for (j = 0; j < rootElements.length; j++) {
         if (n === rootElements[j]) {
             var rn = roots[rootIds[j]].n;
+            if (rn === undefined)
+                continue;
             var findResult = nodeContainsNode(rn, currentNode, res.length, res);
             if (findResult !== undefined) {
                 currentCacheArray = findResult;
