@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.1.2
+--
+
+Fixed crash when combining Bobril with Angular and drag and drop and Angular input loosing focus.
+
 7.1.0
 --
 
