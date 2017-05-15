@@ -2733,6 +2733,7 @@ const BustDistance = 50;
 let ownerCtx: any = null;
 let invokingOwner: boolean;
 const onClickText = "onClick";
+const onDoubleClickText = "onDoubleClick";
 
 // PureFuncs: isMouseOwner, isMouseOwnerEvent
 
@@ -3068,6 +3069,27 @@ function bustingPointerMove(ev: IBobrilPointerEvent, target: Node, node: IBobril
     return false;
 }
 
+let clickingSpreeStart: number = 0;
+let clickingSpreeCount: number = 0;
+
+function shouldPreventClickingSpree(clickCount: number): boolean {
+    if (clickingSpreeCount == 0)
+        return false;
+    let n = now();
+    if (n < clickingSpreeStart + 1000 && clickCount >= clickingSpreeCount) {
+        clickingSpreeStart = n;
+        clickingSpreeCount = clickCount;
+        return true;
+    }
+    clickingSpreeCount = 0;
+    return false;
+}
+
+export function preventClickingSpree() {
+    clickingSpreeCount = 2;
+    clickingSpreeStart = now();
+}
+
 function bustingPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCacheNode): boolean {
     delete pointersDown[ev.id];
     if (firstPointerDown == ev.id) {
@@ -3076,6 +3098,7 @@ function bustingPointerUp(ev: IBobrilPointerEvent, target: Node, node: IBobrilCa
         if (ev.type == BobrilPointerType.Touch && !tapCanceled) {
             if (now() - firstPointerDownTime < TapShouldBeShorterThanMs) {
                 emitEvent("!PointerCancel", ev, target, node);
+                shouldPreventClickingSpree(1);
                 var handled = invokeMouseOwner(onClickText, ev) || (bubble(node, onClickText, ev) != null);
                 var delay = (ieVersion()) ? MaxBustDelayForIE : MaxBustDelay;
                 toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
@@ -3152,7 +3175,9 @@ function createHandler(handlerName: string, allButtons?: boolean) {
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
         let param: IBobrilMouseEvent = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail || 1 };
-        if (invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
+        if (handlerName == onDoubleClickText)
+            param.count = 2;
+        if (shouldPreventClickingSpree(param.count) || invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
             preventDefault(ev);
             return true;
         }
@@ -3192,7 +3217,7 @@ addEvent5("selectstart", handleSelectStart);
 
 // click must have higher priority over onchange detection
 addEvent5("^click", createHandler(onClickText));
-addEvent5("^dblclick", createHandler("onDoubleClick"));
+addEvent5("^dblclick", createHandler(onDoubleClickText));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 
 let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
@@ -4718,7 +4743,7 @@ export let transitionRunCount = 1;
 
 export function runTransition(transition: IRouteTransition): void {
     transitionRunCount++;
-
+    preventClickingSpree();
     if (currentTransition != null) {
         nextTransition = transition;
         return;

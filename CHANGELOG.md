@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.2.0
+--
+
+New feature to stop user clicking spree when wanted. Automatically on route change. Think of something on single click changing route so fast that user double click is already handled by new route.
+
 7.1.2
 --
 

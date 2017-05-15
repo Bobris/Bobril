@@ -2548,6 +2548,7 @@ var BustDistance = 50;
 var ownerCtx = null;
 var invokingOwner;
 var onClickText = "onClick";
+var onDoubleClickText = "onDoubleClick";
 // PureFuncs: isMouseOwner, isMouseOwnerEvent
 function isMouseOwner(ctx) {
     return ownerCtx === ctx;
@@ -2866,6 +2867,25 @@ function bustingPointerMove(ev, target, node) {
     }
     return false;
 }
+var clickingSpreeStart = 0;
+var clickingSpreeCount = 0;
+function shouldPreventClickingSpree(clickCount) {
+    if (clickingSpreeCount == 0)
+        return false;
+    var n = exports.now();
+    if (n < clickingSpreeStart + 1000 && clickCount >= clickingSpreeCount) {
+        clickingSpreeStart = n;
+        clickingSpreeCount = clickCount;
+        return true;
+    }
+    clickingSpreeCount = 0;
+    return false;
+}
+function preventClickingSpree() {
+    clickingSpreeCount = 2;
+    clickingSpreeStart = exports.now();
+}
+exports.preventClickingSpree = preventClickingSpree;
 function bustingPointerUp(ev, target, node) {
     delete pointersDown[ev.id];
     if (firstPointerDown == ev.id) {
@@ -2874,6 +2894,7 @@ function bustingPointerUp(ev, target, node) {
         if (ev.type == 1 /* Touch */ && !tapCanceled) {
             if (exports.now() - firstPointerDownTime < TapShouldBeShorterThanMs) {
                 emitEvent("!PointerCancel", ev, target, node);
+                shouldPreventClickingSpree(1);
                 var handled = invokeMouseOwner(onClickText, ev) || (bubble(node, onClickText, ev) != null);
                 var delay = (ieVersion()) ? MaxBustDelayForIE : MaxBustDelay;
                 toBust.push([ev.x, ev.y, exports.now() + delay, handled ? 1 : 0]);
@@ -2946,7 +2967,9 @@ function createHandler(handlerName, allButtons) {
         if (!allButtons && button !== 1)
             return false;
         var param = { x: ev.clientX, y: ev.clientY, button: button, shift: ev.shiftKey, ctrl: ev.ctrlKey, alt: ev.altKey, meta: ev.metaKey || false, count: ev.detail || 1 };
-        if (invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
+        if (handlerName == onDoubleClickText)
+            param.count = 2;
+        if (shouldPreventClickingSpree(param.count) || invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
             preventDefault(ev);
             return true;
         }
@@ -2983,7 +3006,7 @@ function handleSelectStart(ev, _target, node) {
 addEvent5("selectstart", handleSelectStart);
 // click must have higher priority over onchange detection
 addEvent5("^click", createHandler(onClickText));
-addEvent5("^dblclick", createHandler("onDoubleClick"));
+addEvent5("^dblclick", createHandler(onDoubleClickText));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 var wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
 function handleMouseWheel(ev, target, node) {
@@ -4377,6 +4400,7 @@ function nextIteration() {
 exports.transitionRunCount = 1;
 function runTransition(transition) {
     exports.transitionRunCount++;
+    preventClickingSpree();
     if (currentTransition != null) {
         nextTransition = transition;
         return;
