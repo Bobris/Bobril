@@ -4809,6 +4809,12 @@ function recolorAndClip(image, colorStr, width, height, left, top) {
 }
 var lastFuncId = 0;
 var funcIdName = "b@funcId";
+function loadImage(url, onload) {
+    var image = new Image();
+    image.crossOrigin = "Anonymous";
+    image.addEventListener("load", function () { return onload(image); });
+    image.src = url;
+}
 function sprite(url, color, width, height, left, top) {
     assert(allStyles[url] === undefined, "Wrong sprite url");
     left = left || 0;
@@ -4836,18 +4842,15 @@ function sprite(url, color, width, height, left, top) {
         dynamicSprites.push(spDef);
         if (imageCache[url] === undefined) {
             imageCache[url] = null;
-            var image = new Image();
-            image.addEventListener("load", function () {
+            loadImage(url, function (image) {
                 imageCache[url] = image;
                 invalidateStyles();
             });
-            image.src = url;
         }
         invalidateStyles();
     }
     else if (width == null || height == null || color != null) {
-        var image = new Image();
-        image.addEventListener("load", function () {
+        loadImage(url, function (image) {
             if (spDef.width == null)
                 spDef.width = image.width;
             if (spDef.height == null)
@@ -4859,7 +4862,6 @@ function sprite(url, color, width, height, left, top) {
             }
             updateSprite(spDef);
         });
-        image.src = url;
     }
     else {
         updateSprite(spDef);

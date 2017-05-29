@@ -5161,6 +5161,14 @@ function recolorAndClip(image: HTMLImageElement, colorStr: string, width: number
 
 let lastFuncId = 0;
 const funcIdName = "b@funcId";
+
+function loadImage(url: string, onload: (image: HTMLImageElement) => void) {
+    var image = new Image();
+    image.crossOrigin = "Anonymous";
+    image.addEventListener("load", () => onload(image));
+    image.src = url;
+}
+
 export function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
     assert(allStyles[url] === undefined, "Wrong sprite url");
     left = left || 0;
@@ -5187,17 +5195,14 @@ export function sprite(url: string, color?: string | (() => string), width?: num
         dynamicSprites.push(<IDynamicSprite>spDef);
         if (imageCache[url] === undefined) {
             imageCache[url] = null;
-            var image = new Image();
-            image.addEventListener("load", () => {
+            loadImage(url, (image) => {
                 imageCache[url] = image;
                 invalidateStyles();
             });
-            image.src = url;
         }
         invalidateStyles();
     } else if (width == null || height == null || color != null) {
-        var image = new Image();
-        image.addEventListener("load", () => {
+        loadImage(url, (image) => {
             if (spDef.width == null) spDef.width = image.width;
             if (spDef.height == null) spDef.height = image.height;
             if (color != null) {
@@ -5207,7 +5212,6 @@ export function sprite(url: string, color?: string | (() => string), width?: num
             }
             updateSprite(spDef);
         });
-        image.src = url;
     } else {
         updateSprite(spDef);
     }

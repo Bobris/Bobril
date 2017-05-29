@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.3.0
+--
+
+Images for sprites are loaded in Anonymous crossOrigin so with CORS they can be used sandboxed iframe. It also means that this image needs to be available without cookies/session.
+
 7.2.0
 --
 
