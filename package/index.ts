@@ -26,7 +26,7 @@ export interface IBobrilRoot {
     n: IBobrilCacheNode | undefined;
 }
 
-export type ICtxClass = { new <TData>(data?: TData, me?: IBobrilCacheNode): BobrilCtx<TData>; };
+export type ICtxClass = { new(data?: any, me?: IBobrilCacheNode): BobrilCtx<any>; };
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
 

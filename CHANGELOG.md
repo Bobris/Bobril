@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.3.1
+--
+
+Fix compilation in TS 2.4.1 when using ICtxClass.
+
 7.3.0
 --
 
