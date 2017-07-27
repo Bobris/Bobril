@@ -4167,7 +4167,7 @@ export interface IRoute {
     name?: string;
     url?: string;
     data?: Object;
-    handler: IRouteHandler;
+    handler?: IRouteHandler;
     keyBuilder?: (params: Params) => string;
     children?: Array<IRoute>;
     isDefault?: boolean;
@@ -4197,7 +4197,7 @@ export interface IRouteConfig {
     name?: string;
     url?: string;
     data?: Object;
-    handler: IRouteHandler;
+    handler?: IRouteHandler;
     keyBuilder?: (params: Params) => string;
 }
 
