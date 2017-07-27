@@ -19,7 +19,7 @@ export interface IBobrilRoot {
     n: IBobrilCacheNode | undefined;
 }
 export declare type ICtxClass = {
-    new (data?: any, me?: IBobrilCacheNode): BobrilCtx<any>;
+    new(data?: any, me?: IBobrilCacheNode): BobrilCtx<any>;
 };
 export declare type IBobrilRoots = {
     [id: string]: IBobrilRoot;
@@ -336,7 +336,7 @@ export interface IRoute {
     name?: string;
     url?: string;
     data?: Object;
-    handler: IRouteHandler;
+    handler?: IRouteHandler;
     keyBuilder?: (params: Params) => string;
     children?: Array<IRoute>;
     isDefault?: boolean;
@@ -360,7 +360,7 @@ export interface IRouteConfig {
     name?: string;
     url?: string;
     data?: Object;
-    handler: IRouteHandler;
+    handler?: IRouteHandler;
     keyBuilder?: (params: Params) => string;
 }
 export declare function routes(root: IRoute | IRoute[]): void;
