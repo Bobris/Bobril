@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.3.2
+--
+
+Allow route handler be undefined, just fix of strict TS 2.4.1 checks, as it had workaround before.
+
 7.3.1
 --
 
