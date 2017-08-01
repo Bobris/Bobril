@@ -218,8 +218,6 @@ function null2undefined<T>(value: T | null | undefined): T | undefined {
     return value === null ? undefined : value;
 }
 
-var hasTextContent = "textContent" in createTextNode("");
-
 export function isNumber(val: any): val is number {
     return typeof val == "number";
 }
@@ -764,11 +762,7 @@ function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: 
         return;
     if (!isArray(ch)) {
         if (isString(ch)) {
-            if (hasTextContent) {
-                createInto.textContent = ch;
-            } else {
-                (<HTMLElement>createInto).innerText = ch;
-            }
+            createInto.textContent = ch;
             return;
         }
         ch = <any>[ch];
@@ -1029,11 +1023,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             if (isString(newChildren) && isString(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     var el = <Element>c.element;
-                    if (hasTextContent) {
-                        el.textContent = newChildren;
-                    } else {
-                        (<HTMLElement>el).nodeValue = newChildren;
-                    }
+                    el.textContent = newChildren;
                     c.children = newChildren;
                 }
             } else {
@@ -1063,11 +1053,7 @@ export function updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Elem
             var el = <Element>c.element;
             if ((isString(newChildren)) && !isArray(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
-                    if (hasTextContent) {
-                        el.textContent = newChildren;
-                    } else {
-                        (<HTMLElement>el).innerText = newChildren;
-                    }
+                    el.textContent = newChildren;
                     cachedChildren = newChildren;
                 }
             } else {

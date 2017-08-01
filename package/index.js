@@ -31,7 +31,6 @@ function createEl(name) {
 function null2undefined(value) {
     return value === null ? undefined : value;
 }
-var hasTextContent = "textContent" in createTextNode("");
 function isNumber(val) {
     return typeof val == "number";
 }
@@ -598,12 +597,7 @@ function createChildren(c, createInto, createBefore) {
         return;
     if (!exports.isArray(ch)) {
         if (isString(ch)) {
-            if (hasTextContent) {
-                createInto.textContent = ch;
-            }
-            else {
-                createInto.innerText = ch;
-            }
+            createInto.textContent = ch;
             return;
         }
         ch = [ch];
@@ -875,12 +869,7 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             if (isString(newChildren) && isString(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     var el = c.element;
-                    if (hasTextContent) {
-                        el.textContent = newChildren;
-                    }
-                    else {
-                        el.nodeValue = newChildren;
-                    }
+                    el.textContent = newChildren;
                     c.children = newChildren;
                 }
             }
@@ -914,12 +903,7 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             var el = c.element;
             if ((isString(newChildren)) && !exports.isArray(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
-                    if (hasTextContent) {
-                        el.textContent = newChildren;
-                    }
-                    else {
-                        el.innerText = newChildren;
-                    }
+                    el.textContent = newChildren;
                     cachedChildren = newChildren;
                 }
             }

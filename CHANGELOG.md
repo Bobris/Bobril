@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.3.3
+--
+
+Small speed up by removing obsolete fallback for textContent on IE8.
+
 7.3.2
 --
 
