@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.4.0
+--
+
+Made withKey function more generic now it accepts IBobrilChildren and not just IBobrilNode.
+
 7.3.3
 --
 

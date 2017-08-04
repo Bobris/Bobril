@@ -5291,9 +5291,15 @@ export function svgRect(x: number, y: number, width: number, height: number): st
 
 // Bobril.helpers
 
-export function withKey(node: IBobrilNode, key: string): IBobrilNode {
-    node.key = key;
-    return node;
+export function withKey(content: IBobrilChildren, key: string): IBobrilNode {
+    if (isObject(content) && !isArray(content)) {
+        content.key = key;
+        return content;
+    }
+    return {
+        key,
+        children: content
+    };
 }
 
 // PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue

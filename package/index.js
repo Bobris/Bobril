@@ -4943,9 +4943,15 @@ function svgRect(x, y, width, height) {
 }
 exports.svgRect = svgRect;
 // Bobril.helpers
-function withKey(node, key) {
-    node.key = key;
-    return node;
+function withKey(content, key) {
+    if (isObject(content) && !exports.isArray(content)) {
+        content.key = key;
+        return content;
+    }
+    return {
+        key: key,
+        children: content
+    };
 }
 exports.withKey = withKey;
 // PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue

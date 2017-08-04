@@ -402,7 +402,7 @@ export declare function asset(path: string): string;
 export declare function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string;
 export declare function svgCircle(x: number, y: number, radius: number): string;
 export declare function svgRect(x: number, y: number, width: number, height: number): string;
-export declare function withKey(node: IBobrilNode, key: string): IBobrilNode;
+export declare function withKey(content: IBobrilChildren, key: string): IBobrilNode;
 export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode;
 export interface IComponentFactory<TData extends Object> {
     (data?: TData, children?: IBobrilChildren): IBobrilNode;
