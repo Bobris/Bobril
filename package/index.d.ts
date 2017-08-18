@@ -403,6 +403,8 @@ export declare function svgPie(x: number, y: number, radiusBig: number, radiusSm
 export declare function svgCircle(x: number, y: number, radius: number): string;
 export declare function svgRect(x: number, y: number, width: number, height: number): string;
 export declare function withKey(content: IBobrilChildren, key: string): IBobrilNode;
+export declare function withRef(node: IBobrilNode, ctx: IBobrilCtx, name: string): IBobrilNode;
+export declare function extendCfg(ctx: IBobrilCtx, propertyName: string, value: any): void;
 export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode;
 export interface IComponentFactory<TData extends Object> {
     (data?: TData, children?: IBobrilChildren): IBobrilNode;

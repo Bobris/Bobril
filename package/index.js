@@ -4954,6 +4954,17 @@ function withKey(content, key) {
     };
 }
 exports.withKey = withKey;
+function withRef(node, ctx, name) {
+    node.ref = [ctx, name];
+    return node;
+}
+exports.withRef = withRef;
+function extendCfg(ctx, propertyName, value) {
+    var c = Object.assign({}, ctx.cfg);
+    c[propertyName] = value;
+    ctx.me.cfg = c;
+}
+exports.extendCfg = extendCfg;
 // PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue
 function styledDiv(children) {
     var styles = [];

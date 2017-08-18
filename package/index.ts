@@ -5302,6 +5302,17 @@ export function withKey(content: IBobrilChildren, key: string): IBobrilNode {
     };
 }
 
+export function withRef(node: IBobrilNode, ctx: IBobrilCtx, name: string): IBobrilNode {
+    node.ref = [ctx, name];
+    return node;
+}
+
+export function extendCfg(ctx: IBobrilCtx, propertyName: string, value: any): void {
+    let c = Object.assign({}, ctx.cfg);
+    c[propertyName] = value;
+    ctx.me.cfg = c;
+}
+
 // PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue
 
 export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
