@@ -1,5 +1,5 @@
-// Bobril.Core
 "use strict";
+// Bobril.Core
 Object.defineProperty(exports, "__esModule", { value: true });
 var BobrilCtx = (function () {
     function BobrilCtx(data, me) {

@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.6.0
+--
+
+Prettier applied on source code.
+
 7.5.0
 --
 

@@ -165,3 +165,4 @@ $RECYCLE.BIN/
 /*.userprefs
 bobril.sublime-project
 bobril.sublime-workspace
+/package/yarn.lock
