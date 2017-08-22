@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.5.0
+--
+
+Added 2 convenience functions withRef and extendCfg.
+
 7.4.0
 --
 

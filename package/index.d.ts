@@ -144,7 +144,7 @@ export declare let assign: {
     <T, U>(target: T, source: U): T & U;
     <T, U, V>(target: T, source1: U, source2: V): T & U & V;
     <T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
-    (target: object, ...sources: any[]): any;
+    (target: any, ...sources: any[]): any;
 };
 export declare function flatten(a: any | any[]): any[];
 export declare function setSetValue(callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void;
@@ -403,6 +403,8 @@ export declare function svgPie(x: number, y: number, radiusBig: number, radiusSm
 export declare function svgCircle(x: number, y: number, radius: number): string;
 export declare function svgRect(x: number, y: number, width: number, height: number): string;
 export declare function withKey(content: IBobrilChildren, key: string): IBobrilNode;
+export declare function withRef(node: IBobrilNode, ctx: IBobrilCtx, name: string): IBobrilNode;
+export declare function extendCfg(ctx: IBobrilCtx, propertyName: string, value: any): void;
 export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode;
 export interface IComponentFactory<TData extends Object> {
     (data?: TData, children?: IBobrilChildren): IBobrilNode;
@@ -428,5 +430,5 @@ export declare const __spread: {
     <T, U>(target: T, source: U): T & U;
     <T, U, V>(target: T, source1: U, source2: V): T & U & V;
     <T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
-    (target: object, ...sources: any[]): any;
+    (target: any, ...sources: any[]): any;
 };
