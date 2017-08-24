@@ -594,7 +594,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var backupInSvg = inSvg;
         var bigChange = false;
         var ctx = c.ctx;
-        if (component && ctx != null) {
+        if (component != null && ctx != null) {
             if ((<any>ctx)[ctxInvalidated] === frameCounter) {
                 deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
             }
@@ -621,8 +621,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var newChildren = n.children;
         var cachedChildren = c.children;
         var tag = n.tag;
-        if (bigChange || (component && ctx == null)) {
-            // it is big change of component.id or old one was not even component => recreate
+        if (bigChange || (component != null && ctx == null) || (component == null && ctx != null)) {
+            // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
         } else if (tag === "/") {
             if (c.tag === "/" && cachedChildren === newChildren) {
                 finishUpdateNode(n, c, component);

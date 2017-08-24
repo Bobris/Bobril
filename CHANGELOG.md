@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.6.1
+--
+
+Major bug fixed in updating VDom node when node with component is changed do simple node, component was not destroyed.
+
 7.6.0
 --
 

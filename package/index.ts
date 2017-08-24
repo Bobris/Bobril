@@ -1090,7 +1090,7 @@ export function updateNode(
   var component = n.component;
   var bigChange = false;
   var ctx = c.ctx;
-  if (component && ctx != null) {
+  if (component != null && ctx != null) {
     let locallyInvalidated = false;
     if ((<any>ctx)[ctxInvalidated] === frameCounter) {
       deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
@@ -1137,8 +1137,12 @@ export function updateNode(
   if (isNumber(newChildren)) {
     newChildren = "" + newChildren;
   }
-  if (bigChange || (component && ctx == null)) {
-    // it is big change of component.id or old one was not even component => recreate
+  if (
+    bigChange ||
+    (component != null && ctx == null) ||
+    (component == null && ctx != null)
+  ) {
+    // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
   } else if (tag === "/") {
     if (c.tag === "/" && cachedChildren === newChildren) {
       finishUpdateNode(n, c, component);
