@@ -1,7 +1,7 @@
 "use strict";
 // Bobril.Core
 Object.defineProperty(exports, "__esModule", { value: true });
-var BobrilCtx = (function () {
+var BobrilCtx = /** @class */ (function () {
     function BobrilCtx(data, me) {
         this.data = data;
         this.me = me;
@@ -3369,7 +3369,7 @@ function nodePagePos(node) {
 }
 exports.nodePagePos = nodePagePos;
 var cachedConvertPointFromClientToNode;
-var CSSMatrix = (function () {
+var CSSMatrix = /** @class */ (function () {
     function CSSMatrix(data) {
         this.data = data;
     }
@@ -4158,7 +4158,7 @@ function compilePattern(pattern) {
         var source = pattern.replace(paramCompileMatcher, function (match, paramName) {
             if (paramName) {
                 paramNames.push(paramName);
-                return "([^/?#]+)";
+                return "([^/]+)";
             }
             else if (match === "*") {
                 paramNames.push("splat");

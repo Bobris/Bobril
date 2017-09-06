@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.6.2
+--
+
+Allow # and ? in router params.
+
 7.6.1
 --
 
