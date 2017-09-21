@@ -15,7 +15,8 @@
         "preserveConstEnums": false,
         "jsx": "react",
         "reactNamespace": "b",
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "types": []
     },
     "include": [
         "**/*"

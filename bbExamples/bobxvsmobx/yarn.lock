@@ -3,15 +3,15 @@
 
 
 bobril@*, bobril@^7.0.0:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-7.1.1.tgz#55a0faa54c13709497930bcd185cca1f50ac552d"
+  version "7.6.2"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-7.6.2.tgz#86bfe18b4d2be7d0c25ed4deb9753866c514e7a2"
 
 bobx@*:
-  version "0.8.1"
-  resolved "https://registry.yarnpkg.com/bobx/-/bobx-0.8.1.tgz#6c8198907cf45ba0b3c56781b5aaeda2470b6361"
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/bobx/-/bobx-0.11.0.tgz#2d17bed82b5fab33cec7abf1a5a4b561b9b27aa1"
   dependencies:
     bobril "^7.0.0"
 
 mobx@*:
-  version "3.1.9"
-  resolved "https://registry.yarnpkg.com/mobx/-/mobx-3.1.9.tgz#ed4af9d874ff6032c7af91fc1b87d9d33122a557"
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/mobx/-/mobx-3.3.0.tgz#1bc1dd7e78547065af04b49bdb7f2098cada47aa"
