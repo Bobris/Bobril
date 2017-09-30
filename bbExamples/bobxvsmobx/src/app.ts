@@ -144,7 +144,7 @@ function mobxComputed() {
     c.a = 1;
     c.b = 2;
     let s = 0;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 100000; i++) {
         c.a = i;
         s += c.sum;
     }
@@ -163,7 +163,7 @@ function bobxComputed() {
     c.a = 1;
     c.b = 2;
     let s = 0;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 100000; i++) {
         c.a = i;
         s += c.sum;
     }
@@ -182,7 +182,7 @@ function noneComputed() {
     c.a = 1;
     c.b = 2;
     let s = 0;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 100000; i++) {
         c.a = i;
         s += c.sum;
     }
@@ -190,18 +190,72 @@ function noneComputed() {
     console.log(s);
 }
 
+function mobxComputedMemoize() {
+    console.time("Mobx computed memoize +1");
+    class C {
+        @mobx.observable a: number;
+        @mobx.observable b: number;
+        @mobx.computed get sum() { return this.a + this.b; }
+    }
+    let c = new C();
+    c.a = 1;
+    c.b = 2;
+    let s = 0;
+    for (let i = 0; i < 100000; i++) {
+        s += c.sum;
+    }
+    console.timeEnd("Mobx computed memoize +1");
+    console.log(s);
+}
+
+function bobxComputedMemoize() {
+    console.time("Bobx computed memoize +1");
+    class C {
+        @bobx.observable a: number;
+        @bobx.observable b: number;
+        @bobx.computed get sum() { return this.a + this.b; }
+    }
+    let c = new C();
+    c.a = 1;
+    c.b = 2;
+    let s = 0;
+    for (let i = 0; i < 100000; i++) {
+        s += c.sum;
+    }
+    console.timeEnd("Bobx computed memoize +1");
+    console.log(s);
+}
+
+function noneComputedMemoize() {
+    console.time("None computed memoize +1");
+    class C {
+        a: number;
+        b: number;
+        get sum() { return this.a + this.b; }
+    }
+    let c = new C();
+    c.a = 1;
+    c.b = 2;
+    let s = 0;
+    for (let i = 0; i < 100000; i++) {
+        s += c.sum;
+    }
+    console.timeEnd("None computed memoize +1");
+    console.log(s);
+}
+
 noneComputed();
 bobxComputed();
 mobxComputed();
-noneComputed();
-bobxComputed();
-mobxComputed();
-//noneArrayPush();
-//bobxArrayPush();
-//mobxArrayPush();
-//mobxObservableChange();
-//bobxObservableChange();
-//noneObservableChange();
-//mobxClassObservableChange();
-//bobxClassObservableChange();
-//noneClassObservableChange();
+noneComputedMemoize();
+bobxComputedMemoize();
+mobxComputedMemoize();
+noneArrayPush();
+bobxArrayPush();
+mobxArrayPush();
+mobxObservableChange();
+bobxObservableChange();
+noneObservableChange();
+mobxClassObservableChange();
+bobxClassObservableChange();
+noneClassObservableChange();

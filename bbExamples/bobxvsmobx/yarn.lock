@@ -7,8 +7,8 @@ bobril@*, bobril@^7.0.0:
   resolved "https://registry.yarnpkg.com/bobril/-/bobril-7.6.2.tgz#86bfe18b4d2be7d0c25ed4deb9753866c514e7a2"
 
 bobx@*:
-  version "0.11.0"
-  resolved "https://registry.yarnpkg.com/bobx/-/bobx-0.11.0.tgz#2d17bed82b5fab33cec7abf1a5a4b561b9b27aa1"
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/bobx/-/bobx-0.12.0.tgz#6f8f806ed0496be350b93979fd1b24d37d16bd03"
   dependencies:
     bobril "^7.0.0"
 
