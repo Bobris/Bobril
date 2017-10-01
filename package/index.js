@@ -21,6 +21,7 @@ function assert(shouldBeTrue, messageIfFalse) {
         throw Error(messageIfFalse || "assertion failed");
 }
 exports.isArray = Array.isArray;
+var emptyComponent = {};
 function createTextNode(content) {
     return document.createTextNode(content);
 }
@@ -865,7 +866,7 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
     }
     if (bigChange ||
         (component != null && ctx == null) ||
-        (component == null && ctx != null)) {
+        (component == null && ctx != null && ctx.me.component !== emptyComponent)) {
         // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
     }
     else if (tag === "/") {
@@ -2331,7 +2332,7 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
     }
     if (node.ctx === undefined) {
         node.ctx = { me: node };
-        node.component = {};
+        node.component = emptyComponent;
     }
     if (oldValue === undefined) {
         node.ctx[bValue] = newValue;

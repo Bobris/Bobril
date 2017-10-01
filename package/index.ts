@@ -238,6 +238,8 @@ function assert(shouldBeTrue: boolean, messageIfFalse?: string) {
 
 export const isArray = Array.isArray;
 
+const emptyComponent = {};
+
 function createTextNode(content: string): Text {
   return document.createTextNode(content);
 }
@@ -1140,7 +1142,7 @@ export function updateNode(
   if (
     bigChange ||
     (component != null && ctx == null) ||
-    (component == null && ctx != null)
+    (component == null && ctx != null && ctx.me.component !== emptyComponent)
   ) {
     // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
   } else if (tag === "/") {
@@ -2960,7 +2962,7 @@ var prevSetValueCallback = setSetValue(
     }
     if (node.ctx === undefined) {
       node.ctx = { me: node };
-      node.component = {};
+      node.component = emptyComponent;
     }
     if (oldValue === undefined) {
       (<any>node.ctx)[bValue] = newValue;

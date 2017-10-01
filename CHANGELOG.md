@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.6.3
+--
+
+Fix recreating input without component (bug introduced in 7.6.1).
+
 7.6.2
 --
 
