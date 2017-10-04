@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.6.4
+--
+
+Bobril.style: Autofix naming of class names to never have digit as first character because it is not valid.
+
 7.6.3
 --
 

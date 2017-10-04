@@ -5021,6 +5021,7 @@ function styleDef(style, pseudo, nameHint) {
 exports.styleDef = styleDef;
 function styleDefEx(parent, style, pseudo, nameHint) {
     if (nameHint && nameHint !== "b-") {
+        nameHint = nameHint.replace(/[^a-z0-9_-]/gi, "_").replace(/^[0-9]/, "_$&");
         if (allNameHints[nameHint]) {
             var counter = 1;
             while (allNameHints[nameHint + counter])
@@ -5073,7 +5074,7 @@ function updateSprite(spDef) {
     invalidateStyles();
 }
 function emptyStyleDef(url) {
-    return styleDef({ width: 0, height: 0 }, undefined, url.replace(/[^a-z0-9_-]/gi, "_"));
+    return styleDef({ width: 0, height: 0 }, undefined, url);
 }
 var rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
 function recolorAndClip(image, colorStr, width, height, left, top) {

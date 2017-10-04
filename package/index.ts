@@ -6176,6 +6176,7 @@ export function styleDefEx(
   nameHint?: string
 ): IBobrilStyleDef {
   if (nameHint && nameHint !== "b-") {
+    nameHint = nameHint.replace(/[^a-z0-9_-]/gi, "_").replace(/^[0-9]/, "_$&");
     if (allNameHints[nameHint]) {
       var counter = 1;
       while (allNameHints[nameHint + counter]) counter++;
@@ -6231,11 +6232,7 @@ function updateSprite(spDef: ISprite): void {
 }
 
 function emptyStyleDef(url: string): IBobrilStyleDef {
-  return styleDef(
-    { width: 0, height: 0 },
-    undefined,
-    url.replace(/[^a-z0-9_-]/gi, "_")
-  );
+  return styleDef({ width: 0, height: 0 }, undefined, url);
 }
 
 const rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
