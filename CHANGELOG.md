@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.6.5
+--
+
+Massively simplified jsx.d.ts. It now works again :-)
+
 7.6.4
 --
 
