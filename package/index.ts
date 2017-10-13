@@ -693,7 +693,7 @@ export function createNode(
     children: n.children,
     component: n.component,
     data: n.data,
-    cfg: n.cfg,
+    cfg: undefined,
     parent: parentNode,
     element: undefined,
     ctx: undefined
@@ -712,7 +712,7 @@ export function createNode(
     } else {
       ctx = { data: c.data || {}, me: c, cfg: undefined };
     }
-    ctx.cfg = findCfg(parentNode);
+    ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg;
     c.ctx = ctx;
     currentCtx = ctx;
     if (component.init) {
@@ -1102,7 +1102,8 @@ export function updateNode(
       bigChange = true;
     } else {
       currentCtx = ctx;
-      if (c.parent != undefined) ctx.cfg = findCfg(c.parent);
+      if (n.cfg !== undefined) ctx.cfg = n.cfg;
+      else ctx.cfg = findCfg(c.parent);
       if (component.shouldChange)
         if (
           !component.shouldChange(ctx, n, c) &&
@@ -1123,7 +1124,6 @@ export function updateNode(
         n = assign({}, n); // need to clone me because it should not be modified for next updates
         component.render(ctx, n, c);
       }
-      c.cfg = n.cfg;
       currentCtx = undefined;
     }
   }

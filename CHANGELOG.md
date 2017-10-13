@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+7.6.6
+--
+
+Fixed propagation of cfg during update. Now it behaves how was described in comment.
+
 7.6.5
 --
 

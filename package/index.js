@@ -435,7 +435,7 @@ function createNode(n, parentNode, createInto, createBefore) {
         children: n.children,
         component: n.component,
         data: n.data,
-        cfg: n.cfg,
+        cfg: undefined,
         parent: parentNode,
         element: undefined,
         ctx: undefined
@@ -457,7 +457,7 @@ function createNode(n, parentNode, createInto, createBefore) {
         else {
             ctx = { data: c.data || {}, me: c, cfg: undefined };
         }
-        ctx.cfg = findCfg(parentNode);
+        ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg;
         c.ctx = ctx;
         currentCtx = ctx;
         if (component.init) {
@@ -831,7 +831,9 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
         }
         else {
             currentCtx = ctx;
-            if (c.parent != undefined)
+            if (n.cfg !== undefined)
+                ctx.cfg = n.cfg;
+            else
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
                 if (!component.shouldChange(ctx, n, c) &&
@@ -848,7 +850,6 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
                 n = exports.assign({}, n); // need to clone me because it should not be modified for next updates
                 component.render(ctx, n, c);
             }
-            c.cfg = n.cfg;
             currentCtx = undefined;
         }
     }
