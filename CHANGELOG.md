@@ -1,6 +1,12 @@
 CHANGELOG
 ===
 
+7.7.0
+--
+
+New feature to allow request images with credentials instead of anonymous context (`setImagesWithCredentials`).
+
+
 7.6.6
 --
 

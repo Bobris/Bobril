@@ -5141,12 +5141,17 @@ function recolorAndClip(image, colorStr, width, height, left, top) {
 }
 var lastFuncId = 0;
 var funcIdName = "b@funcId";
+var imagesWithCredentials = false;
 function loadImage(url, onload) {
     var image = new Image();
-    image.crossOrigin = "Anonymous";
+    image.crossOrigin = imagesWithCredentials ? "use-credentials" : "anonymous";
     image.addEventListener("load", function () { return onload(image); });
     image.src = url;
 }
+function setImagesWithCredentials(value) {
+    imagesWithCredentials = value;
+}
+exports.setImagesWithCredentials = setImagesWithCredentials;
 function sprite(url, color, width, height, left, top) {
     assert(allStyles[url] === undefined, "Wrong sprite url");
     left = left || 0;

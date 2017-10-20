@@ -393,6 +393,7 @@ export declare function selectorStyleDef(selector: string, style: any, pseudo?: 
     [name: string]: any;
 }): void;
 export declare function invalidateStyles(): void;
+export declare function setImagesWithCredentials(value: boolean): void;
 export declare function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
 export declare function setBundlePngPath(path: string): void;
 export declare function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef;

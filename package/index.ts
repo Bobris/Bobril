@@ -6309,12 +6309,17 @@ function recolorAndClip(
 
 let lastFuncId = 0;
 const funcIdName = "b@funcId";
+let imagesWithCredentials = false;
 
 function loadImage(url: string, onload: (image: HTMLImageElement) => void) {
   var image = new Image();
-  image.crossOrigin = "Anonymous";
+  image.crossOrigin = imagesWithCredentials ? "use-credentials" : "anonymous";
   image.addEventListener("load", () => onload(image));
   image.src = url;
+}
+
+export function setImagesWithCredentials(value: boolean) {
+  imagesWithCredentials = value;
 }
 
 export function sprite(
