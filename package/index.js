@@ -438,7 +438,8 @@ function createNode(n, parentNode, createInto, createBefore) {
         cfg: undefined,
         parent: parentNode,
         element: undefined,
-        ctx: undefined
+        ctx: undefined,
+        orig: n
     };
     var backupInSvg = inSvg;
     var backupInNotFocusable = inNotFocusable;
@@ -469,6 +470,10 @@ function createNode(n, parentNode, createInto, createBefore) {
             component.render(ctx, c);
         }
         currentCtx = undefined;
+    }
+    else {
+        if (DEBUG)
+            Object.freeze(n);
     }
     var tag = c.tag;
     if (tag === "-") {
@@ -848,10 +853,29 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
                 beforeRenderCallback(n, inSelectedUpdate ? 2 /* LocalUpdate */ : 1 /* Update */);
             if (component.render) {
                 n = exports.assign({}, n); // need to clone me because it should not be modified for next updates
+                c.orig = n;
+                c.cfg = undefined;
+                if (n.cfg !== undefined)
+                    n.cfg = undefined;
                 component.render(ctx, n, c);
+                if (n.cfg !== undefined) {
+                    if (c.cfg === undefined)
+                        c.cfg = n.cfg;
+                    else
+                        exports.assign(c.cfg, n.cfg);
+                }
             }
             currentCtx = undefined;
         }
+    }
+    else {
+        // In case there is no component and source is same reference it is considered not changed
+        if (c.orig === n) {
+            return c;
+        }
+        c.orig = n;
+        if (DEBUG)
+            Object.freeze(n);
     }
     var newChildren = n.children;
     var cachedChildren = c.children;
@@ -1451,8 +1475,7 @@ function selectedUpdate(cache, element, createBefore) {
         var node = cache[i];
         var ctx = node.ctx;
         if (ctx != null && ctx[ctxInvalidated] === frameCounter) {
-            var cloned = { data: ctx.data, component: node.component };
-            cache[i] = updateNode(cloned, node, element, createBefore, ctx[ctxDeepness], true);
+            cache[i] = updateNode(node.orig, node, element, createBefore, ctx[ctxDeepness], true);
         }
         else if (exports.isArray(node.children)) {
             var backupInSvg = inSvg;
@@ -3528,8 +3551,7 @@ function getTransformationMatrix(element) {
             computedStyle.WebkitTransform ||
             computedStyle.msTransform ||
             computedStyle.MozTransform ||
-            "none")
-            .replace(/^none$/, "matrix(1,0,0,1,0,0)"));
+            "none").replace(/^none$/, "matrix(1,0,0,1,0,0)"));
         transformationMatrix = c.multiply(transformationMatrix);
         x = x.parentNode;
     }
@@ -5341,9 +5363,15 @@ function withRef(node, ctx, name) {
 }
 exports.withRef = withRef;
 function extendCfg(ctx, propertyName, value) {
-    var c = Object.assign({}, ctx.cfg);
-    c[propertyName] = value;
-    ctx.me.cfg = c;
+    var c = ctx.me.cfg;
+    if (c !== undefined) {
+        c[propertyName] = value;
+    }
+    else {
+        c = Object.assign({}, ctx.cfg);
+        c[propertyName] = value;
+        ctx.me.cfg = c;
+    }
 }
 exports.extendCfg = extendCfg;
 // PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue

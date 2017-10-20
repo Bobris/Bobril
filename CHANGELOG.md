@@ -1,6 +1,19 @@
 CHANGELOG
 ===
 
+8.0.0
+--
+
+Breaking Change: (You are most probably are not affected by this)
+
+IBobrilNodes without component are now compared by reference in update and if equal whole update it skipped. It means IBobrilNodes passed into Bobril should be immutable. To prevent such mutation mistakes object is frozen in debug version. It now makes sense to remember constant node trees to enjoy this speed up.
+
+IBobrilCacheNode has new field orig which contains reference to original IBobrilNode.
+
+Local invalidate correctly remembers original pre render node values. This allows style nodes after component factory was called and still use local invalidate.
+
+One more work on cfg improvements. `extendCfg` could be called multiple times.
+
 7.7.0
 --
 

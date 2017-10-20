@@ -105,6 +105,7 @@ export interface IBobrilCacheNode {
     element: Node | Node[] | undefined;
     parent: IBobrilCacheNode | undefined;
     ctx: IBobrilCtx | undefined;
+    orig: IBobrilNode;
 }
 export interface IBobrilCtx {
     data?: any;

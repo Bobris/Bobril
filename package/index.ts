@@ -164,7 +164,7 @@ export interface IBobrilNodeCommon {
   attrs?: IBobrilAttributes;
   children?: IBobrilChildren;
   ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
-  // set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway
+  /// set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway; but better to use `extendCfg`
   cfg?: any;
   component?: IBobrilComponent;
   // Bobril does not touch this, it is completely for user passing custom data to component
@@ -188,6 +188,8 @@ export interface IBobrilCacheNode {
   element: Node | Node[] | undefined;
   parent: IBobrilCacheNode | undefined;
   ctx: IBobrilCtx | undefined;
+  /// Originally created or updated from - used for partial updates
+  orig: IBobrilNode;
 }
 
 export interface IBobrilCtx {
@@ -696,7 +698,8 @@ export function createNode(
     cfg: undefined,
     parent: parentNode,
     element: undefined,
-    ctx: undefined
+    ctx: undefined,
+    orig: n
   };
   var backupInSvg = inSvg;
   var backupInNotFocusable = inNotFocusable;
@@ -724,6 +727,8 @@ export function createNode(
       component.render(ctx, c);
     }
     currentCtx = undefined;
+  } else {
+    if (DEBUG) Object.freeze(n);
   }
   var tag = c.tag;
   if (tag === "-") {
@@ -1122,10 +1127,24 @@ export function updateNode(
         );
       if (component.render) {
         n = assign({}, n); // need to clone me because it should not be modified for next updates
+        c.orig = n;
+        c.cfg = undefined;
+        if (n.cfg !== undefined) n.cfg = undefined;
         component.render(ctx, n, c);
+        if (n.cfg !== undefined) {
+          if (c.cfg === undefined) c.cfg = n.cfg;
+          else assign(c.cfg, n.cfg);
+        }
       }
       currentCtx = undefined;
     }
+  } else {
+    // In case there is no component and source is same reference it is considered not changed
+    if (c.orig === n) {
+      return c;
+    }
+    c.orig = n;
+    if (DEBUG) Object.freeze(n);
   }
   var newChildren = n.children;
   var cachedChildren = c.children;
@@ -1951,9 +1970,8 @@ function selectedUpdate(
     var node = cache[i];
     var ctx = node.ctx;
     if (ctx != null && (<any>ctx)[ctxInvalidated] === frameCounter) {
-      var cloned: IBobrilNode = { data: ctx.data, component: node.component };
       cache[i] = updateNode(
-        cloned,
+        node.orig,
         node,
         element,
         createBefore,
@@ -4372,8 +4390,8 @@ function getTransformationMatrix(element: Node) {
         computedStyle.WebkitTransform ||
         computedStyle.msTransform ||
         computedStyle.MozTransform ||
-        "none")
-        .replace(/^none$/, "matrix(1,0,0,1,0,0)")
+        "none"
+      ).replace(/^none$/, "matrix(1,0,0,1,0,0)")
     );
     transformationMatrix = c.multiply(transformationMatrix);
     x = x.parentNode;
@@ -6563,9 +6581,14 @@ export function extendCfg(
   propertyName: string,
   value: any
 ): void {
-  let c = Object.assign({}, ctx.cfg);
-  c[propertyName] = value;
-  ctx.me.cfg = c;
+  var c = ctx.me.cfg;
+  if (c !== undefined) {
+    c[propertyName] = value;
+  } else {
+    c = Object.assign({}, ctx.cfg);
+    c[propertyName] = value;
+    ctx.me.cfg = c;
+  }
 }
 
 // PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue
