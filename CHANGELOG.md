@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+8.0.1
+--
+
+Fixed regression in 8.0.0 when partially invalidating node it wrongly remember old className, styles or tag.
+
 8.0.0
 --
 

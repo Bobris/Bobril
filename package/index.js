@@ -852,8 +852,8 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             if (beforeRenderCallback !== emptyBeforeRenderCallback)
                 beforeRenderCallback(n, inSelectedUpdate ? 2 /* LocalUpdate */ : 1 /* Update */);
             if (component.render) {
-                n = exports.assign({}, n); // need to clone me because it should not be modified for next updates
                 c.orig = n;
+                n = exports.assign({}, n); // need to clone me because it should not be modified for next updates
                 c.cfg = undefined;
                 if (n.cfg !== undefined)
                     n.cfg = undefined;

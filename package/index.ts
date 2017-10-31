@@ -1126,8 +1126,8 @@ export function updateNode(
           inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update
         );
       if (component.render) {
-        n = assign({}, n); // need to clone me because it should not be modified for next updates
         c.orig = n;
+        n = assign({}, n); // need to clone me because it should not be modified for next updates
         c.cfg = undefined;
         if (n.cfg !== undefined) n.cfg = undefined;
         component.render(ctx, n, c);
