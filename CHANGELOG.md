@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+8.1.0
+--
+
+Made many types generic by data type. And TSX is type safe again.
+
 8.0.1
 --
 

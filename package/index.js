@@ -4388,7 +4388,12 @@ function rootNodeFactory() {
                     res = handler(data);
                 }
                 else {
-                    res = { key: undefined, ref: undefined, data: data, component: handler };
+                    res = {
+                        key: undefined,
+                        ref: undefined,
+                        data: data,
+                        component: handler
+                    };
                 }
                 if (r.keyBuilder)
                     res.key = r.keyBuilder(routeParams);
@@ -5505,8 +5510,6 @@ if (!window.b)
         getDnds: exports.getDnds,
         setBeforeInit: setBeforeInit
     };
-// TSX reactNamespace emulation
-// PureFuncs: createElement
 function createElement(name, props) {
     var children = [];
     for (var i = 2; i < arguments.length; i++) {

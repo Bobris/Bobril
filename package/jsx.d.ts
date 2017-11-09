@@ -1,17 +1,29 @@
-import * as b from './index';
+import * as b from "./index";
 
-declare namespace JSX {
-    type Element = b.IBobrilNode;
+declare global {
+    namespace JSX {
+        type Element<T = any> = b.IBobrilNode<T>;
 
-    interface IntrinsicAttributes {
-        key?: string;
-        ref?: [b.IBobrilCtx, string] | ((node: b.IBobrilCacheNode) => void);
-    }
+        interface ElementAttributesProperty {
+            data: {};
+        }
+        interface ElementChildrenAttribute {
+            children: {};
+        }
 
-    interface IntrinsicClassAttributes<T> {
-    }
+        interface IntrinsicAttributes {
+            key?: string;
+            ref?: [b.IBobrilCtx, string] | ((node: b.IBobrilCacheNode) => void);
+            children?: b.IBobrilChildren;
+        }
 
-    interface IntrinsicElements {
-        [name: string]: any;
+        interface IntrinsicClassAttributes<T> {
+            key?: string;
+            ref?: [b.IBobrilCtx, string] | ((node: b.IBobrilCacheNode) => void);
+        }
+
+        interface IntrinsicElements {
+            [name: string]: any;
+        }
     }
 }

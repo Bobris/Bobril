@@ -1,4 +1,4 @@
-export declare type IBobrilChild = boolean | number | string | IBobrilNode | null | undefined;
+export declare type IBobrilChild<T = any> = boolean | number | string | IBobrilNode<T> | null | undefined;
 export declare type IBobrilChildren = IBobrilChild | IBobrilChildArray | null | undefined;
 export interface IBobrilChildArray extends Array<IBobrilChildren> {
 }
@@ -78,7 +78,7 @@ export interface IBobrilComponent {
     canActivate?(transition: IRouteTransition): IRouteCanResult;
     canDeactivate?(ctx: IBobrilCtx, transition: IRouteTransition): IRouteCanResult;
 }
-export interface IBobrilNodeCommon {
+export interface IBobrilNodeCommon<T = any> {
     tag?: string;
     key?: string;
     className?: string;
@@ -88,9 +88,9 @@ export interface IBobrilNodeCommon {
     ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
     cfg?: any;
     component?: IBobrilComponent;
-    data?: any;
+    data?: T;
 }
-export declare type IBobrilNode = IBobrilNodeCommon & object;
+export declare type IBobrilNode<T = any> = IBobrilNodeCommon<T> & object;
 export interface IBobrilCacheNode {
     tag: string | undefined;
     key: string | undefined;
@@ -409,7 +409,7 @@ export declare function withRef(node: IBobrilNode, ctx: IBobrilCtx, name: string
 export declare function extendCfg(ctx: IBobrilCtx, propertyName: string, value: any): void;
 export declare function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode;
 export interface IComponentFactory<TData extends Object> {
-    (data?: TData, children?: IBobrilChildren): IBobrilNode;
+    (data?: TData, children?: IBobrilChildren): IBobrilNode<TData>;
 }
 export declare function createVirtualComponent<TData>(component: IBobrilComponent): IComponentFactory<TData>;
 export declare function createOverridingComponent<TData>(original: (data?: any, children?: IBobrilChildren) => IBobrilNode, after: IBobrilComponent): IComponentFactory<TData>;
@@ -427,7 +427,7 @@ export declare function propa<T>(prop: IProp<T>): IPropAsync<T>;
 export declare function propim<T>(value: T, ctx?: IBobrilCtx, onChange?: (value: T, old: T) => void): IProp<T>;
 export declare function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T;
 export declare function emitChange<T>(data: IValueData<T>, value: T): void;
-export declare function createElement(name: any, props: any): IBobrilNode;
+export declare function createElement<T>(name: (data?: T, children?: any) => IBobrilNode, data?: T, ...children: IBobrilChildren[]): IBobrilNode<T>;
 export declare const __spread: {
     <T, U>(target: T, source: U): T & U;
     <T, U, V>(target: T, source1: U, source2: V): T & U & V;

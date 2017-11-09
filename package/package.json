@@ -1,6 +1,6 @@
 {
   "name": "bobril",
-  "version": "8.0.1",
+  "version": "8.1.0",
   "description": "Component Oriented MVC Framework with virtual DOM and CSS",
   "main": "index.js",
   "types": "index.d.ts",
@@ -15,6 +15,6 @@
   "license": "MIT",
   "devDependencies": {
     "prettier": "^1.5.3",
-    "typescript": "^2.4.2"
+    "typescript": "^2.5.2"
   }
 }

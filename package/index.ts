@@ -1,10 +1,10 @@
 // Bobril.Core
 
-export type IBobrilChild =
+export type IBobrilChild<T = any> =
   | boolean
   | number
   | string
-  | IBobrilNode
+  | IBobrilNode<T>
   | null
   | undefined;
 export type IBobrilChildren =
@@ -156,7 +156,7 @@ export interface IBobrilComponent {
 }
 
 // new node should at least have tag or component or children member
-export interface IBobrilNodeCommon {
+export interface IBobrilNodeCommon<T = any> {
   tag?: string;
   key?: string;
   className?: string;
@@ -169,10 +169,10 @@ export interface IBobrilNodeCommon {
   component?: IBobrilComponent;
   // Bobril does not touch this, it is completely for user passing custom data to component
   // It is very similar to props in ReactJs, it must be immutable, you have access to this through ctx.data
-  data?: any;
+  data?: T;
 }
 
-export type IBobrilNode = IBobrilNodeCommon & object;
+export type IBobrilNode<T = any> = IBobrilNodeCommon<T> & object;
 
 export interface IBobrilCacheNode {
   tag: string | undefined;
@@ -5473,7 +5473,12 @@ function rootNodeFactory(): IBobrilNode | undefined {
         if (isFunction(handler)) {
           res = handler(data);
         } else {
-          res = { key: undefined, ref: undefined, data, component: handler };
+          res = {
+            key: undefined,
+            ref: undefined,
+            data,
+            component: handler
+          };
         }
         if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
         else res.key = r.name;
@@ -6601,7 +6606,7 @@ export function styledDiv(
 }
 
 export interface IComponentFactory<TData extends Object> {
-  (data?: TData, children?: IBobrilChildren): IBobrilNode;
+  (data?: TData, children?: IBobrilChildren): IBobrilNode<TData>;
 }
 
 export function createVirtualComponent<TData>(
@@ -6756,6 +6761,12 @@ if (!(<any>window).b)
 
 // TSX reactNamespace emulation
 // PureFuncs: createElement
+
+export function createElement<T>(
+  name: (data?: T, children?: any) => IBobrilNode,
+  data?: T,
+  ...children: IBobrilChildren[]
+): IBobrilNode<T>;
 
 export function createElement(name: any, props: any): IBobrilNode {
   var children: IBobrilChild[] = [];
