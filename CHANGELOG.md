@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+8.1.1
+--
+
+Fix Drag And Drop in Chrome 62, to not recreate original DNDCtx and lost data types.
+
 8.1.0
 --
 

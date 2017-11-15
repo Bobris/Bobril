@@ -1,7 +1,7 @@
 "use strict";
 // Bobril.Core
 Object.defineProperty(exports, "__esModule", { value: true });
-var BobrilCtx = /** @class */ (function () {
+var BobrilCtx = (function () {
     function BobrilCtx(data, me) {
         this.data = data;
         this.me = me;
@@ -2294,10 +2294,7 @@ else {
                             pos += 4;
                             var posEnd = value.indexOf(",", pos);
                             var dir = value.slice(pos, posEnd);
-                            dir = dir
-                                .split(" ")
-                                .map(function (v) { return revDirs[v] || v; })
-                                .join(" ");
+                            dir = dir.split(" ").map(function (v) { return revDirs[v] || v; }).join(" ");
                             value =
                                 value.slice(0, pos - 3) +
                                     dir +
@@ -2455,8 +2452,7 @@ function emitOnChange(ev, target, node) {
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && target.multiple;
     if (hasPropOrOnChange && isMultiSelect) {
-        var vs = selectedArray(target
-            .options);
+        var vs = selectedArray(target.options);
         if (!stringArrayEqual(ctx[bValue], vs)) {
             ctx[bValue] = vs;
             if (hasProp)
@@ -3398,7 +3394,7 @@ function nodePagePos(node) {
 }
 exports.nodePagePos = nodePagePos;
 var cachedConvertPointFromClientToNode;
-var CSSMatrix = /** @class */ (function () {
+var CSSMatrix = (function () {
     function CSSMatrix(data) {
         this.data = data;
     }
@@ -3551,7 +3547,8 @@ function getTransformationMatrix(element) {
             computedStyle.WebkitTransform ||
             computedStyle.msTransform ||
             computedStyle.MozTransform ||
-            "none").replace(/^none$/, "matrix(1,0,0,1,0,0)"));
+            "none")
+            .replace(/^none$/, "matrix(1,0,0,1,0,0)"));
         transformationMatrix = c.multiply(transformationMatrix);
         x = x.parentNode;
     }
@@ -3597,9 +3594,7 @@ function convertPointFromClientToNode(node, pageX, pageY) {
         }
         else {
             cachedConvertPointFromClientToNode = function (element, x, y) {
-                return getTransformationMatrix(element)
-                    .inverse()
-                    .transformPoint(x, y);
+                return getTransformationMatrix(element).inverse().transformPoint(x, y);
             };
         }
     }
@@ -3874,6 +3869,8 @@ function handlePointerUp(ev, _target, node) {
 function handlePointerCancel(ev, _target, _node) {
     var dnd = pointer2Dnd[ev.id];
     if (!dnd)
+        return false;
+    if (dnd.system)
         return false;
     if (!dnd.beforeDrag) {
         dnd.cancelDnd();
@@ -4177,10 +4174,7 @@ function decodeUrl(url) {
     return decodeURIComponent(url.replace(/\+/g, " "));
 }
 function encodeUrlPath(path) {
-    return String(path)
-        .split("/")
-        .map(encodeUrl)
-        .join("/");
+    return String(path).split("/").map(encodeUrl).join("/");
 }
 var paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
 var paramInjectMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|[*]/g;

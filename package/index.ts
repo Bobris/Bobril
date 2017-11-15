@@ -1078,7 +1078,7 @@ function finishUpdateNodeWithoutChange(
     if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
     selectedUpdate(
       <IBobrilCacheNode[]>c.children,
-      <Element>c.element || createInto,
+      (<Element>c.element) || createInto,
       c.element != null ? null : createBefore
     );
     inSvg = backupInSvg;
@@ -1570,7 +1570,7 @@ function updateChildrenCore(
     node = cachedChildren[cachedIndex];
     key = node.key;
     if (key != null) {
-      assert(!(key in <any>cachedKeys));
+      assert(!(key in (<any>cachedKeys)));
       cachedKeys[key] = cachedIndex;
     } else deltaKeyless--;
   }
@@ -1579,7 +1579,7 @@ function updateChildrenCore(
     node = newChildren[newIndex];
     key = node.key;
     if (key != null) {
-      assert(!(key in <any>newKeys));
+      assert(!(key in (<any>newKeys)));
       newKeys[key] = newIndex;
     } else deltaKeyless++;
   }
@@ -1637,7 +1637,7 @@ function updateChildrenCore(
       cachedLength++;
       continue;
     }
-    if (!(cachedKey in <any>newKeys)) {
+    if (!(cachedKey in (<any>newKeys))) {
       // Old key
       removeNode(cachedChildren[cachedIndex]);
       cachedChildren.splice(cachedIndex, 1);
@@ -1986,7 +1986,7 @@ function selectedUpdate(
       else if (inSvg && node.tag === "foreignObject") inSvg = false;
       selectedUpdate(
         node.children,
-        <Element>node.element || element,
+        (<Element>node.element) || element,
         findNextNode(cache, i, len, createBefore)
       );
       pushUpdateEverytimeCallback(node);
@@ -2343,7 +2343,7 @@ function mergeComponents(
   let res: IBobrilComponent = Object.create(c1)!;
   res.super = c1;
   for (var i in c2) {
-    if (!(i in <any>emptyObject)) {
+    if (!(i in (<any>emptyObject))) {
       var m = (<any>c2)[i];
       var origM = (<any>c1)[i];
       if (i === "id") {
@@ -2365,7 +2365,7 @@ function overrideComponents(
   let res: IBobrilComponent = Object.create(originalComponent)!;
   res.super = originalComponent;
   for (let i in overridingComponent) {
-    if (!(i in <any>emptyObject)) {
+    if (!(i in (<any>emptyObject))) {
       let m = (<any>overridingComponent)[i];
       let origM = (<any>originalComponent)[i];
       if (i === "id") {
@@ -2914,10 +2914,7 @@ if (ieVersion() === 9) {
               pos += 4;
               var posEnd = (<string>value).indexOf(",", pos);
               var dir = (<string>value).slice(pos, posEnd);
-              dir = dir
-                .split(" ")
-                .map(v => (<any>revDirs)[v] || v)
-                .join(" ");
+              dir = dir.split(" ").map(v => (<any>revDirs)[v] || v).join(" ");
               value =
                 (<string>value).slice(0, pos - 3) +
                 dir +
@@ -3085,8 +3082,9 @@ function emitOnChange(
   var isSelect = tagName === "SELECT";
   var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
   if (hasPropOrOnChange && isMultiSelect) {
-    var vs = selectedArray(<HTMLSelectElement>(<HTMLSelectElement>target)
-      .options);
+    var vs = selectedArray(
+      <HTMLSelectElement>(<HTMLSelectElement>target).options
+    );
     if (!stringArrayEqual((<any>ctx)[bValue], vs)) {
       (<any>ctx)[bValue] = vs;
       if (hasProp) hasProp(vs);
@@ -4390,8 +4388,8 @@ function getTransformationMatrix(element: Node) {
         computedStyle.WebkitTransform ||
         computedStyle.msTransform ||
         computedStyle.MozTransform ||
-        "none"
-      ).replace(/^none$/, "matrix(1,0,0,1,0,0)")
+        "none")
+        .replace(/^none$/, "matrix(1,0,0,1,0,0)")
     );
     transformationMatrix = c.multiply(transformationMatrix);
     x = x.parentNode;
@@ -4455,9 +4453,7 @@ export function convertPointFromClientToNode(
         x: number,
         y: number
       ) => {
-        return getTransformationMatrix(element)
-          .inverse()
-          .transformPoint(x, y);
+        return getTransformationMatrix(element).inverse().transformPoint(x, y);
       };
     }
   }
@@ -4838,6 +4834,7 @@ function handlePointerCancel(
 ): boolean {
   var dnd = pointer2Dnd[ev.id];
   if (!dnd) return false;
+  if (dnd.system) return false;
   if (!dnd.beforeDrag) {
     dnd.cancelDnd();
   } else {
@@ -5229,10 +5226,7 @@ function decodeUrl(url: string): string {
 }
 
 function encodeUrlPath(path: string): string {
-  return String(path)
-    .split("/")
-    .map(encodeUrl)
-    .join("/");
+  return String(path).split("/").map(encodeUrl).join("/");
 }
 
 const paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
@@ -5243,7 +5237,7 @@ let compiledPatterns: {
 } = {};
 
 function compilePattern(pattern: string) {
-  if (!(pattern in <any>compiledPatterns)) {
+  if (!(pattern in (<any>compiledPatterns))) {
     var paramNames: Array<string> = [];
     var source = pattern.replace(
       paramCompileMatcher,
@@ -6119,7 +6113,7 @@ export function style(
     if (ca.length === i) {
       if (stack === null || stack.length === 0) break;
       ca = <IBobrilStyles[]>stack.pop();
-      i = <number>stack.pop() + 1;
+      i = (<number>stack.pop()) + 1;
       continue;
     }
     let s = ca[i];
