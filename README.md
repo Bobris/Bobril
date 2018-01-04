@@ -17,9 +17,9 @@ If you need compatibility with IE8 look at 2.x branch.
 Examples: http://bobris.github.io/Bobril/
 For modern code look at Bobril Material: https://github.com/Bobril/Bobril-m 
 
-Getting started video [cz]: 
+Tutorial videos [cz][en sub]: 
 
-[![Getting started video](http://img.youtube.com/vi/8p27FLAneiM/default.jpg)](http://www.youtube.com/watch?v=8p27FLAneiM)
+[![Bobril tutorial](https://i.ytimg.com/vi/OV6Su7wauVA/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLC3ND2Ig4ihIKtsV8xe4BVXztqQ9w)](https://www.youtube.com/playlist?list=PLNswFMwJJR39BvE5NuYmEiVvUmzwhZqZa)
 
 See it in vdom-benchmarks: http://vdom-benchmark.github.io/vdom-benchmark/
 
