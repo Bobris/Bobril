@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+8.2.0
+--
+
+Added support for !important in inline styles. Whitelisted touchCallout style property.
+
 8.1.1
 --
 

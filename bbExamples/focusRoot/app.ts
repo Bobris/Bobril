@@ -11,7 +11,7 @@ let textInput = b.createVirtualComponent({
     render(ctx: ITextInputCtx, me: b.IBobrilNode) {
         me.tag = "input";
         me.attrs = { type: "text", value: ctx.v };
-        b.style(me, { width: "100%" });
+        b.style(me, { width: "100% !important" });
     }
 });
 

@@ -1,7 +1,7 @@
 "use strict";
 // Bobril.Core
 Object.defineProperty(exports, "__esModule", { value: true });
-var BobrilCtx = (function () {
+var BobrilCtx = /** @class */ (function () {
     function BobrilCtx(data, me) {
         this.data = data;
         this.me = me;
@@ -197,7 +197,7 @@ function shimStyle(newValue) {
                     if (DEBUG &&
                         window.console &&
                         console.warn &&
-                        ["overflowScrolling"].indexOf(ki) < 0 // whitelist rare but useful
+                        ["overflowScrolling", "touchCallout"].indexOf(ki) < 0 // whitelist rare but useful
                     )
                         console.warn("Style property " + ki + " is not supported in this browser");
                 }
@@ -210,6 +210,16 @@ function shimStyle(newValue) {
 }
 function removeProperty(s, name) {
     s[name] = "";
+}
+function setStyleProperty(s, name, value) {
+    if (isString(value)) {
+        var len = value.length;
+        if (len > 11 && value.substr(len - 11, 11) === " !important") {
+            s.setProperty(name, value.substr(0, len - 11), "important");
+            return;
+        }
+    }
+    s[name] = value;
 }
 function updateStyle(el, newStyle, oldStyle) {
     var s = el.style;
@@ -225,7 +235,7 @@ function updateStyle(el, newStyle, oldStyle) {
                 var v = newStyle[rule];
                 if (v !== undefined) {
                     if (oldStyle[rule] !== v)
-                        s[rule] = v;
+                        setStyleProperty(s, rule, v);
                 }
                 else {
                     removeProperty(s, rule);
@@ -238,7 +248,7 @@ function updateStyle(el, newStyle, oldStyle) {
             for (rule in newStyle) {
                 var v = newStyle[rule];
                 if (v !== undefined)
-                    s[rule] = v;
+                    setStyleProperty(s, rule, v);
             }
         }
     }
@@ -2294,7 +2304,10 @@ else {
                             pos += 4;
                             var posEnd = value.indexOf(",", pos);
                             var dir = value.slice(pos, posEnd);
-                            dir = dir.split(" ").map(function (v) { return revDirs[v] || v; }).join(" ");
+                            dir = dir
+                                .split(" ")
+                                .map(function (v) { return revDirs[v] || v; })
+                                .join(" ");
                             value =
                                 value.slice(0, pos - 3) +
                                     dir +
@@ -2452,7 +2465,8 @@ function emitOnChange(ev, target, node) {
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && target.multiple;
     if (hasPropOrOnChange && isMultiSelect) {
-        var vs = selectedArray(target.options);
+        var vs = selectedArray(target
+            .options);
         if (!stringArrayEqual(ctx[bValue], vs)) {
             ctx[bValue] = vs;
             if (hasProp)
@@ -3394,7 +3408,7 @@ function nodePagePos(node) {
 }
 exports.nodePagePos = nodePagePos;
 var cachedConvertPointFromClientToNode;
-var CSSMatrix = (function () {
+var CSSMatrix = /** @class */ (function () {
     function CSSMatrix(data) {
         this.data = data;
     }
@@ -3547,8 +3561,7 @@ function getTransformationMatrix(element) {
             computedStyle.WebkitTransform ||
             computedStyle.msTransform ||
             computedStyle.MozTransform ||
-            "none")
-            .replace(/^none$/, "matrix(1,0,0,1,0,0)"));
+            "none").replace(/^none$/, "matrix(1,0,0,1,0,0)"));
         transformationMatrix = c.multiply(transformationMatrix);
         x = x.parentNode;
     }
@@ -3594,7 +3607,9 @@ function convertPointFromClientToNode(node, pageX, pageY) {
         }
         else {
             cachedConvertPointFromClientToNode = function (element, x, y) {
-                return getTransformationMatrix(element).inverse().transformPoint(x, y);
+                return getTransformationMatrix(element)
+                    .inverse()
+                    .transformPoint(x, y);
             };
         }
     }
@@ -4174,7 +4189,10 @@ function decodeUrl(url) {
     return decodeURIComponent(url.replace(/\+/g, " "));
 }
 function encodeUrlPath(path) {
-    return String(path).split("/").map(encodeUrl).join("/");
+    return String(path)
+        .split("/")
+        .map(encodeUrl)
+        .join("/");
 }
 var paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
 var paramInjectMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|[*]/g;
