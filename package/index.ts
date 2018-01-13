@@ -5716,6 +5716,7 @@ function nextIteration(): void {
           } else if (resp === false) {
             currentTransition = null;
             nextTransition = null;
+            if (programPath) replace(programPath, true);
             return;
           } else {
             nextTransition = <IRouteTransition>resp;

@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+8.2.1
+--
+
+Fix of infinite routing when canDeactive returns false and url is changed
+
 8.2.0
 --
 
