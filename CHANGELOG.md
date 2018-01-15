@@ -1,6 +1,11 @@
 CHANGELOG
 ===
 
+8.2.2
+--
+
+Removed useless line with setting DEBUG default value which with "use strict" does not have meaning.
+
 8.2.1
 --
 

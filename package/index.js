@@ -13,8 +13,6 @@ var BobrilCtx = /** @class */ (function () {
     return BobrilCtx;
 }());
 exports.BobrilCtx = BobrilCtx;
-if (typeof DEBUG === "undefined")
-    DEBUG = true;
 // PureFuncs: assert, isArray, isObject, flatten
 function assert(shouldBeTrue, messageIfFalse) {
     if (DEBUG && !shouldBeTrue)

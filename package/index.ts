@@ -230,7 +230,6 @@ export interface ISelectionChangeEvent {
 }
 
 declare var DEBUG: boolean;
-if (typeof DEBUG === "undefined") DEBUG = true;
 
 // PureFuncs: assert, isArray, isObject, flatten
 
