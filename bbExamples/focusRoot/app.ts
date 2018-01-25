@@ -6,12 +6,14 @@ interface ITextInputCtx extends b.IBobrilCtx {
 
 let textInput = b.createVirtualComponent({
     init(ctx: ITextInputCtx) {
-        ctx.v = b.prop("", () => { b.invalidate(ctx) });
+        ctx.v = b.prop("", () => {
+            b.invalidate(ctx);
+        });
     },
     render(ctx: ITextInputCtx, me: b.IBobrilNode) {
         me.tag = "input";
         me.attrs = { type: "text", value: ctx.v };
-        b.style(me, { width: "100% !important" });
+        b.style(me, { minWidth: "100% !important" });
     }
 });
 
@@ -46,23 +48,61 @@ function createDialog() {
             },
             render(ctx: b.IBobrilCtx, me: b.IBobrilNode) {
                 me.tag = "div";
-                me.style = { position: "relative", top: 10, left: 10, width: 200, height: 100, background: "#eee", padding: 5 };
+                me.style = {
+                    position: "relative",
+                    top: 10,
+                    left: 10,
+                    width: 200,
+                    height: 100,
+                    background: "#eee",
+                    padding: 5
+                };
                 me.children = [
                     "Frame: " + b.frame(),
                     textInput(),
                     textInput(),
-                    button({ action: () => { b.removeRoot(myself); } }, "Close"),
-                    button({ action: () => { b.invalidate(dialogctx, 0); } }, "Invalidate"),
-                    button({ action: () => { b.invalidate(dialogctx); } }, "Deep Invalidate"),
-                    button({ action: () => { b.invalidate(); } }, "Root Invalidate"),
-                    button({
-                        action: () => {
-                            lastChild = createDialog();
-                        }
-                    }, "Dialog")
+                    button(
+                        {
+                            action: () => {
+                                b.removeRoot(myself);
+                            }
+                        },
+                        "Close"
+                    ),
+                    button(
+                        {
+                            action: () => {
+                                b.invalidate(dialogctx, 0);
+                            }
+                        },
+                        "Invalidate"
+                    ),
+                    button(
+                        {
+                            action: () => {
+                                b.invalidate(dialogctx);
+                            }
+                        },
+                        "Deep Invalidate"
+                    ),
+                    button(
+                        {
+                            action: () => {
+                                b.invalidate();
+                            }
+                        },
+                        "Root Invalidate"
+                    ),
+                    button(
+                        {
+                            action: () => {
+                                lastChild = createDialog();
+                            }
+                        },
+                        "Dialog"
+                    )
                 ];
-                if (b.getRoots()[lastChild] != null)
-                    b.updateRoot(lastChild);
+                if (b.getRoots()[lastChild] != null) b.updateRoot(lastChild);
             }
         }
     }));
@@ -74,10 +114,13 @@ b.init(() => {
         "Frame: " + b.frame(),
         textInput(),
         textInput(),
-        button({
-            action: () => {
-                createDialog();
-            }
-        }, "Dialog")
+        button(
+            {
+                action: () => {
+                    createDialog();
+                }
+            },
+            "Dialog"
+        )
     ];
 });

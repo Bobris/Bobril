@@ -213,7 +213,7 @@ function setStyleProperty(s, name, value) {
     if (isString(value)) {
         var len = value.length;
         if (len > 11 && value.substr(len - 11, 11) === " !important") {
-            s.setProperty(name, value.substr(0, len - 11), "important");
+            s.setProperty(hyphenateStyle(name), value.substr(0, len - 11), "important");
             return;
         }
     }
