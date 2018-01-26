@@ -3290,7 +3290,8 @@ function emitOnKeyPress(
 ) {
   if (!node) return false;
   if (
-    ev.which === 0 // don't want special key presses
+    ev.which === 0 || // don't want special key presses
+    ev.altKey // Ignore Alt+num in Firefox
   )
     return false;
   var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode };

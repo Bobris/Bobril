@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.2.4
+
+Normalize Keypress event on Firefox by filtering Alt key. Other browsers behave correctly.
+
 ## 8.2.3
 
 Fixed !important in inline styles works for multi word properties.

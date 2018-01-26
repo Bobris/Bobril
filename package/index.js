@@ -2628,7 +2628,8 @@ function emitOnKeyUp(ev, _target, node) {
 function emitOnKeyPress(ev, _target, node) {
     if (!node)
         return false;
-    if (ev.which === 0 // don't want special key presses
+    if (ev.which === 0 || // don't want special key presses
+        ev.altKey // Ignore Alt+num in Firefox
     )
         return false;
     var param = { charCode: ev.which || ev.keyCode };
