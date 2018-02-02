@@ -49,6 +49,7 @@ export interface IBobrilAttributes {
   href?: string;
   value?: boolean | string | string[] | IProp<boolean | string | string[]>;
   tabindex?: number;
+  tabIndex?: never;
   [name: string]: any;
 }
 

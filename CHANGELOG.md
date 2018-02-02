@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.3.0
+
+Forbid use of wrongly cased attribute tabIndex (it must be all lower case).
+
 ## 8.2.4
 
 Normalize Keypress event on Firefox by filtering Alt key. Other browsers behave correctly.
