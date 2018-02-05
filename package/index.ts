@@ -523,6 +523,16 @@ function setClassName(el: Element, className: string) {
 const focusableTag = /^input$|^select$|^textarea$|^button$/;
 const tabindexStr = "tabindex";
 
+function isNaturalyFocusable(
+  tag: string | undefined,
+  attrs: IBobrilAttributes | undefined
+): boolean {
+  if (tag == null) return false;
+  if (focusableTag.test(tag)) return true;
+  if (tag === "a" && attrs != null && attrs.href != null) return true;
+  return false;
+}
+
 function updateElement(
   n: IBobrilCacheNode,
   el: Element,
@@ -567,7 +577,7 @@ function updateElement(
         } else el.setAttribute(attrName, newAttr);
       }
     }
-  if (notFocusable && !wasTabindex && n.tag && focusableTag.test(n.tag)) {
+  if (notFocusable && !wasTabindex && isNaturalyFocusable(n.tag, newAttrs)) {
     el.setAttribute(tabindexStr, "-1");
     oldAttrs[tabindexStr] = -1;
   }
@@ -4164,8 +4174,8 @@ export function focus(node: IBobrilCacheNode): boolean {
   }
   var attrs = node.attrs;
   if (attrs != null) {
-    var ti = attrs.tabindex != null ? attrs.tabindex : (<any>attrs).tabIndex; // < tabIndex is here because of backward compatibility
-    if (ti !== undefined || (node.tag && focusableTag.test(node.tag))) {
+    var ti = attrs.tabindex;
+    if (ti !== undefined || isNaturalyFocusable(node.tag, attrs)) {
       var el = node.element;
       (<HTMLElement>el).focus();
       emitOnFocusChange(false);

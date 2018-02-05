@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.3.1
+
+Anchor element with href is now also considered tabbable, so it can be made untabbable if needed.
+
 ## 8.3.0
 
 Forbid use of wrongly cased attribute tabIndex (it must be all lower case).

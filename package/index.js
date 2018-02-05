@@ -272,6 +272,15 @@ function setClassName(el, className) {
 }
 var focusableTag = /^input$|^select$|^textarea$|^button$/;
 var tabindexStr = "tabindex";
+function isNaturalyFocusable(tag, attrs) {
+    if (tag == null)
+        return false;
+    if (focusableTag.test(tag))
+        return true;
+    if (tag === "a" && attrs != null && attrs.href != null)
+        return true;
+    return false;
+}
 function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
     var attrName, newAttr, oldAttr, valueOldAttr, valueNewAttr;
     var wasTabindex = false;
@@ -309,7 +318,7 @@ function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
                     el.setAttribute(attrName, newAttr);
             }
         }
-    if (notFocusable && !wasTabindex && n.tag && focusableTag.test(n.tag)) {
+    if (notFocusable && !wasTabindex && isNaturalyFocusable(n.tag, newAttrs)) {
         el.setAttribute(tabindexStr, "-1");
         oldAttrs[tabindexStr] = -1;
     }
@@ -3330,8 +3339,8 @@ function focus(node) {
     }
     var attrs = node.attrs;
     if (attrs != null) {
-        var ti = attrs.tabindex != null ? attrs.tabindex : attrs.tabIndex; // < tabIndex is here because of backward compatibility
-        if (ti !== undefined || (node.tag && focusableTag.test(node.tag))) {
+        var ti = attrs.tabindex;
+        if (ti !== undefined || isNaturalyFocusable(node.tag, attrs)) {
             var el = node.element;
             el.focus();
             emitOnFocusChange(false);
