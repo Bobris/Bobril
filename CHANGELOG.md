@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.4.0
+
+Compile on most strict settings. Callback functions in IBobrilNode.ref are now called with undefined instead of null when destroying reference.
+
 ## 8.3.1
 
 Anchor element with href is now also considered tabbable, so it can be made untabbable if needed.

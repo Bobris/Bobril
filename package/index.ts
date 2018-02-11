@@ -164,7 +164,7 @@ export interface IBobrilNodeCommon<T = any> {
   style?: any;
   attrs?: IBobrilAttributes;
   children?: IBobrilChildren;
-  ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
+  ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void);
   /// set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway; but better to use `extendCfg`
   cfg?: any;
   component?: IBobrilComponent;
@@ -182,7 +182,7 @@ export interface IBobrilCacheNode {
   style: any;
   attrs: IBobrilAttributes | undefined;
   children: IBobrilCacheChildren;
-  ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
+  ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void);
   cfg: any;
   component: IBobrilComponent;
   data: any;
@@ -199,7 +199,7 @@ export interface IBobrilCtx {
   me: IBobrilCacheNode;
   // properties passed from parent component automatically, but could be extended for children to IBobrilNode.cfg
   cfg?: any;
-  refs?: { [name: string]: IBobrilCacheNode | null };
+  refs?: { [name: string]: IBobrilCacheNode | undefined };
   disposables?: IDisposableLike[];
 }
 
@@ -216,12 +216,12 @@ export class BobrilCtx<TData> implements IBobrilCtx {
   data: TData;
   me: IBobrilCacheNode;
   cfg?: any;
-  refs?: { [name: string]: IBobrilCacheNode | null };
+  refs?: { [name: string]: IBobrilCacheNode | undefined };
   disposables?: IDisposableLike[];
 }
 
 export interface IBobrilScroll {
-  node: IBobrilCacheNode;
+  node: IBobrilCacheNode | undefined;
 }
 
 export interface ISelectionChangeEvent {
@@ -659,12 +659,12 @@ function findCfg(parent: IBobrilCacheNode | undefined): any {
 }
 
 function setRef(
-  ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode | null) => void),
-  value: IBobrilCacheNode | null
+  ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void),
+  value: IBobrilCacheNode | undefined
 ) {
   if (ref == null) return;
   if (isFunction(ref)) {
-    (<(node: IBobrilCacheNode | null) => void>ref)(value);
+    (<(node: IBobrilCacheNode | undefined) => void>ref)(value);
     return;
   }
   var ctx = (<[IBobrilCtx, string]>ref)[0];
@@ -910,7 +910,7 @@ function createChildren(
 }
 
 function destroyNode(c: IBobrilCacheNode) {
-  setRef(c.ref, null);
+  setRef(c.ref, undefined);
   let ch = c.children;
   if (isArray(ch)) {
     for (let i = 0, l = ch.length; i < l; i++) {
@@ -3274,8 +3274,8 @@ function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
 
 function emitOnKeyDown(
   ev: KeyboardEvent,
-  _target: Node,
-  node: IBobrilCacheNode
+  _target: Node | undefined,
+  node: IBobrilCacheNode | undefined
 ) {
   if (!node) return false;
   var param: IKeyDownUpEvent = buildParam(ev);
@@ -3285,7 +3285,7 @@ function emitOnKeyDown(
   }
   return false;
 }
-function emitOnKeyUp(ev: KeyboardEvent, _target: Node, node: IBobrilCacheNode) {
+function emitOnKeyUp(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
   if (!node) return false;
   var param: IKeyDownUpEvent = buildParam(ev);
   if (bubble(node, "onKeyUp", param)) {
@@ -3296,8 +3296,8 @@ function emitOnKeyUp(ev: KeyboardEvent, _target: Node, node: IBobrilCacheNode) {
 }
 function emitOnKeyPress(
   ev: KeyboardEvent,
-  _target: Node,
-  node: IBobrilCacheNode
+  _target: Node | undefined,
+  node: IBobrilCacheNode | undefined
 ) {
   if (!node) return false;
   if (
@@ -3437,8 +3437,8 @@ function pushAndHide(
 
 function pointerThroughIE(
   ev: MouseEvent,
-  target: Node,
-  _node: IBobrilCacheNode
+  target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   var hiddenEls: { t: HTMLElement; p: string }[] = [];
   var t = <HTMLElement>target;
@@ -3460,7 +3460,7 @@ function pointerThroughIE(
 
 function addEvent5(
   name: string,
-  callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean
+  callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean
 ) {
   addEvent(name, 5, callback);
 }
@@ -3524,7 +3524,7 @@ function pointerEventsNoneFix(
 function buildHandlerPointer(name: string) {
   return function handlePointerDown(
     ev: PointerEvent,
-    target: Node,
+    target: Node | undefined,
     node: IBobrilCacheNode | undefined
   ): boolean {
     if (hasPointerEventsNoneB(node)) {
@@ -3565,7 +3565,7 @@ function buildHandlerPointer(name: string) {
 function buildHandlerTouch(name: string) {
   return function handlePointerDown(
     ev: TouchEvent,
-    target: Node,
+    target: Node | undefined,
     node: IBobrilCacheNode | undefined
   ): boolean {
     var preventDef = false;
@@ -3598,7 +3598,7 @@ function buildHandlerTouch(name: string) {
 function buildHandlerMouse(name: string) {
   return function handlePointer(
     ev: MouseEvent,
-    target: Node,
+    target: Node | undefined,
     node: IBobrilCacheNode | undefined
   ): boolean {
     target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
@@ -3681,7 +3681,7 @@ for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
     addEvent(
       "!" + name,
       50,
-      (ev: IBobrilPointerEvent, _target: Node, node: IBobrilCacheNode) => {
+      (ev: IBobrilPointerEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) => {
         return invokeMouseOwner(onName, ev) || bubble(node, onName, ev) != null;
       }
     );
@@ -3776,8 +3776,8 @@ function noPointersDown(): boolean {
 
 function bustingPointerDown(
   ev: IBobrilPointerEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   if (firstPointerDown === -1 && noPointersDown()) {
     firstPointerDown = ev.id;
@@ -3796,8 +3796,8 @@ function bustingPointerDown(
 
 function bustingPointerMove(
   ev: IBobrilPointerEvent,
-  target: Node,
-  node: IBobrilCacheNode
+  target: Node | undefined,
+  node: IBobrilCacheNode | undefined
 ): boolean {
   // Browser forgot to send mouse up? Let's fix it
   if (
@@ -3844,8 +3844,8 @@ export function preventClickingSpree() {
 
 function bustingPointerUp(
   ev: IBobrilPointerEvent,
-  target: Node,
-  node: IBobrilCacheNode
+  target: Node | undefined,
+  node: IBobrilCacheNode | undefined
 ): boolean {
   delete pointersDown[ev.id];
   if (firstPointerDown == ev.id) {
@@ -3869,8 +3869,8 @@ function bustingPointerUp(
 
 function bustingPointerCancel(
   ev: IBobrilPointerEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   delete pointersDown[ev.id];
   if (firstPointerDown == ev.id) {
@@ -3881,8 +3881,8 @@ function bustingPointerCancel(
 
 function bustingClick(
   ev: MouseEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   var n = now();
   for (var i = 0; i < toBust.length; i++) {
@@ -3923,7 +3923,7 @@ for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
 }
 
 function createHandlerMouse(handlerName: string) {
-  return (ev: IBobrilPointerEvent, _target: Node, node: IBobrilCacheNode) => {
+  return (ev: IBobrilPointerEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) => {
     if (firstPointerDown != ev.id && !noPointersDown()) return false;
     if (invokeMouseOwner(handlerName, ev) || bubble(node, handlerName, ev)) {
       return true;
@@ -3946,10 +3946,10 @@ function decodeButton(ev: MouseEvent): number {
 }
 
 function createHandler(handlerName: string, allButtons?: boolean) {
-  return (ev: MouseEvent, target: Node, node: IBobrilCacheNode | undefined) => {
+  return (ev: MouseEvent, target: Node | undefined, node: IBobrilCacheNode | undefined) => {
     if (
       listeningEventDeepness == 1 &&
-      (target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)
+      (target == null || target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)
     ) {
       // Fix target node only for browser triggered events + crazy heuristic to ignore click
       target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
@@ -4001,7 +4001,7 @@ export function nodeOnPoint(
 
 function handleSelectStart(
   ev: any,
-  _target: Node,
+  _target: Node | undefined,
   node: IBobrilCacheNode | undefined
 ): boolean {
   while (node) {
@@ -4032,7 +4032,7 @@ let wheelSupport =
   ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
 function handleMouseWheel(
   ev: any,
-  target: Node,
+  target: Node | undefined,
   node: IBobrilCacheNode | undefined
 ): boolean {
   if (hasPointerEventsNoneB(node)) {
@@ -4195,7 +4195,7 @@ export function focus(node: IBobrilCacheNode): boolean {
 // Bobril.Scroll
 var callbacks: Array<(info: IBobrilScroll) => void> = [];
 
-function emitOnScroll(_ev: Event, _target: Node, node: IBobrilCacheNode) {
+function emitOnScroll(_ev: Event, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
   let info: IBobrilScroll = {
     node
   };
@@ -4251,12 +4251,6 @@ export function nodePagePos(node: IBobrilCacheNode): [number, number] {
   res[1] += rect.top;
   return res;
 }
-
-var cachedConvertPointFromClientToNode: (
-  element: Node | null,
-  x: number,
-  y: number
-) => [number, number];
 
 type Point = [number, number];
 class CSSMatrix {
@@ -4460,34 +4454,10 @@ export function convertPointFromClientToNode(
   pageY: number
 ): [number, number] {
   let element = getDomNode(node);
-  if (cachedConvertPointFromClientToNode == null) {
-    let nativeConvert = window.webkitConvertPointFromPageToNode;
-    if (nativeConvert) {
-      cachedConvertPointFromClientToNode = (
-        element: Node,
-        x: number,
-        y: number
-      ) => {
-        let scr = getWindowScroll();
-        let res = nativeConvert(
-          element,
-          new WebKitPoint(scr[0] + x, scr[1] + y)
-        );
-        return [res.x, res.y];
-      };
-    } else {
-      cachedConvertPointFromClientToNode = (
-        element: Node,
-        x: number,
-        y: number
-      ) => {
-        return getTransformationMatrix(element)
-          .inverse()
-          .transformPoint(x, y);
-      };
-    }
-  }
-  return cachedConvertPointFromClientToNode(element, pageX, pageY);
+  if (element == null) element = document.body;
+  return getTransformationMatrix(element)
+    .inverse()
+    .transformPoint(pageX, pageY);
 }
 
 // Bobril.Dnd
@@ -4751,8 +4721,8 @@ var pointer2Dnd = newHashObj();
 
 function handlePointerDown(
   ev: IBobrilPointerEvent,
-  _target: Node,
-  node: IBobrilCacheNode
+  _target: Node | undefined,
+  node: IBobrilCacheNode | undefined
 ): boolean {
   var dnd = pointer2Dnd[ev.id];
   if (dnd) {
@@ -4812,8 +4782,8 @@ function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent) {
 
 function handlePointerMove(
   ev: IBobrilPointerEvent,
-  _target: Node,
-  node: IBobrilCacheNode
+  _target: Node | undefined,
+  node: IBobrilCacheNode | undefined
 ): boolean {
   var dnd = pointer2Dnd[ev.id];
   if (!dnd) return false;
@@ -4836,8 +4806,8 @@ function handlePointerMove(
 
 function handlePointerUp(
   ev: IBobrilPointerEvent,
-  _target: Node,
-  node: IBobrilCacheNode
+  _target: Node | undefined,
+  node: IBobrilCacheNode | undefined
 ): boolean {
   var dnd = pointer2Dnd[ev.id];
   if (!dnd) return false;
@@ -4859,8 +4829,8 @@ function handlePointerUp(
 
 function handlePointerCancel(
   ev: IBobrilPointerEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   var dnd = pointer2Dnd[ev.id];
   if (!dnd) return false;
@@ -4901,8 +4871,8 @@ var effectAllowedTable = [
 
 function handleDragStart(
   ev: DragEvent,
-  _target: Node,
-  node: IBobrilCacheNode
+  _target: Node | undefined, 
+  node: IBobrilCacheNode | undefined
 ): boolean {
   var dnd: IDndCtx | null = systemDnd;
   if (dnd != null) {
@@ -4995,8 +4965,8 @@ function setDropEffect(ev: DragEvent, op: DndOp) {
 
 function handleDragOver(
   ev: DragEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   var dnd = systemDnd;
   if (dnd == null) {
@@ -5041,8 +5011,8 @@ function handleDragOver(
 
 function handleDrag(
   ev: DragEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   var x = ev.clientX;
   var y = ev.clientY;
@@ -5061,8 +5031,8 @@ function handleDrag(
 
 function handleDragEnd(
   _ev: DragEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   if (systemDnd != null) {
     systemDnd.destroy();
@@ -5072,8 +5042,8 @@ function handleDragEnd(
 
 function handleDrop(
   ev: DragEvent,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   var dnd = systemDnd;
   if (dnd == null) return false;
@@ -5107,8 +5077,8 @@ function handleDrop(
 
 function justPreventDefault(
   ev: any,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   preventDefault(ev);
   return true;
@@ -5116,8 +5086,8 @@ function justPreventDefault(
 
 function handleDndSelectStart(
   ev: any,
-  _target: Node,
-  _node: IBobrilCacheNode
+  _target: Node | undefined,
+  _node: IBobrilCacheNode | undefined
 ): boolean {
   if (dnds.length === 0) return false;
   preventDefault(ev);
@@ -5412,7 +5382,7 @@ let activeRoutes: IRoute[] = [];
 let futureRoutes: IRoute[];
 let activeParams: Params = newHashObj();
 let nodesArray: (IBobrilCacheNode | undefined)[] = [];
-let setterOfNodesArray: ((node: IBobrilCacheNode) => void)[] = [];
+let setterOfNodesArray: ((node: IBobrilCacheNode | undefined) => void)[] = [];
 const urlRegex = /.*(?:\:|\/).*/;
 
 function isInApp(name: string): boolean {
@@ -5427,11 +5397,11 @@ function noop(): IBobrilNode | undefined {
   return undefined;
 }
 
-function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode) => void {
+function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode | undefined) => void {
   while (idx >= setterOfNodesArray.length) {
     setterOfNodesArray.push(
       ((a: (IBobrilCacheNode | undefined)[], i: number) => (
-        n: IBobrilCacheNode
+        n: IBobrilCacheNode | undefined
       ) => {
         if (n) a[i] = n;
       })(nodesArray, idx)
