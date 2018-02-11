@@ -86,7 +86,7 @@ export interface IBobrilNodeCommon<T = any> {
     style?: any;
     attrs?: IBobrilAttributes;
     children?: IBobrilChildren;
-    ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
+    ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void);
     cfg?: any;
     component?: IBobrilComponent;
     data?: T;
@@ -99,7 +99,7 @@ export interface IBobrilCacheNode {
     style: any;
     attrs: IBobrilAttributes | undefined;
     children: IBobrilCacheChildren;
-    ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode) => void);
+    ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void);
     cfg: any;
     component: IBobrilComponent;
     data: any;
@@ -113,7 +113,7 @@ export interface IBobrilCtx {
     me: IBobrilCacheNode;
     cfg?: any;
     refs?: {
-        [name: string]: IBobrilCacheNode | null;
+        [name: string]: IBobrilCacheNode | undefined;
     };
     disposables?: IDisposableLike[];
 }
@@ -124,12 +124,12 @@ export declare class BobrilCtx<TData> implements IBobrilCtx {
     me: IBobrilCacheNode;
     cfg?: any;
     refs?: {
-        [name: string]: IBobrilCacheNode | null;
+        [name: string]: IBobrilCacheNode | undefined;
     };
     disposables?: IDisposableLike[];
 }
 export interface IBobrilScroll {
-    node: IBobrilCacheNode;
+    node: IBobrilCacheNode | undefined;
 }
 export interface ISelectionChangeEvent {
     startPosition: number;

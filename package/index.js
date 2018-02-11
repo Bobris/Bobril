@@ -175,9 +175,7 @@ function shimStyle(newValue) {
                 if (ki === "float" && window.console && console.error)
                     console.error("In style instead of 'float' you have to use 'cssFloat'");
                 if (/-/.test(ki) && window.console && console.warn)
-                    console.warn("Style property " +
-                        ki +
-                        " contains dash (must use JS props instead of css names)");
+                    console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
             }
             if (testPropExistence(ki)) {
                 mi = isUnitlessNumber[ki] === true ? null : pxAdder;
@@ -310,8 +308,7 @@ function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
                     else
                         el.setAttribute(attrName, newAttr);
                 }
-                else if (attrName in el &&
-                    !(attrName === "list" || attrName === "form")) {
+                else if (attrName in el && !(attrName === "list" || attrName === "form")) {
                     el[attrName] = newAttr;
                 }
                 else
@@ -652,7 +649,7 @@ function createChildren(c, createInto, createBefore) {
     c.children = ch;
 }
 function destroyNode(c) {
-    setRef(c.ref, null);
+    setRef(c.ref, undefined);
     var ch = c.children;
     if (exports.isArray(ch)) {
         for (var i_3 = 0, l = ch.length; i_3 < l; i_3++) {
@@ -858,9 +855,7 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             else
                 ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c) &&
-                    !ignoringShouldChange &&
-                    !locallyInvalidated) {
+                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange && !locallyInvalidated) {
                     finishUpdateNodeWithoutChange(c, createInto, createBefore);
                     return c;
                 }
@@ -1599,10 +1594,7 @@ function internalUpdate(time) {
     nextIgnoreShouldChange = false;
     uptimeMs = time;
     beforeFrameCallback();
-    focusRootTop =
-        focusRootStack.length === 0
-            ? null
-            : focusRootStack[focusRootStack.length - 1];
+    focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
     inNotFocusable = false;
     var fullRefresh = false;
     if (fullRecreateRequested) {
@@ -2023,9 +2015,7 @@ exports.asap = (function () {
         };
         // Browsers that support postMessage
     }
-    else if (!window.setImmediate &&
-        window.postMessage &&
-        window.addEventListener) {
+    else if (!window.setImmediate && window.postMessage && window.addEventListener) {
         var MESSAGE_PREFIX = "basap" + Math.random(), hasPostMessage = false;
         var onGlobalMessage = function (event) {
             if (event.source === window && event.data === MESSAGE_PREFIX) {
@@ -2043,8 +2033,7 @@ exports.asap = (function () {
         };
         // IE browsers without postMessage
     }
-    else if (!window.setImmediate &&
-        onreadystatechange in document.createElement("script")) {
+    else if (!window.setImmediate && onreadystatechange in document.createElement("script")) {
         var scriptEl;
         return function (callback) {
             callbacks.push(callback);
@@ -2119,11 +2108,11 @@ if (!window.Promise) {
             finale.call(this);
         }
         /**
-             * Take a potentially misbehaving resolver function and make sure
-             * onFulfilled and onRejected are only called once.
-             *
-             * Makes no guarantees about asynchrony.
-             */
+         * Take a potentially misbehaving resolver function and make sure
+         * onFulfilled and onRejected are only called once.
+         *
+         * Makes no guarantees about asynchrony.
+         */
         function doResolve(fn, onFulfilled, onRejected) {
             var done = false;
             try {
@@ -2182,9 +2171,7 @@ if (!window.Promise) {
             return this.then(undefined, onRejected);
         };
         Promise.all = function () {
-            var args = [].slice.call(arguments.length === 1 && exports.isArray(arguments[0])
-                ? arguments[0]
-                : arguments);
+            var args = [].slice.call(arguments.length === 1 && exports.isArray(arguments[0]) ? arguments[0] : arguments);
             return new Promise(function (resolve, reject) {
                 if (args.length === 0) {
                     resolve(args);
@@ -2193,8 +2180,7 @@ if (!window.Promise) {
                 var remaining = args.length;
                 function res(i, val) {
                     try {
-                        if (val &&
-                            (typeof val === "object" || typeof val === "function")) {
+                        if (val && (typeof val === "object" || typeof val === "function")) {
                             var then = val.then;
                             if (typeof then === "function") {
                                 then.call(val, function (val) {
@@ -2315,10 +2301,7 @@ else {
                                 .split(" ")
                                 .map(function (v) { return revDirs[v] || v; })
                                 .join(" ");
-                            value =
-                                value.slice(0, pos - 3) +
-                                    dir +
-                                    value.slice(posEnd);
+                            value = value.slice(0, pos - 3) + dir + value.slice(posEnd);
                         }
                         value = "-webkit-" + value;
                     }
@@ -2404,9 +2387,7 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
         if (isInput && isCheckboxLike(el)) {
             var currentChecked = el.checked;
             if (newValue !== currentChecked) {
-                if (oldValue === undefined ||
-                    currentChecked === oldValue ||
-                    newValue !== node.ctx[bValue]) {
+                if (oldValue === undefined || currentChecked === oldValue || newValue !== node.ctx[bValue]) {
                     el.checked = newValue;
                 }
                 else {
@@ -2418,9 +2399,7 @@ var prevSetValueCallback = setSetValue(function (el, node, newValue, oldValue) {
             var isCombobox = isSelect && el.size < 2;
             var currentValue = el[tValue];
             if (newValue !== currentValue) {
-                if (oldValue === undefined ||
-                    currentValue === oldValue ||
-                    newValue !== node.ctx[bValue]) {
+                if (oldValue === undefined || currentValue === oldValue || newValue !== node.ctx[bValue]) {
                     if (isSelect) {
                         if (newValue === "") {
                             el.selectedIndex = isCombobox ? 0 : -1;
@@ -2472,8 +2451,7 @@ function emitOnChange(ev, target, node) {
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && target.multiple;
     if (hasPropOrOnChange && isMultiSelect) {
-        var vs = selectedArray(target
-            .options);
+        var vs = selectedArray(target.options);
         if (!stringArrayEqual(ctx[bValue], vs)) {
             ctx[bValue] = vs;
             if (hasProp)
@@ -2561,8 +2539,7 @@ function emitOnChange(ev, target, node) {
 function emitOnSelectionChange(node, start, end) {
     var c = node.component;
     var ctx = node.ctx;
-    if (c &&
-        (ctx[bSelectionStart] !== start || ctx[bSelectionEnd] !== end)) {
+    if (c && (ctx[bSelectionStart] !== start || ctx[bSelectionEnd] !== end)) {
         ctx[bSelectionStart] = start;
         ctx[bSelectionEnd] = end;
         if (c.onSelectionChange)
@@ -2585,24 +2562,10 @@ function emitOnMouseChange(ev, _target, _node) {
     return false;
 }
 // click here must have lower priority (higher number) over mouse handlers
-var events = [
-    "input",
-    "cut",
-    "paste",
-    "keydown",
-    "keypress",
-    "keyup",
-    "click",
-    "change"
-];
+var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
 for (var i = 0; i < events.length; i++)
     addEvent(events[i], 10, emitOnChange);
-var mouseEvents = [
-    "!PointerDown",
-    "!PointerMove",
-    "!PointerUp",
-    "!PointerCancel"
-];
+var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
 for (var i = 0; i < mouseEvents.length; i++)
     addEvent(mouseEvents[i], 2, emitOnMouseChange);
 function buildParam(ev) {
@@ -2745,12 +2708,7 @@ function pointerThroughIE(ev, target, _node) {
 function addEvent5(name, callback) {
     addEvent(name, 5, callback);
 }
-var pointersEventNames = [
-    "PointerDown",
-    "PointerMove",
-    "PointerUp",
-    "PointerCancel"
-];
+var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
 var i;
 if (ieVersion() && ieVersion() < 11) {
     // emulate pointer-events: none in older ie
@@ -2952,9 +2910,7 @@ function mouseEnterAndLeave(ev) {
     }
     bubble(node, "onMouseOver", ev);
     var common = 0;
-    while (common < prevMousePath.length &&
-        common < toPath.length &&
-        prevMousePath[common] === toPath[common])
+    while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
         common++;
     var n;
     var c;
@@ -3016,9 +2972,7 @@ function bustingPointerDown(ev, _target, _node) {
 }
 function bustingPointerMove(ev, target, node) {
     // Browser forgot to send mouse up? Let's fix it
-    if (ev.type === 0 /* Mouse */ &&
-        ev.button === 0 &&
-        pointersDown[ev.id] != null) {
+    if (ev.type === 0 /* Mouse */ && ev.button === 0 && pointersDown[ev.id] != null) {
         ev.button = 1;
         emitEvent("!PointerUp", ev, target, node);
         ev.button = 0;
@@ -3062,8 +3016,7 @@ function bustingPointerUp(ev, target, node) {
             if (exports.now() - firstPointerDownTime < TapShouldBeShorterThanMs) {
                 emitEvent("!PointerCancel", ev, target, node);
                 shouldPreventClickingSpree(1);
-                var handled = invokeMouseOwner(onClickText, ev) ||
-                    bubble(node, onClickText, ev) != null;
+                var handled = invokeMouseOwner(onClickText, ev) || bubble(node, onClickText, ev) != null;
                 var delay = ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
                 toBust.push([ev.x, ev.y, exports.now() + delay, handled ? 1 : 0]);
                 return handled;
@@ -3088,8 +3041,7 @@ function bustingClick(ev, _target, _node) {
             i--;
             continue;
         }
-        if (diffLess(j[0], ev.clientX, BustDistance) &&
-            diffLess(j[1], ev.clientY, BustDistance)) {
+        if (diffLess(j[0], ev.clientX, BustDistance) && diffLess(j[1], ev.clientY, BustDistance)) {
             toBust.splice(i, 1);
             if (j[3])
                 preventDefault(ev);
@@ -3098,13 +3050,7 @@ function bustingClick(ev, _target, _node) {
     }
     return false;
 }
-var bustingEventNames = [
-    "!PointerDown",
-    "!PointerMove",
-    "!PointerUp",
-    "!PointerCancel",
-    "^click"
-];
+var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "^click"];
 var bustingEventHandlers = [
     bustingPointerDown,
     bustingPointerMove,
@@ -3135,7 +3081,7 @@ function decodeButton(ev) {
 function createHandler(handlerName, allButtons) {
     return function (ev, target, node) {
         if (listeningEventDeepness == 1 &&
-            (target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)) {
+            (target == null || target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)) {
             // Fix target node only for browser triggered events + crazy heuristic to ignore click
             target = document.elementFromPoint(ev.clientX, ev.clientY);
             node = deref(target);
@@ -3239,8 +3185,7 @@ function handleMouseWheel(ev, target, node) {
         meta: ev.metaKey || false,
         count: ev.detail
     };
-    if (invokeMouseOwner("onMouseWheel", param) ||
-        bubble(node, "onMouseWheel", param)) {
+    if (invokeMouseOwner("onMouseWheel", param) || bubble(node, "onMouseWheel", param)) {
         preventDefault(ev);
         return true;
     }
@@ -3263,9 +3208,7 @@ function emitOnFocusChange(inFocus) {
         currentActiveElement = newActiveElement;
         var newStack = vdomPath(currentActiveElement);
         var common = 0;
-        while (common < nodeStack.length &&
-            common < newStack.length &&
-            nodeStack[common] === newStack[common])
+        while (common < nodeStack.length && common < newStack.length && nodeStack[common] === newStack[common])
             common++;
         var i = nodeStack.length - 1;
         var n;
@@ -3308,10 +3251,7 @@ function emitOnFocusChange(inFocus) {
             i++;
         }
         nodeStack = newStack;
-        currentFocusedNode =
-            nodeStack.length == 0
-                ? undefined
-                : null2undefined(nodeStack[nodeStack.length - 1]);
+        currentFocusedNode = nodeStack.length == 0 ? undefined : null2undefined(nodeStack[nodeStack.length - 1]);
     }
     return false;
 }
@@ -3415,7 +3355,6 @@ function nodePagePos(node) {
     return res;
 }
 exports.nodePagePos = nodePagePos;
-var cachedConvertPointFromClientToNode;
 var CSSMatrix = /** @class */ (function () {
     function CSSMatrix(data) {
         this.data = data;
@@ -3423,24 +3362,7 @@ var CSSMatrix = /** @class */ (function () {
     CSSMatrix.fromString = function (s) {
         var c = s.match(/matrix3?d?\(([^\)]+)\)/i)[1].split(",");
         if (c.length === 6) {
-            c = [
-                c[0],
-                c[1],
-                "0",
-                "0",
-                c[2],
-                c[3],
-                "0",
-                "0",
-                "0",
-                "0",
-                "1",
-                "0",
-                c[4],
-                c[5],
-                "0",
-                "1"
-            ];
+            c = [c[0], c[1], "0", "0", c[2], c[3], "0", "0", "0", "0", "1", "0", c[4], c[5], "0", "1"];
         }
         return new CSSMatrix([
             parseFloat(c[0]),
@@ -3529,24 +3451,7 @@ var CSSMatrix = /** @class */ (function () {
             0,
             1
         ]);
-        var Y = new CSSMatrix([
-            1,
-            0,
-            0,
-            -m[3],
-            0,
-            1,
-            0,
-            -m[7],
-            0,
-            0,
-            1,
-            -m[11],
-            0,
-            0,
-            0,
-            1
-        ]);
+        var Y = new CSSMatrix([1, 0, 0, -m[3], 0, 1, 0, -m[7], 0, 0, 1, -m[11], 0, 0, 0, 1]);
         return X.multiply(Y);
     };
     CSSMatrix.prototype.transformPoint = function (x, y) {
@@ -3597,31 +3502,16 @@ function getTransformationMatrix(element) {
         }
     }
     var rect = element.getBoundingClientRect();
-    transformationMatrix = identity
-        .translate(rect.left - left, rect.top - top, 0)
-        .multiply(transformationMatrix);
+    transformationMatrix = identity.translate(rect.left - left, rect.top - top, 0).multiply(transformationMatrix);
     return transformationMatrix;
 }
 function convertPointFromClientToNode(node, pageX, pageY) {
     var element = getDomNode(node);
-    if (cachedConvertPointFromClientToNode == null) {
-        var nativeConvert_1 = window.webkitConvertPointFromPageToNode;
-        if (nativeConvert_1) {
-            cachedConvertPointFromClientToNode = function (element, x, y) {
-                var scr = getWindowScroll();
-                var res = nativeConvert_1(element, new WebKitPoint(scr[0] + x, scr[1] + y));
-                return [res.x, res.y];
-            };
-        }
-        else {
-            cachedConvertPointFromClientToNode = function (element, x, y) {
-                return getTransformationMatrix(element)
-                    .inverse()
-                    .transformPoint(x, y);
-            };
-        }
-    }
-    return cachedConvertPointFromClientToNode(element, pageX, pageY);
+    if (element == null)
+        element = document.body;
+    return getTransformationMatrix(element)
+        .inverse()
+        .transformPoint(pageX, pageY);
 }
 exports.convertPointFromClientToNode = convertPointFromClientToNode;
 var lastDndId = 0;
@@ -3917,16 +3807,7 @@ function updateFromNative(dnd, ev) {
     dnd.lastX = dnd.x;
     dnd.lastY = dnd.y;
 }
-var effectAllowedTable = [
-    "none",
-    "link",
-    "copy",
-    "copyLink",
-    "move",
-    "linkMove",
-    "copyMove",
-    "all"
-];
+var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
 function handleDragStart(ev, _target, node) {
     var dnd = systemDnd;
     if (dnd != null) {
@@ -4070,8 +3951,7 @@ function handleDrag(ev, _target, _node) {
     var x = ev.clientX;
     var y = ev.clientY;
     var m = getMedia();
-    if (systemDnd != null &&
-        ((x === 0 && y === 0) || x < 0 || y < 0 || x >= m.width || y >= m.height)) {
+    if (systemDnd != null && ((x === 0 && y === 0) || x < 0 || y < 0 || x >= m.width || y >= m.height)) {
         systemDnd.x = 0;
         systemDnd.y = 0;
         systemDnd.operation = 0 /* None */;
@@ -4365,15 +4245,11 @@ function rootNodeFactory() {
         programPath = browserPath;
     }
     else {
-        if (!currentTransition &&
-            matches.length > 0 &&
-            browserPath != programPath) {
+        if (!currentTransition && matches.length > 0 && browserPath != programPath) {
             runTransition(createRedirectPush(matches[0].name, out.p));
         }
     }
-    if (currentTransition &&
-        currentTransition.type === 2 /* Pop */ &&
-        transitionState < 0) {
+    if (currentTransition && currentTransition.type === 2 /* Pop */ && transitionState < 0) {
         programPath = browserPath;
         currentTransition.inApp = true;
         if (currentTransition.name == null && matches.length > 0) {
@@ -4645,16 +4521,14 @@ function nextIteration() {
         }
         else if (transitionState == activeRoutes.length) {
             if (nextTransition) {
-                if (currentTransition &&
-                    currentTransition.type == 0 /* Push */) {
+                if (currentTransition && currentTransition.type == 0 /* Push */) {
                     push(urlOfRoute(currentTransition.name, currentTransition.params), currentTransition.inApp);
                 }
                 currentTransition = nextTransition;
                 nextTransition = null;
             }
             transitionState = -1;
-            if (!currentTransition.inApp ||
-                currentTransition.type === 2 /* Pop */) {
+            if (!currentTransition.inApp || currentTransition.type === 2 /* Pop */) {
                 var tr = currentTransition;
                 if (!currentTransition.inApp)
                     currentTransition = null;
@@ -4807,7 +4681,7 @@ function buildCssSubRule(parent) {
     if (!matchSplit)
         return allStyles[parent].name;
     var posSplit = matchSplit.index;
-    return (allStyles[parent.substring(0, posSplit)].name + parent.substring(posSplit));
+    return allStyles[parent.substring(0, posSplit)].name + parent.substring(posSplit);
 }
 function buildCssRule(parent, name) {
     var result = "";
@@ -4940,18 +4814,12 @@ function beforeFrame() {
             shimStyle(style_1);
             var cssStyle = inlineStyleToCssDeclaration(style_1);
             if (cssStyle.length > 0)
-                styleStr +=
-                    (name_1 == null ? parent_1 : buildCssRule(parent_1, name_1)) +
-                        " {" +
-                        cssStyle +
-                        "}\n";
+                styleStr += (name_1 == null ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n";
             for (var key2 in flattenPseudo) {
                 var item = flattenPseudo[key2];
                 shimStyle(item);
                 styleStr +=
-                    (name_1 == null
-                        ? parent_1 + ":" + key2
-                        : buildCssRule(parent_1, name_1 + ":" + key2)) +
+                    (name_1 == null ? parent_1 + ":" + key2 : buildCssRule(parent_1, name_1 + ":" + key2)) +
                         " {" +
                         inlineStyleToCssDeclaration(item) +
                         "}\n";
@@ -5215,17 +5083,7 @@ function sprite(url, color, width, height, left, top) {
             color[funcIdName] = colorId;
         }
     }
-    var key = url +
-        ":" +
-        colorId +
-        ":" +
-        (width || 0) +
-        ":" +
-        (height || 0) +
-        ":" +
-        left +
-        ":" +
-        top;
+    var key = url + ":" + colorId + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
     var spDef = allSprites[key];
     if (spDef)
         return spDef.styleId;
@@ -5359,9 +5217,7 @@ function svgPie(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
         if (!nextWithLine)
             return p;
     }
-    return (p +
-        svgDescribeArc(x, y, radiusSmall, endAngle, startAngle, nextWithLine) +
-        "Z");
+    return p + svgDescribeArc(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "Z";
 }
 exports.svgPie = svgPie;
 function svgCircle(x, y, radius) {
@@ -5552,11 +5408,7 @@ function createElement(name, props) {
                 style(res, props[n]);
                 continue;
             }
-            if (n === "key" ||
-                n === "ref" ||
-                n === "className" ||
-                n === "component" ||
-                n === "data") {
+            if (n === "key" || n === "ref" || n === "className" || n === "component" || n === "data") {
                 res[n] = props[n];
                 continue;
             }
