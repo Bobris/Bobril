@@ -2,9 +2,8 @@ declare var b: IBobrilStatic;
 
 declare type IBobrilChild = boolean | string | IBobrilNode;
 declare type IBobrilChildren = IBobrilChild | IBobrilChildArray;
-interface IBobrilChildArray extends Array<IBobrilChildren> {
-}
-declare type IBobrilCacheChildren = string | IBobrilCacheNode[]; 
+interface IBobrilChildArray extends Array<IBobrilChildren> {}
+declare type IBobrilCacheChildren = string | IBobrilCacheNode[];
 declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
 interface IBobrilRoot {
@@ -47,17 +46,32 @@ interface IBobrilStatic {
     // Low level method used just for testing
     createNode(n: IBobrilNode, parentNode: IBobrilNode, createInto: Element, createBefore: Node): IBobrilCacheNode;
     // Low level method used just for testing
-    updateNode(n: IBobrilNode, c: IBobrilCacheNode, createInto: Element, createBefore: Node, deepness: number): IBobrilCacheNode;
+    updateNode(
+        n: IBobrilNode,
+        c: IBobrilCacheNode,
+        createInto: Element,
+        createBefore: Node,
+        deepness: number
+    ): IBobrilCacheNode;
     // Low level method used just for testing
-    updateChildren(element: Element, newChildren: IBobrilChildren, cachedChildren: IBobrilCacheChildren, parentNode: IBobrilNode, createBefore: Node, deepness: number): IBobrilCacheNode[];
+    updateChildren(
+        element: Element,
+        newChildren: IBobrilChildren,
+        cachedChildren: IBobrilCacheChildren,
+        parentNode: IBobrilNode,
+        createBefore: Node,
+        deepness: number
+    ): IBobrilCacheNode[];
     // Low level method used just for testing
     callPostCallbacks(): void;
     // Set update DOM attribute value callback, returns previous callback to allow chaining
-    setSetValue(callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
+    setSetValue(
+        callback: (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void
+    ): (el: Element, node: IBobrilNode, newValue: any, oldValue: any) => void;
     // Register new style shim, look at bobril.styleshim.ts for examples
     setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void): void;
     // Set callback after frame is done, returns previous callback to allow chaining
-    setAfterFrame(callback: (root: IBobrilCacheNode[]) => void): (root: IBobrilCacheNode[]) => void;
+    setAfterFrame(callback: (root: IBobrilCacheChildren) => void): (root: IBobrilCacheChildren) => void;
     // Set callback before frame is rendering, returns previous callback to allow chaining
     setBeforeFrame(callback: () => void): () => void;
     // Set callback before init passes callback to continue with initialization
@@ -85,7 +99,11 @@ interface IBobrilStatic {
     // get first DOM Node from BobrilCacheNode
     getDomNode(node: IBobrilCacheNode): Node;
     // adds native event to window or body, if name starts with '!' it is not native but internal event which could be emited by code by emitEvent function
-    addEvent(name: string, priority: number, callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean): void;
+    addEvent(
+        name: string,
+        priority: number,
+        callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean
+    ): void;
     // emit internal event it should start with '!'
     emitEvent(name: string, ev: any, target: Node, node: IBobrilCacheNode): boolean;
     // bubble component event, returning ctx from event stops bubbling and returns true
@@ -101,8 +119,8 @@ interface IBobrilStatic {
     // shim inline style (it is used internally)
     shimStyle(style: any): void;
     // flatten array or wrap by array as needed - removing null, undefined, false, true - always returning new array
-    flatten(a:any|any[]): any[];
-	// merged component methods calls methods from c1 and if they don't return trueish value it continue with calling c2 method
+    flatten(a: any | any[]): any[];
+    // merged component methods calls methods from c1 and if they don't return trueish value it continue with calling c2 method
     mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent;
     // call imidiate render
     syncUpdate(): void;
@@ -111,14 +129,14 @@ interface IBobrilStatic {
 interface IBobrilAttributes {
     id?: string;
     href?: string;
-    value?: boolean|string|string[];
+    value?: boolean | string | string[];
     tabindex?: number;
     [name: string]: any;
 }
 
 interface IBobrilComponent {
     // parent component of devired/overriding component
-    super?: IBobrilComponent;     
+    super?: IBobrilComponent;
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;
@@ -173,7 +191,7 @@ interface IBobrilNodeWithChildren extends IBobrilNodeCommon {
     children: IBobrilChildren;
 }
 
-declare type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;   
+declare type IBobrilNode = IBobrilNodeWithTag | IBobrilNodeWithComponent | IBobrilNodeWithChildren;
 
 interface IBobrilCacheNode {
     tag: string;

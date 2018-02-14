@@ -296,6 +296,7 @@
                 return false;
             }
         }
+        return true;
     }
     function updateStyleDefEx(what, parent, style, pseudo) {
         var originalStyle = allStyles[what];

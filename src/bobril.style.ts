@@ -293,7 +293,7 @@ interface IInternalStyle {
         return updateStyleDefEx(what, null, style, pseudo);
     }
 
-    function objectsEqual(obj1: any, obj2: any) {
+    function objectsEqual(obj1: any, obj2: any): boolean {
         if (obj1 === obj2) return true;
         if (typeof obj1 !== typeof obj2) {
             return false;
@@ -320,6 +320,7 @@ interface IInternalStyle {
                 return false;
             }
         }
+        return true;
     }
 
     function updateStyleDefEx(
