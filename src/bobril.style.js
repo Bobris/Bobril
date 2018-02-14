@@ -94,7 +94,11 @@
                         dynSprite.height = image.height;
                     var lastUrl = recolorAndClip(image, colorStr, dynSprite.width, dynSprite.height, dynSprite.left, dynSprite.top);
                     var stDef = allStyles[dynSprite.styleid];
-                    stDef.style = { backgroundImage: "url(" + lastUrl + ")", width: dynSprite.width, height: dynSprite.height };
+                    stDef.style = {
+                        backgroundImage: "url(" + lastUrl + ")",
+                        width: dynSprite.width,
+                        height: dynSprite.height
+                    };
                 }
             }
             var stylestr = injectedCss;
@@ -137,18 +141,19 @@
                 for (var key2 in flattenPseudo) {
                     var sspi = flattenPseudo[key2];
                     b.shimStyle(sspi);
-                    stylestr += buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
+                    stylestr +=
+                        buildCssRule(parent_1, name_1 + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
                 }
             }
             var styleElement = document.createElement("style");
-            styleElement.type = 'text/css';
+            styleElement.type = "text/css";
             if (styleElement.styleSheet) {
                 styleElement.styleSheet.cssText = stylestr;
             }
             else {
                 styleElement.appendChild(document.createTextNode(stylestr));
             }
-            var head = document.head || document.getElementsByTagName('head')[0];
+            var head = document.head || document.getElementsByTagName("head")[0];
             if (htmlStyle != null) {
                 head.replaceChild(styleElement, htmlStyle);
             }
@@ -180,7 +185,7 @@
                 continue;
             }
             var s = ca[i];
-            if (s == null || typeof s === "boolean" || s === '') {
+            if (s == null || typeof s === "boolean" || s === "") {
                 // skip
             }
             else if (typeof s === "string") {
@@ -223,7 +228,10 @@
     function hyphenateStyle(s) {
         if (s === "cssFloat")
             return "float";
-        return s.replace(uppercasePattern, '-$1').toLowerCase().replace(msPattern, '-ms-');
+        return s
+            .replace(uppercasePattern, "-$1")
+            .toLowerCase()
+            .replace(msPattern, "-ms-");
     }
     function inlineStyleToCssDeclaration(style) {
         var res = "";
@@ -256,6 +264,52 @@
         invalidateStyles();
         return nameHint;
     }
+    function updateStyleDef(what, style, pseudo) {
+        return updateStyleDefEx(what, null, style, pseudo);
+    }
+    function objectsEqual(obj1, obj2) {
+        if (obj1 === obj2)
+            return true;
+        if (typeof obj1 !== typeof obj2) {
+            return false;
+        }
+        for (var p in obj1) {
+            if (obj1.hasOwnProperty(p) !== obj2.hasOwnProperty(p)) {
+                return false;
+            }
+            var v1 = obj1[p];
+            var v2 = obj2[p];
+            if (typeof v1 !== typeof v2) {
+                return false;
+            }
+            if (DEBUG && typeof v1 === "function")
+                throw new Error("not supported");
+            if (!objectsEqual(v1, v2)) {
+                return false;
+            }
+        }
+        for (var p in obj2) {
+            if (!obj2.hasOwnProperty(p)) {
+                continue;
+            }
+            if (!obj1.hasOwnProperty(p)) {
+                return false;
+            }
+        }
+    }
+    function updateStyleDefEx(what, parent, style, pseudo) {
+        var originalStyle = allStyles[what];
+        if (originalStyle === undefined) {
+            throw new Error("Unknown style " + what);
+        }
+        if (objectsEqual(originalStyle.parent, parent) &&
+            objectsEqual(originalStyle.style, style) &&
+            objectsEqual(originalStyle.pseudo, pseudo)) {
+            return;
+        }
+        allStyles[what] = { name: what, realname: what, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
+        invalidateStyles();
+    }
     function invalidateStyles() {
         rebuildStyles = true;
         b.invalidate();
@@ -270,7 +324,7 @@
         invalidateStyles();
     }
     function emptyStyleDef(url) {
-        return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
+        return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, "_"));
     }
     var rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
     function recolorAndClip(image, colorStr, width, height, left, top) {
@@ -299,7 +353,9 @@
             for (var i = 0; i < imgd.length; i += 4) {
                 // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
                 var red = imgd[i];
-                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
+                if (red === imgd[i + 1] &&
+                    red === imgd[i + 2] &&
+                    (red === 0x80 || (imgd[i + 3] < 0xff && red > 0x70))) {
                     imgd[i] = cred;
                     imgd[i + 1] = cgreen;
                     imgd[i + 2] = cblue;
@@ -310,7 +366,7 @@
             for (var i = 0; i < imgd.length; i += 4) {
                 var red = imgd[i];
                 var alpha = imgd[i + 3];
-                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || alpha < 0xff && red > 0x70)) {
+                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || (alpha < 0xff && red > 0x70))) {
                     if (alpha === 0xff) {
                         imgd[i] = cred;
                         imgd[i + 1] = cgreen;
@@ -333,10 +389,18 @@
     function sprite(url, color, width, height, left, top) {
         left = left || 0;
         top = top || 0;
-        if (typeof color === 'function') {
+        if (typeof color === "function") {
             var styleid = emptyStyleDef(url);
             dynamicSprites.push({
-                styleid: styleid, color: color, url: url, width: width, height: height, left: left, top: top, lastColor: '', lastUrl: ''
+                styleid: styleid,
+                color: color,
+                url: url,
+                width: width,
+                height: height,
+                left: left,
+                top: top,
+                lastColor: "",
+                lastUrl: ""
             });
             if (imageCache[url] === undefined) {
                 imageCache[url] = null;
@@ -377,7 +441,7 @@
         allSprites[key] = spDef;
         return styleid;
     }
-    var bundlePath = window['bobrilBPath'] || 'bundle.png';
+    var bundlePath = window["bobrilBPath"] || "bundle.png";
     function setBundlePngPath(path) {
         bundlePath = path;
     }
@@ -403,6 +467,8 @@
     b.style = style;
     b.styleDef = styleDef;
     b.styleDefEx = styleDefEx;
+    b.updateStyleDef = updateStyleDef;
+    b.updateStyleDefEx = updateStyleDefEx;
     b.sprite = sprite;
     b.spriteb = spriteb;
     b.spritebc = spritebc;

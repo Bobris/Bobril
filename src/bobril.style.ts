@@ -119,9 +119,20 @@ interface IInternalStyle {
                     dynSprite.lastColor = colorStr;
                     if (dynSprite.width == null) dynSprite.width = image.width;
                     if (dynSprite.height == null) dynSprite.height = image.height;
-                    let lastUrl = recolorAndClip(image, colorStr, dynSprite.width, dynSprite.height, dynSprite.left, dynSprite.top);
+                    let lastUrl = recolorAndClip(
+                        image,
+                        colorStr,
+                        dynSprite.width,
+                        dynSprite.height,
+                        dynSprite.left,
+                        dynSprite.top
+                    );
                     var stDef = allStyles[dynSprite.styleid];
-                    stDef.style = { backgroundImage: `url(${lastUrl})`, width: dynSprite.width, height: dynSprite.height };
+                    stDef.style = {
+                        backgroundImage: `url(${lastUrl})`,
+                        width: dynSprite.width,
+                        height: dynSprite.height
+                    };
                 }
             }
             var stylestr = injectedCss;
@@ -150,8 +161,7 @@ interface IInternalStyle {
                 }
                 if (isIE9) {
                     if (style["userSelect"]) {
-                        if (extractedInlStyle == null)
-                            extractedInlStyle = Object.create(null);
+                        if (extractedInlStyle == null) extractedInlStyle = Object.create(null);
                         extractedInlStyle["userSelect"] = style["userSelect"];
                         delete style["userSelect"];
                     }
@@ -159,27 +169,26 @@ interface IInternalStyle {
                 ss.inlStyle = extractedInlStyle;
                 b.shimStyle(style);
                 let cssStyle = inlineStyleToCssDeclaration(style);
-                if (cssStyle.length > 0)
-                    stylestr += buildCssRule(parent, name) + " {" + cssStyle + "}\n";
+                if (cssStyle.length > 0) stylestr += buildCssRule(parent, name) + " {" + cssStyle + "}\n";
                 for (var key2 in flattenPseudo) {
                     let sspi = flattenPseudo[key2];
                     b.shimStyle(sspi);
-                    stylestr += buildCssRule(parent, name + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
+                    stylestr +=
+                        buildCssRule(parent, name + ":" + key2) + " {" + inlineStyleToCssDeclaration(sspi) + "}\n";
                 }
             }
             var styleElement = document.createElement("style");
-            styleElement.type = 'text/css';
+            styleElement.type = "text/css";
             if ((<any>styleElement).styleSheet) {
                 (<any>styleElement).styleSheet.cssText = stylestr;
             } else {
                 styleElement.appendChild(document.createTextNode(stylestr));
             }
 
-            var head = document.head || document.getElementsByTagName('head')[0];
+            var head = document.head || document.getElementsByTagName("head")[0];
             if (htmlStyle != null) {
                 head.replaceChild(styleElement, htmlStyle);
-            }
-            else {
+            } else {
                 head.appendChild(styleElement);
             }
             htmlStyle = styleElement;
@@ -202,11 +211,12 @@ interface IInternalStyle {
                 continue;
             }
             let s = ca[i];
-            if (s == null || typeof s === "boolean" || s === '') {
+            if (s == null || typeof s === "boolean" || s === "") {
                 // skip
             } else if (typeof s === "string") {
                 var sd = allStyles[s];
-                if (className == null) className = sd.realname; else className = className + " " + sd.realname;
+                if (className == null) className = sd.realname;
+                else className = className + " " + sd.realname;
                 var inls = sd.inlStyle;
                 if (inls) {
                     if (inlineStyle == null) inlineStyle = {};
@@ -215,9 +225,11 @@ interface IInternalStyle {
             } else if (b.isArray(s)) {
                 if (ca.length > i + 1) {
                     if (stack == null) stack = [];
-                    stack.push(i); stack.push(ca);
+                    stack.push(i);
+                    stack.push(ca);
                 }
-                ca = <IBobrilStyles[]>s; i = 0;
+                ca = <IBobrilStyles[]>s;
+                i = 0;
                 continue;
             } else {
                 if (inlineStyle == null) inlineStyle = {};
@@ -235,7 +247,10 @@ interface IInternalStyle {
 
     function hyphenateStyle(s: string): string {
         if (s === "cssFloat") return "float";
-        return s.replace(uppercasePattern, '-$1').toLowerCase().replace(msPattern, '-ms-');
+        return s
+            .replace(uppercasePattern, "-$1")
+            .toLowerCase()
+            .replace(msPattern, "-ms-");
     }
 
     function inlineStyleToCssDeclaration(style: any): string {
@@ -253,7 +268,12 @@ interface IInternalStyle {
         return styleDefEx(null, style, pseudo, nameHint);
     }
 
-    function styleDefEx(parent: IBobrilStyleDef | IBobrilStyleDef[], style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+    function styleDefEx(
+        parent: IBobrilStyleDef | IBobrilStyleDef[],
+        style: any,
+        pseudo?: { [name: string]: any },
+        nameHint?: string
+    ): IBobrilStyleDef {
         if (nameHint && nameHint !== "b-") {
             if (allNameHints[nameHint]) {
                 var counter = 1;
@@ -267,6 +287,60 @@ interface IInternalStyle {
         allStyles[nameHint] = { name: nameHint, realname: nameHint, parent, style, inlStyle: null, pseudo };
         invalidateStyles();
         return nameHint;
+    }
+
+    function updateStyleDef(what: IBobrilStyleDef, style: any, pseudo?: { [name: string]: any }): IBobrilStyleDef {
+        return updateStyleDefEx(what, null, style, pseudo);
+    }
+
+    function objectsEqual(obj1: any, obj2: any) {
+        if (obj1 === obj2) return true;
+        if (typeof obj1 !== typeof obj2) {
+            return false;
+        }
+        for (var p in obj1) {
+            if (obj1.hasOwnProperty(p) !== obj2.hasOwnProperty(p)) {
+                return false;
+            }
+            let v1 = obj1[p];
+            let v2 = obj2[p];
+            if (typeof v1 !== typeof v2) {
+                return false;
+            }
+            if (DEBUG && typeof v1 === "function") throw new Error("not supported");
+            if (!objectsEqual(v1, v2)) {
+                return false;
+            }
+        }
+        for (var p in obj2) {
+            if (!obj2.hasOwnProperty(p)) {
+                continue;
+            }
+            if (!obj1.hasOwnProperty(p)) {
+                return false;
+            }
+        }
+    }
+
+    function updateStyleDefEx(
+        what: IBobrilStyleDef,
+        parent: IBobrilStyleDef | IBobrilStyleDef[],
+        style: any,
+        pseudo?: { [name: string]: any }
+    ): IBobrilStyleDef {
+        var originalStyle = allStyles[what];
+        if (originalStyle === undefined) {
+            throw new Error("Unknown style " + what);
+        }
+        if (
+            objectsEqual(originalStyle.parent, parent) &&
+            objectsEqual(originalStyle.style, style) &&
+            objectsEqual(originalStyle.pseudo, pseudo)
+        ) {
+            return;
+        }
+        allStyles[what] = { name: what, realname: what, parent: parent, style: style, inlStyle: null, pseudo: pseudo };
+        invalidateStyles();
     }
 
     function invalidateStyles(): void {
@@ -285,12 +359,19 @@ interface IInternalStyle {
     }
 
     function emptyStyleDef(url: string): IBobrilStyleDef {
-        return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, '_'));
+        return styleDef({ width: 0, height: 0 }, null, url.replace(/[^a-z0-9_-]/gi, "_"));
     }
 
     const rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
 
-    function recolorAndClip(image: HTMLImageElement, colorStr: string, width: number, height: number, left: number, top: number): string {
+    function recolorAndClip(
+        image: HTMLImageElement,
+        colorStr: string,
+        width: number,
+        height: number,
+        left: number,
+        top: number
+    ): string {
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
@@ -315,17 +396,26 @@ interface IInternalStyle {
             for (var i = 0; i < imgd.length; i += 4) {
                 // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
                 let red = imgd[i];
-                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || imgd[i + 3] < 0xff && red > 0x70)) {
-                    imgd[i] = cred; imgd[i + 1] = cgreen; imgd[i + 2] = cblue;
+                if (
+                    red === imgd[i + 1] &&
+                    red === imgd[i + 2] &&
+                    (red === 0x80 || (imgd[i + 3] < 0xff && red > 0x70))
+                ) {
+                    imgd[i] = cred;
+                    imgd[i + 1] = cgreen;
+                    imgd[i + 2] = cblue;
                 }
             }
         } else {
             for (var i = 0; i < imgd.length; i += 4) {
                 let red = imgd[i];
                 let alpha = imgd[i + 3];
-                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || alpha < 0xff && red > 0x70)) {
+                if (red === imgd[i + 1] && red === imgd[i + 2] && (red === 0x80 || (alpha < 0xff && red > 0x70))) {
                     if (alpha === 0xff) {
-                        imgd[i] = cred; imgd[i + 1] = cgreen; imgd[i + 2] = cblue; imgd[i + 3] = calpha;
+                        imgd[i] = cred;
+                        imgd[i + 1] = cgreen;
+                        imgd[i + 2] = cblue;
+                        imgd[i + 3] = calpha;
                     } else {
                         alpha = alpha * (1.0 / 255);
                         imgd[i] = Math.round(cred * alpha);
@@ -340,13 +430,28 @@ interface IInternalStyle {
         return canvas.toDataURL();
     }
 
-    function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef {
+    function sprite(
+        url: string,
+        color?: string | (() => string),
+        width?: number,
+        height?: number,
+        left?: number,
+        top?: number
+    ): IBobrilStyleDef {
         left = left || 0;
         top = top || 0;
-        if (typeof color === 'function') {
+        if (typeof color === "function") {
             var styleid = emptyStyleDef(url);
             dynamicSprites.push({
-                styleid, color, url, width, height, left, top, lastColor: '', lastUrl: ''
+                styleid,
+                color,
+                url,
+                width,
+                height,
+                left,
+                top,
+                lastColor: "",
+                lastUrl: ""
             });
             if (imageCache[url] === undefined) {
                 imageCache[url] = null;
@@ -385,7 +490,7 @@ interface IInternalStyle {
         return styleid;
     }
 
-    var bundlePath = (<any>window)['bobrilBPath'] || 'bundle.png';
+    var bundlePath = (<any>window)["bobrilBPath"] || "bundle.png";
 
     function setBundlePngPath(path: string): void {
         bundlePath = path;
@@ -415,6 +520,8 @@ interface IInternalStyle {
     b.style = style;
     b.styleDef = styleDef;
     b.styleDefEx = styleDefEx;
+    b.updateStyleDef = updateStyleDef;
+    b.updateStyleDefEx = updateStyleDefEx;
     b.sprite = sprite;
     b.spriteb = spriteb;
     b.spritebc = spritebc;
