@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.4.1
+
+Compilable by TS 2.7.1 with strict settings.
+
 ## 8.4.0
 
 Compile on most strict settings. Callback functions in IBobrilNode.ref are now called with undefined instead of null when destroying reference.

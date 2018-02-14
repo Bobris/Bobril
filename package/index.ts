@@ -177,7 +177,7 @@ export interface IBobrilCtx {
 export class BobrilCtx<TData> implements IBobrilCtx {
     constructor(data?: TData, me?: IBobrilCacheNode) {
         this.data = data!;
-        (this as any).me = me;
+        this.me = me!;
         this.cfg = undefined;
         this.refs = undefined;
         this.disposables = undefined;
