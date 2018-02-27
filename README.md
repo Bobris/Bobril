@@ -30,6 +30,8 @@ Chrome plugin to help you to inspect running Bobril application: https://chrome.
 
 If you want to speed up your Angular app use: https://github.com/karasek/ngBobril
 
+Bobx (Mobx like state managment library with deep Bobril integration) is here: https://github.com/bobril/bobx
+
 Flux implementation for Bobril is here: https://github.com/karelsteinmetz/bobflux
 
 Bobril Material Icons: https://github.com/bobril/bobril-m-icons
