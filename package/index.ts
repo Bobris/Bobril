@@ -1135,7 +1135,7 @@ export function updateNode(
                 }
             } else {
                 if (deepness <= 0) {
-                    if (isArray(cachedChildren)) selectedUpdate(<IBobrilCacheNode[]>c.children, el, createBefore);
+                    if (isArray(cachedChildren)) selectedUpdate(<IBobrilCacheNode[]>c.children, el, null);
                 } else {
                     cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
                 }
@@ -1807,14 +1807,26 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
         var node = cache[i];
         var ctx = node.ctx;
         if (ctx != null && (<any>ctx)[ctxInvalidated] === frameCounter) {
-            cache[i] = updateNode(node.orig, node, element, createBefore, (<any>ctx)[ctxDeepness], true);
+            cache[i] = updateNode(
+                node.orig,
+                node,
+                element,
+                findNextNode(cache, i, len, createBefore),
+                (<any>ctx)[ctxDeepness],
+                true
+            );
         } else if (isArray(node.children)) {
             var backupInSvg = inSvg;
             var backupInNotFocusable = inNotFocusable;
             if (inNotFocusable && focusRootTop === node) inNotFocusable = false;
             if (node.tag === "svg") inSvg = true;
             else if (inSvg && node.tag === "foreignObject") inSvg = false;
-            selectedUpdate(node.children, <Element>node.element || element, findNextNode(cache, i, len, createBefore));
+            var thisElement = node.element;
+            if (thisElement != undefined) {
+                selectedUpdate(node.children, <Element>thisElement, null);
+            } else {
+                selectedUpdate(node.children, element, findNextNode(cache, i, len, createBefore));
+            }
             pushUpdateEverytimeCallback(node);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;

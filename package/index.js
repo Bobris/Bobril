@@ -958,7 +958,7 @@ function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) 
             else {
                 if (deepness <= 0) {
                     if (exports.isArray(cachedChildren))
-                        selectedUpdate(c.children, el, createBefore);
+                        selectedUpdate(c.children, el, null);
                 }
                 else {
                     cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
@@ -1487,7 +1487,7 @@ function selectedUpdate(cache, element, createBefore) {
         var node = cache[i];
         var ctx = node.ctx;
         if (ctx != null && ctx[ctxInvalidated] === frameCounter) {
-            cache[i] = updateNode(node.orig, node, element, createBefore, ctx[ctxDeepness], true);
+            cache[i] = updateNode(node.orig, node, element, findNextNode(cache, i, len, createBefore), ctx[ctxDeepness], true);
         }
         else if (exports.isArray(node.children)) {
             var backupInSvg = inSvg;
@@ -1498,7 +1498,13 @@ function selectedUpdate(cache, element, createBefore) {
                 inSvg = true;
             else if (inSvg && node.tag === "foreignObject")
                 inSvg = false;
-            selectedUpdate(node.children, node.element || element, findNextNode(cache, i, len, createBefore));
+            var thisElement = node.element;
+            if (thisElement != undefined) {
+                selectedUpdate(node.children, thisElement, null);
+            }
+            else {
+                selectedUpdate(node.children, element, findNextNode(cache, i, len, createBefore));
+            }
             pushUpdateEverytimeCallback(node);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
