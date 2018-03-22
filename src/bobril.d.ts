@@ -2,7 +2,7 @@ declare var b: IBobrilStatic;
 
 declare type IBobrilChild = boolean | string | IBobrilNode;
 declare type IBobrilChildren = IBobrilChild | IBobrilChildArray;
-interface IBobrilChildArray extends Array<IBobrilChildren> {}
+interface IBobrilChildArray extends Array<IBobrilChildren> { }
 declare type IBobrilCacheChildren = string | IBobrilCacheNode[];
 declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
@@ -124,6 +124,8 @@ interface IBobrilStatic {
     mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent;
     // call imidiate render
     syncUpdate(): void;
+    // iterates trough elements in DOM from specific start position and fires "runMethod" if the method is available on the component, which emits event on desired component  
+    runMethod(ctx: Object, methodId: string, param: any): void;
 }
 
 interface IBobrilAttributes {

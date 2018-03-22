@@ -1503,6 +1503,44 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return r;
     }
 
+    function runMethod(ctx: IBobrilCtx, methodId: string, parms: any) {
+        var done = false;
+        var initialRoot: IBobrilCacheNode = ctx.me;
+        var previousRoot: IBobrilCacheNode = null;
+
+        function loopRoot(root: IBobrilCacheNode) {
+            var children = root ? root.children : null;
+            if (children && children.length && !done) loopChildNodes(<IBobrilCacheNode[]>children);
+
+            var comp: any = root.component;
+            if (comp && comp.runMethod && !done) {
+                if (comp.runMethod(root.ctx, methodId, parms)) done = true;
+            }
+            if (done) return;
+
+            if (root.parent) {
+                previousRoot = root;
+                loopRoot(root.parent);
+            }
+        }
+
+        function loopChildNodes(children: IBobrilCacheNode[]) {
+            for (var i = children.length - 1; i >= 0; i--) {
+                var child: IBobrilCacheNode = children[i];
+                if (child == previousRoot) continue;
+                child.children && loopChildNodes(<IBobrilCacheNode[]>child.children);
+                if (done) return;
+
+                var comp: any = child.component;
+                if (comp && comp.runMethod && !done) {
+                    if (comp.runMethod(child.ctx, methodId, parms)) done = true;
+                }
+            }
+        }
+
+        if (initialRoot) loopRoot(initialRoot);
+    }
+
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -1541,6 +1579,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         shimStyle: shimStyle,
         flatten: flatten,
         syncUpdate: syncUpdate,
-        mergeComponents: mergeComponents
+        mergeComponents: mergeComponents,
+        runMethod: runMethod
     };
 })(window, document);
