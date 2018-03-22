@@ -1514,6 +1514,44 @@ b = (function (window, document) {
         }
         return r;
     }
+    function runMethod(ctx, methodId, parms) {
+        var done = false;
+        var initialRoot = ctx.me;
+        var previousRoot = null;
+        function loopRoot(root) {
+            var children = root ? root.children : null;
+            if (children && children.length && !done)
+                loopChildNodes(children);
+            var comp = root.component;
+            if (comp && comp.runMethod && !done) {
+                if (comp.runMethod(root.ctx, methodId, parms))
+                    done = true;
+            }
+            if (done)
+                return;
+            if (root.parent) {
+                previousRoot = root;
+                loopRoot(root.parent);
+            }
+        }
+        function loopChildNodes(children) {
+            for (var i = children.length - 1; i >= 0; i--) {
+                var child = children[i];
+                if (child == previousRoot)
+                    continue;
+                child.children && loopChildNodes(child.children);
+                if (done)
+                    return;
+                var comp = child.component;
+                if (comp && comp.runMethod && !done) {
+                    if (comp.runMethod(child.ctx, methodId, parms))
+                        done = true;
+                }
+            }
+        }
+        if (initialRoot)
+            loopRoot(initialRoot);
+    }
     return {
         createNode: createNode,
         updateNode: updateNode,
@@ -1552,6 +1590,7 @@ b = (function (window, document) {
         shimStyle: shimStyle,
         flatten: flatten,
         syncUpdate: syncUpdate,
-        mergeComponents: mergeComponents
+        mergeComponents: mergeComponents,
+        runMethod: runMethod
     };
 })(window, document);
