@@ -1505,40 +1505,39 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
     function runMethod(ctx: IBobrilCtx, methodId: string, parms: any) {
         var done = false;
-        var initialRoot: IBobrilCacheNode = ctx.me;
+        var currentRoot: IBobrilCacheNode = ctx.me;
         var previousRoot: IBobrilCacheNode = null;
 
-        function loopRoot(root: IBobrilCacheNode) {
-            var children = root ? root.children : null;
+        while (currentRoot) {
+            var children = currentRoot.children;
             if (children && children.length && !done) loopChildNodes(<IBobrilCacheNode[]>children);
 
-            var comp: any = root.component;
+            var comp: any = currentRoot.component;
             if (comp && comp.runMethod && !done) {
-                if (comp.runMethod(root.ctx, methodId, parms)) done = true;
+                if (comp.runMethod(currentRoot.ctx, methodId, parms)) done = true;
             }
             if (done) return;
 
-            if (root.parent) {
-                previousRoot = root;
-                loopRoot(root.parent);
-            }
+            previousRoot = currentRoot;
+            currentRoot = currentRoot.parent;
         }
 
         function loopChildNodes(children: IBobrilCacheNode[]) {
             for (var i = children.length - 1; i >= 0; i--) {
                 var child: IBobrilCacheNode = children[i];
-                if (child == previousRoot) continue;
-                child.children && loopChildNodes(<IBobrilCacheNode[]>child.children);
+                if (child === previousRoot) continue;
+                isArray(child.children) && loopChildNodes(child.children);
                 if (done) return;
 
                 var comp: any = child.component;
-                if (comp && comp.runMethod && !done) {
-                    if (comp.runMethod(child.ctx, methodId, parms)) done = true;
+                if (comp && comp.runMethod) {
+                    if (comp.runMethod(child.ctx, methodId, parms)) {
+                        done = true;
+                        return;
+                    }
                 }
             }
         }
-
-        if (initialRoot) loopRoot(initialRoot);
     }
 
     return {

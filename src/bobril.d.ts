@@ -124,7 +124,7 @@ interface IBobrilStatic {
     mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent;
     // call imidiate render
     syncUpdate(): void;
-    // iterates trough elements in DOM from specific start position and fires "runMethod" if the method is available on the component, which emits event on desired component  
+    // iterates through elements in DOM from specific start position and fires "runMethod" if the method is available on the component, which emits event on desired component  
     runMethod(ctx: Object, methodId: string, param: any): void;
 }
 
