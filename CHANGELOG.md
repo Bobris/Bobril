@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.5.0
+
+Compilable by TS 2.8.1.
+
 ## 8.4.2
 
 Fixed crashes in virtual components with local invalidates.

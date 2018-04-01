@@ -2725,7 +2725,7 @@ function stringArrayContains(a: string[], v: string): boolean {
     return false;
 }
 
-function selectedArray(options: HTMLSelectElement): string[] {
+function selectedArray(options: HTMLOptionsCollection): string[] {
     var res: string[] = [];
     for (var j = 0; j < options.length; j++) {
         if (options[j].selected) res.push(options[j].value);
@@ -2751,7 +2751,7 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, new
     var isMultiSelect = isSelect && (<HTMLSelectElement>el).multiple;
     var emitDiff = false;
     if (isMultiSelect) {
-        var options = <HTMLSelectElement>(<HTMLSelectElement>el).options;
+        var options = (<HTMLSelectElement>el).options;
         var currentMulti = selectedArray(options);
         if (!stringArrayEqual(newValue, currentMulti)) {
             if (
@@ -2832,7 +2832,7 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
     if (hasPropOrOnChange && isMultiSelect) {
-        var vs = selectedArray(<HTMLSelectElement>(<HTMLSelectElement>target).options);
+        var vs = selectedArray((<HTMLSelectElement>target).options);
         if (!stringArrayEqual((<any>ctx)[bValue], vs)) {
             (<any>ctx)[bValue] = vs;
             if (hasProp) hasProp(vs);
@@ -2882,8 +2882,8 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
             }
         }
         if (hasOnSelectionChange) {
-            let sStart = (<HTMLInputElement>target).selectionStart;
-            let sEnd = (<HTMLInputElement>target).selectionEnd;
+            let sStart = (<HTMLInputElement>target).selectionStart!;
+            let sEnd = (<HTMLInputElement>target).selectionEnd!;
             let sDir = (<any>target).selectionDirection;
             let swap = false;
             let oStart = (<any>ctx)[bSelectionStart];
