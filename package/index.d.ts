@@ -365,6 +365,9 @@ export interface IRouteConfig {
     handler?: IRouteHandler;
     keyBuilder?: (params: Params) => string;
 }
+export declare function encodeUrl(url: string): string;
+export declare function decodeUrl(url: string): string;
+export declare function encodeUrlPath(path: string): string;
 export declare function routes(root: IRoute | IRoute[]): void;
 export declare function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRoute;
 export declare function routeDefault(config: IRouteConfig): IRoute;

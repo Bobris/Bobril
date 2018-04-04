@@ -4720,15 +4720,15 @@ function pop(distance: number) {
 let rootRoutes: IRoute[];
 let nameRouteMap: { [name: string]: IRoute } = {};
 
-function encodeUrl(url: string): string {
+export function encodeUrl(url: string): string {
     return encodeURIComponent(url).replace(/%20/g, "+");
 }
 
-function decodeUrl(url: string): string {
+export function decodeUrl(url: string): string {
     return decodeURIComponent(url.replace(/\+/g, " "));
 }
 
-function encodeUrlPath(path: string): string {
+export function encodeUrlPath(path: string): string {
     return String(path)
         .split("/")
         .map(encodeUrl)

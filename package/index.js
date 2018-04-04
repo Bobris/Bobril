@@ -4079,15 +4079,18 @@ var nameRouteMap = {};
 function encodeUrl(url) {
     return encodeURIComponent(url).replace(/%20/g, "+");
 }
+exports.encodeUrl = encodeUrl;
 function decodeUrl(url) {
     return decodeURIComponent(url.replace(/\+/g, " "));
 }
+exports.decodeUrl = decodeUrl;
 function encodeUrlPath(path) {
     return String(path)
         .split("/")
         .map(encodeUrl)
         .join("/");
 }
+exports.encodeUrlPath = encodeUrlPath;
 var paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
 var paramInjectMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|[*]/g;
 var compiledPatterns = {};

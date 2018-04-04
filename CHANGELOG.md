@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.6.0
+
+Exported encodeUrl, encodeUrlPath, decodeUrl functions.
+
 ## 8.5.0
 
 Compilable by TS 2.8.1.
