@@ -1069,6 +1069,7 @@ export function updateNode(
     } else {
         // In case there is no component and source is same reference it is considered not changed
         if (c.orig === n) {
+            finishUpdateNodeWithoutChange(c, createInto, createBefore);
             return c;
         }
         c.orig = n;

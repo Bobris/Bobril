@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.6.1
+
+Fixed bug in updateNode in special case.
+
 ## 8.6.0
 
 Exported encodeUrl, encodeUrlPath, decodeUrl functions.
