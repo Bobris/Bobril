@@ -1520,7 +1520,7 @@ b = (function (window, document) {
         var previousRoot = null;
         while (currentRoot) {
             var children = currentRoot.children;
-            if (children && children.length && !done)
+            if (isArray(children))
                 loopChildNodes(children);
             var comp = currentRoot.component;
             if (comp && comp.runMethod && !done) {
@@ -1549,6 +1549,8 @@ b = (function (window, document) {
                 }
             }
         }
+        if (done)
+            return true;
     }
     return {
         createNode: createNode,
