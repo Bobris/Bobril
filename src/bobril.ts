@@ -1510,7 +1510,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
         while (currentRoot) {
             var children = currentRoot.children;
-            if (children && children.length && !done) loopChildNodes(<IBobrilCacheNode[]>children);
+            if (isArray(children)) loopChildNodes(<IBobrilCacheNode[]>children);
 
             var comp: any = currentRoot.component;
             if (comp && comp.runMethod && !done) {
@@ -1538,6 +1538,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 }
             }
         }
+        if (done) return true;
     }
 
     return {
