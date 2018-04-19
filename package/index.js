@@ -755,29 +755,34 @@ function vdomPath(n) {
     var rootIds = Object.keys(roots);
     var rootElements = rootIds.map(function (i) { return roots[i].e || document.body; });
     var nodeStack = [];
-    rootFound: while (n) {
-        for (var j = 0; j < rootElements.length; j++) {
-            if (n === rootElements[j])
-                break rootFound;
+    rootReallyFound: while (true) {
+        rootFound: while (n) {
+            for (var j = 0; j < rootElements.length; j++) {
+                if (n === rootElements[j])
+                    break rootFound;
+            }
+            nodeStack.push(n);
+            n = n.parentNode;
         }
-        nodeStack.push(n);
-        n = n.parentNode;
-    }
-    if (!n || nodeStack.length === 0)
-        return res;
-    var currentCacheArray = null;
-    var currentNode = nodeStack.pop();
-    for (j = 0; j < rootElements.length; j++) {
-        if (n === rootElements[j]) {
-            var rn = roots[rootIds[j]].n;
-            if (rn === undefined)
-                continue;
-            var findResult = nodeContainsNode(rn, currentNode, res.length, res);
-            if (findResult !== undefined) {
-                currentCacheArray = findResult;
-                break;
+        if (!n || nodeStack.length === 0)
+            return res;
+        var currentCacheArray = null;
+        var currentNode = nodeStack.pop();
+        for (j = 0; j < rootElements.length; j++) {
+            if (n === rootElements[j]) {
+                var rn = roots[rootIds[j]].n;
+                if (rn === undefined)
+                    continue;
+                var findResult = nodeContainsNode(rn, currentNode, res.length, res);
+                if (findResult !== undefined) {
+                    currentCacheArray = findResult;
+                    break rootReallyFound;
+                }
             }
         }
+        nodeStack.push(currentNode);
+        nodeStack.push(n);
+        n = n.parentNode;
     }
     subtreeSearch: while (nodeStack.length) {
         currentNode = nodeStack.pop();

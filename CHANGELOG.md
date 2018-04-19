@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.7.0
+
+Fixed searching vdomPath when one of roots was created by Bobril. Don't do this at home.
+
 ## 8.6.1
 
 Fixed bug in updateNode in special case.
