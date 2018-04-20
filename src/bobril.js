@@ -80,7 +80,7 @@ b = (function (window, document) {
         strokeDashoffset: true,
         widows: true,
         zIndex: true,
-        zoom: true,
+        zoom: true
     };
     function renamer(newName) {
         return function (style, value, oldName) {
@@ -274,6 +274,10 @@ b = (function (window, document) {
         }
         refs[ref[1]] = value;
     }
+    var currentCtx;
+    function getCurrentCtx() {
+        return currentCtx;
+    }
     function createNode(n, parentNode, createInto, createBefore) {
         var c = {
             tag: n.tag,
@@ -297,12 +301,14 @@ b = (function (window, document) {
         if (component) {
             var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             c.ctx = ctx;
+            currentCtx = ctx;
             if (component.init) {
                 component.init(ctx, c);
             }
             if (component.render) {
                 component.render(ctx, c);
             }
+            currentCtx = undefined;
         }
         var tag = c.tag;
         var children = c.children;
@@ -458,8 +464,10 @@ b = (function (window, document) {
         }
         var component = c.component;
         if (component) {
+            var ctx = c.ctx;
+            currentCtx = ctx;
             if (component.destroy)
-                component.destroy(c.ctx, c, c.element);
+                component.destroy(ctx, c, c.element);
         }
     }
     function removeNodeRecursive(c) {
@@ -587,7 +595,9 @@ b = (function (window, document) {
     function finishUpdateNode(n, c, component) {
         if (component) {
             if (component.postRender) {
+                currentCtx = c.ctx;
                 component.postRender(c.ctx, n, c);
+                currentCtx = undefined;
             }
         }
         c.data = n.data;
@@ -606,6 +616,7 @@ b = (function (window, document) {
                 bigChange = true;
             }
             else {
+                currentCtx = ctx;
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
@@ -621,6 +632,7 @@ b = (function (window, document) {
                     component.render(ctx, n, c);
                 }
                 c.cfg = n.cfg;
+                currentCtx = ctx;
             }
         }
         var newChildren = n.children;
@@ -744,6 +756,7 @@ b = (function (window, document) {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
             var n = updateInstance[i];
+            currentCtx = n.ctx;
             if (updateCall[i]) {
                 n.component.postUpdateDom(n.ctx, n, n.element);
             }
@@ -751,6 +764,7 @@ b = (function (window, document) {
                 n.component.postInitDom(n.ctx, n, n.element);
             }
         }
+        currentCtx = undefined;
         updateCall = [];
         updateInstance = [];
     }
@@ -1418,7 +1432,7 @@ b = (function (window, document) {
     var emptyObject = {};
     function mergeComponents(c1, c2) {
         var res = Object.create(c1);
-        res.super = c1;
+        res["super"] = c1;
         for (var i in c2) {
             if (!(i in emptyObject)) {
                 var m = c2[i];
@@ -1514,7 +1528,7 @@ b = (function (window, document) {
         }
         return r;
     }
-    function runMethod(ctx, methodId, parms) {
+    function runMethodFrom(ctx, methodId, parms) {
         var done = false;
         var currentRoot = ctx.me;
         var previousRoot = null;
@@ -1524,7 +1538,7 @@ b = (function (window, document) {
                 loopChildNodes(children);
             var comp = currentRoot.component;
             if (comp && comp.runMethod && !done) {
-                if (comp.runMethod(currentRoot.ctx, methodId, parms))
+                if (comp.runMethodFrom(currentRoot.ctx, methodId, parms))
                     done = true;
             }
             if (done)
@@ -1542,7 +1556,7 @@ b = (function (window, document) {
                     return;
                 var comp = child.component;
                 if (comp && comp.runMethod) {
-                    if (comp.runMethod(child.ctx, methodId, parms)) {
+                    if (comp.runMethodFrom(child.ctx, methodId, parms)) {
                         done = true;
                         return;
                     }
@@ -1551,6 +1565,9 @@ b = (function (window, document) {
         }
         if (done)
             return true;
+    }
+    function runMethod(methodId, parms) {
+        return runMethodFrom(getCurrentCtx, methodId, parms);
     }
     return {
         createNode: createNode,
@@ -1591,6 +1608,8 @@ b = (function (window, document) {
         flatten: flatten,
         syncUpdate: syncUpdate,
         mergeComponents: mergeComponents,
-        runMethod: runMethod
+        runMethodFrom: runMethodFrom,
+        runMethod: runMethod,
+        getCurrentCtx: getCurrentCtx
     };
 })(window, document);

@@ -125,7 +125,11 @@ interface IBobrilStatic {
     // call imidiate render
     syncUpdate(): void;
     // iterates through elements in DOM from specific start position and fires "runMethod" if the method is available on the component, which emits event on desired component  
-    runMethod(ctx: Object, methodId: string, param: any): void;
+    runMethodFrom(ctx: Object, methodId: string, param?: any): void;
+    // same as previous, ctx is taken from current context
+    runMethod(methodId: string, param?: any): void;
+    // gets context of currently processed component
+    getCurrentCtx():IBobrilCtx | undefined;
 }
 
 interface IBobrilAttributes {
