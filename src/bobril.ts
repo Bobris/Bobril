@@ -280,6 +280,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         refs[(<[IBobrilCtx, string]>ref)[1]] = value;
     }
 
+    let currentCtx: IBobrilCtx | undefined;
+
+    function getCurrentCtx() {
+        return currentCtx;
+    }
+
     function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode {
         var c = <IBobrilCacheNode>{ // This makes CacheNode just one object class = fast
             tag: n.tag,
@@ -303,12 +309,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (component) {
             var ctx: IBobrilCtx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             c.ctx = ctx;
+            currentCtx = ctx;
             if (component.init) {
                 component.init(ctx, c);
             }
             if (component.render) {
                 component.render(ctx, c);
             }
+            currentCtx = undefined;
         }
         var tag = c.tag;
         var children = c.children;
@@ -455,8 +463,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         let component = c.component;
         if (component) {
+            let ctx = c.ctx!;
+            currentCtx = ctx;
             if (component.destroy)
-                component.destroy(c.ctx, c, <HTMLElement>c.element);
+                component.destroy(ctx, c, <HTMLElement>c.element);
         }
     }
 
@@ -582,7 +592,9 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent) {
         if (component) {
             if (component.postRender) {
+                currentCtx = c.ctx!;
                 component.postRender(c.ctx, n, c);
+                currentCtx = undefined;
             }
         }
         c.data = n.data;
@@ -601,6 +613,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (component.id !== c.component.id) {
                 bigChange = true;
             } else {
+                currentCtx = ctx;
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
@@ -616,6 +629,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     component.render(ctx, n, c);
                 }
                 c.cfg = n.cfg;
+                currentCtx = ctx;
             }
         }
         var newChildren = n.children;
@@ -724,12 +738,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var count = updateInstance.length;
         for (var i = 0; i < count; i++) {
             var n = updateInstance[i];
+            currentCtx = n.ctx;
             if (updateCall[i]) {
                 n.component.postUpdateDom(n.ctx, n, <HTMLElement>n.element);
             } else {
                 n.component.postInitDom(n.ctx, n, <HTMLElement>n.element);
             }
         }
+        currentCtx = undefined;
         updateCall = [];
         updateInstance = [];
     }
@@ -1503,7 +1519,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return r;
     }
 
-    function runMethod(ctx: IBobrilCtx, methodId: string, parms: any) {
+    function runMethodFrom(ctx: IBobrilCtx, methodId: string, parms: any) {
         var done = false;
         var currentRoot: IBobrilCacheNode = ctx.me;
         var previousRoot: IBobrilCacheNode = null;
@@ -1514,7 +1530,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
             var comp: any = currentRoot.component;
             if (comp && comp.runMethod && !done) {
-                if (comp.runMethod(currentRoot.ctx, methodId, parms)) done = true;
+                if (comp.runMethodFrom(currentRoot.ctx, methodId, parms)) done = true;
             }
             if (done) return;
 
@@ -1531,7 +1547,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
                 var comp: any = child.component;
                 if (comp && comp.runMethod) {
-                    if (comp.runMethod(child.ctx, methodId, parms)) {
+                    if (comp.runMethodFrom(child.ctx, methodId, parms)) {
                         done = true;
                         return;
                     }
@@ -1539,6 +1555,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
         }
         if (done) return true;
+    }
+
+    function runMethod(methodId: string, parms: any) {
+        return runMethodFrom(getCurrentCtx, methodId, parms);
     }
 
     return {
@@ -1580,6 +1600,8 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         flatten: flatten,
         syncUpdate: syncUpdate,
         mergeComponents: mergeComponents,
-        runMethod: runMethod
+        runMethodFrom: runMethodFrom,
+        runMethod: runMethod,
+        getCurrentCtx:getCurrentCtx
     };
 })(window, document);
