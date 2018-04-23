@@ -286,6 +286,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return currentCtx;
     }
 
+    let currentCtxWithEvents: IBobrilCtx | undefined;
+
+    function getcurrentCtxWithEvents() {
+        return currentCtxWithEvents;
+    }
+
     function createNode(n: IBobrilNode, parentNode: IBobrilCacheNode, createInto: Element, createBefore: Node): IBobrilCacheNode {
         var c = <IBobrilCacheNode>{ // This makes CacheNode just one object class = fast
             tag: n.tag,
@@ -310,12 +316,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var ctx: IBobrilCtx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             c.ctx = ctx;
             currentCtx = ctx;
+            currentCtxWithEvents = ctx;
             if (component.init) {
                 component.init(ctx, c);
             }
             if (component.render) {
                 component.render(ctx, c);
             }
+            currentCtxWithEvents = undefined;
             currentCtx = undefined;
         }
         var tag = c.tag;
@@ -463,10 +471,13 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         }
         let component = c.component;
         if (component) {
-            let ctx = c.ctx!;
-            currentCtx = ctx;
-            if (component.destroy)
+            if (component.destroy) {
+                let ctx = c.ctx!;
+                currentCtxWithEvents = ctx;
                 component.destroy(ctx, c, <HTMLElement>c.element);
+                currentCtxWithEvents = undefined;
+            }
+
         }
     }
 
@@ -593,8 +604,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         if (component) {
             if (component.postRender) {
                 currentCtx = c.ctx!;
+                currentCtxWithEvents = c.ctx!;
                 component.postRender(c.ctx, n, c);
                 currentCtx = undefined;
+                currentCtxWithEvents = undefined;
             }
         }
         c.data = n.data;
@@ -614,6 +627,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 bigChange = true;
             } else {
                 currentCtx = ctx;
+                currentCtxWithEvents = ctx;
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
@@ -630,6 +644,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                 }
                 c.cfg = n.cfg;
                 currentCtx = undefined;
+                currentCtxWithEvents = undefined;
             }
         }
         var newChildren = n.children;
@@ -739,6 +754,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         for (var i = 0; i < count; i++) {
             var n = updateInstance[i];
             currentCtx = n.ctx;
+            currentCtxWithEvents = n.ctx;
             if (updateCall[i]) {
                 n.component.postUpdateDom(n.ctx, n, <HTMLElement>n.element);
             } else {
@@ -746,6 +762,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             }
         }
         currentCtx = undefined;
+        currentCtxWithEvents = undefined;
         updateCall = [];
         updateInstance = [];
     }
@@ -1358,16 +1375,23 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var c = node.component;
             if (c) {
                 var ctx = node.ctx;
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = ctx;
                 var m = (<any>c)[name];
                 if (m) {
-                    if (m.call(c, ctx, param))
+                    if (m.call(c, ctx, param)) {
+                        currentCtxWithEvents = prevCtx;
                         return ctx;
+                    }
                 }
                 m = (<any>c).shouldStopBubble;
                 if (m) {
-                    if (m.call(c, ctx, name, param))
+                    if (m.call(c, ctx, name, param)) {
+                        currentCtxWithEvents = prevCtx;
                         break;
+                    }
                 }
+                currentCtxWithEvents = prevCtx;
             }
             node = node.parent;
         }
@@ -1380,16 +1404,23 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         var c = node.component;
         if (c) {
             var ctx = node.ctx;
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
             var m = (<any>c)[name];
             if (m) {
-                if (m.call(c, ctx, param))
+                if (m.call(c, ctx, param)) {
+                    currentCtxWithEvents = prevCtx;
                     return ctx;
+                }
             }
             m = c.shouldStopBroadcast;
             if (m) {
-                if (m.call(c, ctx, name, param))
+                if (m.call(c, ctx, name, param)) {
+                    currentCtxWithEvents = prevCtx;
                     return null;
+                }
             }
+            currentCtxWithEvents = prevCtx;
         }
         var ch = node.children;
         if (isArray(ch)) {
@@ -1530,7 +1561,10 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
             var comp: any = currentRoot.component;
             if (comp && comp.runMethod && !done) {
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = currentRoot.ctx;
                 if (comp.runMethod(currentRoot.ctx, methodId, parms)) done = true;
+                currentCtxWithEvents = prevCtx;
             }
             if (done) return;
 
@@ -1547,10 +1581,14 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
                 var comp: any = child.component;
                 if (comp && comp.runMethod) {
+                    var prevCtx = currentCtxWithEvents;
+                    currentCtxWithEvents = child.ctx;
                     if (comp.runMethod(child.ctx, methodId, parms)) {
                         done = true;
+                        currentCtxWithEvents = prevCtx;
                         return;
                     }
+                    currentCtxWithEvents = prevCtx;
                 }
             }
         }
@@ -1558,7 +1596,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function runMethod(methodId: string, parms: any) {
-        return runMethodFrom(getCurrentCtx(), methodId, parms);
+        return runMethodFrom(getcurrentCtxWithEvents(), methodId, parms);
     }
 
     return {

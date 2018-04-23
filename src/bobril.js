@@ -278,6 +278,10 @@ b = (function (window, document) {
     function getCurrentCtx() {
         return currentCtx;
     }
+    var currentCtxWithEvents;
+    function getcurrentCtxWithEvents() {
+        return currentCtxWithEvents;
+    }
     function createNode(n, parentNode, createInto, createBefore) {
         var c = {
             tag: n.tag,
@@ -302,12 +306,14 @@ b = (function (window, document) {
             var ctx = { data: c.data || {}, me: c, cfg: findCfg(parentNode) };
             c.ctx = ctx;
             currentCtx = ctx;
+            currentCtxWithEvents = ctx;
             if (component.init) {
                 component.init(ctx, c);
             }
             if (component.render) {
                 component.render(ctx, c);
             }
+            currentCtxWithEvents = undefined;
             currentCtx = undefined;
         }
         var tag = c.tag;
@@ -464,10 +470,12 @@ b = (function (window, document) {
         }
         var component = c.component;
         if (component) {
-            var ctx = c.ctx;
-            currentCtx = ctx;
-            if (component.destroy)
+            if (component.destroy) {
+                var ctx = c.ctx;
+                currentCtxWithEvents = ctx;
                 component.destroy(ctx, c, c.element);
+                currentCtxWithEvents = undefined;
+            }
         }
     }
     function removeNodeRecursive(c) {
@@ -596,8 +604,10 @@ b = (function (window, document) {
         if (component) {
             if (component.postRender) {
                 currentCtx = c.ctx;
+                currentCtxWithEvents = c.ctx;
                 component.postRender(c.ctx, n, c);
                 currentCtx = undefined;
+                currentCtxWithEvents = undefined;
             }
         }
         c.data = n.data;
@@ -617,6 +627,7 @@ b = (function (window, document) {
             }
             else {
                 currentCtx = ctx;
+                currentCtxWithEvents = ctx;
                 if (c.parent != undefined)
                     ctx.cfg = findCfg(c.parent);
                 if (component.shouldChange)
@@ -633,6 +644,7 @@ b = (function (window, document) {
                 }
                 c.cfg = n.cfg;
                 currentCtx = undefined;
+                currentCtxWithEvents = undefined;
             }
         }
         var newChildren = n.children;
@@ -757,6 +769,7 @@ b = (function (window, document) {
         for (var i = 0; i < count; i++) {
             var n = updateInstance[i];
             currentCtx = n.ctx;
+            currentCtxWithEvents = n.ctx;
             if (updateCall[i]) {
                 n.component.postUpdateDom(n.ctx, n, n.element);
             }
@@ -765,6 +778,7 @@ b = (function (window, document) {
             }
         }
         currentCtx = undefined;
+        currentCtxWithEvents = undefined;
         updateCall = [];
         updateInstance = [];
     }
@@ -1360,16 +1374,23 @@ b = (function (window, document) {
             var c = node.component;
             if (c) {
                 var ctx = node.ctx;
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = ctx;
                 var m = c[name];
                 if (m) {
-                    if (m.call(c, ctx, param))
+                    if (m.call(c, ctx, param)) {
+                        currentCtxWithEvents = prevCtx;
                         return ctx;
+                    }
                 }
                 m = c.shouldStopBubble;
                 if (m) {
-                    if (m.call(c, ctx, name, param))
+                    if (m.call(c, ctx, name, param)) {
+                        currentCtxWithEvents = prevCtx;
                         break;
+                    }
                 }
+                currentCtxWithEvents = prevCtx;
             }
             node = node.parent;
         }
@@ -1381,16 +1402,23 @@ b = (function (window, document) {
         var c = node.component;
         if (c) {
             var ctx = node.ctx;
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
             var m = c[name];
             if (m) {
-                if (m.call(c, ctx, param))
+                if (m.call(c, ctx, param)) {
+                    currentCtxWithEvents = prevCtx;
                     return ctx;
+                }
             }
             m = c.shouldStopBroadcast;
             if (m) {
-                if (m.call(c, ctx, name, param))
+                if (m.call(c, ctx, name, param)) {
+                    currentCtxWithEvents = prevCtx;
                     return null;
+                }
             }
+            currentCtxWithEvents = prevCtx;
         }
         var ch = node.children;
         if (isArray(ch)) {
@@ -1538,8 +1566,11 @@ b = (function (window, document) {
                 loopChildNodes(children);
             var comp = currentRoot.component;
             if (comp && comp.runMethod && !done) {
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = currentRoot.ctx;
                 if (comp.runMethod(currentRoot.ctx, methodId, parms))
                     done = true;
+                currentCtxWithEvents = prevCtx;
             }
             if (done)
                 return;
@@ -1556,10 +1587,14 @@ b = (function (window, document) {
                     return;
                 var comp = child.component;
                 if (comp && comp.runMethod) {
+                    var prevCtx = currentCtxWithEvents;
+                    currentCtxWithEvents = child.ctx;
                     if (comp.runMethod(child.ctx, methodId, parms)) {
                         done = true;
+                        currentCtxWithEvents = prevCtx;
                         return;
                     }
+                    currentCtxWithEvents = prevCtx;
                 }
             }
         }
@@ -1567,7 +1602,7 @@ b = (function (window, document) {
             return true;
     }
     function runMethod(methodId, parms) {
-        return runMethodFrom(getCurrentCtx(), methodId, parms);
+        return runMethodFrom(getcurrentCtxWithEvents(), methodId, parms);
     }
     return {
         createNode: createNode,
