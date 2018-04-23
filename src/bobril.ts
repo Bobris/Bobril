@@ -629,7 +629,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     component.render(ctx, n, c);
                 }
                 c.cfg = n.cfg;
-                currentCtx = ctx;
+                currentCtx = undefined;
             }
         }
         var newChildren = n.children;
@@ -1530,7 +1530,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
             var comp: any = currentRoot.component;
             if (comp && comp.runMethod && !done) {
-                if (comp.runMethodFrom(currentRoot.ctx, methodId, parms)) done = true;
+                if (comp.runMethod(currentRoot.ctx, methodId, parms)) done = true;
             }
             if (done) return;
 
@@ -1547,7 +1547,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
 
                 var comp: any = child.component;
                 if (comp && comp.runMethod) {
-                    if (comp.runMethodFrom(child.ctx, methodId, parms)) {
+                    if (comp.runMethod(child.ctx, methodId, parms)) {
                         done = true;
                         return;
                     }
@@ -1558,7 +1558,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
     }
 
     function runMethod(methodId: string, parms: any) {
-        return runMethodFrom(getCurrentCtx, methodId, parms);
+        return runMethodFrom(getCurrentCtx(), methodId, parms);
     }
 
     return {
@@ -1602,6 +1602,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         mergeComponents: mergeComponents,
         runMethodFrom: runMethodFrom,
         runMethod: runMethod,
-        getCurrentCtx:getCurrentCtx
+        getCurrentCtx: getCurrentCtx
     };
 })(window, document);
