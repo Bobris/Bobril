@@ -11,6 +11,7 @@ export interface IDisposable {
 }
 export declare type IDisposeFunction = (ctx?: any) => void;
 export declare type IDisposableLike = IDisposable | IDisposeFunction;
+export declare type MethodId = string | number;
 export interface IBobrilRoot {
     f: (rootData: IBobrilRoot) => IBobrilChildren;
     e: HTMLElement | undefined;
@@ -46,6 +47,7 @@ export interface IBobrilComponent {
     destroy?(ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement): void;
     shouldStopBubble?(ctx: IBobrilCtx, name: string, param: Object): boolean;
     shouldStopBroadcast?(ctx: IBobrilCtx, name: string, param: Object): boolean;
+    runMethod?(ctx: IBobrilCtx, methodId: MethodId, param?: Object): boolean;
     onChange?(ctx: IBobrilCtx, value: any): void;
     onSelectionChange?(ctx: IBobrilCtx, event: ISelectionChangeEvent): void;
     onKeyDown?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
@@ -189,6 +191,11 @@ export declare function init(factory: () => any, element?: HTMLElement): void;
 export declare function setBeforeInit(callback: (cb: () => void) => void): void;
 export declare function bubble(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined;
 export declare function broadcast(name: string, param: any): IBobrilCtx | undefined;
+export declare function runMethodFrom(ctx: IBobrilCtx | undefined, methodId: MethodId, param?: Object): boolean;
+export declare function getCurrentCtxWithEvents(): IBobrilCtx | undefined;
+export declare function tryRunMethod(methodId: MethodId, param?: Object): boolean;
+export declare function runMethod(methodId: MethodId, param?: Object): void;
+export declare function allocateMethodId(): number;
 export declare function preEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
 export declare function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobrilNode;
 export declare function preventDefault(event: Event): void;

@@ -15,6 +15,8 @@ export interface IDisposable {
 export type IDisposeFunction = (ctx?: any) => void;
 export type IDisposableLike = IDisposable | IDisposeFunction;
 
+export type MethodId = string | number;
+
 export interface IBobrilRoot {
     // Factory function
     f: (rootData: IBobrilRoot) => IBobrilChildren;
@@ -72,6 +74,8 @@ export interface IBobrilComponent {
     shouldStopBubble?(ctx: IBobrilCtx, name: string, param: Object): boolean;
     // called when broadcast wants to dive in this node so you could silence broadcast for you and your children
     shouldStopBroadcast?(ctx: IBobrilCtx, name: string, param: Object): boolean;
+    // used to implement any instance method which will be search by runMethodFrom using wave kind of broadcast stopping on first method returning true
+    runMethod?(ctx: IBobrilCtx, methodId: MethodId, param?: Object): boolean;
 
     // called on input element after any change with new value (string|boolean)
     onChange?(ctx: IBobrilCtx, value: any): void;
@@ -857,6 +861,7 @@ function destroyNode(c: IBobrilCacheNode) {
                 else d.dispose();
             }
         }
+        currentCtx = undefined;
     }
 }
 
@@ -2090,14 +2095,21 @@ export function setBeforeInit(callback: (cb: () => void) => void): void {
     };
 }
 
+let currentCtxWithEvents: IBobrilCtx | undefined;
+
 export function bubble(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined {
+    var prevCtx = currentCtxWithEvents;
     while (node) {
         var c = node.component;
         if (c) {
             var ctx = node.ctx!;
+            currentCtxWithEvents = ctx;
             var m = (<any>c)[name];
             if (m) {
-                if (m.call(c, ctx, param)) return ctx;
+                if (m.call(c, ctx, param)) {
+                    currentCtxWithEvents = prevCtx;
+                    return ctx;
+                }
             }
             m = (<any>c).shouldStopBubble;
             if (m) {
@@ -2106,6 +2118,7 @@ export function bubble(node: IBobrilCacheNode | null | undefined, name: string, 
         }
         node = node.parent;
     }
+    currentCtxWithEvents = prevCtx;
     return undefined;
 }
 
@@ -2118,14 +2131,23 @@ function broadcastEventToNode(
     var c = node.component;
     if (c) {
         var ctx = node.ctx!;
+        var prevCtx = currentCtxWithEvents;
+        currentCtxWithEvents = ctx;
         var m = (<any>c)[name];
         if (m) {
-            if (m.call(c, ctx, param)) return ctx;
+            if (m.call(c, ctx, param)) {
+                currentCtxWithEvents = prevCtx;
+                return ctx;
+            }
         }
         m = c.shouldStopBroadcast;
         if (m) {
-            if (m.call(c, ctx, name, param)) return undefined;
+            if (m.call(c, ctx, name, param)) {
+                currentCtxWithEvents = prevCtx;
+                return undefined;
+            }
         }
+        currentCtxWithEvents = prevCtx;
     }
     var ch = node.children;
     if (isArray(ch)) {
@@ -2147,6 +2169,72 @@ export function broadcast(name: string, param: any): IBobrilCtx | undefined {
         }
     }
     return undefined;
+}
+
+export function runMethodFrom(ctx: IBobrilCtx | undefined, methodId: MethodId, param?: Object): boolean {
+    var done = false;
+    if (DEBUG && ctx == undefined) throw new Error("runMethodFrom ctx is undefined");
+    var currentRoot: IBobrilCacheNode | undefined = ctx!.me;
+    var previousRoot: IBobrilCacheNode | undefined;
+
+    while (currentRoot != undefined) {
+        var children = currentRoot.children;
+        if (isArray(children)) loopChildNodes(<IBobrilCacheNode[]>children);
+        if (done) return true;
+
+        var comp: any = currentRoot.component;
+        if (comp && comp.runMethod) {
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = currentRoot.ctx;
+            if (comp.runMethod(currentCtxWithEvents, methodId, param)) done = true;
+            currentCtxWithEvents = prevCtx;
+        }
+        if (done) return true;
+
+        previousRoot = currentRoot;
+        currentRoot = currentRoot.parent;
+    }
+
+    function loopChildNodes(children: IBobrilCacheNode[]) {
+        for (var i = children.length - 1; i >= 0; i--) {
+            var child: IBobrilCacheNode = children[i];
+            if (child === previousRoot) continue;
+            isArray(child.children) && loopChildNodes(child.children);
+            if (done) return;
+
+            var comp: any = child.component;
+            if (comp && comp.runMethod) {
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = child.ctx;
+                if (comp.runMethod(currentCtxWithEvents, methodId, param)) {
+                    currentCtxWithEvents = prevCtx;
+                    done = true;
+                    return;
+                }
+                currentCtxWithEvents = prevCtx;
+            }
+        }
+    }
+    return done;
+}
+
+export function getCurrentCtxWithEvents(): IBobrilCtx | undefined {
+    if (currentCtxWithEvents != undefined) return currentCtxWithEvents;
+    return currentCtx;
+}
+
+export function tryRunMethod(methodId: MethodId, param?: Object): boolean {
+    return runMethodFrom(getCurrentCtxWithEvents(), methodId, param);
+}
+
+export function runMethod(methodId: MethodId, param?: Object): void {
+    if (!runMethodFrom(getCurrentCtxWithEvents(), methodId, param)) throw Error("runMethod didn't found " + methodId);
+}
+
+let lastMethodId = 0;
+
+export function allocateMethodId(): number {
+    return lastMethodId++;
 }
 
 function merge(f1: Function, f2: Function): Function {
@@ -2841,8 +2929,11 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
         var vs = selectedArray((<HTMLSelectElement>target).options);
         if (!stringArrayEqual((<any>ctx)[bValue], vs)) {
             (<any>ctx)[bValue] = vs;
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
             if (hasProp) hasProp(vs);
             if (hasOnChange) c.onChange!(ctx, vs);
+            currentCtxWithEvents = prevCtx;
         }
     } else if (hasPropOrOnChange && isCheckboxLike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
@@ -2866,16 +2957,22 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
                 var vrb = (<HTMLInputElement>radio).checked;
                 if ((<any>radioCtx)[bValue] !== vrb) {
                     (<any>radioCtx)[bValue] = vrb;
+                    var prevCtx = currentCtxWithEvents;
+                    currentCtxWithEvents = radioCtx;
                     if (rbHasProp) rbHasProp(vrb);
                     if (rbHasOnChange) radioComponent.onChange!(radioCtx!, vrb);
+                    currentCtxWithEvents = prevCtx;
                 }
             }
         } else {
             var vb = (<HTMLInputElement>target).checked;
             if ((<any>ctx)[bValue] !== vb) {
                 (<any>ctx)[bValue] = vb;
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = ctx;
                 if (hasProp) hasProp(vb);
                 if (hasOnChange) c.onChange!(ctx, vb);
+                currentCtxWithEvents = prevCtx;
             }
         }
     } else {
@@ -2883,8 +2980,11 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
             var v = (<HTMLInputElement>target).value;
             if ((<any>ctx)[bValue] !== v) {
                 (<any>ctx)[bValue] = v;
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = ctx;
                 if (hasProp) hasProp(v);
                 if (hasOnChange) c.onChange!(ctx, v);
+                currentCtxWithEvents = prevCtx;
             }
         }
         if (hasOnSelectionChange) {
@@ -2915,11 +3015,15 @@ function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: numbe
     if (c && ((<any>ctx)[bSelectionStart] !== start || (<any>ctx)[bSelectionEnd] !== end)) {
         (<any>ctx)[bSelectionStart] = start;
         (<any>ctx)[bSelectionEnd] = end;
-        if (c.onSelectionChange)
+        if (c.onSelectionChange) {
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
             c.onSelectionChange(ctx!, {
                 startPosition: start,
                 endPosition: end
             });
+            currentCtxWithEvents = prevCtx;
+        }
     }
 }
 
@@ -3075,13 +3179,17 @@ function invokeMouseOwner(handlerName: string, param: any): boolean {
         return false;
     }
 
-    var handler = ownerCtx.me.component[handlerName];
+    var c = ownerCtx.me.component;
+    var handler = c[handlerName];
     if (!handler) {
         // no handler available
         return false;
     }
     invokingOwner = true;
-    var stop = handler(ownerCtx, param);
+    var prevCtx = currentCtxWithEvents;
+    currentCtxWithEvents = ownerCtx;
+    var stop = handler.call(c, ownerCtx, param);
+    currentCtxWithEvents = prevCtx;
     invokingOwner = false;
     return stop;
 }

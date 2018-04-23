@@ -674,6 +674,7 @@ function destroyNode(c) {
                     d.dispose();
             }
         }
+        currentCtx = undefined;
     }
 }
 function addDisposable(ctx, disposable) {
@@ -1754,15 +1755,20 @@ function setBeforeInit(callback) {
     };
 }
 exports.setBeforeInit = setBeforeInit;
+var currentCtxWithEvents;
 function bubble(node, name, param) {
+    var prevCtx = currentCtxWithEvents;
     while (node) {
         var c = node.component;
         if (c) {
             var ctx = node.ctx;
+            currentCtxWithEvents = ctx;
             var m = c[name];
             if (m) {
-                if (m.call(c, ctx, param))
+                if (m.call(c, ctx, param)) {
+                    currentCtxWithEvents = prevCtx;
                     return ctx;
+                }
             }
             m = c.shouldStopBubble;
             if (m) {
@@ -1772,6 +1778,7 @@ function bubble(node, name, param) {
         }
         node = node.parent;
     }
+    currentCtxWithEvents = prevCtx;
     return undefined;
 }
 exports.bubble = bubble;
@@ -1781,16 +1788,23 @@ function broadcastEventToNode(node, name, param) {
     var c = node.component;
     if (c) {
         var ctx = node.ctx;
+        var prevCtx = currentCtxWithEvents;
+        currentCtxWithEvents = ctx;
         var m = c[name];
         if (m) {
-            if (m.call(c, ctx, param))
+            if (m.call(c, ctx, param)) {
+                currentCtxWithEvents = prevCtx;
                 return ctx;
+            }
         }
         m = c.shouldStopBroadcast;
         if (m) {
-            if (m.call(c, ctx, name, param))
+            if (m.call(c, ctx, name, param)) {
+                currentCtxWithEvents = prevCtx;
                 return undefined;
+            }
         }
+        currentCtxWithEvents = prevCtx;
     }
     var ch = node.children;
     if (exports.isArray(ch)) {
@@ -1815,6 +1829,75 @@ function broadcast(name, param) {
     return undefined;
 }
 exports.broadcast = broadcast;
+function runMethodFrom(ctx, methodId, param) {
+    var done = false;
+    if (DEBUG && ctx == undefined)
+        throw new Error("runMethodFrom ctx is undefined");
+    var currentRoot = ctx.me;
+    var previousRoot;
+    while (currentRoot != undefined) {
+        var children = currentRoot.children;
+        if (exports.isArray(children))
+            loopChildNodes(children);
+        if (done)
+            return true;
+        var comp = currentRoot.component;
+        if (comp && comp.runMethod) {
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = currentRoot.ctx;
+            if (comp.runMethod(currentCtxWithEvents, methodId, param))
+                done = true;
+            currentCtxWithEvents = prevCtx;
+        }
+        if (done)
+            return true;
+        previousRoot = currentRoot;
+        currentRoot = currentRoot.parent;
+    }
+    function loopChildNodes(children) {
+        for (var i = children.length - 1; i >= 0; i--) {
+            var child = children[i];
+            if (child === previousRoot)
+                continue;
+            exports.isArray(child.children) && loopChildNodes(child.children);
+            if (done)
+                return;
+            var comp = child.component;
+            if (comp && comp.runMethod) {
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = child.ctx;
+                if (comp.runMethod(currentCtxWithEvents, methodId, param)) {
+                    currentCtxWithEvents = prevCtx;
+                    done = true;
+                    return;
+                }
+                currentCtxWithEvents = prevCtx;
+            }
+        }
+    }
+    return done;
+}
+exports.runMethodFrom = runMethodFrom;
+function getCurrentCtxWithEvents() {
+    if (currentCtxWithEvents != undefined)
+        return currentCtxWithEvents;
+    return currentCtx;
+}
+exports.getCurrentCtxWithEvents = getCurrentCtxWithEvents;
+function tryRunMethod(methodId, param) {
+    return runMethodFrom(getCurrentCtxWithEvents(), methodId, param);
+}
+exports.tryRunMethod = tryRunMethod;
+function runMethod(methodId, param) {
+    if (!runMethodFrom(getCurrentCtxWithEvents(), methodId, param))
+        throw Error("runMethod didn't found " + methodId);
+}
+exports.runMethod = runMethod;
+var lastMethodId = 0;
+function allocateMethodId() {
+    return lastMethodId++;
+}
+exports.allocateMethodId = allocateMethodId;
 function merge(f1, f2) {
     return function () {
         var params = [];
@@ -2466,10 +2549,13 @@ function emitOnChange(ev, target, node) {
         var vs = selectedArray(target.options);
         if (!stringArrayEqual(ctx[bValue], vs)) {
             ctx[bValue] = vs;
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
             if (hasProp)
                 hasProp(vs);
             if (hasOnChange)
                 c.onChange(ctx, vs);
+            currentCtxWithEvents = prevCtx;
         }
     }
     else if (hasPropOrOnChange && isCheckboxLike(target)) {
@@ -2496,10 +2582,13 @@ function emitOnChange(ev, target, node) {
                 var vrb = radio.checked;
                 if (radioCtx[bValue] !== vrb) {
                     radioCtx[bValue] = vrb;
+                    var prevCtx = currentCtxWithEvents;
+                    currentCtxWithEvents = radioCtx;
                     if (rbHasProp)
                         rbHasProp(vrb);
                     if (rbHasOnChange)
                         radioComponent.onChange(radioCtx, vrb);
+                    currentCtxWithEvents = prevCtx;
                 }
             }
         }
@@ -2507,10 +2596,13 @@ function emitOnChange(ev, target, node) {
             var vb = target.checked;
             if (ctx[bValue] !== vb) {
                 ctx[bValue] = vb;
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = ctx;
                 if (hasProp)
                     hasProp(vb);
                 if (hasOnChange)
                     c.onChange(ctx, vb);
+                currentCtxWithEvents = prevCtx;
             }
         }
     }
@@ -2519,10 +2611,13 @@ function emitOnChange(ev, target, node) {
             var v = target.value;
             if (ctx[bValue] !== v) {
                 ctx[bValue] = v;
+                var prevCtx = currentCtxWithEvents;
+                currentCtxWithEvents = ctx;
                 if (hasProp)
                     hasProp(v);
                 if (hasOnChange)
                     c.onChange(ctx, v);
+                currentCtxWithEvents = prevCtx;
             }
         }
         if (hasOnSelectionChange) {
@@ -2554,11 +2649,15 @@ function emitOnSelectionChange(node, start, end) {
     if (c && (ctx[bSelectionStart] !== start || ctx[bSelectionEnd] !== end)) {
         ctx[bSelectionStart] = start;
         ctx[bSelectionEnd] = end;
-        if (c.onSelectionChange)
+        if (c.onSelectionChange) {
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
             c.onSelectionChange(ctx, {
                 startPosition: start,
                 endPosition: end
             });
+            currentCtxWithEvents = prevCtx;
+        }
     }
 }
 function select(node, start, end) {
@@ -2656,13 +2755,17 @@ function invokeMouseOwner(handlerName, param) {
     if (ownerCtx == null) {
         return false;
     }
-    var handler = ownerCtx.me.component[handlerName];
+    var c = ownerCtx.me.component;
+    var handler = c[handlerName];
     if (!handler) {
         // no handler available
         return false;
     }
     invokingOwner = true;
-    var stop = handler(ownerCtx, param);
+    var prevCtx = currentCtxWithEvents;
+    currentCtxWithEvents = ownerCtx;
+    var stop = handler.call(c, ownerCtx, param);
+    currentCtxWithEvents = prevCtx;
     invokingOwner = false;
     return stop;
 }
