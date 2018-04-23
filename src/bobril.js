@@ -632,7 +632,7 @@ b = (function (window, document) {
                     component.render(ctx, n, c);
                 }
                 c.cfg = n.cfg;
-                currentCtx = ctx;
+                currentCtx = undefined;
             }
         }
         var newChildren = n.children;
@@ -1538,7 +1538,7 @@ b = (function (window, document) {
                 loopChildNodes(children);
             var comp = currentRoot.component;
             if (comp && comp.runMethod && !done) {
-                if (comp.runMethodFrom(currentRoot.ctx, methodId, parms))
+                if (comp.runMethod(currentRoot.ctx, methodId, parms))
                     done = true;
             }
             if (done)
@@ -1556,7 +1556,7 @@ b = (function (window, document) {
                     return;
                 var comp = child.component;
                 if (comp && comp.runMethod) {
-                    if (comp.runMethodFrom(child.ctx, methodId, parms)) {
+                    if (comp.runMethod(child.ctx, methodId, parms)) {
                         done = true;
                         return;
                     }
@@ -1567,7 +1567,7 @@ b = (function (window, document) {
             return true;
     }
     function runMethod(methodId, parms) {
-        return runMethodFrom(getCurrentCtx, methodId, parms);
+        return runMethodFrom(getCurrentCtx(), methodId, parms);
     }
     return {
         createNode: createNode,
