@@ -3009,8 +3009,10 @@ function diffLess(n1, n2, diff) {
 }
 var prevMousePath = [];
 function revalidateMouseIn() {
-    if (lastMouseEv)
+    if (lastMouseEv) {
         mouseEnterAndLeave(lastMouseEv);
+        handlePointerMove(lastMouseEv, undefined, deref(document.elementFromPoint(lastMouseEv.x, lastMouseEv.y)));
+    }
 }
 exports.revalidateMouseIn = revalidateMouseIn;
 function mouseEnterAndLeave(ev) {

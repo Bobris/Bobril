@@ -3468,7 +3468,7 @@ function diffLess(n1: number, n2: number, diff: number) {
 var prevMousePath: (IBobrilCacheNode | null)[] = [];
 
 export function revalidateMouseIn() {
-    if (lastMouseEv){
+    if (lastMouseEv) {
         mouseEnterAndLeave(lastMouseEv);
         handlePointerMove(lastMouseEv, undefined, deref(document.elementFromPoint(lastMouseEv.x, lastMouseEv.y)));
     }

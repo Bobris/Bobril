@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "8.8.0",
+    "version": "8.8.1",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",

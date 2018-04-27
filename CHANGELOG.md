@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.8.1
+
+Fixed revalidateMouseIn method to fix also Drag and Drop use-case.
+
 ## 8.8.0
 
 New feature runMethod and getCurrentCtxWithEvents which is new method of how to call methods between components.
