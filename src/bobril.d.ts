@@ -130,6 +130,7 @@ interface IBobrilStatic {
     runMethod(methodId: string, param?: any): void;
     // gets context of currently processed component
     getCurrentCtx():IBobrilCtx | undefined;
+    setCurrentCtx(ctx: IBobrilCtx | undefined): void;
 }
 
 interface IBobrilAttributes {

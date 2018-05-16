@@ -286,8 +286,12 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return currentCtx;
     }
 
-    let currentCtxWithEvents: IBobrilCtx | undefined;
+    function setCurrentCtx(ctx: IBobrilCtx | undefined): void {
+        currentCtx = ctx;
+    }
 
+    let currentCtxWithEvents: IBobrilCtx | undefined;
+   
     function getcurrentCtxWithEvents() {
         return currentCtxWithEvents;
     }
@@ -1640,6 +1644,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         mergeComponents: mergeComponents,
         runMethodFrom: runMethodFrom,
         runMethod: runMethod,
-        getCurrentCtx: getCurrentCtx
+        getCurrentCtx: getCurrentCtx,
+        setCurrentCtx: setCurrentCtx
     };
 })(window, document);
