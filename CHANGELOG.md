@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 8.8.1
+
+Fixed revalidateMouseIn method to fix also Drag and Drop use-case.
+
+## 8.8.0
+
+New feature runMethod and getCurrentCtxWithEvents which is new method of how to call methods between components.
+
 ## 8.7.0
 
 Fixed searching vdomPath when one of roots was created by Bobril. Don't do this at home.
