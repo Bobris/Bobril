@@ -278,6 +278,9 @@ b = (function (window, document) {
     function getCurrentCtx() {
         return currentCtx;
     }
+    function setCurrentCtx(ctx) {
+        currentCtx = ctx;
+    }
     var currentCtxWithEvents;
     function getcurrentCtxWithEvents() {
         return currentCtxWithEvents;
@@ -1645,6 +1648,7 @@ b = (function (window, document) {
         mergeComponents: mergeComponents,
         runMethodFrom: runMethodFrom,
         runMethod: runMethod,
-        getCurrentCtx: getCurrentCtx
+        getCurrentCtx: getCurrentCtx,
+        setCurrentCtx: setCurrentCtx
     };
 })(window, document);
