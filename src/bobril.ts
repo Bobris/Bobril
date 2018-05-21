@@ -161,6 +161,82 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         (<any>s)[name] = "";
     }
 
+    var linkedProps = createLinkedPropsMap([
+        {
+            rootToDeepestLevelLink: true,
+            g: [["border"], ["Top", "Right", "Bottom", "Left"], ["Color", "Style", "Width"]]
+        },
+        {
+            rootToDeepestLevelLink: true,
+            omitLevels: [0, 1],
+            g: [["border"], ["TopLeft", "TopRight", "BottomRight", "BottomLeft"], ["Radius"]]
+        },
+        { g: [["margin"], ["Top", "Right", "Bottom", "Left"]] },
+        { g: [["padding"], ["Top", "Right", "Bottom", "Left"]] },
+        { g: [["outline"], ["Color", "Style", "Width"]] },
+        {
+            forcedPrefixes: {lineHeight: ""},
+            g: [["font"], ["Style", "Variant", "Weight", "Size", "lineHeight", "Family"]]
+        },
+        { g: [["background"], ["Color", "Image", "Repeat", "Position", "Attachment", "Size", "Origin", "Clip"]] },
+        { g: [["listStyle"], ["Type", "Position", "Image"]] }
+    ]);
+
+    interface linkedPropsMapCfg {
+        rootToDeepestLevelLink?: boolean;
+        omitLevels?: number[];
+        forcedPrefixes?: { [prop: string]: string };
+        g: string[][];
+    }
+
+    function createLinkedPropsMap(cfgs: linkedPropsMapCfg[]): any {
+
+        var result: any = {};
+        var partialMap: any;
+        var cfg: linkedPropsMapCfg;
+
+        function recursiveSearch(parent: string, lvl: number, parentsProps: any, omit: boolean, idxInLvl: number) {
+            var passIn: any = assign(null, parentsProps);
+            if (!omit) {
+                passIn[parent] = {};
+                if (partialMap[parent] === undefined) partialMap[parent] = {};
+                for (var prop in passIn) {
+                    if (parentsProps.hasOwnProperty(prop))
+                        passIn[parent][prop] = partialMap[parent][prop] = true;
+                }
+            }
+            var children = cfg.g[lvl + 1] || [];
+            var parentProp = parent;
+            if (cfg.rootToDeepestLevelLink && lvl === cfg.g.length - 1) {
+                children = [cfg.g[lvl][idxInLvl]];
+                parentProp = cfg.g[0][0];
+            }
+            children.forEach((child: string, idx: number) => {
+                var propPrefix = cfg.forcedPrefixes[child] !== undefined ? cfg.forcedPrefixes[child] : parentProp;
+                if (!omit) partialMap[parent][propPrefix + child] = true;
+                recursiveSearch(propPrefix + child, lvl + 1, passIn, cfg.omitLevels.indexOf(lvl + 1) > -1, idx);
+            });
+            // Root property has to contain all of the generated properties
+            // except itself unless it's omitted from the partialMap
+            if (!omit && lvl === 0) {
+                for (var prop in partialMap) {
+                    if (prop !== parent)
+                        partialMap[parent][prop] = true;
+                }
+            }
+        }
+        for (var i = 0; i < cfgs.length; i++) {
+            cfg = cfgs[i];
+            partialMap = {};
+            cfg.rootToDeepestLevelLink = cfg.rootToDeepestLevelLink || false;
+            cfg.omitLevels = cfg.omitLevels || [];
+            cfg.forcedPrefixes = cfg.forcedPrefixes || {};
+            recursiveSearch(cfg.g[0][0], 0, {}, cfg.omitLevels.indexOf(0) > -1, 0);
+            assign(result, partialMap);
+        }
+        return result;
+    }
+
     function updateStyle(n: IBobrilCacheNode, el: HTMLElement, newStyle: any, oldStyle: any) {
         var s = el.style;
         if (isObject(newStyle)) {
@@ -168,15 +244,22 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             var rule: string;
             if (isObject(oldStyle)) {
                 for (rule in oldStyle) {
-                    if (!(rule in newStyle))
+                    if (newStyle[rule] === undefined) {
                         removeProperty(s, rule);
+                        if (rule in linkedProps) {
+                            var linkedRule: string;
+                            for (linkedRule in linkedProps[rule]) {
+                                if (newStyle[linkedRule] !== undefined && oldStyle[linkedRule] === newStyle[linkedRule]) {
+                                    oldStyle[linkedRule] = undefined;
+                                }
+                            }
+                        }
+                    }
                 }
                 for (rule in newStyle) {
                     var v = newStyle[rule];
                     if (v !== undefined) {
                         if (oldStyle[rule] !== v) s[<any>rule] = v;
-                    } else {
-                        removeProperty(s, rule);
                     }
                 }
             } else {
