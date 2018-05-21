@@ -21,7 +21,7 @@
             return false;
         }
         var handler = ownerCtx.me.component[handlerName];
-        if (!handler) {
+        if (!handler) { // no handler available
             return false;
         }
         invokingOwner = true;

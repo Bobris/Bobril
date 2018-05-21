@@ -88,7 +88,6 @@ b = (function (window, document) {
             style[oldName] = undefined;
         };
     }
-    ;
     function renamerpx(newName) {
         return function (style, value, oldName) {
             if (typeof value === "number") {
@@ -123,18 +122,18 @@ b = (function (window, document) {
                         console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
                 }
                 if (testPropExistence(ki)) {
-                    mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                    mi = isUnitlessNumber[ki] === true ? null : pxadder;
                 }
                 else {
                     var titleCaseKi = ki.replace(/^\w/, function (match) { return match.toUpperCase(); });
                     for (var j = 0; j < vendors.length; j++) {
                         if (testPropExistence(vendors[j] + titleCaseKi)) {
-                            mi = ((isUnitlessNumber[ki] === true) ? renamer : renamerpx)(vendors[j] + titleCaseKi);
+                            mi = (isUnitlessNumber[ki] === true ? renamer : renamerpx)(vendors[j] + titleCaseKi);
                             break;
                         }
                     }
                     if (mi === undefined) {
-                        mi = (isUnitlessNumber[ki] === true) ? null : pxadder;
+                        mi = isUnitlessNumber[ki] === true ? null : pxadder;
                         if (DEBUG && window.console && console.warn)
                             console.warn("Style property " + ki + " is not supported in this browser");
                     }
@@ -282,11 +281,15 @@ b = (function (window, document) {
         currentCtx = ctx;
     }
     var currentCtxWithEvents;
-    function getcurrentCtxWithEvents() {
+    function getCurrentCtxWithEvents() {
         return currentCtxWithEvents;
+    }
+    function setCurrentCtxWithEvents(ctx) {
+        currentCtxWithEvents = ctx;
     }
     function createNode(n, parentNode, createInto, createBefore) {
         var c = {
+            // This makes CacheNode just one object class = fast
             tag: n.tag,
             key: n.key,
             ref: n.ref,
@@ -693,7 +696,7 @@ b = (function (window, document) {
                     inSvg = true;
                 }
                 var el = c.element;
-                if ((typeof newChildren === "string") && !isArray(cachedChildren)) {
+                if (typeof newChildren === "string" && !isArray(cachedChildren)) {
                     if (newChildren !== cachedChildren) {
                         if (hasTextContent) {
                             el.textContent = newChildren;
@@ -961,6 +964,7 @@ b = (function (window, document) {
         var cachedKey;
         while (cachedIndex < cachedEnd && newIndex < newEnd) {
             if (cachedChildren[cachedIndex] === null) {
+                // already moved somethere else
                 cachedChildren.splice(cachedIndex, 1);
                 cachedEnd--;
                 cachedLength--;
@@ -1025,12 +1029,14 @@ b = (function (window, document) {
         // remove old keyed cached nodes
         while (cachedIndex < cachedEnd) {
             if (cachedChildren[cachedIndex] === null) {
+                // already moved somethere else
                 cachedChildren.splice(cachedIndex, 1);
                 cachedEnd--;
                 cachedLength--;
                 continue;
             }
             if (cachedChildren[cachedIndex].key != null) {
+                // this key is only in old
                 removeNode(cachedChildren[cachedIndex]);
                 cachedChildren.splice(cachedIndex, 1);
                 cachedEnd--;
@@ -1131,10 +1137,12 @@ b = (function (window, document) {
     var hasNativeRaf = false;
     var nativeRaf = window.requestAnimationFrame;
     if (nativeRaf) {
-        nativeRaf(function (param) { if (param === +param)
-            hasNativeRaf = true; });
+        nativeRaf(function (param) {
+            if (param === +param)
+                hasNativeRaf = true;
+        });
     }
-    var now = Date.now || (function () { return (new Date).getTime(); });
+    var now = Date.now || (function () { return new Date().getTime(); });
     var startTime = now();
     var lastTickTime = 0;
     function requestAnimationFrame(callback) {
@@ -1181,7 +1189,7 @@ b = (function (window, document) {
     function addListener(el, name) {
         if (name[0] == "!")
             return;
-        var capture = (name[0] == "^");
+        var capture = name[0] == "^";
         var eventName = name;
         if (capture) {
             eventName = name.slice(1);
@@ -1192,7 +1200,7 @@ b = (function (window, document) {
             var n = getCacheNode(t);
             emitEvent(name, ev, t, n);
         }
-        if (("on" + eventName) in window)
+        if ("on" + eventName in window)
             el = window;
         el.addEventListener(eventName, enhanceEvent, capture);
     }
@@ -1463,13 +1471,13 @@ b = (function (window, document) {
     var emptyObject = {};
     function mergeComponents(c1, c2) {
         var res = Object.create(c1);
-        res["super"] = c1;
+        res.super = c1;
         for (var i in c2) {
             if (!(i in emptyObject)) {
                 var m = c2[i];
                 var origM = c1[i];
                 if (i === "id") {
-                    res[i] = ((origM != null) ? origM : "") + "/" + m;
+                    res[i] = (origM != null ? origM : "") + "/" + m;
                 }
                 else if (typeof m === "function" && origM != null && typeof origM === "function") {
                     res[i] = merge(origM, m);
@@ -1605,7 +1613,7 @@ b = (function (window, document) {
             return true;
     }
     function runMethod(methodId, parms) {
-        return runMethodFrom(getcurrentCtxWithEvents(), methodId, parms);
+        return runMethodFrom(getCurrentCtxWithEvents(), methodId, parms);
     }
     return {
         createNode: createNode,
@@ -1613,7 +1621,9 @@ b = (function (window, document) {
         updateChildren: updateChildren,
         callPostCallbacks: callPostCallbacks,
         setSetValue: setSetValue,
-        setStyleShim: function (name, action) { return mapping[name] = action; },
+        setStyleShim: function (name, action) {
+            return (mapping[name] = action);
+        },
         init: init,
         addRoot: addRoot,
         removeRoot: removeRoot,
@@ -1649,6 +1659,8 @@ b = (function (window, document) {
         runMethodFrom: runMethodFrom,
         runMethod: runMethod,
         getCurrentCtx: getCurrentCtx,
-        setCurrentCtx: setCurrentCtx
+        setCurrentCtx: setCurrentCtx,
+        getCurrentCtxWithEvents: getCurrentCtxWithEvents,
+        setCurrentCtxWithEvents: setCurrentCtxWithEvents
     };
 })(window, document);

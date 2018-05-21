@@ -2,7 +2,7 @@ declare var b: IBobrilStatic;
 
 declare type IBobrilChild = boolean | string | IBobrilNode;
 declare type IBobrilChildren = IBobrilChild | IBobrilChildArray;
-interface IBobrilChildArray extends Array<IBobrilChildren> { }
+interface IBobrilChildArray extends Array<IBobrilChildren> {}
 declare type IBobrilCacheChildren = string | IBobrilCacheNode[];
 declare type IBobrilShimStyleMapping = { [name: string]: (style: any, value: any, oldName: string) => void };
 
@@ -124,13 +124,15 @@ interface IBobrilStatic {
     mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent;
     // call imidiate render
     syncUpdate(): void;
-    // iterates through elements in DOM from specific start position and fires "runMethod" if the method is available on the component, which emits event on desired component  
+    // iterates through elements in DOM from specific start position and fires "runMethod" if the method is available on the component, which emits event on desired component
     runMethodFrom(ctx: IBobrilCtx, methodId: string, param?: any): void;
     // same as previous, ctx is taken from current context
     runMethod(methodId: string, param?: any): void;
     // gets context of currently processed component
-    getCurrentCtx():IBobrilCtx | undefined;
+    getCurrentCtx(): IBobrilCtx | undefined;
     setCurrentCtx(ctx: IBobrilCtx | undefined): void;
+    getCurrentCtxWithEvents(): IBobrilCtx | undefined;
+    setCurrentCtxWithEvents(ctx: IBobrilCtx | undefined): void;
 }
 
 interface IBobrilAttributes {
