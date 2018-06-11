@@ -2062,6 +2062,8 @@ function getMedia() {
         var p = h >= w;
         if (o == null)
             o = p ? 0 : 90;
+        else
+            o = +o;
         if (isAndroid) {
             // without this keyboard change screen rotation because h or w changes
             var op = Math.abs(o) % 180 === 90;
@@ -2080,7 +2082,8 @@ function getMedia() {
             height: h,
             orientation: o,
             deviceCategory: device,
-            portrait: p
+            portrait: p,
+            dppx: window.devicePixelRatio
         };
     }
     return media;
@@ -3283,8 +3286,8 @@ function handleMouseWheel(ev, target, node) {
     }
     var dx = 0, dy;
     if (wheelSupport == "mousewheel") {
-        dy = -1 / 40 * ev.wheelDelta;
-        ev.wheelDeltaX && (dx = -1 / 40 * ev.wheelDeltaX);
+        dy = (-1 / 40) * ev.wheelDelta;
+        ev.wheelDeltaX && (dx = (-1 / 40) * ev.wheelDeltaX);
     }
     else {
         dx = ev.deltaX;
@@ -4786,8 +4789,10 @@ function getActiveParams() {
 exports.getActiveParams = getActiveParams;
 var allStyles = newHashObj();
 var allSprites = newHashObj();
+var bundledSprites = newHashObj();
 var allNameHints = newHashObj();
 var dynamicSprites = [];
+var bundledDynamicSprites = [];
 var imageCache = newHashObj();
 var injectedCss = "";
 var rebuildStyles = false;
@@ -4861,12 +4866,39 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         }
     }
 }
+var lastDppx = 0;
+var lastSpriteUrl = "";
+var lastSpriteDppx = 1;
+var hasBundledSprites = false;
+var wasSpriteUrlChanged = true;
 var firstStyles = false;
 function beforeFrame() {
+    var _a;
     var dbs = document.body.style;
     if (firstStyles && uptimeMs >= 150) {
         dbs.opacity = "1";
         firstStyles = false;
+    }
+    if (hasBundledSprites && lastDppx != getMedia().dppx) {
+        lastDppx = getMedia().dppx;
+        var newSpriteUrl = bundlePath;
+        var newSpriteDppx = 1;
+        if (lastDppx > 1) {
+            for (var i_11 = 0; i_11 < bundlePath2.length; i_11++) {
+                if (i_11 == bundlePath2.length - 1 || bundlePath2[i_11][1] >= lastDppx) {
+                    newSpriteUrl = bundlePath2[i_11][0];
+                    newSpriteDppx = bundlePath2[i_11][1];
+                }
+                else
+                    break;
+            }
+        }
+        if (lastSpriteUrl != newSpriteUrl) {
+            lastSpriteUrl = newSpriteUrl;
+            lastSpriteDppx = newSpriteDppx;
+            rebuildStyles = true;
+            wasSpriteUrlChanged = true;
+        }
     }
     if (rebuildStyles) {
         // Hack around bug in Chrome to not have flash of unstyled content
@@ -4875,8 +4907,62 @@ function beforeFrame() {
             dbs.opacity = "0";
             setTimeout(exports.invalidate, 200);
         }
-        for (var i_11 = 0; i_11 < dynamicSprites.length; i_11++) {
-            var dynSprite = dynamicSprites[i_11];
+        if (hasBundledSprites) {
+            var imageSprite = imageCache[lastSpriteUrl];
+            if (imageSprite === undefined) {
+                imageSprite = null;
+                imageCache[lastSpriteUrl] = imageSprite;
+                loadImage(lastSpriteUrl, function (image) {
+                    imageCache[lastSpriteUrl] = image;
+                    invalidateStyles();
+                });
+            }
+            if (imageSprite != null) {
+                for (var i_12 = 0; i_12 < bundledDynamicSprites.length; i_12++) {
+                    var dynSprite = bundledDynamicSprites[i_12];
+                    var colorStr = dynSprite.color();
+                    if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
+                        dynSprite.lastColor = colorStr;
+                        var mulWidth = (dynSprite.width * lastSpriteDppx) | 0;
+                        var mulHeight = (dynSprite.height * lastSpriteDppx) | 0;
+                        var lastUrl = recolorAndClip(imageSprite, colorStr, mulWidth, mulHeight, (dynSprite.left * lastSpriteDppx) | 0, (dynSprite.top * lastSpriteDppx) | 0);
+                        var stDef = allStyles[dynSprite.styleId];
+                        stDef.style = {
+                            backgroundImage: "url(" + lastUrl + ")",
+                            width: dynSprite.width,
+                            height: dynSprite.height,
+                            backgroundPosition: 0,
+                            backgroundSize: "100%"
+                        };
+                    }
+                }
+                if (wasSpriteUrlChanged) {
+                    var iWidth = imageSprite.width / lastSpriteDppx;
+                    var iHeight = imageSprite.height / lastSpriteDppx;
+                    for (var key_1 in bundledSprites) {
+                        var sprite_1 = bundledSprites[key_1];
+                        if (sprite_1.color != null)
+                            continue;
+                        var stDef = allStyles[sprite_1.styleId];
+                        var width = sprite_1.width;
+                        var height = sprite_1.height;
+                        var percentWidth = (100 * iWidth) / width;
+                        var percentHeight = (100 * iHeight) / height;
+                        stDef.style = {
+                            backgroundImage: "url(" + lastSpriteUrl + ")",
+                            width: width,
+                            height: height,
+                            backgroundPosition: (100 * sprite_1.left) / (iWidth - width) + "% " + (100 * sprite_1.top) /
+                                (iHeight - height) + "%",
+                            backgroundSize: percentWidth + "% " + percentHeight + "%"
+                        };
+                    }
+                }
+                wasSpriteUrlChanged = false;
+            }
+        }
+        for (var i_13 = 0; i_13 < dynamicSprites.length; i_13++) {
+            var dynSprite = dynamicSprites[i_13];
             var image = imageCache[dynSprite.url];
             if (image == null)
                 continue;
@@ -4964,7 +5050,6 @@ function beforeFrame() {
         rebuildStyles = false;
     }
     chainedBeforeFrame();
-    var _a;
 }
 function style(node) {
     var styles = [];
@@ -5105,9 +5190,10 @@ function updateSprite(spDef) {
     var style = {
         backgroundImage: "url(" + spDef.url + ")",
         width: spDef.width,
-        height: spDef.height
+        height: spDef.height,
+        backgroundPosition: -spDef.left + "px " + -spDef.top + "px",
+        backgroundSize: spDef.width + "px " + spDef.height + "px"
     };
-    style.backgroundPosition = -spDef.left + "px " + -spDef.top + "px";
     stDef.style = style;
     invalidateStyles();
 }
@@ -5245,32 +5331,65 @@ function sprite(url, color, width, height, left, top) {
 }
 exports.sprite = sprite;
 var bundlePath = window["bobrilBPath"] || "bundle.png";
+var bundlePath2 = window["bobrilBPath2"] || [];
 function setBundlePngPath(path) {
     bundlePath = path;
 }
 exports.setBundlePngPath = setBundlePngPath;
+function getSpritePaths() {
+    return [bundlePath, bundlePath2];
+}
+exports.getSpritePaths = getSpritePaths;
+function setSpritePaths(main, others) {
+    bundlePath = main;
+    bundlePath2 = others;
+}
+exports.setSpritePaths = setSpritePaths;
 function spriteb(width, height, left, top) {
-    var url = bundlePath;
-    var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
-    var spDef = allSprites[key];
+    var key = ":" + width + ":" + height + ":" + left + ":" + top;
+    var spDef = bundledSprites[key];
     if (spDef)
         return spDef.styleId;
-    var styleId = styleDef({ width: 0, height: 0 });
+    hasBundledSprites = true;
+    var styleId = styleDef({ width: width, height: height });
     spDef = {
         styleId: styleId,
-        url: url,
+        url: "",
         width: width,
         height: height,
         left: left,
         top: top
     };
-    updateSprite(spDef);
-    allSprites[key] = spDef;
+    bundledSprites[key] = spDef;
     return styleId;
 }
 exports.spriteb = spriteb;
 function spritebc(color, width, height, left, top) {
-    return sprite(bundlePath, color, width, height, left, top);
+    var colorId = color[funcIdName];
+    if (colorId == null) {
+        colorId = "" + lastFuncId++;
+        color[funcIdName] = colorId;
+    }
+    var key = colorId + ":" + width + ":" + height + ":" + left + ":" + top;
+    var spDef = bundledSprites[key];
+    if (spDef)
+        return spDef.styleId;
+    hasBundledSprites = true;
+    var styleId = styleDef({ width: width, height: height });
+    spDef = {
+        styleId: styleId,
+        url: "",
+        width: width,
+        height: height,
+        left: left,
+        top: top
+    };
+    spDef.color = color;
+    spDef.lastColor = "";
+    spDef.lastUrl = "";
+    bundledDynamicSprites.push(spDef);
+    bundledSprites[key] = spDef;
+    return styleId;
 }
 exports.spritebc = spritebc;
 function injectCss(css) {
@@ -5284,7 +5403,7 @@ function asset(path) {
 exports.asset = asset;
 // Bobril.svgExtensions
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-    var angleInRadians = angleInDegrees * Math.PI / 180.0;
+    var angleInRadians = (angleInDegrees * Math.PI) / 180.0;
     return {
         x: centerX + radius * Math.sin(angleInRadians),
         y: centerY - radius * Math.cos(angleInRadians)

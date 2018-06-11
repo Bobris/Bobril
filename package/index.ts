@@ -2377,6 +2377,7 @@ export interface IBobrilMedia {
     orientation: number;
     deviceCategory: BobrilDeviceCategory;
     portrait: boolean;
+    dppx: number;
 }
 
 var media: IBobrilMedia | null = null;
@@ -2410,9 +2411,10 @@ export function getMedia(): IBobrilMedia {
     if (media == null) {
         var w = viewport.clientWidth;
         var h = viewport.clientHeight;
-        var o: any = (<any>window).orientation;
+        var o = window.orientation;
         var p = h >= w;
         if (o == null) o = p ? 0 : 90;
+        else o = +o;
         if (isAndroid) {
             // without this keyboard change screen rotation because h or w changes
             let op = Math.abs(o) % 180 === 90;
@@ -2429,7 +2431,8 @@ export function getMedia(): IBobrilMedia {
             height: h,
             orientation: o,
             deviceCategory: device,
-            portrait: p
+            portrait: p,
+            dppx: window.devicePixelRatio
         };
     }
     return media;
@@ -3775,8 +3778,8 @@ function handleMouseWheel(ev: any, target: Node | undefined, node: IBobrilCacheN
     let dx = 0,
         dy: number;
     if (wheelSupport == "mousewheel") {
-        dy = -1 / 40 * ev.wheelDelta;
-        ev.wheelDeltaX && (dx = -1 / 40 * ev.wheelDeltaX);
+        dy = (-1 / 40) * ev.wheelDelta;
+        ev.wheelDeltaX && (dx = (-1 / 40) * ev.wheelDeltaX);
     } else {
         dx = ev.deltaX;
         dy = ev.deltaY;
@@ -4083,7 +4086,8 @@ function getTransformationMatrix(element: Node) {
     while (x != undefined && x !== doc) {
         var computedStyle = <any>window.getComputedStyle(<HTMLElement>x, undefined);
         var c = CSSMatrix.fromString(
-            (computedStyle.transform ||
+            (
+                computedStyle.transform ||
                 computedStyle.OTransform ||
                 computedStyle.WebkitTransform ||
                 computedStyle.msTransform ||
@@ -5461,8 +5465,10 @@ interface IInternalStyle {
 
 var allStyles: { [id: string]: IInternalStyle } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
+var bundledSprites: { [key: string]: ISprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
 var dynamicSprites: IDynamicSprite[] = [];
+var bundledDynamicSprites: IDynamicSprite[] = [];
 var imageCache: { [url: string]: HTMLImageElement | null } = newHashObj();
 var injectedCss = "";
 var rebuildStyles = false;
@@ -5535,6 +5541,12 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
     }
 }
 
+let lastDppx = 0;
+let lastSpriteUrl = "";
+let lastSpriteDppx = 1;
+let hasBundledSprites = false;
+let wasSpriteUrlChanged = true;
+
 let firstStyles = false;
 function beforeFrame() {
     var dbs = document.body.style;
@@ -5542,12 +5554,91 @@ function beforeFrame() {
         dbs.opacity = "1";
         firstStyles = false;
     }
+    if (hasBundledSprites && lastDppx != getMedia().dppx) {
+        lastDppx = getMedia().dppx;
+        let newSpriteUrl = bundlePath;
+        let newSpriteDppx = 1;
+        if (lastDppx > 1) {
+            for (let i = 0; i < bundlePath2.length; i++) {
+                if (i == bundlePath2.length - 1 || bundlePath2[i][1] >= lastDppx) {
+                    newSpriteUrl = bundlePath2[i][0];
+                    newSpriteDppx = bundlePath2[i][1];
+                } else break;
+            }
+        }
+        if (lastSpriteUrl != newSpriteUrl) {
+            lastSpriteUrl = newSpriteUrl;
+            lastSpriteDppx = newSpriteDppx;
+            rebuildStyles = true;
+            wasSpriteUrlChanged = true;
+        }
+    }
     if (rebuildStyles) {
         // Hack around bug in Chrome to not have flash of unstyled content
         if (frameCounter === 1 && "webkitAnimation" in dbs) {
             firstStyles = true;
             dbs.opacity = "0";
             setTimeout(invalidate, 200);
+        }
+        if (hasBundledSprites) {
+            let imageSprite = imageCache[lastSpriteUrl];
+            if (imageSprite === undefined) {
+                imageSprite = null;
+                imageCache[lastSpriteUrl] = imageSprite;
+                loadImage(lastSpriteUrl, image => {
+                    imageCache[lastSpriteUrl] = image;
+                    invalidateStyles();
+                });
+            }
+            if (imageSprite != null) {
+                for (let i = 0; i < bundledDynamicSprites.length; i++) {
+                    let dynSprite = bundledDynamicSprites[i];
+                    let colorStr = dynSprite.color();
+                    if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
+                        dynSprite.lastColor = colorStr;
+                        let mulWidth = (dynSprite.width! * lastSpriteDppx) | 0;
+                        let mulHeight = (dynSprite.height! * lastSpriteDppx) | 0;
+                        let lastUrl = recolorAndClip(
+                            imageSprite,
+                            colorStr,
+                            mulWidth,
+                            mulHeight,
+                            (dynSprite.left * lastSpriteDppx) | 0,
+                            (dynSprite.top * lastSpriteDppx) | 0
+                        );
+                        var stDef = allStyles[dynSprite.styleId];
+                        stDef.style = {
+                            backgroundImage: `url(${lastUrl})`,
+                            width: dynSprite.width,
+                            height: dynSprite.height,
+                            backgroundPosition: 0,
+                            backgroundSize: "100%"
+                        };
+                    }
+                }
+                if (wasSpriteUrlChanged) {
+                    let iWidth = imageSprite.width / lastSpriteDppx;
+                    let iHeight = imageSprite.height / lastSpriteDppx;
+                    for (let key in bundledSprites) {
+                        let sprite = bundledSprites[key];
+                        if ((sprite as IDynamicSprite).color != null) continue;
+                        var stDef = allStyles[sprite.styleId];
+                        let width = sprite.width!;
+                        let height = sprite.height!;
+                        let percentWidth = (100 * iWidth) / width;
+                        let percentHeight = (100 * iHeight) / height;
+                        stDef.style = {
+                            backgroundImage: `url(${lastSpriteUrl})`,
+                            width: width,
+                            height: height,
+                            backgroundPosition: `${(100 * sprite.left) / (iWidth - width)}% ${(100 * sprite.top) /
+                                (iHeight - height)}%`,
+                            backgroundSize: `${percentWidth}% ${percentHeight}%`
+                        };
+                    }
+                }
+                wasSpriteUrlChanged = false;
+            }
         }
         for (let i = 0; i < dynamicSprites.length; i++) {
             let dynSprite = dynamicSprites[i];
@@ -5772,9 +5863,10 @@ function updateSprite(spDef: ISprite): void {
     var style: any = {
         backgroundImage: `url(${spDef.url})`,
         width: spDef.width,
-        height: spDef.height
+        height: spDef.height,
+        backgroundPosition: `${-spDef.left}px ${-spDef.top}px`,
+        backgroundSize: `${spDef.width}px ${spDef.height}px`
     };
-    style.backgroundPosition = `${-spDef.left}px ${-spDef.top}px`;
     stDef.style = style;
     invalidateStyles();
 }
@@ -5928,27 +6020,36 @@ export function sprite(
 }
 
 var bundlePath = (<any>window)["bobrilBPath"] || "bundle.png";
+var bundlePath2: [string, number][] = (<any>window)["bobrilBPath2"] || [];
 
 export function setBundlePngPath(path: string) {
     bundlePath = path;
 }
 
+export function getSpritePaths(): [string, [string, number][]] {
+    return [bundlePath, bundlePath2];
+}
+
+export function setSpritePaths(main: string, others: [string, number][]) {
+    bundlePath = main;
+    bundlePath2 = others;
+}
+
 export function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef {
-    let url = bundlePath;
-    var key = url + "::" + width + ":" + height + ":" + left + ":" + top;
-    var spDef = allSprites[key];
+    var key = ":" + width + ":" + height + ":" + left + ":" + top;
+    var spDef = bundledSprites[key];
     if (spDef) return spDef.styleId;
-    var styleId = styleDef({ width: 0, height: 0 });
+    hasBundledSprites = true;
+    var styleId = styleDef({ width, height });
     spDef = {
         styleId,
-        url: url,
-        width: width,
-        height: height,
-        left: left,
-        top: top
+        url: "",
+        width,
+        height,
+        left,
+        top
     };
-    updateSprite(spDef);
-    allSprites[key] = spDef;
+    bundledSprites[key] = spDef;
     return styleId;
 }
 
@@ -5959,7 +6060,30 @@ export function spritebc(
     left: number,
     top: number
 ): IBobrilStyleDef {
-    return sprite(bundlePath, color, width, height, left, top);
+    var colorId = (<any>color)[funcIdName];
+    if (colorId == null) {
+        colorId = "" + lastFuncId++;
+        (<any>color)[funcIdName] = colorId;
+    }
+    var key = colorId + ":" + width + ":" + height + ":" + left + ":" + top;
+    var spDef = bundledSprites[key];
+    if (spDef) return spDef.styleId;
+    hasBundledSprites = true;
+    var styleId = styleDef({ width, height });
+    spDef = {
+        styleId,
+        url: "",
+        width,
+        height,
+        left,
+        top
+    };
+    (<IDynamicSprite>spDef).color = <() => string>color;
+    (<IDynamicSprite>spDef).lastColor = "";
+    (<IDynamicSprite>spDef).lastUrl = "";
+    bundledDynamicSprites.push(<IDynamicSprite>spDef);
+    bundledSprites[key] = spDef;
+    return styleId;
 }
 
 export function injectCss(css: string): void {
@@ -5979,7 +6103,7 @@ function polarToCartesian(
     radius: number,
     angleInDegrees: number
 ): { x: number; y: number } {
-    var angleInRadians = angleInDegrees * Math.PI / 180.0;
+    var angleInRadians = (angleInDegrees * Math.PI) / 180.0;
     return {
         x: centerX + radius * Math.sin(angleInRadians),
         y: centerY - radius * Math.cos(angleInRadians)

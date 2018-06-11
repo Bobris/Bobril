@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.9.0
+
+Support for higher dppx sprites.
+
 ## 8.8.1
 
 Fixed revalidateMouseIn method to fix also Drag and Drop use-case.

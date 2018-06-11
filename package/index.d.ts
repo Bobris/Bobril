@@ -172,7 +172,7 @@ export declare const enum RenderPhase {
     Create = 0,
     Update = 1,
     LocalUpdate = 2,
-    Destroy = 3,
+    Destroy = 3
 }
 export declare function setBeforeRender(callback: (node: IBobrilNode, phase: RenderPhase) => void): (node: IBobrilNode, phase: RenderPhase) => void;
 export declare function setBeforeFrame(callback: () => void): () => void;
@@ -209,7 +209,7 @@ export declare const enum BobrilDeviceCategory {
     Mobile = 0,
     Tablet = 1,
     Desktop = 2,
-    LargeDesktop = 3,
+    LargeDesktop = 3
 }
 export interface IBobrilMedia {
     width: number;
@@ -217,6 +217,7 @@ export interface IBobrilMedia {
     orientation: number;
     deviceCategory: BobrilDeviceCategory;
     portrait: boolean;
+    dppx: number;
 }
 export declare function accDeviceBreaks(newBreaks?: number[][]): number[][];
 export declare function getMedia(): IBobrilMedia;
@@ -249,7 +250,7 @@ export interface IBobrilMouseEvent {
 export declare const enum BobrilPointerType {
     Mouse = 0,
     Touch = 1,
-    Pen = 2,
+    Pen = 2
 }
 export interface IBobrilPointerEvent extends IBobrilMouseEvent {
     id: number;
@@ -281,7 +282,7 @@ export declare const enum DndOp {
     None = 0,
     Link = 1,
     Copy = 2,
-    Move = 3,
+    Move = 3
 }
 export declare const enum DndEnabledOps {
     None = 0,
@@ -291,7 +292,7 @@ export declare const enum DndEnabledOps {
     Move = 4,
     MoveLink = 5,
     MoveCopy = 6,
-    MoveCopyLink = 7,
+    MoveCopyLink = 7
 }
 export interface IDndCtx {
     id: number;
@@ -354,7 +355,7 @@ export interface IRoute {
 export declare const enum RouteTransitionType {
     Push = 0,
     Replace = 1,
-    Pop = 2,
+    Pop = 2
 }
 export interface IRouteTransition {
     inApp: boolean;
@@ -408,6 +409,8 @@ export declare function invalidateStyles(): void;
 export declare function setImagesWithCredentials(value: boolean): void;
 export declare function sprite(url: string, color?: string | (() => string), width?: number, height?: number, left?: number, top?: number): IBobrilStyleDef;
 export declare function setBundlePngPath(path: string): void;
+export declare function getSpritePaths(): [string, [string, number][]];
+export declare function setSpritePaths(main: string, others: [string, number][]): void;
 export declare function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef;
 export declare function spritebc(color: () => string, width: number, height: number, left: number, top: number): IBobrilStyleDef;
 export declare function injectCss(css: string): void;
