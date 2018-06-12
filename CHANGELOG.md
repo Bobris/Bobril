@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.9.1
+
+Fixed regression to allow to pass color as variable string again to b.sprite with enabled spriting in bb2.
+
 ## 8.9.0
 
 Support for higher dppx sprites.

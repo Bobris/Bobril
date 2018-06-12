@@ -5454,6 +5454,20 @@ interface IDynamicSprite extends ISprite {
     lastUrl: string;
 }
 
+interface IResponsiveSprite {
+    styleId: IBobrilStyleDef;
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+}
+
+interface IResponsiveDynamicSprite extends IResponsiveSprite {
+    color: string | (() => string);
+    lastColor: string;
+    lastUrl: string;
+}
+
 interface IInternalStyle {
     name: string | null;
     realName: string | null;
@@ -5465,10 +5479,10 @@ interface IInternalStyle {
 
 var allStyles: { [id: string]: IInternalStyle } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
-var bundledSprites: { [key: string]: ISprite } = newHashObj();
+var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
 var dynamicSprites: IDynamicSprite[] = [];
-var bundledDynamicSprites: IDynamicSprite[] = [];
+var bundledDynamicSprites: IResponsiveDynamicSprite[] = [];
 var imageCache: { [url: string]: HTMLImageElement | null } = newHashObj();
 var injectedCss = "";
 var rebuildStyles = false;
@@ -5593,11 +5607,12 @@ function beforeFrame() {
             if (imageSprite != null) {
                 for (let i = 0; i < bundledDynamicSprites.length; i++) {
                     let dynSprite = bundledDynamicSprites[i];
-                    let colorStr = dynSprite.color();
+                    let colorStr = dynSprite.color;
+                    if (!isString(colorStr)) colorStr = colorStr();
                     if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
                         dynSprite.lastColor = colorStr;
-                        let mulWidth = (dynSprite.width! * lastSpriteDppx) | 0;
-                        let mulHeight = (dynSprite.height! * lastSpriteDppx) | 0;
+                        let mulWidth = (dynSprite.width * lastSpriteDppx) | 0;
+                        let mulHeight = (dynSprite.height * lastSpriteDppx) | 0;
                         let lastUrl = recolorAndClip(
                             imageSprite,
                             colorStr,
@@ -5621,10 +5636,10 @@ function beforeFrame() {
                     let iHeight = imageSprite.height / lastSpriteDppx;
                     for (let key in bundledSprites) {
                         let sprite = bundledSprites[key];
-                        if ((sprite as IDynamicSprite).color != null) continue;
+                        if ((sprite as IResponsiveDynamicSprite).color !== undefined) continue;
                         var stDef = allStyles[sprite.styleId];
-                        let width = sprite.width!;
-                        let height = sprite.height!;
+                        let width = sprite.width;
+                        let height = sprite.height;
                         let percentWidth = (100 * iWidth) / width;
                         let percentHeight = (100 * iHeight) / height;
                         stDef.style = {
@@ -6043,7 +6058,6 @@ export function spriteb(width: number, height: number, left: number, top: number
     var styleId = styleDef({ width, height });
     spDef = {
         styleId,
-        url: "",
         width,
         height,
         left,
@@ -6054,16 +6068,21 @@ export function spriteb(width: number, height: number, left: number, top: number
 }
 
 export function spritebc(
-    color: () => string,
+    color: string | (() => string),
     width: number,
     height: number,
     left: number,
     top: number
 ): IBobrilStyleDef {
-    var colorId = (<any>color)[funcIdName];
-    if (colorId == null) {
-        colorId = "" + lastFuncId++;
-        (<any>color)[funcIdName] = colorId;
+    var colorId: string;
+    if (isString(color)) {
+        colorId = color;
+    } else {
+        colorId = (<any>color)[funcIdName];
+        if (colorId == null) {
+            colorId = "" + lastFuncId++;
+            (<any>color)[funcIdName] = colorId;
+        }
     }
     var key = colorId + ":" + width + ":" + height + ":" + left + ":" + top;
     var spDef = bundledSprites[key];
@@ -6072,16 +6091,15 @@ export function spritebc(
     var styleId = styleDef({ width, height });
     spDef = {
         styleId,
-        url: "",
         width,
         height,
         left,
         top
     };
-    (<IDynamicSprite>spDef).color = <() => string>color;
-    (<IDynamicSprite>spDef).lastColor = "";
-    (<IDynamicSprite>spDef).lastUrl = "";
-    bundledDynamicSprites.push(<IDynamicSprite>spDef);
+    (<IResponsiveDynamicSprite>spDef).color = color;
+    (<IResponsiveDynamicSprite>spDef).lastColor = "";
+    (<IResponsiveDynamicSprite>spDef).lastUrl = "";
+    bundledDynamicSprites.push(<IResponsiveDynamicSprite>spDef);
     bundledSprites[key] = spDef;
     return styleId;
 }

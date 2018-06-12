@@ -4920,7 +4920,9 @@ function beforeFrame() {
             if (imageSprite != null) {
                 for (var i_12 = 0; i_12 < bundledDynamicSprites.length; i_12++) {
                     var dynSprite = bundledDynamicSprites[i_12];
-                    var colorStr = dynSprite.color();
+                    var colorStr = dynSprite.color;
+                    if (!isString(colorStr))
+                        colorStr = colorStr();
                     if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
                         dynSprite.lastColor = colorStr;
                         var mulWidth = (dynSprite.width * lastSpriteDppx) | 0;
@@ -4941,7 +4943,7 @@ function beforeFrame() {
                     var iHeight = imageSprite.height / lastSpriteDppx;
                     for (var key_1 in bundledSprites) {
                         var sprite_1 = bundledSprites[key_1];
-                        if (sprite_1.color != null)
+                        if (sprite_1.color !== undefined)
                             continue;
                         var stDef = allStyles[sprite_1.styleId];
                         var width = sprite_1.width;
@@ -5354,7 +5356,6 @@ function spriteb(width, height, left, top) {
     var styleId = styleDef({ width: width, height: height });
     spDef = {
         styleId: styleId,
-        url: "",
         width: width,
         height: height,
         left: left,
@@ -5365,10 +5366,16 @@ function spriteb(width, height, left, top) {
 }
 exports.spriteb = spriteb;
 function spritebc(color, width, height, left, top) {
-    var colorId = color[funcIdName];
-    if (colorId == null) {
-        colorId = "" + lastFuncId++;
-        color[funcIdName] = colorId;
+    var colorId;
+    if (isString(color)) {
+        colorId = color;
+    }
+    else {
+        colorId = color[funcIdName];
+        if (colorId == null) {
+            colorId = "" + lastFuncId++;
+            color[funcIdName] = colorId;
+        }
     }
     var key = colorId + ":" + width + ":" + height + ":" + left + ":" + top;
     var spDef = bundledSprites[key];
@@ -5378,7 +5385,6 @@ function spritebc(color, width, height, left, top) {
     var styleId = styleDef({ width: width, height: height });
     spDef = {
         styleId: styleId,
-        url: "",
         width: width,
         height: height,
         left: left,
