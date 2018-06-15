@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.9.2
+
+Fixed regression which makes static bundled sprites invisible if they are created later.
+
 ## 8.9.1
 
 Fixed regression to allow to pass color as variable string again to b.sprite with enabled spriting in bb2.

@@ -6064,6 +6064,7 @@ export function spriteb(width: number, height: number, left: number, top: number
         top
     };
     bundledSprites[key] = spDef;
+    wasSpriteUrlChanged = true;
     return styleId;
 }
 

@@ -5362,6 +5362,7 @@ function spriteb(width, height, left, top) {
         top: top
     };
     bundledSprites[key] = spDef;
+    wasSpriteUrlChanged = true;
     return styleId;
 }
 exports.spriteb = spriteb;
