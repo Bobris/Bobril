@@ -1861,7 +1861,6 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         flatten: flatten,
         syncUpdate: syncUpdate,
         mergeComponents: mergeComponents,
-        runMethodFrom: runMethodFrom,
         runMethod: runMethod,
         getCurrentCtx: getCurrentCtx,
         setCurrentCtx: setCurrentCtx,

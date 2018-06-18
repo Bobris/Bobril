@@ -1699,7 +1699,6 @@ b = (function (window, document) {
         flatten: flatten,
         syncUpdate: syncUpdate,
         mergeComponents: mergeComponents,
-        runMethodFrom: runMethodFrom,
         runMethod: runMethod,
         getCurrentCtx: getCurrentCtx,
         setCurrentCtx: setCurrentCtx,
