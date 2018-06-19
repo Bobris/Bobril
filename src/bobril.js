@@ -1654,7 +1654,7 @@ b = (function (window, document) {
             for (var i = 0; i < rootKeys.length; i++) {
                 var root = roots[rootKeys[i]];
                 if (elm === root.p)
-                    return roots[i].c;
+                    return root.c;
             }
         }
     }

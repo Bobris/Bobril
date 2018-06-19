@@ -1816,7 +1816,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             if (!elm.hasLogicChldrn) return null;
             for (let i = 0; i < rootKeys.length; i++) {
                 const root: IBobrilRoot = roots[rootKeys[i]];
-                if (elm === root.p) return roots[i].c;
+                if (elm === root.p) return root.c;
             }
         }
     }
