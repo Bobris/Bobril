@@ -3142,6 +3142,9 @@ function bustingPointerUp(ev, target, node) {
                 return handled;
             }
         }
+        else if (tapCanceled) {
+            exports.ignoreClick(ev.x, ev.y);
+        }
     }
     return false;
 }

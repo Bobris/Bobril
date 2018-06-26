@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.10.0
+
+Prevented onClick event when you move pointer too far. It could be controversial change, so be prepared for reverting of this change if it will not work out in real world.
+
 ## 8.9.2
 
 Fixed regression which makes static bundled sprites invisible if they are created later.

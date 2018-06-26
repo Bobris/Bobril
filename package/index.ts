@@ -3617,6 +3617,8 @@ function bustingPointerUp(
                 toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
                 return handled;
             }
+        } else if (tapCanceled) {
+            ignoreClick(ev.x, ev.y);
         }
     }
     return false;
