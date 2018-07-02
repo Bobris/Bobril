@@ -1420,6 +1420,7 @@ var ctxInvalidated = "$invalidated";
 var ctxDeepness = "$deepness";
 var fullRecreateRequested = true;
 var scheduled = false;
+var beingInvalidated = false;
 var initializing = true;
 var uptimeMs = 0;
 var frameCounter = 0;
@@ -1570,6 +1571,7 @@ function isLogicalParent(parent, child, rootIds) {
 var deferSyncUpdateRequested = false;
 function syncUpdate() {
     deferSyncUpdateRequested = false;
+    beingInvalidated = false;
     internalUpdate(exports.now() - startTime);
 }
 exports.syncUpdate = syncUpdate;
@@ -1583,6 +1585,7 @@ function deferSyncUpdate() {
 exports.deferSyncUpdate = deferSyncUpdate;
 function update(time) {
     scheduled = false;
+    beingInvalidated = false;
     internalUpdate(time);
 }
 var rootIds;
@@ -1688,6 +1691,7 @@ exports.invalidate = function (ctx, deepness) {
     if (scheduled || initializing)
         return;
     scheduled = true;
+    beingInvalidated = true;
     requestAnimationFrame(update);
 };
 var lastRootId = 0;
@@ -2027,7 +2031,7 @@ function frame() {
 }
 exports.frame = frame;
 function invalidated() {
-    return scheduled;
+    return beingInvalidated;
 }
 exports.invalidated = invalidated;
 var media = null;
@@ -4876,7 +4880,6 @@ var hasBundledSprites = false;
 var wasSpriteUrlChanged = true;
 var firstStyles = false;
 function beforeFrame() {
-    var _a;
     var dbs = document.body.style;
     if (firstStyles && uptimeMs >= 150) {
         dbs.opacity = "1";
@@ -5055,6 +5058,7 @@ function beforeFrame() {
         rebuildStyles = false;
     }
     chainedBeforeFrame();
+    var _a;
 }
 function style(node) {
     var styles = [];
