@@ -1567,31 +1567,22 @@ b = (function (window, document) {
         }
         return r;
     }
-    var runMethodRunning = false;
     function runMethod(methodId, parms) {
         var done = false;
-        var firstCycle = true;
         var roots = b.getRoots();
         var rootKeys = Object.keys(roots);
-        if (!runMethodRunning) {
-            runMethodRunning = true;
-            for (var i = 0; i < rootKeys.length; i++) {
-                var root = roots[rootKeys[i]];
-                if (root.p)
-                    root.p.hasLogicChldrn = true;
-            }
+        for (var i = 0; i < rootKeys.length; i++) {
+            var root = roots[rootKeys[i]];
+            if (root.p)
+                root.p.hasLogicChldrn = true;
         }
-        else
-            firstCycle = false;
         runMethodFrom(getCurrentCtxWithEvents().me, methodId, parms);
-        if (firstCycle)
-            runMethodRunning = false;
         return done;
         function runMethodFrom(currentRoot, methodId, parms) {
             var previousRoot = null;
             while (currentRoot) {
                 var comp = currentRoot.component;
-                if (comp && comp.runMethod && !done) {
+                if (comp && comp.runMethod) {
                     var prevCtx = currentCtxWithEvents;
                     currentCtxWithEvents = currentRoot.ctx;
                     if (comp.runMethod(currentRoot.ctx, methodId, parms))
@@ -1611,8 +1602,9 @@ b = (function (window, document) {
                     return;
             }
             for (var i = 0; i < rootKeys.length; i++) {
-                var rChlds = roots[rootKeys[i]].c;
-                var logicalParent = roots[rootKeys[i]].p;
+                var currRoot = roots[rootKeys[i]];
+                var rChlds = currRoot.c;
+                var logicalParent = currRoot.p;
                 for (var j = 0; j < rChlds.length; j++) {
                     var root = rChlds[j];
                     if (root == previousRoot && logicalParent) {

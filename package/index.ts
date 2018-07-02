@@ -1727,6 +1727,7 @@ var ctxInvalidated = "$invalidated";
 var ctxDeepness = "$deepness";
 var fullRecreateRequested = true;
 var scheduled = false;
+var beingInvalidated = false;
 let initializing = true;
 var uptimeMs = 0;
 var frameCounter = 0;
@@ -1913,6 +1914,7 @@ var deferSyncUpdateRequested = false;
 
 export function syncUpdate() {
     deferSyncUpdateRequested = false;
+    beingInvalidated = false;
     internalUpdate(now() - startTime);
 }
 
@@ -1926,6 +1928,7 @@ export function deferSyncUpdate() {
 
 function update(time: number) {
     scheduled = false;
+    beingInvalidated = false;
     internalUpdate(time);
 }
 
@@ -2024,6 +2027,7 @@ export var invalidate = (ctx?: Object, deepness?: number) => {
     }
     if (scheduled || initializing) return;
     scheduled = true;
+    beingInvalidated = true;
     requestAnimationFrame(update);
 };
 
@@ -2360,7 +2364,7 @@ export function frame() {
 }
 
 export function invalidated() {
-    return scheduled;
+    return beingInvalidated;
 }
 
 // Bobril.Media
