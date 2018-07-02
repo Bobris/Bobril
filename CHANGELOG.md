@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.10.1
+
+invalidated() is reset in syncUpdate too.
+
 ## 8.10.0
 
 Prevented onClick event when you move pointer too far. It could be controversial change, so be prepared for reverting of this change if it will not work out in real world.

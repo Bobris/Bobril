@@ -1727,7 +1727,7 @@ var ctxInvalidated = "$invalidated";
 var ctxDeepness = "$deepness";
 var fullRecreateRequested = true;
 var scheduled = false;
-var beingInvalidated = false;
+var isInvalidated = true;
 let initializing = true;
 var uptimeMs = 0;
 var frameCounter = 0;
@@ -1914,7 +1914,6 @@ var deferSyncUpdateRequested = false;
 
 export function syncUpdate() {
     deferSyncUpdateRequested = false;
-    beingInvalidated = false;
     internalUpdate(now() - startTime);
 }
 
@@ -1928,7 +1927,6 @@ export function deferSyncUpdate() {
 
 function update(time: number) {
     scheduled = false;
-    beingInvalidated = false;
     internalUpdate(time);
 }
 
@@ -1947,6 +1945,7 @@ const RootComponent = createVirtualComponent<IBobrilRoot>({
 });
 
 function internalUpdate(time: number) {
+    isInvalidated = false;
     renderFrameBegin = now();
     initEvents();
     reallyBeforeFrameCallback();
@@ -2025,9 +2024,9 @@ export var invalidate = (ctx?: Object, deepness?: number) => {
     } else {
         fullRecreateRequested = true;
     }
+    isInvalidated = true;
     if (scheduled || initializing) return;
     scheduled = true;
-    beingInvalidated = true;
     requestAnimationFrame(update);
 };
 
@@ -2364,7 +2363,7 @@ export function frame() {
 }
 
 export function invalidated() {
-    return beingInvalidated;
+    return isInvalidated;
 }
 
 // Bobril.Media

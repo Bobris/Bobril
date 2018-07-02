@@ -1420,7 +1420,7 @@ var ctxInvalidated = "$invalidated";
 var ctxDeepness = "$deepness";
 var fullRecreateRequested = true;
 var scheduled = false;
-var beingInvalidated = false;
+var isInvalidated = true;
 var initializing = true;
 var uptimeMs = 0;
 var frameCounter = 0;
@@ -1571,7 +1571,6 @@ function isLogicalParent(parent, child, rootIds) {
 var deferSyncUpdateRequested = false;
 function syncUpdate() {
     deferSyncUpdateRequested = false;
-    beingInvalidated = false;
     internalUpdate(exports.now() - startTime);
 }
 exports.syncUpdate = syncUpdate;
@@ -1585,7 +1584,6 @@ function deferSyncUpdate() {
 exports.deferSyncUpdate = deferSyncUpdate;
 function update(time) {
     scheduled = false;
-    beingInvalidated = false;
     internalUpdate(time);
 }
 var rootIds;
@@ -1602,6 +1600,7 @@ var RootComponent = createVirtualComponent({
     }
 });
 function internalUpdate(time) {
+    isInvalidated = false;
     renderFrameBegin = exports.now();
     initEvents();
     reallyBeforeFrameCallback();
@@ -1688,10 +1687,10 @@ exports.invalidate = function (ctx, deepness) {
     else {
         fullRecreateRequested = true;
     }
+    isInvalidated = true;
     if (scheduled || initializing)
         return;
     scheduled = true;
-    beingInvalidated = true;
     requestAnimationFrame(update);
 };
 var lastRootId = 0;
@@ -2031,7 +2030,7 @@ function frame() {
 }
 exports.frame = frame;
 function invalidated() {
-    return beingInvalidated;
+    return isInvalidated;
 }
 exports.invalidated = invalidated;
 var media = null;
