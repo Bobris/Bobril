@@ -4880,6 +4880,7 @@ var hasBundledSprites = false;
 var wasSpriteUrlChanged = true;
 var firstStyles = false;
 function beforeFrame() {
+    var _a;
     var dbs = document.body.style;
     if (firstStyles && uptimeMs >= 150) {
         dbs.opacity = "1";
@@ -5058,7 +5059,6 @@ function beforeFrame() {
         rebuildStyles = false;
     }
     chainedBeforeFrame();
-    var _a;
 }
 function style(node) {
     var styles = [];

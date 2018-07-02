@@ -2,7 +2,7 @@
 
 export type IBobrilChild<T = any> = boolean | number | string | IBobrilNode<T> | null | undefined;
 export type IBobrilChildren = IBobrilChild | IBobrilChildArray | null | undefined;
-export interface IBobrilChildArray extends Array<IBobrilChildren> { }
+export interface IBobrilChildArray extends Array<IBobrilChildren> {}
 export type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
 export type IBobrilShimStyleMapping = {
     [name: string]: null | ((style: any, value: any, oldName: string) => void);
@@ -31,7 +31,7 @@ export interface IBobrilRoot {
 }
 
 export type ICtxClass = {
-    new(data?: any, me?: IBobrilCacheNode): BobrilCtx<any>;
+    new (data?: any, me?: IBobrilCacheNode): BobrilCtx<any>;
 };
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -272,7 +272,7 @@ export function flatten(a: any | any[]): any[] {
     }
     a = a.slice(0);
     let aLen = a.length;
-    for (let i = 0; i < aLen;) {
+    for (let i = 0; i < aLen; ) {
         let item = a[i];
         if (isArray(item)) {
             a.splice.apply(a, [i, 1].concat(item));
@@ -855,7 +855,7 @@ function destroyNode(c: IBobrilCacheNode) {
         if (component.destroy) component.destroy(ctx, c, <HTMLElement>c.element);
         let disposables = ctx.disposables;
         if (isArray(disposables)) {
-            for (let i = disposables.length; i-- > 0;) {
+            for (let i = disposables.length; i-- > 0; ) {
                 let d = disposables[i];
                 if (isFunction(d)) d(ctx);
                 else d.dispose();
@@ -1304,7 +1304,7 @@ export function updateChildren(
     newCh = newCh.slice(0);
     var newLength = newCh.length;
     var newIndex: number;
-    for (newIndex = 0; newIndex < newLength;) {
+    for (newIndex = 0; newIndex < newLength; ) {
         var item = newCh[newIndex];
         if (isArray(item)) {
             newCh.splice.apply(newCh, [newIndex, 1].concat(<any>item));
@@ -1739,11 +1739,11 @@ var regEvents: {
 } = {};
 var registryEvents:
     | {
-        [name: string]: Array<{
-            priority: number;
-            callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean;
-        }>;
-    }
+          [name: string]: Array<{
+              priority: number;
+              callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean;
+          }>;
+      }
     | undefined;
 
 export function addEvent(
@@ -1853,11 +1853,11 @@ export const enum RenderPhase {
     Destroy
 }
 
-const emptyBeforeRenderCallback = () => { };
+const emptyBeforeRenderCallback = () => {};
 var beforeRenderCallback: (node: IBobrilNode, phase: RenderPhase) => void = emptyBeforeRenderCallback;
-var beforeFrameCallback: () => void = () => { };
-var reallyBeforeFrameCallback: () => void = () => { };
-var afterFrameCallback: (root: IBobrilCacheChildren | null) => void = () => { };
+var beforeFrameCallback: () => void = () => {};
+var reallyBeforeFrameCallback: () => void = () => {};
+var afterFrameCallback: (root: IBobrilCacheChildren | null) => void = () => {};
 
 export function setBeforeRender(
     callback: (node: IBobrilNode, phase: RenderPhase) => void
@@ -2242,7 +2242,7 @@ export function allocateMethodId(): number {
 }
 
 function merge(f1: Function, f2: Function): Function {
-    return function (this: any, ...params: any[]) {
+    return function(this: any, ...params: any[]) {
         var result = f1.apply(this, params);
         if (result) return result;
         return f2.apply(this, params);
@@ -2528,10 +2528,10 @@ export const asap = (() => {
 })();
 
 if (!(<any>window).Promise) {
-    (function () {
+    (function() {
         // Polyfill for Function.prototype.bind
         function bind(fn: (args: any) => void, thisArg: any) {
-            return function () {
+            return function() {
                 fn.apply(thisArg, arguments);
             };
         }
@@ -2634,18 +2634,18 @@ if (!(<any>window).Promise) {
             doResolve(fn, bind(resolve, this), bind(reject, this));
         }
 
-        Promise.prototype.then = function (this: any, onFulfilled: any, onRejected?: any) {
+        Promise.prototype.then = function(this: any, onFulfilled: any, onRejected?: any) {
             var me = this;
             return new (<any>Promise)((resolve: any, reject: any) => {
                 handle.call(me, [onFulfilled, onRejected, resolve, reject]);
             });
         };
 
-        Promise.prototype["catch"] = function (this: any, onRejected?: any) {
+        Promise.prototype["catch"] = function(this: any, onRejected?: any) {
             return this.then(undefined, onRejected);
         };
 
-        (<any>Promise).all = function () {
+        (<any>Promise).all = function() {
             var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
 
             return new (<any>Promise)((resolve: (value: any) => void, reject: (reason: any) => void) => {
@@ -2753,12 +2753,12 @@ if (ieVersion() === 9) {
             addFilter(
                 s,
                 "progid:DXImageTransform.Microsoft.gradient(startColorstr='" +
-                color1 +
-                "',endColorstr='" +
-                color2 +
-                "', gradientType='" +
-                dir +
-                "')"
+                    color1 +
+                    "',endColorstr='" +
+                    color2 +
+                    "', gradientType='" +
+                    dir +
+                    "')"
             );
         });
     })();
@@ -4226,7 +4226,7 @@ shimStyle(shimmedStyle);
 var shimedStyleKeys = Object.keys(shimmedStyle);
 var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 
-var DndCtx = function (this: IDndCtx, pointerId: number) {
+var DndCtx = function(this: IDndCtx, pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -4337,41 +4337,41 @@ function dndRootFactory(): IBobrilChildren {
 }
 
 var dndProto = DndCtx.prototype;
-dndProto.setOperation = function (this: IDndCtx, operation: DndOp): void {
+dndProto.setOperation = function(this: IDndCtx, operation: DndOp): void {
     this.operation = operation;
 };
 
-dndProto.setDragNodeView = function (this: IDndCtx, view: ((dnd: IDndCtx) => IBobrilChildren) | undefined): void {
+dndProto.setDragNodeView = function(this: IDndCtx, view: ((dnd: IDndCtx) => IBobrilChildren) | undefined): void {
     this.dragView = view;
 };
 
-dndProto.addData = function (this: IDndCtx, type: string, data: any): boolean {
+dndProto.addData = function(this: IDndCtx, type: string, data: any): boolean {
     this.data[type] = data;
     return true;
 };
 
-dndProto.listData = function (this: IDndCtx): string[] {
+dndProto.listData = function(this: IDndCtx): string[] {
     return Object.keys(this.data);
 };
 
-dndProto.hasData = function (this: IDndCtx, type: string): boolean {
+dndProto.hasData = function(this: IDndCtx, type: string): boolean {
     return this.data[type] !== undefined;
 };
 
-dndProto.getData = function (this: IDndCtx, type: string): any {
+dndProto.getData = function(this: IDndCtx, type: string): any {
     return this.data[type];
 };
 
-dndProto.setEnabledOps = function (this: IDndCtx, ops: DndEnabledOps): void {
+dndProto.setEnabledOps = function(this: IDndCtx, ops: DndEnabledOps): void {
     this.enabledOperations = ops;
 };
 
-dndProto.cancelDnd = function (this: IDndCtx): void {
+dndProto.cancelDnd = function(this: IDndCtx): void {
     dndMoved(undefined, this);
     this.destroy();
 };
 
-dndProto.destroy = function (this: IDndCtx): void {
+dndProto.destroy = function(this: IDndCtx): void {
     this.ended = true;
     if (this.started) broadcast("onDragEnd", this);
     delete pointer2Dnd[this.pointerid];
@@ -4640,7 +4640,7 @@ function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobril
         var effectAllowed: string | undefined = undefined;
         try {
             effectAllowed = dt.effectAllowed;
-        } catch (e) { }
+        } catch (e) {}
         for (; eff < 7; eff++) {
             if (effectAllowedTable[eff] === effectAllowed) break;
         }
@@ -6262,7 +6262,7 @@ export function createOverridingComponent<TData>(
 export function createComponent<TData extends Object>(component: IBobrilComponent): IComponentFactory<TData> {
     const originalRender = component.render;
     if (originalRender) {
-        component.render = function (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
+        component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
             me.tag = "div";
             return originalRender.call(component, ctx, me, oldMe);
         };
