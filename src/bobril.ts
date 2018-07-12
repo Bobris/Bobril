@@ -1333,6 +1333,20 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             callback: (ev: any, target: Node, node: IBobrilCacheNode) => boolean;
         }>;
     };
+    var isPassiveEventHandlerSupported = false;
+
+    try {
+        const options = Object.defineProperty({}, "passive", {
+            get: function () {
+                isPassiveEventHandlerSupported = true;
+            }
+        });
+
+        window.addEventListener("test", options, options);
+        window.removeEventListener("test", options, options);
+    } catch (err) {
+        isPassiveEventHandlerSupported = false;
+    }
 
     function addEvent(
         name: string,
@@ -1368,7 +1382,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             emitEvent(name, ev, <Node>t, n);
         }
         if ("on" + eventName in window) el = window;
-        el.addEventListener(eventName, enhanceEvent, capture);
+        el.addEventListener(eventName, enhanceEvent, isPassiveEventHandlerSupported ? { capture, passive: false } : capture);
     }
 
     function initEvents() {

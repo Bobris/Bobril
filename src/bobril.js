@@ -1170,6 +1170,19 @@ b = (function (window, document) {
     var renderFrameBegin = 0;
     var regEvents = {};
     var registryEvents;
+    var isPassiveEventHandlerSupported = false;
+    try {
+        var options = Object.defineProperty({}, "passive", {
+            get: function () {
+                isPassiveEventHandlerSupported = true;
+            }
+        });
+        window.addEventListener("test", options, options);
+        window.removeEventListener("test", options, options);
+    }
+    catch (err) {
+        isPassiveEventHandlerSupported = false;
+    }
     function addEvent(name, priority, callback) {
         if (registryEvents == null)
             registryEvents = {};
@@ -1202,7 +1215,7 @@ b = (function (window, document) {
         }
         if ("on" + eventName in window)
             el = window;
-        el.addEventListener(eventName, enhanceEvent, capture);
+        el.addEventListener(eventName, enhanceEvent, isPassiveEventHandlerSupported ? { capture: capture, passive: false } : capture);
     }
     function initEvents() {
         if (registryEvents == null)
