@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.11.0
+
+Forcing active event listeners, due to browsers breaking apps because "they think it is good for users".
+
 ## 8.10.1
 
 invalidated() is reset in syncUpdate too.

@@ -1771,6 +1771,19 @@ export function emitEvent(
     return false;
 }
 
+var isPassiveEventHandlerSupported = false;
+try {
+    var options = Object.defineProperty({}, "passive", {
+        get: function() {
+            isPassiveEventHandlerSupported = true;
+        }
+    });
+    window.addEventListener("test", options, options);
+    window.removeEventListener("test", options, options);
+} catch (err) {
+    isPassiveEventHandlerSupported = false;
+}
+
 var listeningEventDeepness = 0;
 
 function addListener(el: EventTarget, name: string) {
@@ -1794,7 +1807,11 @@ function addListener(el: EventTarget, name: string) {
         if (listeningEventDeepness == 0 && deferSyncUpdateRequested) syncUpdate();
     }
     if ("on" + eventName in window) el = window;
-    el.addEventListener(eventName, enhanceEvent, capture);
+    el.addEventListener(
+        eventName,
+        enhanceEvent,
+        isPassiveEventHandlerSupported ? { capture: capture, passive: false } : capture
+    );
 }
 
 function initEvents() {

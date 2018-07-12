@@ -1446,6 +1446,19 @@ function emitEvent(name, ev, target, node) {
     return false;
 }
 exports.emitEvent = emitEvent;
+var isPassiveEventHandlerSupported = false;
+try {
+    var options = Object.defineProperty({}, "passive", {
+        get: function () {
+            isPassiveEventHandlerSupported = true;
+        }
+    });
+    window.addEventListener("test", options, options);
+    window.removeEventListener("test", options, options);
+}
+catch (err) {
+    isPassiveEventHandlerSupported = false;
+}
 var listeningEventDeepness = 0;
 function addListener(el, name) {
     if (name[0] == "!")
@@ -1471,7 +1484,7 @@ function addListener(el, name) {
     }
     if ("on" + eventName in window)
         el = window;
-    el.addEventListener(eventName, enhanceEvent, capture);
+    el.addEventListener(eventName, enhanceEvent, isPassiveEventHandlerSupported ? { capture: capture, passive: false } : capture);
 }
 function initEvents() {
     if (registryEvents === undefined)
