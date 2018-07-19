@@ -5073,9 +5073,12 @@ function rootNodeFactory(): IBobrilNode | undefined {
         } else return undefined;
     }
     if (currentTransition == null) {
+        if (activeRoutes.length !== matches.length) {
+            setterOfNodesArray = [];
+            nodesArray = [];
+            while (nodesArray.length < matches.length) nodesArray.push(undefined);
+        }
         activeRoutes = matches;
-        while (nodesArray.length > activeRoutes.length) nodesArray.pop();
-        while (nodesArray.length < activeRoutes.length) nodesArray.push(undefined);
         activeParams = out.p;
     }
     var fn: (otherData?: any) => IBobrilNode | undefined = noop;
