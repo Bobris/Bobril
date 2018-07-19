@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.11.1
+
+Fixed regression with passing undefined to color in b.sprite with enabled spriting.
+
 ## 8.11.0
 
 Forcing active event listeners, due to browsers breaking apps because "they think it is good for users".

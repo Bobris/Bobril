@@ -6091,13 +6091,16 @@ export function spriteb(width: number, height: number, left: number, top: number
 }
 
 export function spritebc(
-    color: string | (() => string),
+    color: undefined | string | (() => string),
     width: number,
     height: number,
     left: number,
     top: number
 ): IBobrilStyleDef {
     var colorId: string;
+    if (color == undefined) {
+        color = "#808080";
+    }
     if (isString(color)) {
         colorId = color;
     } else {

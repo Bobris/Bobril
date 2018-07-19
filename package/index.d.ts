@@ -412,7 +412,7 @@ export declare function setBundlePngPath(path: string): void;
 export declare function getSpritePaths(): [string, [string, number][]];
 export declare function setSpritePaths(main: string, others: [string, number][]): void;
 export declare function spriteb(width: number, height: number, left: number, top: number): IBobrilStyleDef;
-export declare function spritebc(color: string | (() => string), width: number, height: number, left: number, top: number): IBobrilStyleDef;
+export declare function spritebc(color: undefined | string | (() => string), width: number, height: number, left: number, top: number): IBobrilStyleDef;
 export declare function injectCss(css: string): void;
 export declare function asset(path: string): string;
 export declare function svgPie(x: number, y: number, radiusBig: number, radiusSmall: number, startAngle: number, endAngle: number): string;
