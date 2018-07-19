@@ -5386,10 +5386,10 @@ function spriteb(width, height, left, top) {
 }
 exports.spriteb = spriteb;
 function spritebc(color, width, height, left, top) {
-    var colorId;
     if (color == undefined) {
-        color = "#808080";
+        return spriteb(width, height, left, top);
     }
+    var colorId;
     if (isString(color)) {
         colorId = color;
     }

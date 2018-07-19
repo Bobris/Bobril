@@ -6097,10 +6097,10 @@ export function spritebc(
     left: number,
     top: number
 ): IBobrilStyleDef {
-    var colorId: string;
     if (color == undefined) {
-        color = "#808080";
+        return spriteb(width, height, left, top);
     }
+    var colorId: string;
     if (isString(color)) {
         colorId = color;
     } else {
