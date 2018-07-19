@@ -234,7 +234,7 @@ interface OutFindMatch {
                 ((n: IBobrilCacheNode) => {
                     if (n)
                         a[i] = n
-                }))(nodesArray, idx));
+                }))(nodesArray, setterOfNodesArray.length));
         }
         return setterOfNodesArray[idx];
     }
@@ -472,7 +472,7 @@ interface OutFindMatch {
                 (<any>Promise).resolve(res).then((resp: boolean | IRouteTransition) => {
                     if (resp === true) { }
                     else if (resp === false) {
-                        currentTransition = null; nextTransition = null; 
+                        currentTransition = null; nextTransition = null;
                         if (programPath) replace(programPath, true);
                         return;
                     } else {

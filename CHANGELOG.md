@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.11.2
+
+Fixed router problem when first route starting deeper. Thanks @Petaniss for repo. 
+
 ## 8.11.1
 
 Fixed regression with passing undefined to color in b.sprite with enabled spriting.

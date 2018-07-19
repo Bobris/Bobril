@@ -4361,7 +4361,7 @@ function getSetterOfNodesArray(idx) {
         setterOfNodesArray.push((function (a, i) { return function (n) {
             if (n)
                 a[i] = n;
-        }; })(nodesArray, idx));
+        }; })(nodesArray, setterOfNodesArray.length));
     }
     return setterOfNodesArray[idx];
 }

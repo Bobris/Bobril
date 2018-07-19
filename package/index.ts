@@ -5033,7 +5033,7 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode | undefined
         setterOfNodesArray.push(
             ((a: (IBobrilCacheNode | undefined)[], i: number) => (n: IBobrilCacheNode | undefined) => {
                 if (n) a[i] = n;
-            })(nodesArray, idx)
+            })(nodesArray, setterOfNodesArray.length)
         );
     }
     return setterOfNodesArray[idx];
