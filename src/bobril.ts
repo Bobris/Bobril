@@ -1746,7 +1746,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
         return r;
     }
 
-    function runMethod(methodId: string, parms: any): boolean {
+    function runMethod(methodId: string, params: any): boolean {
         let done: boolean = false;
         const roots: IBobrilRoots = b.getRoots();
         const rootKeys: string[] = Object.keys(roots);
@@ -1754,42 +1754,53 @@ b = ((window: Window, document: Document): IBobrilStatic => {
             let root: IBobrilRoot = roots[rootKeys[i]];
             if (root.p) (<any>root.p).hasLogicChldrn = true;
         }
-        runMethodFrom(getCurrentCtxWithEvents().me, methodId, parms);
+        let ctx = getCurrentCtxWithEvents();
+        if (ctx)
+            runMethodFrom(ctx.me, methodId, params);
+        else
+            runMethodFrom(roots["0"].c, methodId, params);
         return done;
 
-        function runMethodFrom(currentRoot: IBobrilCacheNode, methodId: string, parms: any): void {
+        function runMethodFrom(currentRoot: IBobrilCacheNode | IBobrilCacheNode[], methodId: string, params: any): void {
             let previousRoot: IBobrilCacheNode = null;
-            while (currentRoot) {
-                const comp: any = currentRoot.component;
-                if (comp && comp.runMethod) {
-                    const prevCtx: IBobrilCtx = currentCtxWithEvents;
-                    currentCtxWithEvents = currentRoot.ctx;
-                    if (comp.runMethod(currentRoot.ctx, methodId, parms))
-                        done = true;
-                    currentCtxWithEvents = prevCtx;
-                }
-                const children: IBobrilCacheChildren = currentRoot.children;
-
-                if (isArray(children) && !done) loopChildNodes(children);
-                if (!done) {
-                    const logicalChildren: IBobrilCacheNode[] = getLogicalChildren(currentRoot);
-                    isArray(logicalChildren) && loopChildNodes(logicalChildren);
-                }
-                previousRoot = currentRoot;
-                currentRoot = currentRoot.parent;
-                if (done)
-                    return;
+            if (b.isArray(currentRoot))
+            {
+                loopChildNodes(currentRoot);
             }
-            for (let i = 0; i < rootKeys.length; i++) {
-                const currRoot = roots[rootKeys[i]];
-                const rChlds: IBobrilCacheNode[] = currRoot.c;
-                const logicalParent: IBobrilCacheNode = currRoot.p;
-                for (let j = 0; j < rChlds.length; j++) {
-                    const root: IBobrilCacheNode = rChlds[j];
-                    if (root == previousRoot && logicalParent) {
-                        runMethodFrom(logicalParent, methodId, parms)
-                        if (done)
-                            return;
+            else
+            {
+                while (currentRoot) {
+                    const comp: any = currentRoot.component;
+                    if (comp && comp.runMethod) {
+                        const prevCtx: IBobrilCtx = currentCtxWithEvents;
+                        currentCtxWithEvents = currentRoot.ctx;
+                        if (comp.runMethod(currentRoot.ctx, methodId, params))
+                            done = true;
+                        currentCtxWithEvents = prevCtx;
+                    }
+                    const children: IBobrilCacheChildren = currentRoot.children;
+    
+                    if (isArray(children) && !done) loopChildNodes(children);
+                    if (!done) {
+                        const logicalChildren: IBobrilCacheNode[] = getLogicalChildren(currentRoot);
+                        isArray(logicalChildren) && loopChildNodes(logicalChildren);
+                    }
+                    previousRoot = currentRoot;
+                    currentRoot = currentRoot.parent;
+                    if (done)
+                        return;
+                }
+                for (let i = 0; i < rootKeys.length; i++) {
+                    const currRoot = roots[rootKeys[i]];
+                    const rChlds: IBobrilCacheNode[] = currRoot.c;
+                    const logicalParent: IBobrilCacheNode = currRoot.p;
+                    for (let j = 0; j < rChlds.length; j++) {
+                        const root: IBobrilCacheNode = rChlds[j];
+                        if (root == previousRoot && logicalParent) {
+                            runMethodFrom(logicalParent, methodId, params)
+                            if (done)
+                                return;
+                        }
                     }
                 }
             }
@@ -1803,7 +1814,7 @@ b = ((window: Window, document: Document): IBobrilStatic => {
                     if (comp && comp.runMethod) {
                         const prevCtx: IBobrilCtx = currentCtxWithEvents;
                         currentCtxWithEvents = child.ctx;
-                        if (comp.runMethod(child.ctx, methodId, parms)) {
+                        if (comp.runMethod(child.ctx, methodId, params)) {
                             done = true;
                             currentCtxWithEvents = prevCtx;
                             return;

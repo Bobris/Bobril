@@ -34,7 +34,7 @@
     function emitOnKeyPress(ev, target, node) {
         if (!node)
             return false;
-        if (ev.which === 0) // don't want special key presses
+        if (ev.which === 0)
             return false;
         var param = { charCode: ev.which || ev.keyCode };
         if (b.bubble(node, "onKeyPress", param)) {

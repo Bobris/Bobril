@@ -193,7 +193,7 @@
                     if (n)
                         a[i] = n;
                 });
-            })(nodesArray, idx));
+            })(nodesArray, setterOfNodesArray.length));
         }
         return setterOfNodesArray[idx];
     }
