@@ -18,7 +18,7 @@
     "author": "Boris Letocha",
     "license": "MIT",
     "devDependencies": {
-        "prettier": "^1.5.3",
-        "typescript": "^2.8.1"
+        "prettier": "*",
+        "typescript": "*"
     }
 }
