@@ -1580,7 +1580,7 @@ b = (function (window, document) {
         }
         return r;
     }
-    function runMethod(methodId, parms) {
+    function runMethod(methodId, params) {
         var done = false;
         var roots = b.getRoots();
         var rootKeys = Object.keys(roots);
@@ -1589,41 +1589,50 @@ b = (function (window, document) {
             if (root.p)
                 root.p.hasLogicChldrn = true;
         }
-        runMethodFrom(getCurrentCtxWithEvents().me, methodId, parms);
+        var ctx = getCurrentCtxWithEvents();
+        if (ctx)
+            runMethodFrom(ctx.me, methodId, params);
+        else
+            runMethodFrom(roots["0"].c, methodId, params);
         return done;
-        function runMethodFrom(currentRoot, methodId, parms) {
+        function runMethodFrom(currentRoot, methodId, params) {
             var previousRoot = null;
-            while (currentRoot) {
-                var comp = currentRoot.component;
-                if (comp && comp.runMethod) {
-                    var prevCtx = currentCtxWithEvents;
-                    currentCtxWithEvents = currentRoot.ctx;
-                    if (comp.runMethod(currentRoot.ctx, methodId, parms))
-                        done = true;
-                    currentCtxWithEvents = prevCtx;
-                }
-                var children = currentRoot.children;
-                if (isArray(children) && !done)
-                    loopChildNodes(children);
-                if (!done) {
-                    var logicalChildren = getLogicalChildren(currentRoot);
-                    isArray(logicalChildren) && loopChildNodes(logicalChildren);
-                }
-                previousRoot = currentRoot;
-                currentRoot = currentRoot.parent;
-                if (done)
-                    return;
+            if (b.isArray(currentRoot)) {
+                loopChildNodes(currentRoot);
             }
-            for (var i = 0; i < rootKeys.length; i++) {
-                var currRoot = roots[rootKeys[i]];
-                var rChlds = currRoot.c;
-                var logicalParent = currRoot.p;
-                for (var j = 0; j < rChlds.length; j++) {
-                    var root = rChlds[j];
-                    if (root == previousRoot && logicalParent) {
-                        runMethodFrom(logicalParent, methodId, parms);
-                        if (done)
-                            return;
+            else {
+                while (currentRoot) {
+                    var comp = currentRoot.component;
+                    if (comp && comp.runMethod) {
+                        var prevCtx = currentCtxWithEvents;
+                        currentCtxWithEvents = currentRoot.ctx;
+                        if (comp.runMethod(currentRoot.ctx, methodId, params))
+                            done = true;
+                        currentCtxWithEvents = prevCtx;
+                    }
+                    var children = currentRoot.children;
+                    if (isArray(children) && !done)
+                        loopChildNodes(children);
+                    if (!done) {
+                        var logicalChildren = getLogicalChildren(currentRoot);
+                        isArray(logicalChildren) && loopChildNodes(logicalChildren);
+                    }
+                    previousRoot = currentRoot;
+                    currentRoot = currentRoot.parent;
+                    if (done)
+                        return;
+                }
+                for (var i = 0; i < rootKeys.length; i++) {
+                    var currRoot = roots[rootKeys[i]];
+                    var rChlds = currRoot.c;
+                    var logicalParent = currRoot.p;
+                    for (var j = 0; j < rChlds.length; j++) {
+                        var root = rChlds[j];
+                        if (root == previousRoot && logicalParent) {
+                            runMethodFrom(logicalParent, methodId, params);
+                            if (done)
+                                return;
+                        }
                     }
                 }
             }
@@ -1636,7 +1645,7 @@ b = (function (window, document) {
                     if (comp && comp.runMethod) {
                         var prevCtx = currentCtxWithEvents;
                         currentCtxWithEvents = child.ctx;
-                        if (comp.runMethod(child.ctx, methodId, parms)) {
+                        if (comp.runMethod(child.ctx, methodId, params)) {
                             done = true;
                             currentCtxWithEvents = prevCtx;
                             return;

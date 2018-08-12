@@ -144,7 +144,7 @@
             }
         }
         function resolve(newValue) {
-            try { //Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
+            try {
                 if (newValue === this)
                     throw new TypeError('Promise selfresolve');
                 if (Object(newValue) === newValue) {
