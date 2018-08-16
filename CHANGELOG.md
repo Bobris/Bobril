@@ -1,8 +1,13 @@
 # CHANGELOG
 
+## 8.12.0
+
+Allow to customize isArray detection in Vdom. This allows to use Bobx observable arrays.
+Array flattening algorithm complexity decreased for nested arrays.
+
 ## 8.11.2
 
-Fixed router problem when first route starting deeper. Thanks @Petaniss for repo. 
+Fixed router problem when first route starting deeper. Thanks @Petaniss for repro.
 
 ## 8.11.1
 

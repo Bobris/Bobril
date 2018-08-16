@@ -215,6 +215,12 @@ function assert(shouldBeTrue: boolean, messageIfFalse?: string) {
 
 export const isArray = Array.isArray;
 
+var isArrayVdom = isArray;
+
+export function setIsArrayVdom(isArrayFnc: (arg: any) => arg is any[]) {
+    isArrayVdom = isArrayFnc;
+}
+
 const emptyComponent = {};
 
 function createTextNode(content: string): Text {
@@ -809,34 +815,16 @@ function normalizeNode(n: any): IBobrilNode | undefined {
 
 function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: Node | null): void {
     var ch = c.children;
-    if (!ch) return;
-    if (!isArray(ch)) {
-        if (isString(ch)) {
-            createInto.textContent = ch;
-            return;
-        }
-        ch = <any>[ch];
+    if (isString(ch)) {
+        createInto.textContent = ch;
+        return;
     }
-    ch = (<any[]>ch).slice(0);
-    var i = 0,
-        l = (<any[]>ch).length;
-    while (i < l) {
-        var item = (<any[]>ch)[i];
-        if (isArray(item)) {
-            (<IBobrilCacheNode[]>ch).splice.apply(ch, (<any>[i, 1]).concat(item));
-            l = (<IBobrilCacheNode[]>ch).length;
-            continue;
-        }
-        item = normalizeNode(item);
-        if (item == null) {
-            (<any[]>ch).splice(i, 1);
-            l--;
-            continue;
-        }
-        (<IBobrilCacheNode[]>ch)[i] = createNode(item, c, createInto, createBefore);
-        i++;
+    let res = <IBobrilCacheNode[]>[];
+    flattenVdomChildren(res, ch);
+    for (let i = 0; i < res.length; i++) {
+        res[i] = createNode(res[i], c, createInto, createBefore);
     }
-    c.children = ch;
+    c.children = res;
 }
 
 function destroyNode(c: IBobrilCacheNode) {
@@ -1283,6 +1271,18 @@ function reorderAndUpdateNodeInUpdateChildren(
     cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
 }
 
+function flattenVdomChildren(res: IBobrilNode[], children: IBobrilChildren) {
+    if (children == undefined) return;
+    if (isArrayVdom(children)) {
+        for (let i = 0; i < children.length; i++) {
+            flattenVdomChildren(res, children[i]);
+        }
+    } else {
+        let item = normalizeNode(children);
+        if (item !== undefined) res.push(item);
+    }
+}
+
 export function updateChildren(
     element: Element,
     newChildren: IBobrilChildren,
@@ -1291,35 +1291,13 @@ export function updateChildren(
     createBefore: Node | null,
     deepness: number
 ): IBobrilCacheNode[] {
-    if (newChildren == null) newChildren = <IBobrilNode[]>[];
-    if (!isArray(newChildren)) {
-        newChildren = [newChildren];
-    }
     if (cachedChildren == null) cachedChildren = [];
     if (!isArray(cachedChildren)) {
         if (element.firstChild) element.removeChild(element.firstChild);
         cachedChildren = <any>[];
     }
-    let newCh = <IBobrilChildArray>newChildren;
-    newCh = newCh.slice(0);
-    var newLength = newCh.length;
-    var newIndex: number;
-    for (newIndex = 0; newIndex < newLength; ) {
-        var item = newCh[newIndex];
-        if (isArray(item)) {
-            newCh.splice.apply(newCh, [newIndex, 1].concat(<any>item));
-            newLength = newCh.length;
-            continue;
-        }
-        item = normalizeNode(item);
-        if (item == null) {
-            newCh.splice(newIndex, 1);
-            newLength--;
-            continue;
-        }
-        newCh[newIndex] = item;
-        newIndex++;
-    }
+    let newCh = <IBobrilNode[]>[];
+    flattenVdomChildren(newCh, newChildren);
     return updateChildrenCore(
         element,
         <IBobrilNode[]>newCh,

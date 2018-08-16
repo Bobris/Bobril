@@ -19,6 +19,11 @@ function assert(shouldBeTrue, messageIfFalse) {
         throw Error(messageIfFalse || "assertion failed");
 }
 exports.isArray = Array.isArray;
+var isArrayVdom = exports.isArray;
+function setIsArrayVdom(isArrayFnc) {
+    isArrayVdom = isArrayFnc;
+}
+exports.setIsArrayVdom = setIsArrayVdom;
 var emptyComponent = {};
 function createTextNode(content) {
     return document.createTextNode(content);
@@ -619,41 +624,23 @@ function normalizeNode(n) {
 }
 function createChildren(c, createInto, createBefore) {
     var ch = c.children;
-    if (!ch)
+    if (isString(ch)) {
+        createInto.textContent = ch;
         return;
-    if (!exports.isArray(ch)) {
-        if (isString(ch)) {
-            createInto.textContent = ch;
-            return;
-        }
-        ch = [ch];
     }
-    ch = ch.slice(0);
-    var i = 0, l = ch.length;
-    while (i < l) {
-        var item = ch[i];
-        if (exports.isArray(item)) {
-            ch.splice.apply(ch, [i, 1].concat(item));
-            l = ch.length;
-            continue;
-        }
-        item = normalizeNode(item);
-        if (item == null) {
-            ch.splice(i, 1);
-            l--;
-            continue;
-        }
-        ch[i] = createNode(item, c, createInto, createBefore);
-        i++;
+    var res = [];
+    flattenVdomChildren(res, ch);
+    for (var i_3 = 0; i_3 < res.length; i_3++) {
+        res[i_3] = createNode(res[i_3], c, createInto, createBefore);
     }
-    c.children = ch;
+    c.children = res;
 }
 function destroyNode(c) {
     setRef(c.ref, undefined);
     var ch = c.children;
     if (exports.isArray(ch)) {
-        for (var i_3 = 0, l = ch.length; i_3 < l; i_3++) {
-            destroyNode(ch[i_3]);
+        for (var i_4 = 0, l = ch.length; i_4 < l; i_4++) {
+            destroyNode(ch[i_4]);
         }
     }
     var component = c.component;
@@ -666,8 +653,8 @@ function destroyNode(c) {
             component.destroy(ctx, c, c.element);
         var disposables = ctx.disposables;
         if (exports.isArray(disposables)) {
-            for (var i_4 = disposables.length; i_4-- > 0;) {
-                var d = disposables[i_4];
+            for (var i_5 = disposables.length; i_5-- > 0;) {
+                var d = disposables[i_5];
                 if (isFunction(d))
                     d(ctx);
                 else
@@ -691,8 +678,8 @@ function removeNodeRecursive(c) {
     if (exports.isArray(el)) {
         var pa = el[0].parentNode;
         if (pa) {
-            for (var i_5 = 0; i_5 < el.length; i_5++) {
-                pa.removeChild(el[i_5]);
+            for (var i_6 = 0; i_6 < el.length; i_6++) {
+                pa.removeChild(el[i_6]);
             }
         }
     }
@@ -1083,12 +1070,21 @@ function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedInd
     }
     cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
 }
-function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
-    if (newChildren == null)
-        newChildren = [];
-    if (!exports.isArray(newChildren)) {
-        newChildren = [newChildren];
+function flattenVdomChildren(res, children) {
+    if (children == undefined)
+        return;
+    if (isArrayVdom(children)) {
+        for (var i_7 = 0; i_7 < children.length; i_7++) {
+            flattenVdomChildren(res, children[i_7]);
+        }
     }
+    else {
+        var item = normalizeNode(children);
+        if (item !== undefined)
+            res.push(item);
+    }
+}
+function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
     if (cachedChildren == null)
         cachedChildren = [];
     if (!exports.isArray(cachedChildren)) {
@@ -1096,26 +1092,8 @@ function updateChildren(element, newChildren, cachedChildren, parentNode, create
             element.removeChild(element.firstChild);
         cachedChildren = [];
     }
-    var newCh = newChildren;
-    newCh = newCh.slice(0);
-    var newLength = newCh.length;
-    var newIndex;
-    for (newIndex = 0; newIndex < newLength;) {
-        var item = newCh[newIndex];
-        if (exports.isArray(item)) {
-            newCh.splice.apply(newCh, [newIndex, 1].concat(item));
-            newLength = newCh.length;
-            continue;
-        }
-        item = normalizeNode(item);
-        if (item == null) {
-            newCh.splice(newIndex, 1);
-            newLength--;
-            continue;
-        }
-        newCh[newIndex] = item;
-        newIndex++;
-    }
+    var newCh = [];
+    flattenVdomChildren(newCh, newChildren);
     return updateChildrenCore(element, newCh, cachedChildren, parentNode, createBefore, deepness);
 }
 exports.updateChildren = updateChildren;
@@ -1950,15 +1928,15 @@ function mergeComponents(c1, c2) {
 function overrideComponents(originalComponent, overridingComponent) {
     var res = Object.create(originalComponent);
     res.super = originalComponent;
-    for (var i_6 in overridingComponent) {
-        if (!(i_6 in emptyObject)) {
-            var m = overridingComponent[i_6];
-            var origM = originalComponent[i_6];
-            if (i_6 === "id") {
-                res[i_6] = (origM != null ? origM : "") + "/" + m;
+    for (var i_8 in overridingComponent) {
+        if (!(i_8 in emptyObject)) {
+            var m = overridingComponent[i_8];
+            var origM = originalComponent[i_8];
+            if (i_8 === "id") {
+                res[i_8] = (origM != null ? origM : "") + "/" + m;
             }
             else {
-                res[i_6] = m;
+                res[i_8] = m;
             }
         }
     }
@@ -4113,8 +4091,8 @@ function handleDrop(ev, _target, _node) {
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer;
-        for (var i_7 = 0; i_7 < dataKeys.length; i_7++) {
-            var k = dataKeys[i_7];
+        for (var i_9 = 0; i_9 < dataKeys.length; i_9++) {
+            var k = dataKeys[i_9];
             var d;
             if (k === "Files") {
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
@@ -4148,8 +4126,8 @@ function handleDndSelectStart(ev, _target, _node) {
     return true;
 }
 function anyActiveDnd() {
-    for (var i_8 = 0; i_8 < dnds.length; i_8++) {
-        var dnd = dnds[i_8];
+    for (var i_10 = 0; i_10 < dnds.length; i_10++) {
+        var dnd = dnds[i_10];
         if (dnd.beforeDrag)
             continue;
         return dnd;
@@ -4831,11 +4809,11 @@ function buildCssRule(parent, name) {
     var result = "";
     if (parent) {
         if (exports.isArray(parent)) {
-            for (var i_9 = 0; i_9 < parent.length; i_9++) {
-                if (i_9 > 0) {
+            for (var i_11 = 0; i_11 < parent.length; i_11++) {
+                if (i_11 > 0) {
                     result += ",";
                 }
-                result += "." + buildCssSubRule(parent[i_9]) + "." + name;
+                result += "." + buildCssSubRule(parent[i_11]) + "." + name;
             }
         }
         else {
@@ -4859,8 +4837,8 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         style(cur, curPseudo);
     }
     else if (exports.isArray(style)) {
-        for (var i_10 = 0; i_10 < style.length; i_10++) {
-            flattenStyle(cur, curPseudo, style[i_10], undefined);
+        for (var i_12 = 0; i_12 < style.length; i_12++) {
+            flattenStyle(cur, curPseudo, style[i_12], undefined);
         }
     }
     else if (typeof style === "object") {
@@ -4903,10 +4881,10 @@ function beforeFrame() {
         var newSpriteUrl = bundlePath;
         var newSpriteDppx = 1;
         if (lastDppx > 1) {
-            for (var i_11 = 0; i_11 < bundlePath2.length; i_11++) {
-                if (i_11 == bundlePath2.length - 1 || bundlePath2[i_11][1] >= lastDppx) {
-                    newSpriteUrl = bundlePath2[i_11][0];
-                    newSpriteDppx = bundlePath2[i_11][1];
+            for (var i_13 = 0; i_13 < bundlePath2.length; i_13++) {
+                if (i_13 == bundlePath2.length - 1 || bundlePath2[i_13][1] >= lastDppx) {
+                    newSpriteUrl = bundlePath2[i_13][0];
+                    newSpriteDppx = bundlePath2[i_13][1];
                 }
                 else
                     break;
@@ -4937,8 +4915,8 @@ function beforeFrame() {
                 });
             }
             if (imageSprite != null) {
-                for (var i_12 = 0; i_12 < bundledDynamicSprites.length; i_12++) {
-                    var dynSprite = bundledDynamicSprites[i_12];
+                for (var i_14 = 0; i_14 < bundledDynamicSprites.length; i_14++) {
+                    var dynSprite = bundledDynamicSprites[i_14];
                     var colorStr = dynSprite.color;
                     if (!isString(colorStr))
                         colorStr = colorStr();
@@ -4982,8 +4960,8 @@ function beforeFrame() {
                 wasSpriteUrlChanged = false;
             }
         }
-        for (var i_13 = 0; i_13 < dynamicSprites.length; i_13++) {
-            var dynSprite = dynamicSprites[i_13];
+        for (var i_15 = 0; i_15 < dynamicSprites.length; i_15++) {
+            var dynSprite = dynamicSprites[i_15];
             var image = imageCache[dynSprite.url];
             if (image == null)
                 continue;
