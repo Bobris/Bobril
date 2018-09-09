@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.13.0
+
+Removed .d.ts and .js to make package lighter.
+
 ## 8.12.0
 
 Allow to customize isArray detection in Vdom. This allows to use Bobx observable arrays.
