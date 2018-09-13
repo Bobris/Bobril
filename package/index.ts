@@ -146,6 +146,8 @@ export interface IBobrilNodeCommon<T = any> {
     // Bobril does not touch this, it is completely for user passing custom data to component
     // It is very similar to props in ReactJs, it must be immutable, you have access to this through ctx.data
     data?: T;
+    /// Forbid array like objects to be IBobrilNode, use IBobrilChildren instead
+    length?: never;
 }
 
 export type IBobrilNode<T = any> = IBobrilNodeCommon<T> & object;

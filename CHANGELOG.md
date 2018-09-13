@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.14.0
+
+Forbid arrays to be compatible with IBobrilNode type, you can probably use IBobrilChildren instead.
+
 ## 8.13.0
 
 Removed .d.ts and .js to make package lighter.
