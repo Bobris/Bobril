@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.15.0
+
+Allow route handler to return IBobrilChildren to ease burden of more stricter IBobrilNode.
+
 ## 8.14.0
 
 Forbid arrays to be compatible with IBobrilNode type, you can probably use IBobrilChildren instead.

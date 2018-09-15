@@ -4782,7 +4782,7 @@ export interface IRouteTransition {
 
 export type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
 
-export type IRouteHandler = IBobrilComponent | ((data: any) => IBobrilNode);
+export type IRouteHandler = IBobrilComponent | ((data: any) => IBobrilChildren);
 
 export interface IRouteConfig {
     // name cannot contain ":" or "/"
@@ -5069,7 +5069,7 @@ function rootNodeFactory(): IBobrilNode | undefined {
                 var handler = r.handler;
                 var res: IBobrilNode;
                 if (isFunction(handler)) {
-                    res = handler(data);
+                    res = { key: undefined, ref: undefined, children: handler(data) };
                 } else {
                     res = {
                         key: undefined,
@@ -5346,7 +5346,7 @@ function nextIteration(): void {
             let comp: IBobrilComponent | undefined = undefined;
             if (isFunction(handler)) {
                 let node = handler({});
-                if (!node) continue;
+                if (!node || !isObject(node) || isArray(node)) continue;
                 comp = node.component;
             } else {
                 comp = handler;
