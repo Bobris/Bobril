@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.15.1
+
+Made compatible with TypeScript 3.1.1
+
 ## 8.15.0
 
 Allow route handler to return IBobrilChildren to ease burden of more stricter IBobrilNode.

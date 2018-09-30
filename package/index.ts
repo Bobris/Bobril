@@ -732,7 +732,7 @@ export function createNode(
         if (htmlText === "") {
             // nothing needs to be created
         } else if (createBefore == null) {
-            var before = createInto.lastChild;
+            var before = createInto.lastChild as Node | null;
             (<HTMLElement>createInto).insertAdjacentHTML("beforeend", htmlText);
             c.element = <Node[]>[];
             if (before) {
@@ -933,7 +933,7 @@ function nodeContainsNode(
 
 export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[] {
     var res: (IBobrilCacheNode | null)[] = [];
-    if (n == null) return res;
+    if (n == undefined) return res;
     var rootIds = Object.keys(roots);
     var rootElements = rootIds.map(i => roots[i].e || document.body);
     var nodeStack: Node[] = [];
@@ -981,7 +981,7 @@ export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[
 }
 
 // PureFuncs: deref, getDomNode
-export function deref(n: Node): IBobrilCacheNode | undefined {
+export function deref(n: Node | null | undefined): IBobrilCacheNode | undefined {
     var p = vdomPath(n);
     var currentNode: IBobrilCacheNode | null | undefined = null;
     while (currentNode === null) {
@@ -2403,7 +2403,7 @@ export function accDeviceBreaks(newBreaks?: number[][]): number[][] {
     return breaks;
 }
 
-var viewport = window.document.documentElement;
+var viewport = window.document.documentElement!;
 var isAndroid = /Android/i.test(navigator.userAgent);
 var weirdPortrait: boolean; // Some android devices provide reverted orientation
 
@@ -2470,7 +2470,7 @@ export const asap = (() => {
             callbacks.push(callback);
         };
         // Browsers that support postMessage
-    } else if (!window.setImmediate && window.postMessage && window.addEventListener) {
+    } else if (!(window as any).setImmediate && window.postMessage && window.addEventListener) {
         var MESSAGE_PREFIX = "basap" + Math.random(),
             hasPostMessage = false;
 
@@ -2492,7 +2492,7 @@ export const asap = (() => {
             }
         };
         // IE browsers without postMessage
-    } else if (!window.setImmediate && onreadystatechange in document.createElement("script")) {
+    } else if (!(window as any).setImmediate && onreadystatechange in document.createElement("script")) {
         var scriptEl: any;
         return (callback: () => void) => {
             callbacks.push(callback);
@@ -2510,7 +2510,7 @@ export const asap = (() => {
         // All other browsers
     } else {
         var timeout: number | undefined;
-        var timeoutFn: (cb: () => void, timeout: number) => number = window.setImmediate || setTimeout;
+        var timeoutFn: (cb: () => void, timeout: number) => number = (window as any).setImmediate || setTimeout;
         return (callback: () => void) => {
             callbacks.push(callback);
             if (!timeout) {
@@ -2912,7 +2912,7 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, new
 
 function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBobrilCacheNode | undefined) {
     if (target && target.nodeName === "OPTION") {
-        target = document.activeElement;
+        target = document.activeElement!;
         node = deref(target);
     }
     if (!node) {
@@ -3820,7 +3820,7 @@ let currentFocusedNode: IBobrilCacheNode | undefined = undefined;
 let nodeStack: (IBobrilCacheNode | null)[] = [];
 
 function emitOnFocusChange(inFocus: boolean): boolean {
-    var newActiveElement = document.hasFocus() || inFocus ? document.activeElement : undefined;
+    var newActiveElement = document.hasFocus() || inFocus ? document.activeElement! : undefined;
     if (newActiveElement !== currentActiveElement) {
         currentActiveElement = newActiveElement;
         var newStack = vdomPath(currentActiveElement);
@@ -4083,7 +4083,7 @@ function getTransformationMatrix(element: Node) {
     var identity = CSSMatrix.identity();
     var transformationMatrix = identity;
     var x: Node | null = element;
-    var doc = x.ownerDocument.documentElement;
+    var doc = x.ownerDocument!.documentElement;
     while (x != undefined && x !== doc && x.nodeType != 1) x = x.parentNode;
     while (x != undefined && x !== doc) {
         var computedStyle = <any>window.getComputedStyle(<HTMLElement>x, undefined);
@@ -4576,7 +4576,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
     }
     dnd!.beforeDrag = false;
     var eff = effectAllowedTable[dnd!.enabledOperations];
-    var dt = ev.dataTransfer;
+    var dt = ev.dataTransfer!;
     dt.effectAllowed = eff;
     if ((<any>dt).setDragImage) {
         var div = document.createElement("div");
@@ -4607,7 +4607,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
             var k = dataKeys[i];
             var d = data[k];
             if (!isString(d)) d = JSON.stringify(d);
-            ev.dataTransfer.setData(k, d);
+            ev.dataTransfer!.setData(k, d);
         } catch (e) {
             if (DEBUG) if (window.console) console.log("Cannot set dnd data to " + dataKeys[i]);
         }
@@ -4617,7 +4617,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
 }
 
 function setDropEffect(ev: DragEvent, op: DndOp) {
-    ev.dataTransfer.dropEffect = ["none", "link", "copy", "move"][op];
+    ev.dataTransfer!.dropEffect = ["none", "link", "copy", "move"][op];
 }
 
 function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
@@ -4631,7 +4631,7 @@ function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobril
         dnd!.startX = dnd!.x;
         dnd!.startY = dnd!.y;
         dnd!.local = false;
-        var dt = ev.dataTransfer;
+        var dt = ev.dataTransfer!;
         var eff = 0;
         var effectAllowed: string | undefined = undefined;
         try {
@@ -4689,7 +4689,7 @@ function handleDrop(ev: DragEvent, _target: Node | undefined, _node: IBobrilCach
     dnd.y = ev.clientY;
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
-        var dt = ev.dataTransfer;
+        var dt = ev.dataTransfer!;
         for (let i = 0; i < dataKeys.length; i++) {
             var k = dataKeys[i];
             var d: any;
