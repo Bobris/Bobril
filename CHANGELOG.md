@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.15.2
+
+Fixed router which did not call canDeactivate when handler was function
+
 ## 8.15.1
 
 Made compatible with TypeScript 3.1.1
