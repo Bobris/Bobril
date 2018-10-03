@@ -5270,8 +5270,7 @@ function nextIteration(): void {
             transitionState++;
             if (!node) continue;
             let comp = node.component;
-            if (!comp && isArray(node.children))
-            {
+            if (!comp && isArray(node.children)) {
                 node = node.children[0];
                 if (!node) continue;
                 comp = node.component;

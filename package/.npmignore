@@ -2,3 +2,4 @@ tsconfig.json
 yarn.lock
 cSpell.json
 package-lock.json
+.vscode/settings.json
