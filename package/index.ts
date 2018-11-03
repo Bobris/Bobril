@@ -273,6 +273,77 @@ if (Object.assign == null) {
 
 export let assign = Object.assign;
 
+function polyfill(prototype: any, method: string, value: Function): void {
+    if (!prototype[method]) {
+        Object.defineProperty(prototype, method, {
+            value,
+            configurable: true,
+            writable: true
+        });
+    }
+}
+
+polyfill(Array.prototype, "find", function(this: any, pred: Function): any {
+    var o = Object(this);
+    var len = o.length >>> 0;
+    var thisArg = arguments[1];
+    for (var k = 0; k < len; k++) {
+        var kValue = o[k];
+        if (pred.call(thisArg, kValue, k, o)) {
+            return kValue;
+        }
+    }
+    return;
+});
+
+polyfill(Array.prototype, "findIndex", function(this: any, pred: Function): number {
+    var o = Object(this);
+    var len = o.length >>> 0;
+    var thisArg = arguments[1];
+    for (var k = 0; k < len; k++) {
+        var kValue = o[k];
+        if (pred.call(thisArg, kValue, k, o)) {
+            return k;
+        }
+    }
+    return -1;
+});
+
+polyfill(Array.prototype, "some", function(this: any, pred: Function): boolean {
+    var o = Object(this);
+    var len = o.length >>> 0;
+    var thisArg = arguments[1];
+    for (var i = 0; i < len; i++) {
+        if (i in o && pred.call(thisArg, o[i], i, o)) {
+            return true;
+        }
+    }
+    return false;
+});
+
+polyfill(String.prototype, "includes", function(this: string, search: string, start: number): boolean {
+    if (!isNumber(start)) start = 0;
+    if (start + search.length > this.length) {
+        return false;
+    } else {
+        return this.indexOf(search, start) !== -1;
+    }
+});
+
+polyfill(String.prototype, "startsWith", function(this: any, search: string, pos?: number): boolean {
+    return this.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
+});
+
+polyfill(String.prototype, "endsWith", function(this: any, search: string, pos?: number): boolean {
+    var s = this.toString();
+    if (!isNumber(pos) || !isFinite(pos) || Math.floor(pos) !== pos || pos > s.length) {
+        pos = s.length;
+    }
+    pos! -= search.length;
+    var lastIndex = s.indexOf(search, pos);
+    return lastIndex !== -1 && lastIndex === pos;
+});
+
 export function flatten(a: any | any[]): any[] {
     if (!isArray(a)) {
         if (a == null || a === false || a === true) return [];

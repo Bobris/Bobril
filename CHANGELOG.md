@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.16.0
+
+Added polyfills for: Array.find, Array.findIndex, Array.some, String.includes, String.startsWith, String.endsWith
+
 ## 8.15.2
 
 Fixed router which did not call canDeactivate when handler was function
