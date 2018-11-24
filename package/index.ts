@@ -152,6 +152,10 @@ export interface IBobrilNodeCommon<T = any> {
 
 export type IBobrilNode<T = any> = IBobrilNodeCommon<T> & object;
 
+export interface IBobrilNodeWithKey<T = any> extends IBobrilNode<T> {
+    key: string;
+}
+
 export interface IBobrilCacheNode {
     tag: string | undefined;
     key: string | undefined;
@@ -1344,15 +1348,30 @@ function reorderAndUpdateNodeInUpdateChildren(
     cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
 }
 
-function flattenVdomChildren(res: IBobrilNode[], children: IBobrilChildren) {
+function recursiveFlattenVdomChildren(res: IBobrilNode[], children: IBobrilChildren) {
     if (children == undefined) return;
     if (isArrayVdom(children)) {
         for (let i = 0; i < children.length; i++) {
-            flattenVdomChildren(res, children[i]);
+            recursiveFlattenVdomChildren(res, children[i]);
         }
     } else {
         let item = normalizeNode(children);
         if (item !== undefined) res.push(item);
+    }
+}
+
+function flattenVdomChildren(res: IBobrilNode[], children: IBobrilChildren) {
+    recursiveFlattenVdomChildren(res, children);
+    if (DEBUG) {
+        var set = new Set();
+        for (let i = 0; i < res.length; i++) {
+            const key = res[i].key;
+            if (key == undefined) continue;
+            if (set.has(key)) {
+                console.warn("Duplicate Bobril node key " + key);
+            }
+            set.add(key);
+        }
     }
 }
 
@@ -6278,10 +6297,10 @@ export function svgRect(x: number, y: number, width: number, height: number): st
 
 // Bobril.helpers
 
-export function withKey(content: IBobrilChildren, key: string): IBobrilNode {
+export function withKey(content: IBobrilChildren, key: string): IBobrilNodeWithKey {
     if (isObject(content) && !isArray(content)) {
         content.key = key;
-        return content;
+        return content as IBobrilNodeWithKey;
     }
     return {
         key,

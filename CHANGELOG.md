@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 8.17.0
+
+New type `IBobrilNodeWithKey<T>` which `withKey` newly returns.
+Duplicate keys shows warning in console (only in DEBUG mode).
+
 ## 8.16.0
 
 Added polyfills for: Array.find, Array.findIndex, Array.some, String.includes, String.startsWith, String.endsWith
