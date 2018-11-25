@@ -1,48 +1,6 @@
 import * as mobx from 'mobx';
 import * as bobx from 'bobx';
 
-function mobxObservableChange() {
-    const counter = mobx.observable(0);
-
-    for (let i = 0; i < 10000; i++) {
-        counter.set(counter.get() + 1);
-    }
-    console.time("Mobx observable get+set 1M");
-    for (let i = 0; i < 1000000; i++) {
-        counter.set(counter.get() + 1);
-    }
-    console.timeEnd("Mobx observable get+set 1M");
-    console.log(counter.get());
-}
-
-function bobxObservableChange() {
-    const counter = bobx.observable(0);
-
-    for (let i = 0; i < 10000; i++) {
-        counter.set(counter.get() + 1);
-    }
-    console.time("Bobx observable get+set 1M");
-    for (let i = 0; i < 1000000; i++) {
-        counter.set(counter.get() + 1);
-    }
-    console.timeEnd("Bobx observable get+set 1M");
-    console.log(counter.get());
-}
-
-function noneObservableChange() {
-    let counter = 0;
-
-    for (let i = 0; i < 10000; i++) {
-        counter += 1;
-    }
-    console.time("None observable get+set 1M");
-    for (let i = 0; i < 1000000; i++) {
-        counter += 1;
-    }
-    console.timeEnd("None observable get+set 1M");
-    console.log(counter);
-}
-
 class MobxCounter {
     constructor() {
         this.c = 0;
@@ -253,9 +211,6 @@ mobxComputedMemoize();
 noneArrayPush();
 bobxArrayPush();
 mobxArrayPush();
-mobxObservableChange();
-bobxObservableChange();
-noneObservableChange();
 mobxClassObservableChange();
 bobxClassObservableChange();
 noneClassObservableChange();

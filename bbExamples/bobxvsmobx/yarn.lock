@@ -2,16 +2,19 @@
 # yarn lockfile v1
 
 
-bobril@*, bobril@^7.0.0:
-  version "7.6.2"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-7.6.2.tgz#86bfe18b4d2be7d0c25ed4deb9753866c514e7a2"
+bobril@*:
+  version "8.17.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.17.0.tgz#fc13f3c0ad7b1f67cab26bc9595290ab8436b8fd"
+  integrity sha512-qpNZvAq/1zv3MhngSOST16pKudqVu1U5UCpOi4Chd3wpGAddJEX2NcVAhbnQFiPq9SrO7jpMoG4gZbjzsKW+DA==
 
 bobx@*:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/bobx/-/bobx-0.12.0.tgz#6f8f806ed0496be350b93979fd1b24d37d16bd03"
+  version "0.19.0"
+  resolved "https://registry.yarnpkg.com/bobx/-/bobx-0.19.0.tgz#448c8436bd3b669a2eb789a56338d6a52dd344b4"
+  integrity sha512-QjohB0S0mJ+ByJuaD41tyYUKIWynR2XsM0hHV+AaErScNy4g3PUNWafw6tOk+yZ1s6Fz5Wrr6gfL/xW485RqJw==
   dependencies:
-    bobril "^7.0.0"
+    bobril "*"
 
 mobx@*:
-  version "3.3.0"
-  resolved "https://registry.yarnpkg.com/mobx/-/mobx-3.3.0.tgz#1bc1dd7e78547065af04b49bdb7f2098cada47aa"
+  version "5.6.0"
+  resolved "https://registry.yarnpkg.com/mobx/-/mobx-5.6.0.tgz#e381c357e0ed7685a99a896455ecc66ff5ab84ee"
+  integrity sha512-xrA0tBnSMANXCDjS2W/6YTasesA8mkg9o+v/Bw/OcbXaRVE6/soVwDMWIh7A6TwMDY4tYQprQJZ5WQN1TRSb3A==
