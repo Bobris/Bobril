@@ -2616,9 +2616,9 @@ export const asap = (() => {
 if (!(<any>window).Promise) {
     (function() {
         // Polyfill for Function.prototype.bind
-        function bind(fn: (args: any) => void, thisArg: any) {
+        function bind(fn: (...args: any[]) => void, thisArg: any) {
             return function() {
-                fn.apply(thisArg, arguments);
+                fn.apply(thisArg, arguments as any);
             };
         }
 
@@ -5368,7 +5368,7 @@ function nextIteration(): void {
             if (!comp) continue;
             let fn = comp.canDeactivate;
             if (!fn) continue;
-            let res = fn.call(comp, node.ctx, currentTransition);
+            let res = fn.call(comp, node.ctx!, currentTransition!);
             if (res === true) continue;
             (<any>Promise)
                 .resolve(res)
@@ -5449,7 +5449,7 @@ function nextIteration(): void {
             if (!comp) continue;
             let fn = comp.canActivate;
             if (!fn) continue;
-            let res = fn.call(comp, currentTransition);
+            let res = fn.call(comp, currentTransition!);
             if (res === true) continue;
             Promise.resolve(res)
                 .then((resp: boolean | IRouteTransition) => {

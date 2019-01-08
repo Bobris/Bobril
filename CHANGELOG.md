@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.17.1
+
+Fix compilation errors in TypeScript 3.2.2
+
 ## 8.17.0
 
 New type `IBobrilNodeWithKey<T>` which `withKey` newly returns.
