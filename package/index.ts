@@ -553,7 +553,7 @@ function setClassName(el: Element, className: string) {
 const focusableTag = /^input$|^select$|^textarea$|^button$/;
 const tabindexStr = "tabindex";
 
-function isNaturalyFocusable(tag: string | undefined, attrs: IBobrilAttributes | undefined): boolean {
+function isNaturallyFocusable(tag: string | undefined, attrs: IBobrilAttributes | undefined): boolean {
     if (tag == null) return false;
     if (focusableTag.test(tag)) return true;
     if (tag === "a" && attrs != null && attrs.href != null) return true;
@@ -596,7 +596,7 @@ function updateElement(
                 } else el.setAttribute(attrName, newAttr);
             }
         }
-    if (notFocusable && !wasTabindex && isNaturalyFocusable(n.tag, newAttrs)) {
+    if (notFocusable && !wasTabindex && isNaturallyFocusable(n.tag, newAttrs)) {
         el.setAttribute(tabindexStr, "-1");
         oldAttrs[tabindexStr] = -1;
     }
@@ -3982,7 +3982,7 @@ export function focus(node: IBobrilCacheNode): boolean {
     var attrs = node.attrs;
     if (attrs != null) {
         var ti = attrs.tabindex;
-        if (ti !== undefined || isNaturalyFocusable(node.tag, attrs)) {
+        if (ti !== undefined || isNaturallyFocusable(node.tag, attrs)) {
             var el = node.element;
             (<HTMLElement>el).focus();
             emitOnFocusChange(false);
@@ -6508,10 +6508,18 @@ export function createElement(name: any, props: any): IBobrilNode {
 
         return res;
     } else {
-        let res = name(props, children);
-        if (props != null) {
-            if (props.key != null) res.key = props.key;
-            if (props.ref != null) res.ref = props.ref;
+        let res: IBobrilNode;
+        assert(isFunction(name));
+        if (name.length == 1) {
+            if (props == undefined) props = { children };
+            else props.children = children;
+            res = name(props);
+        } else {
+            res = name(props, children);
+        }
+        if (props != undefined) {
+            if (props.key != undefined) res.key = props.key;
+            if (props.ref != undefined) res.ref = props.ref;
         }
         return res;
     }

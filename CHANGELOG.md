@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.18.0
+
+TSX now correctly pass children to functions with just one parameter.
+
 ## 8.17.1
 
 Fix compilation errors in TypeScript 3.2.2
