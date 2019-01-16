@@ -6508,6 +6508,8 @@ export function createElement(name: any, props: any): IBobrilNode {
 
         return res;
     } else {
+        if (!props.hasOwnProperty("children")) props.children = children;
+        
         let res = name(props, children);
         if (props != null) {
             if (props.key != null) res.key = props.key;
