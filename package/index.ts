@@ -249,6 +249,10 @@ export function isString(val: any): val is string {
     return typeof val == "string";
 }
 
+export function isBoolean(val: any): val is boolean {
+    return typeof val == "boolean";
+}
+
 export function isFunction(val: any): val is Function {
     return typeof val == "function";
 }
@@ -3220,6 +3224,7 @@ export interface IBobrilMouseEvent {
     ctrl: boolean;
     alt: boolean;
     meta: boolean;
+    cancelable: boolean;
 }
 
 export const enum BobrilPointerType {
@@ -3422,6 +3427,7 @@ function buildHandlerPointer(name: string) {
         }
         var param: IBobrilPointerEvent = {
             id: ev.pointerId,
+            cancelable: normalizeCancelable(ev),
             type: type,
             x: ev.clientX,
             y: ev.clientY,
@@ -3453,6 +3459,7 @@ function buildHandlerTouch(name: string) {
             node = deref(target);
             var param: IBobrilPointerEvent = {
                 id: t.identifier + 2,
+                cancelable: normalizeCancelable(ev),
                 type: BobrilPointerType.Touch,
                 x: t.clientX,
                 y: t.clientY,
@@ -3489,6 +3496,7 @@ function buildHandlerMouse(name: string) {
         var param: IBobrilPointerEvent = {
             id: 1,
             type: BobrilPointerType.Mouse,
+            cancelable: normalizeCancelable(ev),
             x: ev.clientX,
             y: ev.clientY,
             button: decodeButton(ev),
@@ -3775,6 +3783,11 @@ function decodeButton(ev: MouseEvent): number {
     return ev.which || ev.button;
 }
 
+function normalizeCancelable(ev: Event): boolean {
+    var c = ev.cancelable;
+    return !isBoolean(c) || c;
+}
+
 function createHandler(handlerName: string, allButtons?: boolean) {
     return (ev: MouseEvent, target: Node | undefined, node: IBobrilCacheNode | undefined) => {
         if (
@@ -3797,6 +3810,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
             x: ev.clientX,
             y: ev.clientY,
             button: button,
+            cancelable: normalizeCancelable(ev),
             shift: ev.shiftKey,
             ctrl: ev.ctrlKey,
             alt: ev.altKey,
@@ -3881,6 +3895,7 @@ function handleMouseWheel(ev: any, target: Node | undefined, node: IBobrilCacheN
         dy,
         x: ev.clientX,
         y: ev.clientY,
+        cancelable: normalizeCancelable(ev),
         button: button,
         shift: ev.shiftKey,
         ctrl: ev.ctrlKey,

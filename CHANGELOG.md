@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.19.0
+
+Added `cancelable` to `IBobrilMouseEvent` so it could be detected that browser want to handle it itself.
+
 ## 8.18.0
 
 TSX now correctly pass children to functions with just one parameter.
