@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.20.0
+
+Added support for TSX fragments `<>...</>`.
+
 ## 8.19.0
 
 Added `cancelable` to `IBobrilMouseEvent` so it could be detected that browser want to handle it itself.
