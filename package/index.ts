@@ -6540,4 +6540,13 @@ export function createElement(name: any, props: any): IBobrilNode {
     }
 }
 
+export interface IFragmentData {
+    children: IBobrilChildren,
+    key?: string
+}
+
+export function Fragment(data?: IFragmentData){
+    return { ...data };
+}
+
 export const __spread = assign;
