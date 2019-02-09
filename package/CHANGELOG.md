@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 8.21.0
+
+New function debounceProp which delays setting value after changes stops for defined delay (default 500ms).
+
 ## 8.20.0
 
 Added support for TSX fragments `<>...</>`.

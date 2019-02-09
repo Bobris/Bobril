@@ -6453,6 +6453,43 @@ export function propim<T>(value: T, ctx?: IBobrilCtx, onChange?: (value: T, old:
     };
 }
 
+export function debounceProp<T>(from: IProp<T>, delay = 500): IProp<T> {
+    let current = from();
+    let lastSet = current;
+    let timer: number | undefined;
+    function clearTimer() {
+        if (timer !== undefined) {
+            clearTimeout(timer);
+            timer = undefined;
+        }
+    }
+    return (value?: T): T => {
+        if (value === undefined) {
+            let origin = from();
+            if (origin === lastSet) return current;
+            current = origin;
+            lastSet = origin;
+            clearTimer();
+            return origin;
+        } else {
+            clearTimer();
+            // setting same value means flush
+            if (current === value) {
+                lastSet = value;
+                from(value);
+            } else {
+                current = value;
+                timer = setTimeout(() => {
+                    lastSet = current;
+                    from(current);
+                    timer = undefined;
+                }, delay);
+            }
+            return value;
+        }
+    };
+}
+
 export function getValue<T>(value: T | IProp<T> | IPropAsync<T>): T {
     if (isFunction(value)) {
         return (<IProp<T>>value)();
