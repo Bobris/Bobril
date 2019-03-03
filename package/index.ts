@@ -2192,7 +2192,8 @@ export function setBeforeInit(callback: (cb: () => void) => void): void {
 let currentCtxWithEvents: IBobrilCtx | undefined;
 
 export function bubble(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined {
-    var prevCtx = currentCtxWithEvents;
+    const prevCtx = currentCtxWithEvents;
+    let res: IBobrilCtx | undefined;
     while (node) {
         var c = node.component;
         if (c) {
@@ -2200,9 +2201,17 @@ export function bubble(node: IBobrilCacheNode | null | undefined, name: string, 
             currentCtxWithEvents = ctx;
             var m = (<any>c)[name];
             if (m) {
-                if (m.call(c, ctx, param)) {
+                const eventResult = +m.call(c, ctx, param) as EventResult;
+                if (eventResult == EventResult.HandledPreventDefault) {
                     currentCtxWithEvents = prevCtx;
                     return ctx;
+                }
+                if (eventResult == EventResult.HandledButRunDefault) {
+                    currentCtxWithEvents = prevCtx;
+                    return undefined;
+                }
+                if (eventResult == EventResult.NotHandledPreventDefault) {
+                    res = ctx;
                 }
             }
             m = (<any>c).shouldStopBubble;
@@ -2213,7 +2222,7 @@ export function bubble(node: IBobrilCacheNode | null | undefined, name: string, 
         node = node.parent;
     }
     currentCtxWithEvents = prevCtx;
-    return undefined;
+    return res;
 }
 
 function broadcastEventToNode(
@@ -2222,6 +2231,7 @@ function broadcastEventToNode(
     param: any
 ): IBobrilCtx | undefined {
     if (!node) return undefined;
+    let res: IBobrilCtx | undefined;
     var c = node.component;
     if (c) {
         var ctx = node.ctx!;
@@ -2229,16 +2239,24 @@ function broadcastEventToNode(
         currentCtxWithEvents = ctx;
         var m = (<any>c)[name];
         if (m) {
-            if (m.call(c, ctx, param)) {
+            const eventResult = +m.call(c, ctx, param) as EventResult;
+            if (eventResult == EventResult.HandledPreventDefault) {
                 currentCtxWithEvents = prevCtx;
                 return ctx;
+            }
+            if (eventResult == EventResult.HandledButRunDefault) {
+                currentCtxWithEvents = prevCtx;
+                return undefined;
+            }
+            if (eventResult == EventResult.NotHandledPreventDefault) {
+                res = ctx;
             }
         }
         m = c.shouldStopBroadcast;
         if (m) {
             if (m.call(c, ctx, name, param)) {
                 currentCtxWithEvents = prevCtx;
-                return undefined;
+                return res;
             }
         }
         currentCtxWithEvents = prevCtx;
@@ -2246,11 +2264,11 @@ function broadcastEventToNode(
     var ch = node.children;
     if (isArray(ch)) {
         for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-            var res = broadcastEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
-            if (res != null) return res;
+            var res2 = broadcastEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
+            if (res2 != undefined) return res2;
         }
     }
-    return undefined;
+    return res;
 }
 
 export function broadcast(name: string, param: any): IBobrilCtx | undefined {
@@ -3547,7 +3565,7 @@ for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
             "!" + name,
             50,
             (ev: IBobrilPointerEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) => {
-                return invokeMouseOwner(onName, ev) || bubble(node, onName, ev) != null;
+                return invokeMouseOwner(onName, ev) || bubble(node, onName, ev) != undefined;
             }
         );
     })(pointersEventNames[j]);
@@ -6345,8 +6363,10 @@ export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilN
     return style({ tag: "div", children }, styles);
 }
 
+type ChildrenType<TData extends { [name: string]: any }> = "children" extends keyof TData ? TData["children"] : never;
+
 export interface IComponentFactory<TData extends Object> {
-    (data?: TData, children?: IBobrilChildren): IBobrilNode<TData>;
+    (data?: TData, children?: ChildrenType<TData>): IBobrilNode<TData>;
 }
 
 export function createVirtualComponent<TData>(component: IBobrilComponent): IComponentFactory<TData> {
@@ -6525,7 +6545,7 @@ if (!(<any>window).b)
 // PureFuncs: createElement
 
 export function createElement<T>(
-    name: (data?: T, children?: any) => IBobrilNode,
+    name: string | ((data?: T, children?: any) => IBobrilNode),
     data?: T,
     ...children: IBobrilChildren[]
 ): IBobrilNode<T>;
@@ -6541,22 +6561,40 @@ export function createElement(name: any, props: any): IBobrilNode {
         if (props == null) {
             return res;
         }
-        var attrs: IBobrilAttributes = {};
-        var someAttrs = false;
+        var attrs: IBobrilAttributes | undefined;
+        var component: IBobrilComponent | undefined;
         for (var n in props) {
             if (!props.hasOwnProperty(n)) continue;
+            var propValue = props[n];
             if (n === "style") {
-                style(res, props[n]);
+                style(res, propValue);
                 continue;
             }
-            if (n === "key" || n === "ref" || n === "className" || n === "component" || n === "data") {
-                (<any>res)[n] = props[n];
+            if (n === "ref") {
+                if (isString(propValue)) {
+                    assert(getCurrentCtx() != undefined);
+                    res.ref = [getCurrentCtx()!, propValue];
+                } else res = propValue;
                 continue;
             }
-            someAttrs = true;
-            attrs[n] = props[n];
+            if (n === "key" || n === "className" || n === "component" || n === "data") {
+                (<any>res)[n] = propValue;
+                continue;
+            }
+            if (n.startsWith("on") && isFunction(propValue)) {
+                if (component == undefined) {
+                    component = {};
+                    res.component = component;
+                }
+                (component as any)[n] = propValue.call.bind(propValue);
+                continue;
+            }
+            if (attrs == undefined) {
+                attrs = {};
+                res.attrs = attrs;
+            }
+            attrs[n] = propValue;
         }
-        if (someAttrs) res.attrs = attrs;
 
         return res;
     } else {
@@ -6587,3 +6625,158 @@ export function Fragment(data?: IFragmentData) {
 }
 
 export const __spread = assign;
+
+export enum EventResult {
+    /// event propagation will continue. It's like returning falsy value.
+    NotHandled = 0,
+    /// event propagation will stop and any browser default handing will be prevented. returning true has same meaning
+    HandledPreventDefault = 1,
+    /// event propagation will stop but any browser default handing will still run
+    HandledButRunDefault = 2,
+    /// event propagation will continue but browser default handing will be prevented
+    NotHandledPreventDefault = 3
+}
+
+export type GenericEventResult = EventResult | boolean;
+
+export class Component<TData> {
+    constructor(data?: TData, me?: IBobrilCacheNode) {
+        this.data = data!;
+        this.me = me!;
+        this.cfg = undefined;
+        this.refs = undefined;
+    }
+
+    init?(data: TData): void;
+    render?(data: TData): IBobrilChildren;
+    destroy?(): void;
+
+    /// called from children to parents order for new nodes
+    postInitDom?(me: IBobrilCacheNode): void;
+    /// called from children to parents order for updated nodes
+    postUpdateDom?(me: IBobrilCacheNode): void;
+    /// called from children to parents order for updated nodes but in every frame even when render was not run
+    postUpdateDomEverytime?(me: IBobrilCacheNode): void;
+
+    onKeyDown?(event: IKeyDownUpEvent): GenericEventResult;
+    onKeyUp?(event: IKeyDownUpEvent): GenericEventResult;
+    onKeyPress?(event: IKeyPressEvent): GenericEventResult;
+
+    onClick?(event: IBobrilMouseEvent): GenericEventResult;
+    onDoubleClick?(event: IBobrilMouseEvent): GenericEventResult;
+    onContextMenu?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseDown?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseUp?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseOver?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseIn?(event: IBobrilMouseEvent): void;
+    onMouseOut?(event: IBobrilMouseEvent): void;
+    onMouseMove?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseWheel?(event: IBobrilMouseWheelEvent): GenericEventResult;
+    onPointerDown?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerMove?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerUp?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerCancel?(event: IBobrilPointerEvent): GenericEventResult;
+
+    /// focus moved from outside of this component to some child of this component
+    onFocusIn?(): void;
+    /// focus moved from inside of this component to some outside component
+    onFocusOut?(): void;
+
+    /// if drag should start, bubbled
+    onDragStart?(dndCtx: IDndStartCtx): GenericEventResult;
+
+    /// broadcasted after drag started/moved/changed
+    onDrag?(dndCtx: IDndCtx): boolean | void;
+    /// broadcasted after drag ended even if without any action
+    onDragEnd?(dndCtx: IDndCtx): boolean | void;
+
+    /// Do you want to allow to drop here? bubbled
+    onDragOver?(dndCtx: IDndOverCtx): GenericEventResult;
+    /// User want to drop dragged object here - do it - onDragOver before had to set you as target
+    onDrop?(dndCtx: IDndCtx): boolean;
+
+    static canActivate?(transition: IRouteTransition): IRouteCanResult;
+
+    canDeactivate?(transition: IRouteTransition): IRouteCanResult;
+
+    data: TData;
+    me: IBobrilCacheNode;
+    cfg?: any;
+    refs?: { [name: string]: IBobrilCacheNode | undefined };
+}
+
+export interface IComponentClass<TData extends Object> {
+    new (data?: any, me?: IBobrilCacheNode): Component<TData>;
+}
+
+export interface IComponentFunction<TData extends Object> extends Function {
+    (this: IBobrilCtx, data: TData): IBobrilChildren;
+}
+
+const componentEventNames = [
+    "onKeyDown",
+    "onKeyUp",
+    "onKeyPress",
+    "onClick",
+    "onDoubleClick",
+    "onContextMenu",
+    "onMouseDown",
+    "onMouseUp",
+    "onMouseOver",
+    "onMouseIn",
+    "onMouseOut",
+    "onMouseMove",
+    "onMouseWheel",
+    "onPointerDown",
+    "onPointerMove",
+    "onPointerUp",
+    "onPointerCancel",
+    "onFocusIn",
+    "onFocusOut",
+    "onDragStart",
+    "onDrag",
+    "onDragEnd",
+    "onDragOver",
+    "onDrop",
+    "canDeactivate"
+];
+
+function forwardRender(m: Function) {
+    return (ctx: IBobrilCtx, me: IBobrilNode) => {
+        me.children = m.call(ctx, ctx.data);
+    };
+}
+
+export function component<TData>(
+    component: IComponentClass<TData> | IComponentFunction<TData>,
+    name?: string
+): IComponentFactory<TData> {
+    const bobrilComponent = {} as IBobrilComponent;
+    if (component.prototype instanceof Component) {
+        const proto = component.prototype as any;
+        bobrilComponent.id = name || proto.constructor.name || "C" + allocateMethodId();
+        bobrilComponent.ctxClass = (component as unknown) as ICtxClass;
+        bobrilComponent.render = forwardRender(proto.render);
+        for (let i = 0; i < componentEventNames.length; i++) {
+            const name = componentEventNames[i];
+            const eventFunc = proto[name];
+            if (isFunction(eventFunc))
+                (bobrilComponent as any)[name] = (ctx: IBobrilCtx, event: any) => {
+                    return eventFunc.call(ctx, event);
+                };
+        }
+        bobrilComponent.canActivate = proto.constructor.canActivate;
+    } else {
+        bobrilComponent.id = name || component.name || "C" + allocateMethodId();
+        bobrilComponent.render = (ctx, me) => {
+            me.children = component.call(ctx, ctx.data);
+        };
+    }
+    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
+        if (children !== undefined) {
+            if (data == null) data = <any>{};
+            (<any>data).children = children;
+        }
+        return { data, component: bobrilComponent };
+    };
+}

@@ -13,13 +13,13 @@ declare global {
 
         interface IntrinsicAttributes {
             key?: string;
-            ref?: [b.IBobrilCtx, string] | ((node: b.IBobrilCacheNode) => void);
+            ref?: string | [b.IBobrilCtx, string] | ((node: b.IBobrilCacheNode) => void);
             children?: b.IBobrilChildren;
         }
 
         interface IntrinsicClassAttributes<T> {
             key?: string;
-            ref?: [b.IBobrilCtx, string] | ((node: b.IBobrilCacheNode) => void);
+            ref?: string | [b.IBobrilCtx, string] | ((node: b.IBobrilCacheNode) => void);
         }
 
         interface IntrinsicElements {

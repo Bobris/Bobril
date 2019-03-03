@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 9.0.0
+
+New way how to write components. `b.component` takes class or function and creates Bobril component factory function. TSX now supports Bobril event handlers. Event Handlers could now return also `EventResult` enum instead of `boolean`, bubbling and broadcasting was updated to works with EventResult. TSX `ref` could be now also simple `string`.
+
+Breaking change is that children parameter type is not always `IBobrilChildren`, but extracted from `data.children`.
+
 ## 8.21.0
 
 New function debounceProp which delays setting value after changes stops for defined delay (default 500ms).
