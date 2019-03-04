@@ -6,6 +6,10 @@ New way how to write components. `b.component` takes class or function and creat
 
 Breaking change is that children parameter type is not always `IBobrilChildren`, but extracted from `data.children`.
 
+Added polyfill for `Object.is`.
+
+First hook `useState` implemented with same semantics like in React.
+
 ## 8.21.0
 
 New function debounceProp which delays setting value after changes stops for defined delay (default 500ms).

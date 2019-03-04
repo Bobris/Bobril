@@ -279,6 +279,16 @@ if (Object.assign == null) {
     };
 }
 
+if (!Object.is) {
+    Object.is = function(x, y) {
+        if (x === y) {
+            return x !== 0 || 1 / x === 1 / y;
+        } else {
+            return x !== x && y !== y;
+        }
+    };
+}
+
 export let assign = Object.assign;
 
 function polyfill(prototype: any, method: string, value: Function): void {
@@ -6462,7 +6472,7 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
 
 export function propim<T>(value: T, ctx?: IBobrilCtx, onChange?: (value: T, old: T) => void): IProp<T> {
     return (val?: T) => {
-        if (val !== undefined && val !== value) {
+        if (val !== undefined && !Object.is(val, value)) {
             const oldVal = val;
             value = val;
             if (onChange !== undefined) onChange(val, oldVal);
@@ -6649,7 +6659,7 @@ export class Component<TData> {
 
     init?(data: TData): void;
     render?(data: TData): IBobrilChildren;
-    destroy?(): void;
+    destroy?(me: IBobrilCacheNode): void;
 
     /// called from children to parents order for new nodes
     postInitDom?(me: IBobrilCacheNode): void;
@@ -6741,11 +6751,34 @@ const componentEventNames = [
     "canDeactivate"
 ];
 
+let currentRenderCtx: IBobrilCtx | undefined;
+let currentRenderIsInit = false;
+let hookId = 0;
+
 function forwardRender(m: Function) {
-    return (ctx: IBobrilCtx, me: IBobrilNode) => {
+    if (m == undefined) return undefined;
+    return (ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode) => {
+        currentRenderCtx = ctx;
+        currentRenderIsInit = oldMe === undefined;
+        hookId = 0;
         me.children = m.call(ctx, ctx.data);
+        currentRenderCtx = undefined;
     };
 }
+
+function forwardInit(m: Function) {
+    if (m == undefined) return undefined;
+    return (ctx: IBobrilCtx) => {
+        m.call(ctx, ctx.data);
+    };
+}
+
+function forwardMe(m: Function) {
+    if (m == undefined) return undefined;
+    return m.call.bind(m);
+}
+
+const methodsWithMeParam = ["destroy", "postInitDom", "postUpdateDom", "postUpdateDomEverytime"];
 
 export function component<TData>(
     component: IComponentClass<TData> | IComponentFunction<TData>,
@@ -6755,8 +6788,12 @@ export function component<TData>(
     if (component.prototype instanceof Component) {
         const proto = component.prototype as any;
         bobrilComponent.id = name || proto.constructor.name || "C" + allocateMethodId();
-        bobrilComponent.ctxClass = (component as unknown) as ICtxClass;
         bobrilComponent.render = forwardRender(proto.render);
+        bobrilComponent.ctxClass = (component as unknown) as ICtxClass;
+        bobrilComponent.init = forwardInit(proto.init);
+        for (let i = 0; i < methodsWithMeParam.length; i++) {
+            (bobrilComponent as any)[methodsWithMeParam[i]] = forwardMe(proto[methodsWithMeParam[i]]);
+        }
         for (let i = 0; i < componentEventNames.length; i++) {
             const name = componentEventNames[i];
             const eventFunc = proto[name];
@@ -6768,9 +6805,7 @@ export function component<TData>(
         bobrilComponent.canActivate = proto.constructor.canActivate;
     } else {
         bobrilComponent.id = name || component.name || "C" + allocateMethodId();
-        bobrilComponent.render = (ctx, me) => {
-            me.children = component.call(ctx, ctx.data);
-        };
+        bobrilComponent.render = forwardRender(component);
     }
     return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
         if (children !== undefined) {
@@ -6779,4 +6814,40 @@ export function component<TData>(
         }
         return { data, component: bobrilComponent };
     };
+}
+
+function accessHook(): any[] {
+    assert(currentRenderCtx != undefined, "Hooks could be used only in Render method in b.component");
+    let hooks = (currentRenderCtx as any).$hooks;
+    if (hooks === undefined) {
+        hooks = [];
+        (currentRenderCtx as any).$hooks = hooks;
+    }
+    let hook = hooks[hookId];
+    if (hook === undefined) {
+        hook = [];
+        hooks.push(hook);
+    }
+    hookId++;
+    return hook;
+}
+
+export function useState<T>(initValue: T | (() => T)): [T, (value: T | ((value: T) => T)) => void] {
+    var hook = accessHook();
+    function setter(value: T | ((value: T) => T)) {
+        if (isFunction(value)) {
+            value = value(hook[0]);
+        }
+        if (!Object.is(value, hook[0])) {
+            hook[0] = value;
+            invalidate(currentRenderCtx);
+        }
+    }
+    if (hook.length == 0) {
+        if (isFunction(initValue)) {
+            initValue = initValue();
+        }
+        hook.push(initValue, setter);
+    }
+    return hook as any;
 }
