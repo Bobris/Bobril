@@ -24,7 +24,6 @@
     "target": "es5",
     "resolveJsonModule": true
   },
-  "files": [],
   "include": [
     "**/*"
   ]

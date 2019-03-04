@@ -2,6 +2,8 @@
 Bobril
 ======
 
+[Main site bobril.com](bobril.com)
+
 [![npm version](https://badge.fury.io/js/bobril.svg)](https://badge.fury.io/js/bobril)
 
 Changelog of npm version: https://github.com/Bobris/Bobril/blob/master/package/CHANGELOG.md
@@ -10,9 +12,7 @@ Component oriented framework inspired by ReactJs (Virtual DOM, components with s
 Bobril ignores Isomorphic JavaScript, because it would increase size and is not needed for SEO anyway (Google bot supports JavaScript). Client applications are expected to be written in TypeScript.
 Because it is heavily used in production, backward compatibility is king. Any new feature must be optional or its perceived value to minified size ratio must be high enough.
 
-It is intended to be used with [bobril-build](https://github.com/Bobris/bobril-build). There is faster build in works also in usable state (https://github.com/bobril/bbcore) with some additional features like lazy module loading.
-
-If you need compatibility with IE8 look at 2.x branch.
+It is intended to be used with [bobril-build](https://github.com/Bobris/bbcore).
 
 Examples: http://bobris.github.io/Bobril/
 For modern code look at Bobril Material: https://github.com/Bobril/Bobril-m
