@@ -6757,7 +6757,7 @@ let hookId = 0;
 
 function forwardRender(m: Function) {
     if (m == undefined) return undefined;
-    return (ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode) => {
+    return (ctx: IBobrilCtx, me: IBobrilNode, _oldMe?: IBobrilCacheNode) => {
         currentRenderCtx = ctx;
         //currentRenderIsInit = oldMe === undefined;
         hookId = 0;

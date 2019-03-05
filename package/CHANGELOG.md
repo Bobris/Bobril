@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.1.1
+
+Fixed unused parameter.
+
 ## 9.1.0
 
 Added `useContext` and `provideContext` hooks.

@@ -8,15 +8,22 @@
         "lib": ["es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection"],
         "module": "commonjs",
         "noEmitHelpers": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "preserveConstEnums": false,
         "reactNamespace": "React",
         "removeComments": false,
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
         "sourceMap": true,
+        "strict": true,
+        "strictNullChecks": true,
         "target": "es5",
-        "resolveJsonModule": true,
-        "strict": true
+        "resolveJsonModule": true
     },
     "include": ["**/*"]
 }

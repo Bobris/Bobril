@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "9.1.0",
+    "version": "9.1.1",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -14,6 +14,18 @@
     "scripts": {
         "prepublishOnly": "prettier --write index.ts && tsc --noEmit",
         "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "bobril": {
+        "compilerOptions": {
+            "noImplicitAny": true,
+            "noImplicitThis": true,
+            "noUnusedLocals": true,
+            "noUnusedParameters": true,
+            "noImplicitReturns": true,
+            "noFallthroughCasesInSwitch": true,
+            "strictNullChecks": true,
+            "strict": true
+        }
     },
     "author": "Boris Letocha",
     "license": "MIT",
