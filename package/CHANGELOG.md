@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.1.0
+
+Added `useContext` and `provideContext` hooks.
+
 ## 9.0.0
 
 New way how to write components. `b.component` takes class or function and creates Bobril component factory function. TSX now supports Bobril event handlers. Event Handlers could now return also `EventResult` enum instead of `boolean`, bubbling and broadcasting was updated to works with EventResult. TSX `ref` could be now also simple `string`.

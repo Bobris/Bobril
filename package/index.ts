@@ -6752,14 +6752,14 @@ const componentEventNames = [
 ];
 
 let currentRenderCtx: IBobrilCtx | undefined;
-let currentRenderIsInit = false;
+//let currentRenderIsInit = false;
 let hookId = 0;
 
 function forwardRender(m: Function) {
     if (m == undefined) return undefined;
     return (ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode) => {
         currentRenderCtx = ctx;
-        currentRenderIsInit = oldMe === undefined;
+        //currentRenderIsInit = oldMe === undefined;
         hookId = 0;
         me.children = m.call(ctx, ctx.data);
         currentRenderCtx = undefined;
@@ -6816,7 +6816,12 @@ export function component<TData>(
     };
 }
 
+function checkCurrentRenderCtx() {
+    assert(currentRenderCtx != undefined, "Hooks could be used only in Render method in b.component");
+}
+
 function accessHook(): any[] {
+    checkCurrentRenderCtx();
     assert(currentRenderCtx != undefined, "Hooks could be used only in Render method in b.component");
     let hooks = (currentRenderCtx as any).$hooks;
     if (hooks === undefined) {
@@ -6850,4 +6855,14 @@ export function useState<T>(initValue: T | (() => T)): [T, (value: T | ((value: 
         hook.push(initValue, setter);
     }
     return hook as any;
+}
+
+export function useContext<T = unknown>(key: string): T {
+    checkCurrentRenderCtx();
+    return currentRenderCtx!.cfg[key];
+}
+
+export function provideContext(key: string, value: any) {
+    checkCurrentRenderCtx();
+    extendCfg(currentRenderCtx!, key, value);
 }
