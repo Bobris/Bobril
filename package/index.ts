@@ -6373,14 +6373,16 @@ export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilN
     return style({ tag: "div", children }, styles);
 }
 
-type ChildrenType<TData extends { [name: string]: any }> = "children" extends keyof TData ? TData["children"] : never;
+export type ChildrenType<TData extends { [name: string]: any }> = "children" extends keyof TData
+    ? TData["children"]
+    : never;
 
 export interface IComponentFactory<TData extends Object> {
     (data?: TData, children?: ChildrenType<TData>): IBobrilNode<TData>;
 }
 
 export function createVirtualComponent<TData>(component: IBobrilComponent): IComponentFactory<TData> {
-    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
+    return (data?: TData, children?: ChildrenType<TData>): IBobrilNode => {
         if (children !== undefined) {
             if (data == null) data = <any>{};
             (<any>data).children = children;
@@ -6389,8 +6391,8 @@ export function createVirtualComponent<TData>(component: IBobrilComponent): ICom
     };
 }
 
-export function createOverridingComponent<TData>(
-    original: (data?: any, children?: IBobrilChildren) => IBobrilNode,
+export function createOverridingComponent<TData, TDataOriginal = any>(
+    original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
     after: IBobrilComponent
 ): IComponentFactory<TData> {
     const originalComponent = original().component!;
@@ -6413,8 +6415,8 @@ export function createComponent<TData extends Object>(component: IBobrilComponen
     return createVirtualComponent<TData>(component);
 }
 
-export function createDerivedComponent<TData>(
-    original: (data?: any, children?: IBobrilChildren) => IBobrilNode,
+export function createDerivedComponent<TData, TDataOriginal = any>(
+    original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
     after: IBobrilComponent
 ): IComponentFactory<TData> {
     const originalComponent = original().component!;

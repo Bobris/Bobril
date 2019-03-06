@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.2.0
+
+More strict typing of Derived component. Exported `ChildrenType` type.
+
 ## 9.1.1
 
 Fixed unused parameter.
