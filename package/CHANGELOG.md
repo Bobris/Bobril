@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.3.0
+
+Allow to use EventResult on classic components too. Fixed `useContext` empty context crash.
+
 ## 9.2.0
 
 More strict typing of Derived component. Exported `ChildrenType` type.

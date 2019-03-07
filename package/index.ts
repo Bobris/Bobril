@@ -82,27 +82,27 @@ export interface IBobrilComponent {
     // called on string input element when selection or caret position changes
     onSelectionChange?(ctx: IBobrilCtx, event: ISelectionChangeEvent): void;
 
-    onKeyDown?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
-    onKeyUp?(ctx: IBobrilCtx, event: IKeyDownUpEvent): boolean;
-    onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): boolean;
+    onKeyDown?(ctx: IBobrilCtx, event: IKeyDownUpEvent): GenericEventResult;
+    onKeyUp?(ctx: IBobrilCtx, event: IKeyDownUpEvent): GenericEventResult;
+    onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): GenericEventResult;
 
     // called on input element after click/tap
-    onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
+    onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
+    onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
+    onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
+    onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
+    onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
+    onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
     onMouseEnter?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseLeave?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseIn?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
     onMouseOut?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
-    onMouseMove?(ctx: IBobrilCtx, event: IBobrilMouseEvent): boolean;
-    onMouseWheel?(ctx: IBobrilCtx, event: IBobrilMouseWheelEvent): boolean;
-    onPointerDown?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
-    onPointerMove?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
-    onPointerUp?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
-    onPointerCancel?(ctx: IBobrilCtx, event: IBobrilPointerEvent): boolean;
+    onMouseMove?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
+    onMouseWheel?(ctx: IBobrilCtx, event: IBobrilMouseWheelEvent): GenericEventResult;
+    onPointerDown?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
+    onPointerMove?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
+    onPointerUp?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
+    onPointerCancel?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
 
     // this component gained focus
     onFocus?(ctx: IBobrilCtx): void;
@@ -114,7 +114,7 @@ export interface IBobrilComponent {
     onFocusOut?(ctx: IBobrilCtx): void;
 
     // if drag should start, bubbled
-    onDragStart?(ctx: IBobrilCtx, dndCtx: IDndStartCtx): boolean;
+    onDragStart?(ctx: IBobrilCtx, dndCtx: IDndStartCtx): GenericEventResult;
 
     // broadcasted after drag started/moved/changed
     onDrag?(ctx: IBobrilCtx, dndCtx: IDndCtx): boolean;
@@ -122,9 +122,9 @@ export interface IBobrilComponent {
     onDragEnd?(ctx: IBobrilCtx, dndCtx: IDndCtx): boolean;
 
     // Do you want to allow to drop here? bubbled
-    onDragOver?(ctx: IBobrilCtx, dndCtx: IDndOverCtx): boolean;
+    onDragOver?(ctx: IBobrilCtx, dndCtx: IDndOverCtx): GenericEventResult;
     // User want to drop dragged object here - do it - onDragOver before had to set you target
-    onDrop?(ctx: IBobrilCtx, dndCtx: IDndCtx): boolean;
+    onDrop?(ctx: IBobrilCtx, dndCtx: IDndCtx): GenericEventResult;
 
     // this is "static" function that's why it does not have ctx - because it does not exists
     canActivate?(transition: IRouteTransition): IRouteCanResult;
@@ -6859,9 +6859,11 @@ export function useState<T>(initValue: T | (() => T)): [T, (value: T | ((value: 
     return hook as any;
 }
 
-export function useContext<T = unknown>(key: string): T {
+export function useContext<T = unknown>(key: string): T | undefined {
     checkCurrentRenderCtx();
-    return currentRenderCtx!.cfg[key];
+    const cfg = currentRenderCtx!.cfg;
+    if (cfg == undefined) return undefined;
+    return cfg[key];
 }
 
 export function provideContext(key: string, value: any) {
