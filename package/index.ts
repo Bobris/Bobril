@@ -131,6 +131,11 @@ export interface IBobrilComponent {
     canDeactivate?(ctx: IBobrilCtx, transition: IRouteTransition): IRouteCanResult;
 }
 
+export type RefType =
+    | [IBobrilCtx, string]
+    | ((node: IBobrilCacheNode | undefined) => void)
+    | { current: IBobrilCacheNode | undefined };
+
 // new node should at least have tag or component or children member
 export interface IBobrilNodeCommon<T = any> {
     tag?: string;
@@ -139,7 +144,7 @@ export interface IBobrilNodeCommon<T = any> {
     style?: any;
     attrs?: IBobrilAttributes;
     children?: IBobrilChildren;
-    ref?: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void);
+    ref?: RefType;
     /// set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway; but better to use `extendCfg`
     cfg?: any;
     component?: IBobrilComponent;
@@ -163,7 +168,7 @@ export interface IBobrilCacheNode {
     style: any;
     attrs: IBobrilAttributes | undefined;
     children: IBobrilCacheChildren;
-    ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void);
+    ref: RefType | undefined;
     cfg: any;
     component: IBobrilComponent;
     data: any;
@@ -691,22 +696,21 @@ function findCfg(parent: IBobrilCacheNode | undefined): any {
     return cfg;
 }
 
-function setRef(
-    ref: [IBobrilCtx, string] | ((node: IBobrilCacheNode | undefined) => void),
-    value: IBobrilCacheNode | undefined
-) {
-    if (ref == null) return;
-    if (isFunction(ref)) {
-        (<(node: IBobrilCacheNode | undefined) => void>ref)(value);
-        return;
+function setRef(ref: RefType | undefined, value: IBobrilCacheNode | undefined) {
+    if (ref === undefined) return;
+    if ("current" in ref) {
+        ref.current = value;
+    } else if (isFunction(ref)) {
+        ref(value);
+    } else if (isArray(ref)) {
+        const ctx = ref[0];
+        let refs = ctx.refs;
+        if (refs === undefined) {
+            refs = newHashObj();
+            ctx.refs = refs;
+        }
+        refs[ref[1]] = value;
     }
-    var ctx = (<[IBobrilCtx, string]>ref)[0];
-    var refs = ctx.refs;
-    if (refs == null) {
-        refs = newHashObj();
-        ctx.refs = refs;
-    }
-    refs[(<[IBobrilCtx, string]>ref)[1]] = value;
 }
 
 let focusRootStack: IBobrilCacheNode[] = [];
@@ -6822,7 +6826,7 @@ function checkCurrentRenderCtx() {
     assert(currentRenderCtx != undefined, "Hooks could be used only in Render method in b.component");
 }
 
-function accessHook(): any[] {
+function accessHooks() {
     checkCurrentRenderCtx();
     assert(currentRenderCtx != undefined, "Hooks could be used only in Render method in b.component");
     let hooks = (currentRenderCtx as any).$hooks;
@@ -6830,33 +6834,39 @@ function accessHook(): any[] {
         hooks = [];
         (currentRenderCtx as any).$hooks = hooks;
     }
-    let hook = hooks[hookId];
-    if (hook === undefined) {
-        hook = [];
-        hooks.push(hook);
-    }
-    hookId++;
-    return hook;
+    return hooks;
 }
 
-export function useState<T>(initValue: T | (() => T)): [T, (value: T | ((value: T) => T)) => void] {
-    var hook = accessHook();
-    function setter(value: T | ((value: T) => T)) {
-        if (isFunction(value)) {
-            value = value(hook[0]);
-        }
-        if (!Object.is(value, hook[0])) {
-            hook[0] = value;
-            invalidate(currentRenderCtx);
-        }
-    }
-    if (hook.length == 0) {
+export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T | ((value: T) => T)) => void] {
+    const myHookId = hookId++;
+    const hooks = accessHooks();
+    const ctx = currentRenderCtx;
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
         if (isFunction(initValue)) {
             initValue = initValue();
         }
-        hook.push(initValue, setter);
+        hook = (value?: T) => {
+            if (value !== undefined && !Object.is(value, hook[0])) {
+                hook[0] = value;
+                invalidate(ctx);
+            }
+            return hook[0];
+        };
+        hook[0] = initValue;
+        hook[1] = (value: T | ((value: T) => T)) => {
+            if (isFunction(value)) {
+                value = value(hook[0]);
+            }
+            if (!Object.is(value, hook[0])) {
+                hook[0] = value;
+                invalidate(ctx);
+            }
+        };
+        hook.length = 2;
+        hooks[myHookId] = hook;
     }
-    return hook as any;
+    return hook;
 }
 
 export function useContext<T = unknown>(key: string): T | undefined {
@@ -6869,4 +6879,21 @@ export function useContext<T = unknown>(key: string): T | undefined {
 export function provideContext(key: string, value: any) {
     checkCurrentRenderCtx();
     extendCfg(currentRenderCtx!, key, value);
+}
+
+export function useRef<T = unknown>(initialValue?: T): IProp<T> & { current: T } {
+    const myHookId = hookId++;
+    const hooks = accessHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = (value?: T) => {
+            if (value !== undefined) {
+                hook.current = value;
+            }
+            return hook.current;
+        };
+        hook.current = initialValue;
+        hooks[myHookId] = hook;
+    }
+    return hook;
 }

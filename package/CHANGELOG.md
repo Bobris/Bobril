@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.4.0
+
+Added `useRef` hook. Also made both `useRef` and `useState` more usefull in Bobril by implementing also `IProp<T>`. `ref` property in `IBobrilNode` also supports `{ current: IBobrilCacheNode | undefined }` so it could be used together with `useRef`.
+
 ## 9.3.0
 
 Allow to use EventResult on classic components too. Fixed `useContext` empty context crash.
