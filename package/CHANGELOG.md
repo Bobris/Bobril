@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.5.0
+
+b.component does not need to be used with TSX.
+
 ## 9.4.0
 
 Added `useRef` hook. Also made both `useRef` and `useState` more usefull in Bobril by implementing also `IProp<T>`. `ref` property in `IBobrilNode` also supports `{ current: IBobrilCacheNode | undefined }` so it could be used together with `useRef`.

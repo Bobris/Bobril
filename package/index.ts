@@ -6561,7 +6561,7 @@ if (!(<any>window).b)
 // PureFuncs: createElement
 
 export function createElement<T>(
-    name: string | ((data?: T, children?: any) => IBobrilNode),
+    name: string | ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T>,
     data?: T,
     ...children: IBobrilChildren[]
 ): IBobrilNode<T>;
@@ -6615,13 +6615,17 @@ export function createElement(name: any, props: any): IBobrilNode {
         return res;
     } else {
         let res: IBobrilNode;
-        assert(isFunction(name));
-        if (name.length == 1) {
+        let factory = name.$bobrilFactory;
+        if (factory === undefined) {
+            factory = createFactory(name);
+            name.$bobrilFactory = factory;
+        }
+        if (factory.length == 1) {
             if (props == undefined) props = { children };
             else props.children = children;
-            res = name(props);
+            res = factory(props);
         } else {
-            res = name(props, children);
+            res = factory(props, children);
         }
         if (props != undefined) {
             if (props.key != undefined) res.key = props.key;
@@ -6813,13 +6817,20 @@ export function component<TData>(
         bobrilComponent.id = name || component.name || "C" + allocateMethodId();
         bobrilComponent.render = forwardRender(component);
     }
-    return (data?: TData, children?: IBobrilChildren): IBobrilNode => {
-        if (children !== undefined) {
-            if (data == null) data = <any>{};
-            (<any>data).children = children;
-        }
+    return (data?: TData): IBobrilNode => {
         return { data, component: bobrilComponent };
     };
+}
+
+function createFactory(comp: IComponentClass<any> | IComponentFunction<any>): Function {
+    if (comp.prototype instanceof Component) {
+        return component(comp);
+    } else if (comp.length == 2) {
+        // classic bobril factory method
+        return comp;
+    } else {
+        return component(comp);
+    }
 }
 
 function checkCurrentRenderCtx() {
@@ -6863,7 +6874,6 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
                 invalidate(ctx);
             }
         };
-        hook.length = 2;
         hooks[myHookId] = hook;
     }
     return hook;
