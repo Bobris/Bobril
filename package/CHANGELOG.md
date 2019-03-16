@@ -1,12 +1,19 @@
 # CHANGELOG
 
+## 9.6.0
+
+Allow to use hooks even in classic components.
+Added `useEffect` and `useLayoutEffect` hooks.
+During frame you can now trigger exactly one synchronous update by calling `deferSyncUpdate()`.
+Added `@bind` directive for binding class methods.
+
 ## 9.5.0
 
 b.component does not need to be used with TSX.
 
 ## 9.4.0
 
-Added `useRef` hook. Also made both `useRef` and `useState` more usefull in Bobril by implementing also `IProp<T>`. `ref` property in `IBobrilNode` also supports `{ current: IBobrilCacheNode | undefined }` so it could be used together with `useRef`.
+Added `useRef` hook. Also made both `useRef` and `useState` more useful in Bobril by implementing also `IProp<T>`. `ref` property in `IBobrilNode` also supports `{ current: IBobrilCacheNode | undefined }` so it could be used together with `useRef`.
 
 ## 9.3.0
 

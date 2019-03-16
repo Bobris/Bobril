@@ -189,6 +189,17 @@ export interface IBobrilCtx {
     disposables?: IDisposableLike[];
 }
 
+const enum HookFlags {
+    hasPostInitDom = 1,
+    hasPostUpdateDom = 2,
+    hasPostUpdateDomEverytime = 4
+}
+
+interface IBobrilCtxInternal extends IBobrilCtx {
+    $hooks?: any[];
+    $hookFlags?: HookFlags;
+}
+
 export class BobrilCtx<TData> implements IBobrilCtx {
     constructor(data?: TData, me?: IBobrilCacheNode) {
         this.data = data!;
@@ -652,6 +663,10 @@ function pushInitCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
+        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & HookFlags.hasPostInitDom) {
+            updateCall.push(hookPostInitDom);
+            updateInstance.push(c);
+        }
     }
 }
 
@@ -663,9 +678,18 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
+        const flags = (c.ctx! as IBobrilCtxInternal).$hookFlags || 0;
+        if (flags & HookFlags.hasPostUpdateDom) {
+            updateCall.push(hookPostUpdateDom);
+            updateInstance.push(c);
+        }
         fn = cc.postUpdateDomEverytime;
         if (fn) {
             updateCall.push(fn);
+            updateInstance.push(c);
+        }
+        if (flags & HookFlags.hasPostUpdateDomEverytime) {
+            updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
         }
     }
@@ -677,6 +701,10 @@ function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
         let fn = cc.postUpdateDomEverytime;
         if (fn) {
             updateCall.push(fn);
+            updateInstance.push(c);
+        }
+        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & HookFlags.hasPostUpdateDomEverytime) {
+            updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
         }
     }
@@ -731,6 +759,7 @@ export function unregisterFocusRoot(ctx: IBobrilCtx) {
 }
 
 let currentCtx: IBobrilCtx | undefined;
+let hookId = -1;
 
 export function getCurrentCtx() {
     return currentCtx;
@@ -785,7 +814,9 @@ export function createNode(
         }
         if (beforeRenderCallback !== emptyBeforeRenderCallback) beforeRenderCallback(n, RenderPhase.Create);
         if (component.render) {
+            hookId = 0;
             component.render(ctx, c);
+            hookId = -1;
         }
         currentCtx = undefined;
     } else {
@@ -1151,7 +1182,9 @@ export function updateNode(
                 n = assign({}, n); // need to clone me because it should not be modified for next updates
                 c.cfg = undefined;
                 if (n.cfg !== undefined) n.cfg = undefined;
+                hookId = 0;
                 component.render(ctx, n, c);
+                hookId = -1;
                 if (n.cfg !== undefined) {
                     if (c.cfg === undefined) c.cfg = n.cfg;
                     else assign(c.cfg, n.cfg);
@@ -2059,43 +2092,49 @@ function internalUpdate(time: number) {
     nextIgnoreShouldChange = false;
     uptimeMs = time;
     beforeFrameCallback();
-    focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
-    inNotFocusable = false;
     var fullRefresh = false;
     if (fullRecreateRequested) {
         fullRecreateRequested = false;
         fullRefresh = true;
     }
-    rootIds = Object.keys(roots);
-    for (var i = 0; i < rootIds.length; i++) {
-        var r = roots[rootIds[i]];
-        if (!r) continue;
-        var rc = r.n;
-        var insertBefore: Node | null = null;
-        for (var j = i + 1; j < rootIds.length; j++) {
-            let rafter = roots[rootIds[j]];
-            if (rafter === undefined) continue;
-            insertBefore = getDomNode(rafter.n);
-            if (insertBefore != null) break;
-        }
-        if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-        if (r.e === undefined) r.e = document.body;
-        if (rc) {
-            if (fullRefresh || (rc.ctx as any)[ctxInvalidated] === frameCounter) {
-                let node = RootComponent(r);
-                updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : (rc.ctx as any)[ctxDeepness]);
-            } else {
-                if (isArray(r.c)) selectedUpdate(r.c, r.e, insertBefore);
+    listeningEventDeepness++;
+    for (let repeat = 0; repeat < 2; repeat++) {
+        focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
+        inNotFocusable = false;
+        rootIds = Object.keys(roots);
+        for (var i = 0; i < rootIds.length; i++) {
+            var r = roots[rootIds[i]];
+            if (!r) continue;
+            var rc = r.n;
+            var insertBefore: Node | null = null;
+            for (var j = i + 1; j < rootIds.length; j++) {
+                let rafter = roots[rootIds[j]];
+                if (rafter === undefined) continue;
+                insertBefore = getDomNode(rafter.n);
+                if (insertBefore != null) break;
             }
-        } else {
-            let node = RootComponent(r);
-            rc = createNode(node, undefined, r.e, insertBefore);
-            r.n = rc;
+            if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
+            if (r.e === undefined) r.e = document.body;
+            if (rc) {
+                if (fullRefresh || (rc.ctx as any)[ctxInvalidated] === frameCounter) {
+                    let node = RootComponent(r);
+                    updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : (rc.ctx as any)[ctxDeepness]);
+                } else {
+                    if (isArray(r.c)) selectedUpdate(r.c, r.e, insertBefore);
+                }
+            } else {
+                let node = RootComponent(r);
+                rc = createNode(node, undefined, r.e, insertBefore);
+                r.n = rc;
+            }
+            r.c = rc.children;
         }
-        r.c = rc.children;
+        rootIds = undefined;
+        callPostCallbacks();
+        if (!deferSyncUpdateRequested) break;
     }
-    rootIds = undefined;
-    callPostCallbacks();
+    deferSyncUpdateRequested = false;
+    listeningEventDeepness--;
     let r0 = roots["0"];
     afterFrameCallback(r0 ? r0.c : null);
     lastFrameDurationMs = now() - renderFrameBegin;
@@ -6761,18 +6800,10 @@ const componentEventNames = [
     "canDeactivate"
 ];
 
-let currentRenderCtx: IBobrilCtx | undefined;
-//let currentRenderIsInit = false;
-let hookId = 0;
-
 function forwardRender(m: Function) {
     if (m == undefined) return undefined;
     return (ctx: IBobrilCtx, me: IBobrilNode, _oldMe?: IBobrilCacheNode) => {
-        currentRenderCtx = ctx;
-        //currentRenderIsInit = oldMe === undefined;
-        hookId = 0;
         me.children = m.call(ctx, ctx.data);
-        currentRenderCtx = undefined;
     };
 }
 
@@ -6834,16 +6865,15 @@ function createFactory(comp: IComponentClass<any> | IComponentFunction<any>): Fu
 }
 
 function checkCurrentRenderCtx() {
-    assert(currentRenderCtx != undefined, "Hooks could be used only in Render method in b.component");
+    assert(currentCtx != undefined && hookId >= 0, "Hooks could be used only in Render method");
 }
 
 function accessHooks() {
     checkCurrentRenderCtx();
-    assert(currentRenderCtx != undefined, "Hooks could be used only in Render method in b.component");
-    let hooks = (currentRenderCtx as any).$hooks;
+    let hooks = (currentCtx as IBobrilCtxInternal).$hooks;
     if (hooks === undefined) {
         hooks = [];
-        (currentRenderCtx as any).$hooks = hooks;
+        (currentCtx as IBobrilCtxInternal).$hooks = hooks;
     }
     return hooks;
 }
@@ -6851,7 +6881,7 @@ function accessHooks() {
 export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T | ((value: T) => T)) => void] {
     const myHookId = hookId++;
     const hooks = accessHooks();
-    const ctx = currentRenderCtx;
+    const ctx = currentCtx;
     let hook = hooks[myHookId];
     if (hook === undefined) {
         if (isFunction(initValue)) {
@@ -6881,14 +6911,14 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
 
 export function useContext<T = unknown>(key: string): T | undefined {
     checkCurrentRenderCtx();
-    const cfg = currentRenderCtx!.cfg;
+    const cfg = currentCtx!.cfg;
     if (cfg == undefined) return undefined;
     return cfg[key];
 }
 
 export function provideContext(key: string, value: any) {
     checkCurrentRenderCtx();
-    extendCfg(currentRenderCtx!, key, value);
+    extendCfg(currentCtx!, key, value);
 }
 
 export function useRef<T = unknown>(initialValue?: T): IProp<T> & { current: T } {
@@ -6906,4 +6936,178 @@ export function useRef<T = unknown>(initialValue?: T): IProp<T> & { current: T }
         hooks[myHookId] = hook;
     }
     return hook;
+}
+
+function hookPostInitDom(ctx: IBobrilCtxInternal) {
+    const hooks = ctx.$hooks!;
+    const len = hooks.length;
+    for (let i = 0; i < len; i++) {
+        const hook = hooks[i];
+        const fn = hook.postInitDom;
+        if (fn !== undefined) {
+            fn.call(hook, ctx);
+        }
+    }
+}
+
+function hookPostUpdateDom(ctx: IBobrilCtxInternal) {
+    const hooks = ctx.$hooks!;
+    const len = hooks.length;
+    for (let i = 0; i < len; i++) {
+        const hook = hooks[i];
+        const fn = hook.postUpdateDom;
+        if (fn !== undefined) {
+            fn.call(hook, ctx);
+        }
+    }
+}
+
+function hookPostUpdateDomEverytime(ctx: IBobrilCtxInternal) {
+    const hooks = ctx.$hooks!;
+    const len = hooks.length;
+    for (let i = 0; i < len; i++) {
+        const hook = hooks[i];
+        const fn = hook.postUpdateDomEverytime;
+        if (fn !== undefined) {
+            fn.call(hook, ctx);
+        }
+    }
+}
+
+type EffectCallback = () => void | (() => void | undefined);
+type DependencyList = ReadonlyArray<unknown>;
+
+export function bind<T extends Function>(
+    _target: object,
+    propertyKey: string,
+    descriptor: TypedPropertyDescriptor<T>
+): TypedPropertyDescriptor<T> | void {
+    const fn = descriptor.value;
+    assert(
+        !descriptor || !isFunction(fn),
+        `Only methods can be decorated with @bind. '{propertyKey}' is not a method!`
+    );
+
+    let definingProperty = false;
+    return {
+        configurable: true,
+        get() {
+            if (definingProperty) {
+                return fn;
+            }
+            let value = fn!.bind(this);
+            definingProperty = true;
+            Object.defineProperty(this, propertyKey, {
+                value,
+                configurable: true,
+                writable: true
+            });
+            definingProperty = false;
+            return value;
+        }
+    };
+}
+
+class EffectHook implements IDisposable {
+    callback?: EffectCallback;
+    deps?: DependencyList;
+    lastDisposer?: () => void;
+
+    update(callback: EffectCallback, deps?: DependencyList) {
+        this.callback = callback;
+        let changed = false;
+        if (deps != undefined) {
+            const lastDeps = this.deps;
+            if (lastDeps == undefined) {
+                changed = true;
+            } else {
+                const depsLen = deps.length;
+                if (depsLen != lastDeps.length) changed = true;
+                else {
+                    for (let i = 0; i < depsLen; i++) {
+                        if (!Object.is(deps[i], lastDeps[i])) {
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else changed = true;
+        this.deps = deps;
+        if (changed) {
+            this.doRun();
+        }
+    }
+
+    doRun() {
+        asap(this.run);
+    }
+
+    run() {
+        const c = this.callback;
+        this.dispose();
+        if (c != undefined) {
+            this.lastDisposer = c() as any;
+        }
+    }
+
+    dispose() {
+        this.callback = undefined;
+        if (isFunction(this.lastDisposer)) this.lastDisposer();
+        this.lastDisposer = undefined;
+    }
+}
+
+export function useEffect(callback: EffectCallback, deps?: DependencyList): void {
+    const myHookId = hookId++;
+    const hooks = accessHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = new EffectHook();
+        hook.run = hook.run.bind(hook);
+        addDisposable(currentCtx!, hook);
+        hooks[myHookId] = hook;
+    }
+    hook.update(callback, deps);
+}
+
+class LayoutEffectHook extends EffectHook {
+    constructor() {
+        super();
+        this.shouldRun = false;
+    }
+
+    postInitDom(ctx: IBobrilCtxInternal) {
+        this.postUpdateDomEverytime(ctx);
+    }
+
+    postUpdateDomEverytime(ctx: IBobrilCtxInternal) {
+        if (this.shouldRun) {
+            this.shouldRun = false;
+            this.run();
+            if ((<any>ctx)[ctxInvalidated] === frameCounter + 1) {
+                deferSyncUpdate();
+            }
+        }
+    }
+
+    shouldRun: boolean;
+
+    doRun() {
+        this.shouldRun = true;
+    }
+}
+
+export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList): void {
+    const myHookId = hookId++;
+    const hooks = accessHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |=
+            HookFlags.hasPostInitDom | HookFlags.hasPostUpdateDomEverytime;
+        hook = new LayoutEffectHook();
+        addDisposable(currentCtx!, hook);
+        hooks[myHookId] = hook;
+    }
+    hook.update(callback, deps);
 }
