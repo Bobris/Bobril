@@ -1158,7 +1158,7 @@ export function updateNode(
     var ctx = c.ctx;
     if (component != null && ctx != null) {
         let locallyInvalidated = false;
-        if ((<any>ctx)[ctxInvalidated] === frameCounter) {
+        if ((<any>ctx)[ctxInvalidated] >= frameCounter) {
             deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
             locallyInvalidated = true;
         }
@@ -1956,7 +1956,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
     for (var i = 0; i < len; i++) {
         var node = cache[i];
         var ctx = node.ctx;
-        if (ctx != null && (<any>ctx)[ctxInvalidated] === frameCounter) {
+        if (ctx != null && (<any>ctx)[ctxInvalidated] >= frameCounter) {
             cache[i] = updateNode(
                 node.orig,
                 node,
@@ -2116,7 +2116,7 @@ function internalUpdate(time: number) {
             if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
             if (r.e === undefined) r.e = document.body;
             if (rc) {
-                if (fullRefresh || (rc.ctx as any)[ctxInvalidated] === frameCounter) {
+                if (fullRefresh || (rc.ctx as any)[ctxInvalidated] >= frameCounter) {
                     let node = RootComponent(r);
                     updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : (rc.ctx as any)[ctxDeepness]);
                 } else {
@@ -7085,7 +7085,7 @@ class LayoutEffectHook extends EffectHook {
         if (this.shouldRun) {
             this.shouldRun = false;
             this.run();
-            if ((<any>ctx)[ctxInvalidated] === frameCounter + 1) {
+            if ((<any>ctx)[ctxInvalidated] > frameCounter) {
                 deferSyncUpdate();
             }
         }
