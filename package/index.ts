@@ -6868,7 +6868,7 @@ function checkCurrentRenderCtx() {
     assert(currentCtx != undefined && hookId >= 0, "Hooks could be used only in Render method");
 }
 
-function accessHooks() {
+export function _getHooks() {
     checkCurrentRenderCtx();
     let hooks = (currentCtx as IBobrilCtxInternal).$hooks;
     if (hooks === undefined) {
@@ -6878,9 +6878,13 @@ function accessHooks() {
     return hooks;
 }
 
+export function _allocHook() {
+    return hookId++;
+}
+
 export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T | ((value: T) => T)) => void] {
     const myHookId = hookId++;
-    const hooks = accessHooks();
+    const hooks = _getHooks();
     const ctx = currentCtx;
     let hook = hooks[myHookId];
     if (hook === undefined) {
@@ -6923,7 +6927,7 @@ export function provideContext(key: string, value: any) {
 
 export function useRef<T = unknown>(initialValue?: T): IProp<T> & { current: T } {
     const myHookId = hookId++;
-    const hooks = accessHooks();
+    const hooks = _getHooks();
     let hook = hooks[myHookId];
     if (hook === undefined) {
         hook = (value?: T) => {
@@ -7060,7 +7064,7 @@ class EffectHook implements IDisposable {
 
 export function useEffect(callback: EffectCallback, deps?: DependencyList): void {
     const myHookId = hookId++;
-    const hooks = accessHooks();
+    const hooks = _getHooks();
     let hook = hooks[myHookId];
     if (hook === undefined) {
         hook = new EffectHook();
@@ -7100,7 +7104,7 @@ class LayoutEffectHook extends EffectHook {
 
 export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList): void {
     const myHookId = hookId++;
-    const hooks = accessHooks();
+    const hooks = _getHooks();
     let hook = hooks[myHookId];
     if (hook === undefined) {
         (currentCtx as IBobrilCtxInternal).$hookFlags! |=

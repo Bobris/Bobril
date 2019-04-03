@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.7.0
+
+Allow libraries to write their hooks in low level code.
+
 ## 9.6.0
 
 Allow to use hooks even in classic components.
