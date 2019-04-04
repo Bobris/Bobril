@@ -3863,7 +3863,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
     return (ev: MouseEvent, target: Node | undefined, node: IBobrilCacheNode | undefined) => {
         if (
             listeningEventDeepness == 1 &&
-            (target == null || target.nodeName != "INPUT" || ev.clientX != 0 || ev.clientY != 0)
+            (target == null || !"INPUT|BUTTON|SELECT".includes(target.nodeName) || ev.clientX != 0 || ev.clientY != 0)
         ) {
             // Fix target node only for browser triggered events + crazy heuristic to ignore click
             target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);

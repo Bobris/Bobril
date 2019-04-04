@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.7.1
+
+Another fix of phantom clicks at 0,0 now with button.
+
 ## 9.7.0
 
 Allow libraries to write their hooks in low level code.
