@@ -16,6 +16,9 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "bobril": {
+        "includeSources": [
+            "jsx.d.ts"
+        ],
         "compilerOptions": {
             "noImplicitAny": true,
             "noImplicitThis": true,
@@ -24,7 +27,8 @@
             "noImplicitReturns": true,
             "noFallthroughCasesInSwitch": true,
             "strictNullChecks": true,
-            "strict": true
+            "strict": true,
+            "reactNamespace": "b"
         }
     },
     "author": "Boris Letocha",

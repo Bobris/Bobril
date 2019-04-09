@@ -22,7 +22,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "preserveConstEnums": false,
-    "reactNamespace": "React",
+    "reactNamespace": "b",
     "removeComments": false,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
@@ -32,6 +32,10 @@
     "target": "es5",
     "resolveJsonModule": true
   },
+  "files": [
+    "C:/Users/boris/.bbcore/tools/jasmine.d.ts",
+    "jsx.d.ts"
+  ],
   "include": [
     "**/*"
   ]

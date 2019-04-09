@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.8.0
+
+Added first test to Bobril ;-)
+
 ## 9.7.1
 
 Another fix of phantom clicks at 0,0 now with button.
