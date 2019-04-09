@@ -6942,6 +6942,17 @@ export function useRef<T = unknown>(initialValue?: T): IProp<T> & { current: T }
     return hook;
 }
 
+export function useStore<T>(factory: () => T): T {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = factory();
+        hooks[myHookId] = hook;
+    }
+    return hook;
+}
+
 function hookPostInitDom(ctx: IBobrilCtxInternal) {
     const hooks = ctx.$hooks!;
     const len = hooks.length;
