@@ -1,11 +1,8 @@
 # CHANGELOG
 
-## 9.9.0
-
-Added `useStore` hook for creating mutable store.
-
 ## 9.8.0
 
+Added `useStore` hook for creating mutable store.
 Added first test to Bobril ;-)
 
 ## 9.7.1
