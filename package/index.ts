@@ -2869,95 +2869,6 @@ if (!(<any>window).Promise) {
         (<any>window)["Promise"] = <any>Promise;
     })();
 }
-// Bobril.StyleShim
-
-if (ieVersion() === 9) {
-    (() => {
-        function addFilter(s: any, v: string) {
-            if (s.zoom == null) s.zoom = "1";
-            var f = s.filter;
-            s.filter = f == null ? v : f + " " + v;
-        }
-
-        var simpleLinearGradient = /^linear\-gradient\(to (.+?),(.+?),(.+?)\)/gi;
-
-        setStyleShim("background", (s: any, v: any, oldName: string) => {
-            var match = simpleLinearGradient.exec(v);
-            if (match == null) return;
-            var dir = match[1];
-            var color1 = match[2];
-            var color2 = match[3];
-            var tmp: string;
-            switch (dir) {
-                case "top":
-                    dir = "0";
-                    tmp = color1;
-                    color1 = color2;
-                    color2 = tmp;
-                    break;
-                case "bottom":
-                    dir = "0";
-                    break;
-                case "left":
-                    dir = "1";
-                    tmp = color1;
-                    color1 = color2;
-                    color2 = tmp;
-                    break;
-                case "right":
-                    dir = "1";
-                    break;
-                default:
-                    return;
-            }
-            s[oldName] = "none";
-            addFilter(
-                s,
-                "progid:DXImageTransform.Microsoft.gradient(startColorstr='" +
-                    color1 +
-                    "',endColorstr='" +
-                    color2 +
-                    "', gradientType='" +
-                    dir +
-                    "')"
-            );
-        });
-    })();
-} else {
-    (() => {
-        var testStyle = document.createElement("div").style;
-        testStyle.cssText = "background:-webkit-linear-gradient(top,red,red)";
-        if (testStyle.background!.length > 0) {
-            (() => {
-                var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/gi;
-                var revDirs = {
-                    top: "bottom",
-                    bottom: "top",
-                    left: "right",
-                    right: "left"
-                };
-                function gradientWebkitConvertor(style: any, value: any, name: string) {
-                    if (startsWithGradient.test(value)) {
-                        var pos = (<string>value).indexOf("(to ");
-                        if (pos > 0) {
-                            pos += 4;
-                            var posEnd = (<string>value).indexOf(",", pos);
-                            var dir = (<string>value).slice(pos, posEnd);
-                            dir = dir
-                                .split(" ")
-                                .map(v => (<any>revDirs)[v] || v)
-                                .join(" ");
-                            value = (<string>value).slice(0, pos - 3) + dir + (<string>value).slice(posEnd);
-                        }
-                        value = "-webkit-" + value;
-                    }
-                    style[name] = value;
-                }
-                setStyleShim("background", gradientWebkitConvertor);
-            })();
-        }
-    })();
-}
 
 // Bobril.OnChange
 
@@ -3378,11 +3289,6 @@ function hasPointerEventsNoneB(node: IBobrilCacheNode | null | undefined): boole
     return false;
 }
 
-function hasPointerEventsNone(target: Node): boolean {
-    var bNode = deref(target);
-    return hasPointerEventsNoneB(bNode);
-}
-
 function revertVisibilityChanges(hiddenEls: { t: HTMLElement; p: string }[]): boolean {
     if (hiddenEls.length) {
         for (var i = hiddenEls.length - 1; i >= 0; --i) {
@@ -3398,25 +3304,6 @@ function pushAndHide(hiddenEls: { t: HTMLElement; p: string | null }[], t: HTMLE
     t.style.visibility = "hidden";
 }
 
-function pointerThroughIE(ev: MouseEvent, target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
-    var hiddenEls: { t: HTMLElement; p: string }[] = [];
-    var t = <HTMLElement>target;
-    while (hasPointerEventsNone(t)) {
-        pushAndHide(hiddenEls, t);
-        t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
-    }
-    if (revertVisibilityChanges(hiddenEls)) {
-        try {
-            t.dispatchEvent(ev);
-        } catch (e) {
-            return false;
-        }
-        preventDefault(ev);
-        return true;
-    }
-    return false;
-}
-
 function addEvent5(
     name: string,
     callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean
@@ -3426,31 +3313,6 @@ function addEvent5(
 
 var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
 var i: number;
-if (ieVersion() && ieVersion() < 11) {
-    // emulate pointer-events: none in older ie
-    var mouseEvents = [
-        "click",
-        "dblclick",
-        "drag",
-        "dragend",
-        "dragenter",
-        "dragleave",
-        "dragover",
-        "dragstart",
-        "drop",
-        "mousedown",
-        "mousemove",
-        "mouseout",
-        "mouseover",
-        "mouseup",
-        "mousewheel",
-        "scroll",
-        "wheel"
-    ];
-    for (i = 0; i < mouseEvents.length; ++i) {
-        addEvent(mouseEvents[i], 1, pointerThroughIE);
-    }
-}
 
 function type2Bobril(t: any): BobrilPointerType {
     if (t === "mouse" || t === 4) return BobrilPointerType.Mouse;
@@ -3860,20 +3722,7 @@ function normalizeCancelable(ev: Event): boolean {
 }
 
 function createHandler(handlerName: string, allButtons?: boolean) {
-    return (ev: MouseEvent, target: Node | undefined, node: IBobrilCacheNode | undefined) => {
-        if (
-            listeningEventDeepness == 1 &&
-            (target == null || !"INPUT|BUTTON|SELECT".includes(target.nodeName) || ev.clientX != 0 || ev.clientY != 0)
-        ) {
-            // Fix target node only for browser triggered events + crazy heuristic to ignore click
-            target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
-            node = deref(target);
-            if (hasPointerEventsNoneB(node)) {
-                var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
-                target = fixed[0];
-                node = fixed[1];
-            }
-        }
+    return (ev: MouseEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) => {
         let button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
@@ -5671,7 +5520,6 @@ var injectedCss = "";
 var rebuildStyles = false;
 var htmlStyle: HTMLStyleElement | null = null;
 var globalCounter: number = 0;
-const isIE9 = ieVersion() === 9;
 
 var chainedBeforeFrame = setBeforeFrame(beforeFrame);
 
@@ -5888,13 +5736,6 @@ function beforeFrame() {
             if (style["pointerEvents"]) {
                 extractedInlStyle = newHashObj();
                 extractedInlStyle["pointerEvents"] = style["pointerEvents"];
-            }
-            if (isIE9) {
-                if (style["userSelect"]) {
-                    if (extractedInlStyle == null) extractedInlStyle = newHashObj();
-                    extractedInlStyle["userSelect"] = style["userSelect"];
-                    delete style["userSelect"];
-                }
             }
             ss.inlStyle = extractedInlStyle;
             shimStyle(style);

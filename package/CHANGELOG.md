@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.9.0
+
+Removed support for IE9 and IE10. Completely removed code which still sometimes made phantom clicks on 0,0.
+
 ## 9.8.0
 
 Added `useStore` hook for creating mutable store.
