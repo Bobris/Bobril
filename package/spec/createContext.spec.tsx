@@ -58,4 +58,70 @@ describe("createContext", () => {
         b.init(() => <Outer value={1} test={1} />);
         b.syncUpdate();
     });
+
+    it("works with classic classCtx components as decorator", () => {
+        const myContext = b.createContext(42);
+
+        class NestedCtx extends b.BobrilCtx<{ value: number }> {
+            @b.context(myContext)
+            contextValue!: number;
+        }
+
+        const Nested = b.createComponent<{ value: number }>({
+            ctxClass: NestedCtx,
+            render(ctx: NestedCtx) {
+                expect(ctx.contextValue).toBe(ctx.data.value);
+            }
+        });
+
+        interface IOuterData {
+            value?: number;
+            test: number;
+        }
+
+        class OuterCtx extends b.BobrilCtx<IOuterData> {
+            @b.context(myContext)
+            contextValue!: number;
+        }
+
+        const Outer = b.createVirtualComponent<IOuterData>({
+            ctxClass: OuterCtx,
+            render(ctx: OuterCtx, me: b.IBobrilNode) {
+                if (ctx.data.value != undefined) ctx.contextValue = ctx.data.value;
+                me.children = <Nested value={ctx.data.test} />;
+            }
+        });
+
+        b.init(() => <Outer test={42} />);
+        b.syncUpdate();
+        b.init(() => <Outer value={1} test={1} />);
+        b.syncUpdate();
+    });
+
+    it("works with classic components as hooks", () => {
+        const myContext = b.createContext(42);
+
+        const Nested = b.createComponent<{ value: number }>({
+            render(ctx: b.IBobrilCtx<{ value: number }>) {
+                expect(b.useContext(myContext)).toBe(ctx.data.value);
+            }
+        });
+
+        interface IOuterData {
+            value?: number;
+            test: number;
+        }
+
+        const Outer = b.createVirtualComponent<IOuterData>({
+            render(ctx: b.IBobrilCtx<IOuterData>, me: b.IBobrilNode) {
+                if (ctx.data.value != undefined) b.provideContext(myContext, ctx.data.value);
+                me.children = <Nested value={ctx.data.test} />;
+            }
+        });
+
+        b.init(() => Outer({ test: 42 }));
+        b.syncUpdate();
+        b.init(() => Outer({ value: 1, test: 1 }));
+        b.syncUpdate();
+    });
 });

@@ -4,7 +4,9 @@
 
 Added `createContext` with similar API like in React. `useContext` and `provideContext` now additionally work with this type of context. Added decorator `context` which could be used in class components or classic component ctx.
 
-Fix ref callback
+Added generic to `IBobrilCtx<TData>` and `IBobrilComponent<TData>`.
+
+Fix ref callback.
 
 ## 9.9.0
 
