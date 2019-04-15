@@ -6470,7 +6470,7 @@ export function createElement(name: any, props: any): IBobrilNode {
                 if (isString(propValue)) {
                     assert(getCurrentCtx() != undefined);
                     res.ref = [getCurrentCtx()!, propValue];
-                } else res = propValue;
+                } else res.ref = propValue;
                 continue;
             }
             if (n === "key" || n === "className" || n === "component" || n === "data") {
