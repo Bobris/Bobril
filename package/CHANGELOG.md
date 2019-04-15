@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.9.1
+
+Fix ref callback
+
 ## 9.9.0
 
 Removed support for IE9 and IE10. Completely removed code which still sometimes made phantom clicks on 0,0.
