@@ -6539,7 +6539,7 @@ export enum EventResult {
 
 export type GenericEventResult = EventResult | boolean;
 
-export class Component<TData> {
+export class Component<TData = {}> {
     constructor(data?: TData, me?: IBobrilCacheNode) {
         this.data = data!;
         this.me = me!;
@@ -6605,11 +6605,11 @@ export class Component<TData> {
     refs?: { [name: string]: IBobrilCacheNode | undefined };
 }
 
-export interface IComponentClass<TData extends Object> {
+export interface IComponentClass<TData extends Object = {}> {
     new (data?: any, me?: IBobrilCacheNode): Component<TData>;
 }
 
-export interface IComponentFunction<TData extends Object> extends Function {
+export interface IComponentFunction<TData extends Object = {}> extends Function {
     (this: IBobrilCtx, data: TData): IBobrilChildren;
 }
 
@@ -6754,16 +6754,58 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
     return hook;
 }
 
-export function useContext<T = unknown>(key: string): T | undefined {
-    checkCurrentRenderCtx();
-    const cfg = currentCtx!.cfg;
-    if (cfg == undefined) return undefined;
-    return cfg[key];
+export interface IContext<T> {
+    id: string;
+    dv: T;
 }
 
-export function provideContext(key: string, value: any) {
+export function createContext<T = unknown>(defaultValue: T, id?: string): IContext<T> {
+    if (id === undefined) {
+        id = "__b#" + allocateMethodId();
+    }
+    return { id, dv: defaultValue };
+}
+
+export function context<T>(
+    key: IContext<T>
+): (target: object, propertyKey: string) => void {
+    return (
+        target: object,
+        propertyKey: string
+    ): void => {
+        Object.defineProperty(target, propertyKey, {
+            configurable: true,
+            get(this: IBobrilCtxInternal): T {
+                const cfg = this.cfg;
+                if (cfg == undefined || !(key.id in cfg)) return key.dv;
+                return cfg[key.id];
+            },
+            set(this: IBobrilCtxInternal, value: T) {
+                extendCfg(this, key.id, value);
+            }
+        });
+    };
+}
+
+export function useContext<T>(key: IContext<T>): T;
+export function useContext<T = unknown>(key: string): T | undefined;
+export function useContext<T>(key: string | IContext<T>): T | undefined {
     checkCurrentRenderCtx();
-    extendCfg(currentCtx!, key, value);
+    const cfg = currentCtx!.cfg;
+    if (isString(key)) {
+        if (cfg == undefined) return undefined;
+        return cfg[key];
+    } else {
+        if (cfg == undefined || !(key.id in cfg)) return key.dv;
+        return cfg[key.id];
+    }
+}
+
+export function provideContext(key: string, value: any): void;
+export function provideContext<T>(key: IContext<T>, value: T): void;
+export function provideContext<T = any>(key: string | IContext<T>, value: T): void {
+    checkCurrentRenderCtx();
+    extendCfg(currentCtx!, isString(key) ? key : key.id, value);
 }
 
 export function useRef<T = unknown>(initialValue?: T): IProp<T> & { current: T } {
