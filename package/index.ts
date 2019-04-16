@@ -6870,35 +6870,42 @@ function hookPostUpdateDomEverytime(ctx: IBobrilCtxInternal) {
 type EffectCallback = () => void | (() => void | undefined);
 type DependencyList = ReadonlyArray<unknown>;
 
-export function bind<T extends Function>(
-    _target: object,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<T>
-): TypedPropertyDescriptor<T> | void {
-    const fn = descriptor.value;
-    assert(
-        !descriptor || !isFunction(fn),
-        `Only methods can be decorated with @bind. '{propertyKey}' is not a method!`
-    );
+export function bind(target: any, propertyKey?: string, descriptor?: PropertyDescriptor): any {
+    if (propertyKey != undefined && descriptor != undefined) {
+        const fn = descriptor.value;
+        assert(isFunction(fn), `Only methods can be decorated with @bind. '${propertyKey}' is not a method!`);
 
-    let definingProperty = false;
-    return {
-        configurable: true,
-        get() {
-            if (definingProperty) {
-                return fn;
+        let definingProperty = false;
+        return {
+            configurable: true,
+            get() {
+                if (definingProperty) {
+                    return fn;
+                }
+                let value = fn!.bind(this);
+                definingProperty = true;
+                Object.defineProperty(this, propertyKey, {
+                    value,
+                    configurable: true,
+                    writable: true
+                });
+                definingProperty = false;
+                return value;
             }
-            let value = fn!.bind(this);
-            definingProperty = true;
-            Object.defineProperty(this, propertyKey, {
-                value,
-                configurable: true,
-                writable: true
-            });
-            definingProperty = false;
-            return value;
+        };
+    }
+    const proto = Object.getPrototypeOf(target);
+    const keys = Object.getOwnPropertyNames(proto);
+    keys.forEach(key => {
+        if (key === "constructor") {
+            return;
         }
-    };
+        const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+        if (isFunction(descriptor!.value)) {
+            Object.defineProperty(proto, key, bind(target, key, descriptor));
+        }
+    });
+    return target;
 }
 
 class EffectHook implements IDisposable {

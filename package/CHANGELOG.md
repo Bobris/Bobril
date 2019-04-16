@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.11.0
+
+Decorator bind fixed and extended to cover all methods in class.
+
 ## 9.10.0
 
 Added `createContext` with similar API like in React. `useContext` and `provideContext` now additionally work with this type of context. Added decorator `context` which could be used in class components or classic component ctx.
