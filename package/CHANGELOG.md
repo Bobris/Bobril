@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.11.1
+
+Another fix for children in TSX.
+
 ## 9.11.0
 
 New handy exported interface:

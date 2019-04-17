@@ -6437,20 +6437,6 @@ if (!(<any>window).b)
         setBeforeInit
     };
 
-function prepareChildren(args: IArguments): IBobrilChildren{
-    if(args.length === 3) {
-        return args[2];
-    } else {
-        let children: IBobrilChild[] = [];
-        for (var i = 2; i < args.length; i++) {
-            var ii = args[i];
-            children.push(ii);
-        }
-
-        return children;
-    }    
-}
-
 // TSX reactNamespace emulation
 // PureFuncs: createElement
 
@@ -6461,8 +6447,17 @@ export function createElement<T>(
 ): IBobrilNode<T>;
 
 export function createElement(name: any, props: any): IBobrilNode {
-    const children = prepareChildren(arguments);
-    
+    let children: IBobrilChildren;
+    const argumentsCount = arguments.length - 2;
+    if (argumentsCount === 1) {
+        children = arguments[2];
+    } else {
+        children = new Array(argumentsCount);
+        for (let i = 0; i < argumentsCount; i++) {
+            children[i] = arguments[i + 2];
+        }
+    }
+
     if (isString(name)) {
         var res: IBobrilNode = { tag: name, children: children };
         if (props == null) {
