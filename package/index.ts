@@ -7013,5 +7013,5 @@ export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList)
 }
 
 export interface IDataWithChildren {
-    children?: IBobrilChildren
+    children?: IBobrilChildren;
 }

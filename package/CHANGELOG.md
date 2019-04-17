@@ -2,7 +2,17 @@
 
 ## 9.11.0
 
+New handy exported interface:
+
+    export interface IDataWithChildren {
+        children?: IBobrilChildren;
+    }
+
+Class `Component<TData = IDataWithChildren>` using this as generic default.
+
 Decorator bind fixed and extended to cover all methods in class.
+
+Fixed children typings in TSX.
 
 ## 9.10.0
 
