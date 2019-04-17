@@ -6539,7 +6539,7 @@ export enum EventResult {
 
 export type GenericEventResult = EventResult | boolean;
 
-export class Component<TData = {}> {
+export class Component<TData = IDataWithChildren> {
     constructor(data?: TData, me?: IBobrilCacheNode) {
         this.data = data!;
         this.me = me!;
@@ -7010,4 +7010,8 @@ export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList)
         hooks[myHookId] = hook;
     }
     hook.update(callback, deps);
+}
+
+export interface IDataWithChildren {
+    children?: IBobrilChildren
 }

@@ -14,7 +14,6 @@ declare global {
         interface IntrinsicAttributes {
             key?: string;
             ref?: b.RefType;
-            children?: b.IBobrilChildren;
         }
 
         interface IntrinsicClassAttributes<T> {
