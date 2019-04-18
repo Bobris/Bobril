@@ -1860,11 +1860,11 @@ var regEvents: {
 } = {};
 var registryEvents:
     | {
-          [name: string]: Array<{
-              priority: number;
-              callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean;
-          }>;
-      }
+    [name: string]: Array<{
+        priority: number;
+        callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean;
+    }>;
+}
     | undefined;
 
 export function addEvent(
@@ -5678,7 +5678,7 @@ function beforeFrame() {
                             width: width,
                             height: height,
                             backgroundPosition: `${(100 * sprite.left) / (iWidth - width)}% ${(100 * sprite.top) /
-                                (iHeight - height)}%`,
+                            (iHeight - height)}%`,
                             backgroundSize: `${percentWidth}% ${percentHeight}%`
                         };
                     }
@@ -6576,6 +6576,8 @@ export class Component<TData = IDataWithChildren> {
     onMouseOver?(event: IBobrilMouseEvent): GenericEventResult;
     onMouseIn?(event: IBobrilMouseEvent): void;
     onMouseOut?(event: IBobrilMouseEvent): void;
+    onMouseEnter?(event: IBobrilMouseEvent): void;
+    onMouseLeave?(event: IBobrilMouseEvent): void;
     onMouseMove?(event: IBobrilMouseEvent): GenericEventResult;
     onMouseWheel?(event: IBobrilMouseWheelEvent): GenericEventResult;
     onPointerDown?(event: IBobrilPointerEvent): GenericEventResult;
@@ -6631,6 +6633,8 @@ const componentEventNames = [
     "onMouseOver",
     "onMouseIn",
     "onMouseOut",
+    "onMouseEnter",
+    "onMouseLeave",
     "onMouseMove",
     "onMouseWheel",
     "onPointerDown",

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.11.2
+
+Fixed Component, added mouseLeave and mouseEnter events.
+
 ## 9.11.1
 
 Another fix for children in TSX.
