@@ -166,3 +166,5 @@ $RECYCLE.BIN/
 bobril.sublime-project
 bobril.sublime-workspace
 /package/yarn.lock
+*/.idea
+/.idea
