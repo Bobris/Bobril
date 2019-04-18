@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "9.11.2",
+    "version": "9.12.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -16,9 +16,6 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "bobril": {
-        "includeSources": [
-            "jsx.d.ts"
-        ],
         "compilerOptions": {
             "noImplicitAny": true,
             "noImplicitThis": true,

@@ -1860,11 +1860,11 @@ var regEvents: {
 } = {};
 var registryEvents:
     | {
-    [name: string]: Array<{
-        priority: number;
-        callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean;
-    }>;
-}
+          [name: string]: Array<{
+              priority: number;
+              callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean;
+          }>;
+      }
     | undefined;
 
 export function addEvent(
@@ -5678,7 +5678,7 @@ function beforeFrame() {
                             width: width,
                             height: height,
                             backgroundPosition: `${(100 * sprite.left) / (iWidth - width)}% ${(100 * sprite.top) /
-                            (iHeight - height)}%`,
+                                (iHeight - height)}%`,
                             backgroundSize: `${percentWidth}% ${percentHeight}%`
                         };
                     }
@@ -6268,8 +6268,8 @@ export interface IComponentFactory<TData extends Object> {
 export function createVirtualComponent<TData>(component: IBobrilComponent): IComponentFactory<TData> {
     return (data?: TData, children?: ChildrenType<TData>): IBobrilNode => {
         if (children !== undefined) {
-            if (data == null) data = <any>{};
-            (<any>data).children = children;
+            if (data == undefined) data = <any>{};
+            (data as any).children = children;
         }
         return { data, component: component };
     };
@@ -6440,6 +6440,8 @@ if (!(<any>window).b)
 // TSX reactNamespace emulation
 // PureFuncs: createElement
 
+const jsxFactoryCache = new Map<IComponentClass<any> | IComponentFunction<any>, Function>();
+
 export function createElement<T>(
     name: string | ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T>,
     data?: T,
@@ -6501,10 +6503,10 @@ export function createElement(name: any, props: any): IBobrilNode {
         return res;
     } else {
         let res: IBobrilNode;
-        let factory = name.$bobrilFactory;
+        let factory = jsxFactoryCache.get(name);
         if (factory === undefined) {
             factory = createFactory(name);
-            name.$bobrilFactory = factory;
+            jsxFactoryCache.set(name, factory);
         }
         if (factory.length == 1) {
             if (props == undefined) props = { children };
@@ -6621,52 +6623,19 @@ export interface IComponentFunction<TData extends Object = {}> extends Function 
     (this: IBobrilCtx, data: TData): IBobrilChildren;
 }
 
-const componentEventNames = [
-    "onKeyDown",
-    "onKeyUp",
-    "onKeyPress",
-    "onClick",
-    "onDoubleClick",
-    "onContextMenu",
-    "onMouseDown",
-    "onMouseUp",
-    "onMouseOver",
-    "onMouseIn",
-    "onMouseOut",
-    "onMouseEnter",
-    "onMouseLeave",
-    "onMouseMove",
-    "onMouseWheel",
-    "onPointerDown",
-    "onPointerMove",
-    "onPointerUp",
-    "onPointerCancel",
-    "onFocusIn",
-    "onFocusOut",
-    "onDragStart",
-    "onDrag",
-    "onDragEnd",
-    "onDragOver",
-    "onDrop",
-    "canDeactivate"
-];
-
 function forwardRender(m: Function) {
-    if (m == undefined) return undefined;
     return (ctx: IBobrilCtx, me: IBobrilNode, _oldMe?: IBobrilCacheNode) => {
         me.children = m.call(ctx, ctx.data);
     };
 }
 
 function forwardInit(m: Function) {
-    if (m == undefined) return undefined;
     return (ctx: IBobrilCtx) => {
         m.call(ctx, ctx.data);
     };
 }
 
 function forwardMe(m: Function) {
-    if (m == undefined) return undefined;
     return m.call.bind(m);
 }
 
@@ -6679,29 +6648,39 @@ export function component<TData>(
     const bobrilComponent = {} as IBobrilComponent;
     if (component.prototype instanceof Component) {
         const proto = component.prototype as any;
-        bobrilComponent.id = name || proto.constructor.name || "C" + allocateMethodId();
-        bobrilComponent.render = forwardRender(proto.render);
+        const protoStatic = proto.constructor;
+        bobrilComponent.id = getId(name, protoStatic);
+        const protoKeys = Object.keys(proto);
+        for (let i = 0; i < protoKeys.length; i++) {
+            const key = protoKeys[i];
+            const value = proto[key];
+            let set = undefined as any;
+            if (key === "render") {
+                set = forwardRender(value);
+            } else if (key === "init") {
+                set = forwardInit(value);
+            } else if (methodsWithMeParam.indexOf(key) >= 0) {
+                set = forwardMe(value);
+            } else if (isFunction(value) && /^(?:canDeactivate$|on[A-Z])/.test(key)) {
+                set = value.call;
+            }
+            if (set !== undefined) {
+                (bobrilComponent as any)[key] = set;
+            }
+        }
         bobrilComponent.ctxClass = (component as unknown) as ICtxClass;
-        bobrilComponent.init = forwardInit(proto.init);
-        for (let i = 0; i < methodsWithMeParam.length; i++) {
-            (bobrilComponent as any)[methodsWithMeParam[i]] = forwardMe(proto[methodsWithMeParam[i]]);
-        }
-        for (let i = 0; i < componentEventNames.length; i++) {
-            const name = componentEventNames[i];
-            const eventFunc = proto[name];
-            if (isFunction(eventFunc))
-                (bobrilComponent as any)[name] = (ctx: IBobrilCtx, event: any) => {
-                    return eventFunc.call(ctx, event);
-                };
-        }
-        bobrilComponent.canActivate = proto.constructor.canActivate;
+        bobrilComponent.canActivate = protoStatic.canActivate;
     } else {
-        bobrilComponent.id = name || component.name || "C" + allocateMethodId();
+        bobrilComponent.id = getId(name, component);
         bobrilComponent.render = forwardRender(component);
     }
     return (data?: TData): IBobrilNode => {
         return { data, component: bobrilComponent };
     };
+}
+
+function getId(name: string | undefined, classOrFunction: any): string {
+    return name || classOrFunction.id || classOrFunction.name || "C" + allocateMethodId();
 }
 
 function createFactory(comp: IComponentClass<any> | IComponentFunction<any>): Function {
@@ -6904,7 +6883,7 @@ export function bind(target: any, propertyKey?: string, descriptor?: PropertyDes
             }
         };
     }
-    const proto = Object.getPrototypeOf(target);
+    const proto = target.prototype;
     const keys = Object.getOwnPropertyNames(proto);
     keys.forEach(key => {
         if (key === "constructor") {
@@ -7024,4 +7003,31 @@ export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList)
 
 export interface IDataWithChildren {
     children?: IBobrilChildren;
+}
+
+declare global {
+    namespace JSX {
+        type Element<T = any> = IBobrilNode<T>;
+
+        interface ElementAttributesProperty {
+            data: {};
+        }
+        interface ElementChildrenAttribute {
+            children: {};
+        }
+
+        interface IntrinsicAttributes {
+            key?: string;
+            ref?: RefType;
+        }
+
+        interface IntrinsicClassAttributes<T> {
+            key?: string;
+            ref?: RefType;
+        }
+
+        interface IntrinsicElements {
+            [name: string]: any;
+        }
+    }
 }

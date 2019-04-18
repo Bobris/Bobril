@@ -1,8 +1,13 @@
 # CHANGELOG
 
-## 9.11.2
+## 9.12.0
 
 Fixed Component, added mouseLeave and mouseEnter events.
+All methods starting on[A-Z] are considered events.
+Added support for class component inheritance.
+Added way to override component id without calling b.component.
+jsx.d.ts merged into index.ts as TSX is now always supported even without bobril-build.
+Fixed bind on whole class, oops.
 
 ## 9.11.1
 
