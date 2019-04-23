@@ -203,11 +203,10 @@ export interface IBobrilCtx<TData = any> {
     disposables?: IDisposableLike[];
 }
 
-const enum HookFlags {
-    hasPostInitDom = 1,
-    hasPostUpdateDom = 2,
-    hasPostUpdateDomEverytime = 4
-}
+type HookFlags = number;
+const hasPostInitDom: HookFlags = 1;
+const hasPostUpdateDom: HookFlags = 2;
+const hasPostUpdateDomEverytime: HookFlags = 4;
 
 interface IBobrilCtxInternal<TData = any> extends IBobrilCtx<TData> {
     $hooks?: any[];
@@ -677,7 +676,7 @@ function pushInitCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & HookFlags.hasPostInitDom) {
+        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & hasPostInitDom) {
             updateCall.push(hookPostInitDom);
             updateInstance.push(c);
         }
@@ -693,7 +692,7 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
             updateInstance.push(c);
         }
         const flags = (c.ctx! as IBobrilCtxInternal).$hookFlags || 0;
-        if (flags & HookFlags.hasPostUpdateDom) {
+        if (flags & hasPostUpdateDom) {
             updateCall.push(hookPostUpdateDom);
             updateInstance.push(c);
         }
@@ -702,7 +701,7 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (flags & HookFlags.hasPostUpdateDomEverytime) {
+        if (flags & hasPostUpdateDomEverytime) {
             updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
         }
@@ -717,7 +716,7 @@ function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & HookFlags.hasPostUpdateDomEverytime) {
+        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & hasPostUpdateDomEverytime) {
             updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
         }
@@ -6974,8 +6973,7 @@ export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList)
     const hooks = _getHooks();
     let hook = hooks[myHookId];
     if (hook === undefined) {
-        (currentCtx as IBobrilCtxInternal).$hookFlags! |=
-            HookFlags.hasPostInitDom | HookFlags.hasPostUpdateDomEverytime;
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |= hasPostInitDom | hasPostUpdateDomEverytime;
         hook = new LayoutEffectHook();
         addDisposable(currentCtx!, hook);
         hooks[myHookId] = hook;

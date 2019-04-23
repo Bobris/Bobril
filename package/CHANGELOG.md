@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 10.0.2
+
+Removed last const enum.
+
 ## 10.0.1
 
 Had to workaround TS strange behavior by need to specify Ctx type default is any so all should compile, but it will be less type safe.
