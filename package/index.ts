@@ -96,18 +96,19 @@ export interface IBobrilEvents {
     onDrop?(dndCtx: IDndCtx): GenericEventResult;
 }
 
-type IBobrilEventsWithCtx<TData> = {
+export type IBobrilEventsWithCtx<TCtx> = {
     [N in keyof IBobrilEvents]?: (NonNullable<IBobrilEvents[N]> extends (...args: any) => any
         ? (Parameters<NonNullable<IBobrilEvents[N]>>["length"] extends 0
-              ? (ctx: IBobrilCtx<TData>) => ReturnType<NonNullable<IBobrilEvents[N]>>
+              ? (ctx: TCtx) => ReturnType<NonNullable<IBobrilEvents[N]>>
               : (
-                    ctx: IBobrilCtx<TData>,
+                    ctx: TCtx,
                     event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
                 ) => ReturnType<NonNullable<IBobrilEvents[N]>>)
         : never)
 };
 
-export interface IBobrilComponent<TData = any> extends IBobrilEventsWithCtx<TData> {
+export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>
+    extends IBobrilEventsWithCtx<TCtx> {
     // parent component of derived/overriding component
     super?: IBobrilComponent;
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
@@ -6274,11 +6275,13 @@ export type ChildrenType<TData extends { [name: string]: any }> = "children" ext
     ? TData["children"]
     : never;
 
-export interface IComponentFactory<TData extends Object> {
+export interface IComponentFactory<TData extends object> {
     (data?: TData, children?: ChildrenType<TData>): IBobrilNode<TData>;
 }
 
-export function createVirtualComponent<TData>(component: IBobrilComponent): IComponentFactory<TData> {
+export function createVirtualComponent<TData extends object, TCtx extends IBobrilCtx<TData> = any>(
+    component: IBobrilComponent<TData, TCtx>
+): IComponentFactory<TData> {
     return (data?: TData, children?: ChildrenType<TData>): IBobrilNode => {
         if (children !== undefined) {
             if (data == undefined) data = <any>{};
@@ -6288,7 +6291,7 @@ export function createVirtualComponent<TData>(component: IBobrilComponent): ICom
     };
 }
 
-export function createOverridingComponent<TData, TDataOriginal = any>(
+export function createOverridingComponent<TData extends object, TDataOriginal = any>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
     after: IBobrilComponent
 ): IComponentFactory<TData> {
@@ -6297,7 +6300,9 @@ export function createOverridingComponent<TData, TDataOriginal = any>(
     return createVirtualComponent<TData>(overriding);
 }
 
-export function createComponent<TData extends Object>(component: IBobrilComponent): IComponentFactory<TData> {
+export function createComponent<TData extends object, TCtx extends IBobrilCtx<TData> = any>(
+    component: IBobrilComponent<TData, TCtx>
+): IComponentFactory<TData> {
     const originalRender = component.render;
     if (originalRender) {
         component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
@@ -6312,9 +6317,9 @@ export function createComponent<TData extends Object>(component: IBobrilComponen
     return createVirtualComponent<TData>(component);
 }
 
-export function createDerivedComponent<TData, TDataOriginal = any>(
-    original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
-    after: IBobrilComponent
+export function createDerivedComponent<TData extends object, TDataOriginal extends object = any>(
+    original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode<TDataOriginal>,
+    after: IBobrilComponent<TData>
 ): IComponentFactory<TData> {
     const originalComponent = original().component!;
     const merged = mergeComponents(originalComponent, after);
@@ -6618,7 +6623,7 @@ function forwardMe(m: Function) {
 
 const methodsWithMeParam = ["destroy", "postInitDom", "postUpdateDom", "postUpdateDomEverytime"];
 
-export function component<TData>(
+export function component<TData extends object>(
     component: IComponentClass<TData> | IComponentFunction<TData>,
     name?: string
 ): IComponentFactory<TData> {
