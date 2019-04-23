@@ -1,7 +1,7 @@
 // Bobril.Core
 
 export type IBobrilChild<T = any> = boolean | number | string | IBobrilNode<T> | null | undefined;
-export type IBobrilChildren = IBobrilChild | IBobrilChildArray | null | undefined;
+export type IBobrilChildren = IBobrilChild | IBobrilChildArray;
 export interface IBobrilChildArray extends Array<IBobrilChildren> {}
 export type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
 export type IBobrilShimStyleMapping = {
@@ -45,7 +45,69 @@ export interface IBobrilAttributes {
     [name: string]: any;
 }
 
-export interface IBobrilComponent<TData = any> {
+export interface IBobrilEvents {
+    // called on input element after any change with new value (string|boolean)
+    onChange?(value: any): void;
+    // called on string input element when selection or caret position changes
+    onSelectionChange?(event: ISelectionChangeEvent): void;
+
+    onKeyDown?(event: IKeyDownUpEvent): GenericEventResult;
+    onKeyUp?(event: IKeyDownUpEvent): GenericEventResult;
+    onKeyPress?(event: IKeyPressEvent): GenericEventResult;
+
+    // called on input element after click/tap
+    onClick?(event: IBobrilMouseEvent): GenericEventResult;
+    onDoubleClick?(event: IBobrilMouseEvent): GenericEventResult;
+    onContextMenu?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseDown?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseUp?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseOver?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseEnter?(event: IBobrilMouseEvent): void;
+    onMouseLeave?(event: IBobrilMouseEvent): void;
+    onMouseIn?(event: IBobrilMouseEvent): void;
+    onMouseOut?(event: IBobrilMouseEvent): void;
+    onMouseMove?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseWheel?(event: IBobrilMouseWheelEvent): GenericEventResult;
+    onPointerDown?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerMove?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerUp?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerCancel?(event: IBobrilPointerEvent): GenericEventResult;
+
+    // this component gained focus
+    onFocus?(): void;
+    // this component lost focus
+    onBlur?(): void;
+    // focus moved from outside of this element to some child of this element
+    onFocusIn?(): void;
+    // focus moved from inside of this element to some outside element
+    onFocusOut?(): void;
+
+    // if drag should start, bubbled
+    onDragStart?(dndCtx: IDndStartCtx): GenericEventResult;
+
+    // broadcasted after drag started/moved/changed
+    onDrag?(dndCtx: IDndCtx): boolean;
+    // broadcasted after drag ended even if without any action
+    onDragEnd?(dndCtx: IDndCtx): boolean;
+
+    // Do you want to allow to drop here? bubbled
+    onDragOver?(dndCtx: IDndOverCtx): GenericEventResult;
+    // User want to drop dragged object here - do it - onDragOver before had to set you target
+    onDrop?(dndCtx: IDndCtx): GenericEventResult;
+}
+
+type IBobrilEventsWithCtx<TData> = {
+    [N in keyof IBobrilEvents]?: (NonNullable<IBobrilEvents[N]> extends (...args: any) => any
+        ? (Parameters<NonNullable<IBobrilEvents[N]>>["length"] extends 0
+              ? (ctx: IBobrilCtx<TData>) => ReturnType<NonNullable<IBobrilEvents[N]>>
+              : (
+                    ctx: IBobrilCtx<TData>,
+                    event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
+                ) => ReturnType<NonNullable<IBobrilEvents[N]>>)
+        : never)
+};
+
+export interface IBobrilComponent<TData = any> extends IBobrilEventsWithCtx<TData> {
     // parent component of derived/overriding component
     super?: IBobrilComponent;
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
@@ -77,55 +139,6 @@ export interface IBobrilComponent<TData = any> {
     // used to implement any instance method which will be search by runMethodFrom using wave kind of broadcast stopping on first method returning true
     runMethod?(ctx: IBobrilCtx<TData>, methodId: MethodId, param?: Object): boolean;
 
-    // called on input element after any change with new value (string|boolean)
-    onChange?(ctx: IBobrilCtx<TData>, value: any): void;
-    // called on string input element when selection or caret position changes
-    onSelectionChange?(ctx: IBobrilCtx<TData>, event: ISelectionChangeEvent): void;
-
-    onKeyDown?(ctx: IBobrilCtx<TData>, event: IKeyDownUpEvent): GenericEventResult;
-    onKeyUp?(ctx: IBobrilCtx<TData>, event: IKeyDownUpEvent): GenericEventResult;
-    onKeyPress?(ctx: IBobrilCtx<TData>, event: IKeyPressEvent): GenericEventResult;
-
-    // called on input element after click/tap
-    onClick?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): GenericEventResult;
-    onDoubleClick?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): GenericEventResult;
-    onContextMenu?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseDown?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseUp?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseOver?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseEnter?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): void;
-    onMouseLeave?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): void;
-    onMouseIn?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): void;
-    onMouseOut?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): void;
-    onMouseMove?(ctx: IBobrilCtx<TData>, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseWheel?(ctx: IBobrilCtx<TData>, event: IBobrilMouseWheelEvent): GenericEventResult;
-    onPointerDown?(ctx: IBobrilCtx<TData>, event: IBobrilPointerEvent): GenericEventResult;
-    onPointerMove?(ctx: IBobrilCtx<TData>, event: IBobrilPointerEvent): GenericEventResult;
-    onPointerUp?(ctx: IBobrilCtx<TData>, event: IBobrilPointerEvent): GenericEventResult;
-    onPointerCancel?(ctx: IBobrilCtx<TData>, event: IBobrilPointerEvent): GenericEventResult;
-
-    // this component gained focus
-    onFocus?(ctx: IBobrilCtx<TData>): void;
-    // this component lost focus
-    onBlur?(ctx: IBobrilCtx<TData>): void;
-    // focus moved from outside of this element to some child of this element
-    onFocusIn?(ctx: IBobrilCtx<TData>): void;
-    // focus moved from inside of this element to some outside element
-    onFocusOut?(ctx: IBobrilCtx<TData>): void;
-
-    // if drag should start, bubbled
-    onDragStart?(ctx: IBobrilCtx<TData>, dndCtx: IDndStartCtx): GenericEventResult;
-
-    // broadcasted after drag started/moved/changed
-    onDrag?(ctx: IBobrilCtx<TData>, dndCtx: IDndCtx): boolean;
-    // broadcasted after drag ended even if without any action
-    onDragEnd?(ctx: IBobrilCtx<TData>, dndCtx: IDndCtx): boolean;
-
-    // Do you want to allow to drop here? bubbled
-    onDragOver?(ctx: IBobrilCtx<TData>, dndCtx: IDndOverCtx): GenericEventResult;
-    // User want to drop dragged object here - do it - onDragOver before had to set you target
-    onDrop?(ctx: IBobrilCtx<TData>, dndCtx: IDndCtx): GenericEventResult;
-
     // this is "static" function that's why it does not have ctx - because it does not exists
     canActivate?(transition: IRouteTransition): IRouteCanResult;
     canDeactivate?(ctx: IBobrilCtx<TData>, transition: IRouteTransition): IRouteCanResult;
@@ -155,7 +168,7 @@ export interface IBobrilNodeCommon<T = any> {
     length?: never;
 }
 
-export type IBobrilNode<T = any> = IBobrilNodeCommon<T> & object;
+export type IBobrilNode<T = any> = Exclude<IBobrilNodeCommon<T> & object, Function>;
 
 export interface IBobrilNodeWithKey<T = any> extends IBobrilNode<T> {
     key: string;
@@ -1984,7 +1997,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
     }
 }
 
-export const enum RenderPhase {
+export enum RenderPhase {
     Create,
     Update,
     LocalUpdate,
@@ -2228,7 +2241,7 @@ function firstInvalidate() {
     beforeInit = finishInitialize;
 }
 
-export function init(factory: () => any, element?: HTMLElement) {
+export function init(factory: () => IBobrilChildren, element?: HTMLElement) {
     assert(rootIds == null, "init should not be called from render");
     removeRoot("0");
     roots["0"] = { f: factory, e: element, c: [], p: undefined, n: undefined };
@@ -2529,7 +2542,7 @@ export function invalidated() {
 }
 
 // Bobril.Media
-export const enum BobrilDeviceCategory {
+export enum BobrilDeviceCategory {
     Mobile = 0,
     Tablet = 1,
     Desktop = 2,
@@ -3209,7 +3222,7 @@ export interface IBobrilMouseEvent {
     cancelable: boolean;
 }
 
-export const enum BobrilPointerType {
+export enum BobrilPointerType {
     Mouse = 0,
     Touch = 1,
     Pen = 2
@@ -4162,14 +4175,14 @@ export function convertPointFromClientToNode(node: IBobrilCacheNode, pageX: numb
 
 // Bobril.Dnd
 
-export const enum DndOp {
+export enum DndOp {
     None = 0,
     Link = 1,
     Copy = 2,
     Move = 3
 }
 
-export const enum DndEnabledOps {
+export enum DndEnabledOps {
     None = 0,
     Link = 1,
     Copy = 2,
@@ -4791,7 +4804,7 @@ export interface IRoute {
     isNotFound?: boolean;
 }
 
-export const enum RouteTransitionType {
+export enum RouteTransitionType {
     Push,
     Replace,
     Pop
@@ -6523,7 +6536,7 @@ export function createElement(name: any, props: any): IBobrilNode {
     }
 }
 
-export interface IFragmentData {
+export interface IFragmentData extends IBobrilEvents {
     children: IBobrilChildren;
     key?: string;
 }
@@ -6547,7 +6560,7 @@ export enum EventResult {
 
 export type GenericEventResult = EventResult | boolean;
 
-export class Component<TData = IDataWithChildren> {
+export class Component<TData = IDataWithChildren> implements IBobrilEvents {
     constructor(data?: TData, me?: IBobrilCacheNode) {
         this.data = data!;
         this.me = me!;
@@ -6566,44 +6579,8 @@ export class Component<TData = IDataWithChildren> {
     /// called from children to parents order for updated nodes but in every frame even when render was not run
     postUpdateDomEverytime?(me: IBobrilCacheNode): void;
 
-    onKeyDown?(event: IKeyDownUpEvent): GenericEventResult;
-    onKeyUp?(event: IKeyDownUpEvent): GenericEventResult;
-    onKeyPress?(event: IKeyPressEvent): GenericEventResult;
-
+    /// declared here to remove "no properties in common" your component can `implements b.IBobrilEvents`
     onClick?(event: IBobrilMouseEvent): GenericEventResult;
-    onDoubleClick?(event: IBobrilMouseEvent): GenericEventResult;
-    onContextMenu?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseDown?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseUp?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseOver?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseIn?(event: IBobrilMouseEvent): void;
-    onMouseOut?(event: IBobrilMouseEvent): void;
-    onMouseEnter?(event: IBobrilMouseEvent): void;
-    onMouseLeave?(event: IBobrilMouseEvent): void;
-    onMouseMove?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseWheel?(event: IBobrilMouseWheelEvent): GenericEventResult;
-    onPointerDown?(event: IBobrilPointerEvent): GenericEventResult;
-    onPointerMove?(event: IBobrilPointerEvent): GenericEventResult;
-    onPointerUp?(event: IBobrilPointerEvent): GenericEventResult;
-    onPointerCancel?(event: IBobrilPointerEvent): GenericEventResult;
-
-    /// focus moved from outside of this component to some child of this component
-    onFocusIn?(): void;
-    /// focus moved from inside of this component to some outside component
-    onFocusOut?(): void;
-
-    /// if drag should start, bubbled
-    onDragStart?(dndCtx: IDndStartCtx): GenericEventResult;
-
-    /// broadcasted after drag started/moved/changed
-    onDrag?(dndCtx: IDndCtx): boolean | void;
-    /// broadcasted after drag ended even if without any action
-    onDragEnd?(dndCtx: IDndCtx): boolean | void;
-
-    /// Do you want to allow to drop here? bubbled
-    onDragOver?(dndCtx: IDndOverCtx): GenericEventResult;
-    /// User want to drop dragged object here - do it - onDragOver before had to set you as target
-    onDrop?(dndCtx: IDndCtx): boolean;
 
     static canActivate?(transition: IRouteTransition): IRouteCanResult;
 
@@ -6760,7 +6737,7 @@ export function context<T>(key: IContext<T>): (target: object, propertyKey: stri
         Object.defineProperty(target, propertyKey, {
             configurable: true,
             get(this: IBobrilCtxInternal): T {
-                const cfg = this.cfg;
+                const cfg = this.me.cfg || this.cfg;
                 if (cfg == undefined || !(key.id in cfg)) return key.dv;
                 return cfg[key.id];
             },
@@ -6775,7 +6752,7 @@ export function useContext<T>(key: IContext<T>): T;
 export function useContext<T = unknown>(key: string): T | undefined;
 export function useContext<T>(key: string | IContext<T>): T | undefined {
     checkCurrentRenderCtx();
-    const cfg = currentCtx!.cfg;
+    const cfg = currentCtx!.me.cfg || currentCtx!.cfg;
     if (isString(key)) {
         if (cfg == undefined) return undefined;
         return cfg[key];
@@ -6785,9 +6762,9 @@ export function useContext<T>(key: string | IContext<T>): T | undefined {
     }
 }
 
-export function provideContext(key: string, value: any): void;
-export function provideContext<T>(key: IContext<T>, value: T): void;
-export function provideContext<T = any>(key: string | IContext<T>, value: T): void {
+export function useProvideContext(key: string, value: any): void;
+export function useProvideContext<T>(key: IContext<T>, value: T): void;
+export function useProvideContext<T = any>(key: string | IContext<T>, value: T): void {
     checkCurrentRenderCtx();
     extendCfg(currentCtx!, isString(key) ? key : key.id, value);
 }
@@ -7005,15 +6982,20 @@ export interface IDataWithChildren {
     children?: IBobrilChildren;
 }
 
+interface IGenericElementAttributes extends IBobrilEvents {
+    children?: IBobrilChildren;
+    [name: string]: any;
+}
+
 declare global {
     namespace JSX {
-        type Element<T = any> = IBobrilNode<T>;
+        type Element<T = Exclude<object, Function>> = IBobrilNode<T>;
 
         interface ElementAttributesProperty {
             data: {};
         }
         interface ElementChildrenAttribute {
-            children: {};
+            children: IBobrilChildren;
         }
 
         interface IntrinsicAttributes {
@@ -7027,7 +7009,7 @@ declare global {
         }
 
         interface IntrinsicElements {
-            [name: string]: any;
+            [name: string]: IGenericElementAttributes;
         }
     }
 }

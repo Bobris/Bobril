@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 10.0.0
+
+All these are possibly breaking changes but should be minor.
+Removed all const enums so now Babel could be used for "compiling TypeScript" (In future it will be optimized to same optimal code by bobril-build). IBobrilNode now cannot be function, it never worked but TS type allowed it.
+`provideContext` was renamed to `useProvideContext`.
+Exposed new `IBobrilEvents` with all events defined by Bobril.
+
 ## 9.12.0
 
 Fixed Component, added mouseLeave and mouseEnter events.

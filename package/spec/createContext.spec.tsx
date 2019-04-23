@@ -20,7 +20,7 @@ describe("createContext", () => {
         }
 
         function Outer({ value, test }: { value?: number; test: number }) {
-            if (value != undefined) b.provideContext(myContext, value);
+            if (value != undefined) b.useProvideContext(myContext, value);
             return <Nested value={test} />;
         }
 
@@ -114,7 +114,7 @@ describe("createContext", () => {
 
         const Outer = b.createVirtualComponent<IOuterData>({
             render(ctx: b.IBobrilCtx<IOuterData>, me: b.IBobrilNode) {
-                if (ctx.data.value != undefined) b.provideContext(myContext, ctx.data.value);
+                if (ctx.data.value != undefined) b.useProvideContext(myContext, ctx.data.value);
                 me.children = <Nested value={ctx.data.test} />;
             }
         });
@@ -122,6 +122,20 @@ describe("createContext", () => {
         b.init(() => Outer({ test: 42 }));
         b.syncUpdate();
         b.init(() => Outer({ value: 1, test: 1 }));
+        b.syncUpdate();
+    });
+
+    it("can read value just written in same component", () => {
+        const myContext = b.createContext(42);
+
+        function Comp() {
+            expect(b.useContext(myContext)).toBe(42);
+            b.useProvideContext(myContext, 1);
+            expect(b.useContext(myContext)).toBe(1);
+            return <></>;
+        }
+
+        b.init(() => <Comp />);
         b.syncUpdate();
     });
 });
