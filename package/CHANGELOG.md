@@ -1,5 +1,7 @@
 # CHANGELOG
 
+Allow `never` type to be data/props type additionally to object.
+
 ## 10.0.2
 
 Removed last const enum.
