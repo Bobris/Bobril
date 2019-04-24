@@ -6274,11 +6274,11 @@ export type ChildrenType<TData extends { [name: string]: any }> = "children" ext
     ? TData["children"]
     : never;
 
-export interface IComponentFactory<TData extends object> {
+export interface IComponentFactory<TData extends object | never> {
     (data?: TData, children?: ChildrenType<TData>): IBobrilNode<TData>;
 }
 
-export function createVirtualComponent<TData extends object, TCtx extends IBobrilCtx<TData> = any>(
+export function createVirtualComponent<TData extends object | never, TCtx extends IBobrilCtx<TData> = any>(
     component: IBobrilComponent<TData, TCtx>
 ): IComponentFactory<TData> {
     return (data?: TData, children?: ChildrenType<TData>): IBobrilNode => {
@@ -6290,7 +6290,7 @@ export function createVirtualComponent<TData extends object, TCtx extends IBobri
     };
 }
 
-export function createOverridingComponent<TData extends object, TDataOriginal = any>(
+export function createOverridingComponent<TData extends object | never, TDataOriginal = any>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
     after: IBobrilComponent
 ): IComponentFactory<TData> {
@@ -6299,7 +6299,7 @@ export function createOverridingComponent<TData extends object, TDataOriginal = 
     return createVirtualComponent<TData>(overriding);
 }
 
-export function createComponent<TData extends object, TCtx extends IBobrilCtx<TData> = any>(
+export function createComponent<TData extends object | never, TCtx extends IBobrilCtx<TData> = any>(
     component: IBobrilComponent<TData, TCtx>
 ): IComponentFactory<TData> {
     const originalRender = component.render;
@@ -6316,7 +6316,7 @@ export function createComponent<TData extends object, TCtx extends IBobrilCtx<TD
     return createVirtualComponent<TData>(component);
 }
 
-export function createDerivedComponent<TData extends object, TDataOriginal extends object = any>(
+export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never = any>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode<TDataOriginal>,
     after: IBobrilComponent<TData>
 ): IComponentFactory<TData> {

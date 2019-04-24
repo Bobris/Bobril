@@ -3,6 +3,7 @@
 ## 10.1.0
 
 Focus method has optionally backwards search
+Allow `never` type to be data/props type additionally to `object`.
 
 ## 10.0.2
 
