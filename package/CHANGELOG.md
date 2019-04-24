@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 10.1.0
+
+Focus method has optionally backwards search
+
 ## 10.0.2
 
 Removed last const enum.

@@ -3919,7 +3919,7 @@ export function focused(): IBobrilCacheNode | undefined {
     return currentFocusedNode;
 }
 
-export function focus(node: IBobrilCacheNode): boolean {
+export function focus(node: IBobrilCacheNode, backwards?: boolean): boolean {
     if (node == null) return false;
     if (isString(node)) return false;
     var style = node.style;
@@ -3940,7 +3940,7 @@ export function focus(node: IBobrilCacheNode): boolean {
     var children = node.children;
     if (isArray(children)) {
         for (var i = 0; i < children.length; i++) {
-            if (focus(children[i])) return true;
+            if (focus(children[backwards? children.length - 1 - i : i], backwards)) return true;
         }
         return false;
     }
