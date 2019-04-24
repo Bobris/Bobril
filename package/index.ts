@@ -6655,7 +6655,7 @@ export function component<TData extends object>(
             } else if (methodsWithMeParam.indexOf(key) >= 0) {
                 set = forwardMe(value);
             } else if (isFunction(value) && /^(?:canDeactivate$|on[A-Z])/.test(key)) {
-                set = value.call;
+                set = forwardMe(value);
             }
             if (set !== undefined) {
                 (bobrilComponent as any)[key] = set;

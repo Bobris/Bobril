@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 10.1.1
+
+Fixed events in class components.
+
 ## 10.1.0
 
 Focus method has optionally backwards search.
