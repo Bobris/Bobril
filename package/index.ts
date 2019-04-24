@@ -3940,7 +3940,7 @@ export function focus(node: IBobrilCacheNode, backwards?: boolean): boolean {
     var children = node.children;
     if (isArray(children)) {
         for (var i = 0; i < children.length; i++) {
-            if (focus(children[backwards? children.length - 1 - i : i], backwards)) return true;
+            if (focus(children[backwards ? children.length - 1 - i : i], backwards)) return true;
         }
         return false;
     }
@@ -6455,9 +6455,21 @@ if (!(<any>window).b)
     };
 
 // TSX reactNamespace emulation
-// PureFuncs: createElement
+// PureFuncs: createElement, getAllPropertyNames, component
 
 const jsxFactoryCache = new Map<IComponentClass<any> | IComponentFunction<any>, Function>();
+
+function getStringPropertyDescriptors(obj: any): Map<string, PropertyDescriptor> {
+    var props = new Map<string, PropertyDescriptor>();
+
+    do {
+        Object.getOwnPropertyNames(obj).forEach(function(this: Map<string, PropertyDescriptor>, prop: string) {
+            if (!this.has(prop)) this.set(prop, Object.getOwnPropertyDescriptor(obj, prop)!);
+        }, props);
+    } while ((obj = Object.getPrototypeOf(obj)));
+
+    return props;
+}
 
 export function createElement<T>(
     name: string | ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T>,
@@ -6631,10 +6643,10 @@ export function component<TData extends object>(
         const proto = component.prototype as any;
         const protoStatic = proto.constructor;
         bobrilComponent.id = getId(name, protoStatic);
-        const protoKeys = Object.keys(proto);
-        for (let i = 0; i < protoKeys.length; i++) {
-            const key = protoKeys[i];
-            const value = proto[key];
+        const protoMap = getStringPropertyDescriptors(proto);
+        protoMap.forEach((descriptor, key) => {
+            const value = descriptor.value;
+            if (value == undefined) return;
             let set = undefined as any;
             if (key === "render") {
                 set = forwardRender(value);
@@ -6648,7 +6660,7 @@ export function component<TData extends object>(
             if (set !== undefined) {
                 (bobrilComponent as any)[key] = set;
             }
-        }
+        });
         bobrilComponent.ctxClass = (component as unknown) as ICtxClass;
         bobrilComponent.canActivate = protoStatic.canActivate;
     } else {

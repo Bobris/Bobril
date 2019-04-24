@@ -2,7 +2,8 @@
 
 ## 10.1.0
 
-Focus method has optionally backwards search
+Focus method has optionally backwards search.
+Class component now supports also nonenumerable properties (Babel creates such code).
 Allow `never` type to be data/props type additionally to `object`.
 
 ## 10.0.2
