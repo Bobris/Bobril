@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 10.1.2
+
+Fixed focus change events when focus change called from inside focus change events.
+
 ## 10.1.1
 
 Fixed events in class components.

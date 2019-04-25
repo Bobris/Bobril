@@ -3856,10 +3856,14 @@ export const ignoreClick = (x: number, y: number) => {
 let currentActiveElement: Element | undefined = undefined;
 let currentFocusedNode: IBobrilCacheNode | undefined = undefined;
 let nodeStack: (IBobrilCacheNode | null)[] = [];
+let focusChangeRunning = false;
 
 function emitOnFocusChange(inFocus: boolean): boolean {
-    var newActiveElement = document.hasFocus() || inFocus ? document.activeElement! : undefined;
-    if (newActiveElement !== currentActiveElement) {
+    if (focusChangeRunning) return false;
+    focusChangeRunning = true;
+    while (true) {
+        const newActiveElement = document.hasFocus() || inFocus ? document.activeElement! : undefined;
+        if (newActiveElement === currentActiveElement) break;
         currentActiveElement = newActiveElement;
         var newStack = vdomPath(currentActiveElement);
         var common = 0;
@@ -3904,6 +3908,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         nodeStack = newStack;
         currentFocusedNode = nodeStack.length == 0 ? undefined : null2undefined(nodeStack[nodeStack.length - 1]);
     }
+    focusChangeRunning = false;
     return false;
 }
 
