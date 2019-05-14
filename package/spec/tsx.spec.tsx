@@ -2,7 +2,15 @@ import * as b from "../index";
 
 describe("tsx", () => {
     it("creates div", () => {
-        expect(<div />).toEqual({ tag: "div", children: [] });
+        expect(<div />).toEqual({ tag: "div" });
+    });
+
+    it("creates div with attribute", () => {
+        expect(<div data-x="x" />).toEqual({ tag: "div", attrs: { "data-x": "x" } });
+    });
+
+    it("creates div with class", () => {
+        expect(<div className="class" />).toEqual({ tag: "div", className: "class" });
     });
 
     it("supports function components", () => {
@@ -68,5 +76,21 @@ describe("tsx", () => {
         ));
         b.syncUpdate();
         expect(document.body.innerText).toContain("BaseBase in Derived");
+    });
+
+    it("supports passing children in properties", () => {
+        function Comp({ children }: { children: string }) {
+            return <>{children}</>;
+        }
+
+        let el = document.createElement("div");
+        b.createNode(<Comp children="Hi" />, undefined, el, null);
+
+        expect(el.innerHTML).toEqual("Hi");
+
+        el = document.createElement("div");
+        b.createNode(<Comp>Hi</Comp>, undefined, el, null);
+
+        expect(el.innerHTML).toEqual("Hi");
     });
 });

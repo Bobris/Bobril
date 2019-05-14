@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 10.1.3
+
+It should be possible to pass children in TSX as attribute.
+
 ## 10.1.2
 
 Fixed focus change events when focus change called from inside focus change events.

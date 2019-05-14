@@ -6485,7 +6485,8 @@ export function createElement<T>(
 export function createElement(name: any, props: any): IBobrilNode {
     let children: IBobrilChildren;
     const argumentsCount = arguments.length - 2;
-    if (argumentsCount === 1) {
+    if (argumentsCount === 0) {
+    } else if (argumentsCount === 1) {
         children = arguments[2];
     } else {
         children = new Array(argumentsCount);
@@ -6495,7 +6496,7 @@ export function createElement(name: any, props: any): IBobrilNode {
     }
 
     if (isString(name)) {
-        var res: IBobrilNode = { tag: name, children: children };
+        var res: IBobrilNode = argumentsCount === 0 ? { tag: name } : { tag: name, children: children };
         if (props == null) {
             return res;
         }
@@ -6515,7 +6516,7 @@ export function createElement(name: any, props: any): IBobrilNode {
                 } else res.ref = propValue;
                 continue;
             }
-            if (n === "key" || n === "className" || n === "component" || n === "data") {
+            if (n === "key" || n === "className" || n === "component" || n === "data" || n === "children") {
                 (<any>res)[n] = propValue;
                 continue;
             }
@@ -6542,12 +6543,16 @@ export function createElement(name: any, props: any): IBobrilNode {
             factory = createFactory(name);
             jsxFactoryCache.set(name, factory);
         }
-        if (factory.length == 1) {
-            if (props == undefined) props = { children };
-            else props.children = children;
+        if (argumentsCount == 0) {
             res = factory(props);
         } else {
-            res = factory(props, children);
+            if (factory.length == 1) {
+                if (props == undefined) props = { children };
+                else props.children = children;
+                res = factory(props);
+            } else {
+                res = factory(props, children);
+            }
         }
         if (props != undefined) {
             if (props.key != undefined) res.key = props.key;
