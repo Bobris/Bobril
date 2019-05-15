@@ -168,3 +168,4 @@ bobril.sublime-workspace
 /package/yarn.lock
 */.idea
 /.idea
+/package/tsconfig.json

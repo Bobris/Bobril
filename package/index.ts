@@ -1840,6 +1840,8 @@ if (nativeRaf) {
     });
 }
 
+const setTimeout = window.setTimeout;
+
 export const now = Date.now || (() => new Date().getTime());
 var startTime = now();
 var lastTickTime = 0;
@@ -1850,7 +1852,7 @@ function requestAnimationFrame(callback: (time: number) => void) {
     } else {
         var delay = 50 / 3 + lastTickTime - now();
         if (delay < 0) delay = 0;
-        window.setTimeout(() => {
+        setTimeout(() => {
             lastTickTime = now();
             callback(lastTickTime - startTime);
         }, delay);
@@ -2634,8 +2636,7 @@ export const asap = (() => {
         }
     }
 
-    var onreadystatechange = "onreadystatechange";
-    // Modern browsers, fastest async
+    // Mainly IE11, fastest async
     if ((<any>window).MutationObserver) {
         var hiddenDiv = document.createElement("div");
         new MutationObserver(executeCallbacks).observe(hiddenDiv, {
@@ -2646,44 +2647,6 @@ export const asap = (() => {
                 hiddenDiv.setAttribute("yes", "no");
             }
             callbacks.push(callback);
-        };
-        // Browsers that support postMessage
-    } else if (!(window as any).setImmediate && window.postMessage && window.addEventListener) {
-        var MESSAGE_PREFIX = "basap" + Math.random(),
-            hasPostMessage = false;
-
-        var onGlobalMessage = (event: any) => {
-            if (event.source === window && event.data === MESSAGE_PREFIX) {
-                hasPostMessage = false;
-                executeCallbacks();
-            }
-        };
-
-        window.addEventListener("message", onGlobalMessage, false);
-
-        return (fn: () => void) => {
-            callbacks.push(fn);
-
-            if (!hasPostMessage) {
-                hasPostMessage = true;
-                window.postMessage(MESSAGE_PREFIX, "*");
-            }
-        };
-        // IE browsers without postMessage
-    } else if (!(window as any).setImmediate && onreadystatechange in document.createElement("script")) {
-        var scriptEl: any;
-        return (callback: () => void) => {
-            callbacks.push(callback);
-            if (!scriptEl) {
-                scriptEl = document.createElement("script");
-                scriptEl[onreadystatechange] = () => {
-                    scriptEl[onreadystatechange] = null;
-                    scriptEl.parentNode.removeChild(scriptEl);
-                    scriptEl = null;
-                    executeCallbacks();
-                };
-                document.body.appendChild(scriptEl);
-            }
         };
         // All other browsers
     } else {
@@ -4636,7 +4599,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
         style.width = "0";
         style.height = "0";
         style.padding = "0";
-        window.setTimeout(() => {
+        setTimeout(() => {
             style.opacity = opacityBackup;
             style.width = widthBackup;
             style.height = heightBackup;
