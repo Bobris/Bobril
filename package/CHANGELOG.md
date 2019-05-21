@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 10.2.0
+## 10.2.1
 
 `float` could be now used in style instead of `cssFloat`.
 
