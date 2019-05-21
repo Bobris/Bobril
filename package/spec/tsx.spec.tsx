@@ -94,3 +94,10 @@ describe("tsx", () => {
         expect(el.innerHTML).toEqual("Hi");
     });
 });
+
+    it("supports float in style", () => {
+        b.init(() => <div style={{ float: "right" }} />);
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain("float: right");
+    });
+});

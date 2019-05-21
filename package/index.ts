@@ -4,9 +4,7 @@ export type IBobrilChild<T = any> = boolean | number | string | IBobrilNode<T> |
 export type IBobrilChildren = IBobrilChild | IBobrilChildArray;
 export interface IBobrilChildArray extends Array<IBobrilChildren> {}
 export type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
-export type IBobrilShimStyleMapping = {
-    [name: string]: null | ((style: any, value: any, oldName: string) => void);
-};
+export type IBobrilShimStyleMapping = Map<string, (style: any, value: any, oldName: string) => void>;
 
 export interface IDisposable {
     dispose(): void;
@@ -446,9 +444,9 @@ function testPropExistence(name: string) {
     return isString(testingDivStyle[name]);
 }
 
-var mapping: IBobrilShimStyleMapping = newHashObj();
+var mapping: IBobrilShimStyleMapping = new Map();
 
-var isUnitlessNumber = {
+var isUnitlessNumber: { [name: string]: true } = {
     boxFlex: true,
     boxFlexGroup: true,
     columnCount: true,
@@ -499,28 +497,26 @@ function shimStyle(newValue: any) {
     var k = Object.keys(newValue);
     for (var i = 0, l = k.length; i < l; i++) {
         var ki = k[i];
-        var mi = mapping[ki];
+        var mi = mapping.get(ki);
         var vi = newValue[ki];
         if (vi === undefined) continue; // don't want to map undefined
         if (mi === undefined) {
             if (DEBUG) {
-                if (ki === "float" && window.console && console.error)
-                    console.error("In style instead of 'float' you have to use 'cssFloat'");
                 if (/-/.test(ki) && window.console && console.warn)
                     console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
             }
             if (testPropExistence(ki)) {
-                mi = (<any>isUnitlessNumber)[ki] === true ? null : pxAdder;
+                mi = isUnitlessNumber[ki] === true ? noop : pxAdder;
             } else {
                 var titleCaseKi = ki.replace(/^\w/, match => match.toUpperCase());
                 for (var j = 0; j < vendors.length; j++) {
                     if (testPropExistence(vendors[j] + titleCaseKi)) {
-                        mi = ((<any>isUnitlessNumber)[ki] === true ? renamer : renamerPx)(vendors[j] + titleCaseKi);
+                        mi = (isUnitlessNumber[ki] === true ? renamer : renamerPx)(vendors[j] + titleCaseKi);
                         break;
                     }
                 }
                 if (mi === undefined) {
-                    mi = (<any>isUnitlessNumber)[ki] === true ? null : pxAdder;
+                    mi = isUnitlessNumber[ki] === true ? noop : pxAdder;
                     if (
                         DEBUG &&
                         window.console &&
@@ -530,9 +526,9 @@ function shimStyle(newValue: any) {
                         console.warn("Style property " + ki + " is not supported in this browser");
                 }
             }
-            mapping[ki] = mi;
+            mapping.set(ki, mi);
         }
-        if (mi !== null) mi(newValue, vi, ki);
+        mi(newValue, vi, ki);
     }
 }
 
@@ -2522,8 +2518,10 @@ export function cloneNode(node: IBobrilNode): IBobrilNode {
 }
 
 export function setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void) {
-    mapping[name] = action;
+    mapping.set(name, action);
 }
+
+setStyleShim("float", renamer("cssFloat"));
 
 // PureFuncs: uptime, lastFrameDuration, frame, invalidated
 
@@ -5010,7 +5008,7 @@ function isAbsolute(url: string): boolean {
     return url[0] === "/";
 }
 
-function noop(): IBobrilNode | undefined {
+function noop(): undefined {
     return undefined;
 }
 

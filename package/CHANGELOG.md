@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 10.2.0
+
+`float` could be now used in style instead of `cssFloat`.
+
 ## 10.1.4
 
 setTimeout method is now use only from window so it should not have problem with nodejs types. Decreased size of library because of it.
