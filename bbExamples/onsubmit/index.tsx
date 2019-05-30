@@ -12,7 +12,7 @@ declare module "bobril" {
 }
 
 b.init(() => {
-    var text = b.useState("");
+    const text = b.useState("");
     return (
         <>
             <form
