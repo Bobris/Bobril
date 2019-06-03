@@ -99,4 +99,11 @@ describe("tsx", () => {
         b.syncUpdate();
         expect(document.body.innerHTML).toContain("float: right");
     });
+
+    it("supports styling with b.style with TS 3.5.1", () => {
+        const red = "red";
+        b.init(() => b.style(<div />, { fill: red }));
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain("fill: red");
+    });
 });
