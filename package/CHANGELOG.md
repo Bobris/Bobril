@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.0.0
+
+Styles are now strictly secured by TypeScript definitions. Because of more strict typings increased major version, but hoping all errors will be true mistakes.
+
 ## 10.2.2
 
 Fixed compatibility with TS 3.5.1

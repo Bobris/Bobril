@@ -102,7 +102,7 @@ describe("tsx", () => {
 
     it("supports styling with b.style with TS 3.5.1", () => {
         const red = "red";
-        b.init(() => b.style(<div />, { fill: red }));
+        b.init(() => b.style(<div />, { fill: red, borderBottomStyle: "dashed" }));
         b.syncUpdate();
         expect(document.body.innerHTML).toContain("fill: red");
     });
