@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.0.1
+
+Until Bobril 12 allowed to have `0` in styles. It is also correctly skipped in `b.style`.
+
 ## 11.0.0
 
 Styles are now strictly secured by TypeScript definitions. Because of more strict typings increased major version, but hoping all errors will be true mistakes.

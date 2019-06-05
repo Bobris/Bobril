@@ -5446,7 +5446,7 @@ export function getActiveParams() {
 /// definition for Bobril defined class
 export type IBobrilStyleDef = string;
 /// object case if for inline style declaration, undefined, null, true and false values are ignored
-export type IBobrilStyle = Readonly<CSSInlineStyles> | IBobrilStyleDef | boolean | undefined | null;
+export type IBobrilStyle = Readonly<CSSInlineStyles> | IBobrilStyleDef | 0 | boolean | undefined | null;
 /// place inline styles at end for optimal speed
 export type IBobrilStyles = IBobrilStyle | IBobrilStyleArray;
 export interface IBobrilStyleArray extends ReadonlyArray<IBobrilStyles> {
@@ -5792,7 +5792,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             continue;
         }
         let s = ca[i];
-        if (s == null || s === true || s === false || s === "") {
+        if (s == null || s === true || s === false || s === "" || s === 0) {
             // skip
         } else if (isString(s)) {
             var sd = allStyles[s];
