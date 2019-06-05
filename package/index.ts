@@ -7035,7 +7035,12 @@ export type NumberHint = number & { zz_ignore_me?: never };
 
 export type CSSValueGeneral = NumberHint | StringHint;
 
-export type CSSGlobalValues = "initial" | "inherit" | /** combination of `initial` and `inherit` */ "unset" | "revert" | StringHint;
+export type CSSGlobalValues =
+    | "initial"
+    | "inherit"
+    | /** combination of `initial` and `inherit` */ "unset"
+    | "revert"
+    | StringHint;
 
 export type CSSBlendMode =
     | "normal"
@@ -7108,7 +7113,7 @@ export type CSSFontWeight =
     | CSSValueGeneral
     | CSSGlobalValues;
 
-export type CSSLazy<T> = T | StringHint | ((styles: CSSInlineStyles, key: string) => (T | StringHint));
+export type CSSLazy<T> = T | StringHint | ((styles: CSSInlineStyles, key: string) => T | StringHint);
 
 export type CSSLazyString = CSSLazy<string>;
 
