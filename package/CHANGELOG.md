@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 11.1.0
+
+Better typing of IRouteHandler. New `Link` component which is more suited to TSX world.
+Allowed to use string inside `b.style` as class. It is still better to declare class name with `b.styleDef("class")` on one place.
+
 ## 11.0.1
 
 Until Bobril 12 allowed to have `0` in styles. It is also correctly skipped in `b.style`.

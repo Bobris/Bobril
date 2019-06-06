@@ -4786,12 +4786,12 @@ export interface IRouteTransition {
 
 export type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
 
-export interface IRouteHandlarData {
+export interface IRouteHandlerData {
     activeRouteHandler: () => IBobrilChildren;
     routeParams: Params;
 }
 
-export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlarData | any) => IBobrilChildren);
+export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlerData | {}) => IBobrilChildren);
 
 export interface IRouteConfig {
     // name cannot contain ":" or "/"
@@ -5197,10 +5197,35 @@ export function urlOfRoute(name: string, params?: Params): string {
     return name;
 }
 
-export function Link(data: {name: string, params?: Params, children: IBobrilNode }): IBobrilNode {
-    return link(data.children, data.name, data.params);
+export function Link(data: {
+    name: string;
+    params?: Params;
+    replace?: boolean;
+    style?: IBobrilStyles;
+    activeStyle?: IBobrilStyles;
+    children: IBobrilChildren;
+}): IBobrilNode {
+    return style(
+        {
+            tag: "a",
+            component: {
+                id: "link",
+                onClick() {
+                    runTransition((data.replace ? createRedirectReplace : createRedirectPush)(data.name, data.params));
+                    return true;
+                }
+            },
+            children: data.children,
+            attrs: { href: urlOfRoute(data.name, data.params) }
+        },
+        isActive(data.name, data.params)
+            ? data.activeStyle != undefined
+                ? data.activeStyle
+                : [data.style, "active"]
+            : data.style
+    );
 }
-                         
+
 export function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
     node.data = node.data || {};
     node.data.routeName = name;
@@ -5739,7 +5764,7 @@ function beforeFrame() {
             }
             if (isString(ssStyle) && ssPseudo == undefined) {
                 ss.realName = ssStyle;
-                assert(name != null, "Cannot link existing class to selector");
+                assert(name != undefined, "Cannot link existing class to selector");
                 continue;
             }
             ss.realName = name;
@@ -5801,16 +5826,21 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             continue;
         }
         let s = ca[i];
-        if (s == null || s === true || s === false || s === "" || s === 0) {
+        if (s == undefined || s === true || s === false || s === "" || s === 0) {
             // skip
         } else if (isString(s)) {
             var sd = allStyles[s];
-            if (className == null) className = sd.realName!;
-            else className = className + " " + sd.realName;
-            var inlS = sd.inlStyle;
-            if (inlS) {
-                if (inlineStyle == null) inlineStyle = {};
-                inlineStyle = assign(inlineStyle, inlS);
+            if (sd != undefined) {
+                if (className == undefined) className = sd.realName!;
+                else className = className + " " + sd.realName;
+                var inlS = sd.inlStyle;
+                if (inlS) {
+                    if (inlineStyle == undefined) inlineStyle = {};
+                    inlineStyle = assign(inlineStyle, inlS);
+                }
+            } else {
+                if (className == undefined) className = s;
+                else className = className + " " + s;
             }
         } else if (isArray(s)) {
             if (ca.length > i + 1) {
