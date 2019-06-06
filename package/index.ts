@@ -4786,7 +4786,12 @@ export interface IRouteTransition {
 
 export type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
 
-export type IRouteHandler = IBobrilComponent | ((data: any) => IBobrilChildren);
+export interface IRouteHandlarData {
+    activeRouteHandler: () => IBobrilChildren;
+    routeParams: Params;
+}
+
+export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlarData | any) => IBobrilChildren);
 
 export interface IRouteConfig {
     // name cannot contain ":" or "/"
@@ -5192,6 +5197,10 @@ export function urlOfRoute(name: string, params?: Params): string {
     return name;
 }
 
+export function Link(data: {name: string, params?: Params, children: IBobrilNode }): IBobrilNode {
+    return link(data.children, data.name, data.params);
+}
+                         
 export function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
     node.data = node.data || {};
     node.data.routeName = name;
