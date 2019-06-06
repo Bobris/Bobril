@@ -4787,7 +4787,7 @@ export interface IRouteTransition {
 export type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
 
 export interface IRouteHandlarData {
-    activeRouteHandler: () => void;
+    activeRouteHandler: () => IBobrilChildren;
     routeParams: Params;
 }
 
