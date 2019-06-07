@@ -4791,7 +4791,7 @@ export interface IRouteHandlerData {
     routeParams: Params;
 }
 
-export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlerData) => IBobrilChildren);
+export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlerData | any) => IBobrilChildren);
 
 export interface IRouteConfig {
     // name cannot contain ":" or "/"

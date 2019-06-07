@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.1.2
+
+It is pity, but it has be `any`.
+
 ## 11.1.1
 
 Better fix for IRouteHandler.
