@@ -4791,7 +4791,7 @@ export interface IRouteHandlerData {
     routeParams: Params;
 }
 
-export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlerData | {}) => IBobrilChildren);
+export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlerData) => IBobrilChildren);
 
 export interface IRouteConfig {
     // name cannot contain ":" or "/"
@@ -5388,7 +5388,7 @@ function nextIteration(): void {
             let handler = rr.handler;
             let comp: IBobrilComponent | undefined = undefined;
             if (isFunction(handler)) {
-                let node = handler({});
+                let node = handler({ activeRouteHandler: () => undefined, routeParams: currentTransition!.params! });
                 if (!node || !isObject(node) || isArray(node)) continue;
                 comp = node.component;
             } else {

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.1.1
+
+Better fix for IRouteHandler.
+
 ## 11.1.0
 
 Better typing of IRouteHandler. New `Link` component which is more suited to TSX world.
