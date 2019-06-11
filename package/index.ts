@@ -316,6 +316,9 @@ if (!Object.is) {
     };
 }
 
+const is = Object.is;
+const hOP = Object.prototype.hasOwnProperty;
+
 export let assign = Object.assign;
 
 function polyfill(prototype: any, method: string, value: Function): void {
@@ -5606,7 +5609,7 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
         }
     } else if (typeof style === "object") {
         for (let key in style) {
-            if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
+            if (!hOP.call(style, key)) continue;
             let val = style[key];
             if (isFunction(val)) {
                 val = val(cur, key);
@@ -6407,7 +6410,7 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
 
 export function propim<T>(value: T, ctx?: IBobrilCtx, onChange?: (value: T, old: T) => void): IProp<T> {
     return (val?: T) => {
-        if (val !== undefined && !Object.is(val, value)) {
+        if (val !== undefined && !is(val, value)) {
             const oldVal = val;
             value = val;
             if (onChange !== undefined) onChange(val, oldVal);
@@ -6485,6 +6488,31 @@ if (!(<any>window).b)
         getDnds,
         setBeforeInit
     };
+
+export function shallowEqual(a: any, b: any): boolean {
+    if (is(a, b)) {
+        return true;
+    }
+
+    if (!isObject(a) || !isObject(b)) {
+        return false;
+    }
+
+    const kA = Object.keys(a);
+    const kB = Object.keys(b);
+
+    if (kA.length !== kB.length) {
+        return false;
+    }
+
+    for (let i = 0; i < kA.length; i++) {
+        if (!hOP.call(b, kA[i]) || !is(a[kA[i]], b[kA[i]])) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 // TSX reactNamespace emulation
 // PureFuncs: createElement, getAllPropertyNames, component
@@ -6624,6 +6652,7 @@ export class Component<TData = IDataWithChildren> implements IBobrilEvents {
     init?(data: TData): void;
     render?(data: TData): IBobrilChildren;
     destroy?(me: IBobrilCacheNode): void;
+    shouldChange?(newData: TData, oldData: TData): boolean;
 
     /// called from children to parents order for new nodes
     postInitDom?(me: IBobrilCacheNode): void;
@@ -6649,6 +6678,12 @@ export interface IComponentClass<TData extends Object = {}> {
     new (data?: any, me?: IBobrilCacheNode): Component<TData>;
 }
 
+export class PureComponent<TData = IDataWithChildren> extends Component<TData> {
+    shouldChange(newData: TData, oldData: TData): boolean {
+        return !shallowEqual(newData, oldData);
+    }
+}
+
 export interface IComponentFunction<TData extends Object = {}> extends Function {
     (this: IBobrilCtx, data: TData): IBobrilChildren;
 }
@@ -6662,6 +6697,12 @@ function forwardRender(m: Function) {
 function forwardInit(m: Function) {
     return (ctx: IBobrilCtx) => {
         m.call(ctx, ctx.data);
+    };
+}
+
+function forwardShouldChange(m: Function) {
+    return (ctx: IBobrilCtx, me: IBobrilNode, oldMe: IBobrilNode) => {
+        return m.call(ctx, me.data, oldMe.data);
     };
 }
 
@@ -6689,6 +6730,8 @@ export function component<TData extends object>(
                 set = forwardRender(value);
             } else if (key === "init") {
                 set = forwardInit(value);
+            } else if (key === "shouldChange") {
+                set = forwardShouldChange(value);
             } else if (methodsWithMeParam.indexOf(key) >= 0) {
                 set = forwardMe(value);
             } else if (isFunction(value) && /^(?:canDeactivate$|on[A-Z])/.test(key)) {
@@ -6752,7 +6795,7 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
             initValue = initValue();
         }
         hook = (value?: T) => {
-            if (value !== undefined && !Object.is(value, hook[0])) {
+            if (value !== undefined && !is(value, hook[0])) {
                 hook[0] = value;
                 invalidate(ctx);
             }
@@ -6763,7 +6806,7 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
             if (isFunction(value)) {
                 value = value(hook[0]);
             }
-            if (!Object.is(value, hook[0])) {
+            if (!is(value, hook[0])) {
                 hook[0] = value;
                 invalidate(ctx);
             }
@@ -6927,13 +6970,10 @@ export function bind(target: any, propertyKey?: string, descriptor?: PropertyDes
     return target;
 }
 
-class EffectHook implements IDisposable {
-    callback?: EffectCallback;
+class DepsChangeDetector {
     deps?: DependencyList;
-    lastDisposer?: () => void;
 
-    update(callback: EffectCallback, deps?: DependencyList) {
-        this.callback = callback;
+    detectChange(deps?: DependencyList): boolean {
         let changed = false;
         if (deps != undefined) {
             const lastDeps = this.deps;
@@ -6944,7 +6984,7 @@ class EffectHook implements IDisposable {
                 if (depsLen != lastDeps.length) changed = true;
                 else {
                     for (let i = 0; i < depsLen; i++) {
-                        if (!Object.is(deps[i], lastDeps[i])) {
+                        if (!is(deps[i], lastDeps[i])) {
                             changed = true;
                             break;
                         }
@@ -6953,7 +6993,39 @@ class EffectHook implements IDisposable {
             }
         } else changed = true;
         this.deps = deps;
-        if (changed) {
+        return changed;
+    }
+}
+
+class MemoHook<T> extends DepsChangeDetector {
+    current: T | undefined;
+
+    memoize(factory: () => T, deps: DependencyList): T {
+        if (this.detectChange(deps)) {
+            this.current = factory();
+        }
+        return this.current!;
+    }
+}
+
+export function useMemo<T>(factory: () => T, deps: DependencyList): T {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = new MemoHook();
+        hooks[myHookId] = hook;
+    }
+    return hook.memoize(factory, deps);
+}
+
+class EffectHook extends DepsChangeDetector implements IDisposable {
+    callback?: EffectCallback;
+    lastDisposer?: () => void;
+
+    update(callback: EffectCallback, deps?: DependencyList) {
+        this.callback = callback;
+        if (this.detectChange(deps)) {
             this.doRun();
         }
     }
