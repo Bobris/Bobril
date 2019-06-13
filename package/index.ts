@@ -5552,7 +5552,14 @@ interface IInternalStyle {
     pseudo?: CSSPseudoStyles;
 }
 
+export type Keyframes = { from?: CSSStyles; to?: CSSStyles; [step: number]: CSSStyles };
+interface IInternalKeyFrames {
+    name: string;
+    def: Keyframes;
+}
+
 var allStyles: { [id: string]: IInternalStyle } = newHashObj();
+var allAnimations: { [id: string]: IInternalKeyFrames } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
 var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
@@ -5617,7 +5624,7 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
             cur[key] = val;
         }
     }
-    if (stylePseudo != null && curPseudo != null) {
+    if (stylePseudo != undefined && curPseudo != undefined) {
         for (let pseudoKey in stylePseudo) {
             let curPseudoVal = curPseudo[pseudoKey];
             if (curPseudoVal === undefined) {
@@ -5756,6 +5763,23 @@ function beforeFrame() {
             }
         }
         var styleStr = injectedCss;
+        for (var key in allAnimations) {
+            var anim = allAnimations[key];
+            styleStr += "@keyframes " + anim.name + " {";
+            for (var key2 in anim.def) {
+                let item = anim.def[key2];
+                let style = newHashObj();
+                flattenStyle(style, undefined, item, undefined);
+                shimStyle(style);
+                styleStr +=
+                    key2 +
+                    (key2 == "from" || key2 == "to" ? "" : "%") +
+                    " {" +
+                    inlineStyleToCssDeclaration(style) +
+                    "}\n";
+            }
+            styleStr += "}\n";
+        }
         for (var key in allStyles) {
             var ss = allStyles[key];
             let parent = ss.parent;
@@ -5899,12 +5923,7 @@ export function styleDef(style: CSSStyles, pseudo?: CSSPseudoStyles, nameHint?: 
     return styleDefEx(undefined, style, pseudo, nameHint);
 }
 
-export function styleDefEx(
-    parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
-    style: CSSStyles,
-    pseudo?: CSSPseudoStyles,
-    nameHint?: string
-): IBobrilStyleDef {
+function makeName(nameHint?: string): string {
     if (nameHint && nameHint !== "b-") {
         nameHint = nameHint.replace(/[^a-z0-9_-]/gi, "_").replace(/^[0-9]/, "_$&");
         if (allNameHints[nameHint]) {
@@ -5916,6 +5935,26 @@ export function styleDefEx(
     } else {
         nameHint = "b-" + globalCounter++;
     }
+    return nameHint;
+}
+
+export function keyframesDef(def: Keyframes, nameHint?: string): (params?: string) => string {
+    nameHint = makeName(nameHint);
+    allAnimations[nameHint] = { name: nameHint, def };
+    invalidateStyles();
+    return (params?: string) => {
+        if (params != undefined) return params + " " + nameHint;
+        return nameHint!;
+    };
+}
+
+export function styleDefEx(
+    parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
+    style: CSSStyles,
+    pseudo?: CSSPseudoStyles,
+    nameHint?: string
+): IBobrilStyleDef {
+    nameHint = makeName(nameHint);
     allStyles[nameHint] = {
         name: nameHint,
         realName: nameHint,
@@ -6663,7 +6702,6 @@ export class Component<TData = IDataWithChildren> implements IBobrilEvents {
     /// called from children to parents order for new and updated nodes (combines postInitDom and postUpdateDom)
     postRenderDom?(me: IBobrilCacheNode): void;
 
-
     /// declared here to remove "no properties in common" your component can `implements b.IBobrilEvents`
     onClick?(event: IBobrilMouseEvent): GenericEventResult;
 
@@ -6715,13 +6753,17 @@ function forwardMe(m: Function) {
 
 type PostLikeMethod = (ctx: IBobrilCtx, me: IBobrilCacheNode) => void;
 
-function combineWithForwardMe(component: IBobrilComponent, name: keyof IBobrilComponent, func: (me: IBobrilCacheNode)=>void) {
+function combineWithForwardMe(
+    component: IBobrilComponent,
+    name: keyof IBobrilComponent,
+    func: (me: IBobrilCacheNode) => void
+) {
     const existing = component[name] as PostLikeMethod;
-    if (existing!=undefined) {
+    if (existing != undefined) {
         (component[name] as PostLikeMethod) = (ctx: IBobrilCtx, me: IBobrilCacheNode) => {
             existing(ctx, me);
             func.call(ctx, me);
-        }
+        };
     } else {
         (component[name] as PostLikeMethod) = forwardMe(func);
     }
