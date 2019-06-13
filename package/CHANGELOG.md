@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.3.0
+
+New component lifecycle method `postRenderDom` which combines `postInitDom` and `postUpdateDom`
+
 ## 11.2.0
 
 New features: shouldChange in Component, PureComponent, useMemo

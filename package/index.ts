@@ -6660,6 +6660,9 @@ export class Component<TData = IDataWithChildren> implements IBobrilEvents {
     postUpdateDom?(me: IBobrilCacheNode): void;
     /// called from children to parents order for updated nodes but in every frame even when render was not run
     postUpdateDomEverytime?(me: IBobrilCacheNode): void;
+    /// called from children to parents order for new and updated nodes (combines postInitDom and postUpdateDom)
+    postRenderDom?(me: IBobrilCacheNode): void;
+
 
     /// declared here to remove "no properties in common" your component can `implements b.IBobrilEvents`
     onClick?(event: IBobrilMouseEvent): GenericEventResult;
@@ -6710,6 +6713,20 @@ function forwardMe(m: Function) {
     return m.call.bind(m);
 }
 
+type PostLikeMethod = (ctx: IBobrilCtx, me: IBobrilCacheNode) => void;
+
+function combineWithForwardMe(component: IBobrilComponent, name: keyof IBobrilComponent, func: (me: IBobrilCacheNode)=>void) {
+    const existing = component[name] as PostLikeMethod;
+    if (existing!=undefined) {
+        (component[name] as PostLikeMethod) = (ctx: IBobrilCtx, me: IBobrilCacheNode) => {
+            existing(ctx, me);
+            func.call(ctx, me);
+        }
+    } else {
+        (component[name] as PostLikeMethod) = forwardMe(func);
+    }
+}
+
 const methodsWithMeParam = ["destroy", "postInitDom", "postUpdateDom", "postUpdateDomEverytime"];
 
 export function component<TData extends object>(
@@ -6733,7 +6750,10 @@ export function component<TData extends object>(
             } else if (key === "shouldChange") {
                 set = forwardShouldChange(value);
             } else if (methodsWithMeParam.indexOf(key) >= 0) {
-                set = forwardMe(value);
+                combineWithForwardMe(bobrilComponent, key as any, value);
+            } else if (key === "postRenderDom") {
+                combineWithForwardMe(bobrilComponent, methodsWithMeParam[1] as any, value);
+                combineWithForwardMe(bobrilComponent, methodsWithMeParam[2] as any, value);
             } else if (isFunction(value) && /^(?:canDeactivate$|on[A-Z])/.test(key)) {
                 set = forwardMe(value);
             }
