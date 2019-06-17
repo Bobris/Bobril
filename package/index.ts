@@ -5447,23 +5447,30 @@ export function anchor(children: IBobrilChildren, name?: string, params?: Params
         component: {
             id: "anchor",
             postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
-                let routeName: string | undefined;
-                if (name) {
-                    routeName = name;
-                } else {
-                    let firstChild = (me.children && me.children[0]) as IBobrilCacheNode;
-                    routeName = firstChild.attrs && firstChild.attrs.id;
-                }
-                if (!isActive(routeName, params)) {
-                    ctx.l = 0;
-                    return;
-                }
-                if (ctx.l === transitionRunCount) return;
-                (getDomNode(me) as HTMLElement).scrollIntoView();
-                ctx.l = transitionRunCount;
-            }
+                handleAnchorRoute(ctx, me, name, params)
+            },
+            postInitDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
+                handleAnchorRoute(ctx, me, name, params)
+            },
         }
     };
+}
+
+function handleAnchorRoute(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, name?: string,params?: Params) {
+    let routeName: string | undefined;
+    if (name) {
+        routeName = name;
+    } else {
+        let firstChild = (me.children && me.children[0]) as IBobrilCacheNode;
+        routeName = firstChild.attrs && firstChild.attrs.id;
+    }
+    if (!isActive(routeName, params)) {
+        ctx.l = 0;
+        return;
+    }
+    if (ctx.l === transitionRunCount) return;
+    (getDomNode(me) as HTMLElement).scrollIntoView();
+    ctx.l = transitionRunCount;
 }
 
 export function getRoutes() {
