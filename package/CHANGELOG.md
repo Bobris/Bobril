@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.3.1
+
+Fixed init for `anchor`.
+
 ## 11.3.0
 
 New component lifecycle method `postRenderDom` which combines `postInitDom` and `postUpdateDom`

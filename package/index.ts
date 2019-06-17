@@ -5447,16 +5447,16 @@ export function anchor(children: IBobrilChildren, name?: string, params?: Params
         component: {
             id: "anchor",
             postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
-                handleAnchorRoute(ctx, me, name, params)
+                handleAnchorRoute(ctx, me, name, params);
             },
             postInitDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
-                handleAnchorRoute(ctx, me, name, params)
-            },
+                handleAnchorRoute(ctx, me, name, params);
+            }
         }
     };
 }
 
-function handleAnchorRoute(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, name?: string,params?: Params) {
+function handleAnchorRoute(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, name?: string, params?: Params) {
     let routeName: string | undefined;
     if (name) {
         routeName = name;
