@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.4.0
+
+Removed workaround for Chrome styling (hopefully it is fixed for long time). `b.ignoreShouldChange()` now also skip same reference for node optimization, making it true deep invalidate.
+
 ## 11.3.1
 
 Fixed init for `anchor`.

@@ -1206,7 +1206,7 @@ export function updateNode(
         }
     } else {
         // In case there is no component and source is same reference it is considered not changed
-        if (c.orig === n) {
+        if (c.orig === n && !ignoringShouldChange) {
             finishUpdateNodeWithoutChange(c, createInto, createBefore);
             return c;
         }
@@ -5649,13 +5649,7 @@ let lastSpriteDppx = 1;
 let hasBundledSprites = false;
 let wasSpriteUrlChanged = true;
 
-let firstStyles = false;
 function beforeFrame() {
-    var dbs = document.body.style;
-    if (firstStyles && uptimeMs >= 150) {
-        dbs.opacity = "1";
-        firstStyles = false;
-    }
     if (hasBundledSprites && lastDppx != getMedia().dppx) {
         lastDppx = getMedia().dppx;
         let newSpriteUrl = bundlePath;
@@ -5676,12 +5670,6 @@ function beforeFrame() {
         }
     }
     if (rebuildStyles) {
-        // Hack around bug in Chrome to not have flash of unstyled content
-        if (frameCounter === 1 && "webkitAnimation" in dbs) {
-            firstStyles = true;
-            dbs.opacity = "0";
-            setTimeout(invalidate, 200);
-        }
         if (hasBundledSprites) {
             let imageSprite = imageCache[lastSpriteUrl];
             if (imageSprite === undefined) {
