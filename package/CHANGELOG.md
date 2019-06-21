@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.4.1
+
+Fixed missing s in TSX style property. Fixed onMouseIn and onMouseOut events - they should be called only on change of node under mouse.
+
 ## 11.4.0
 
 Removed workaround for Chrome styling (hopefully it is fixed for long time). `b.ignoreShouldChange()` now also skip same reference for node optimization, making it true deep invalidate.

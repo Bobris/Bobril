@@ -33,4 +33,10 @@ describe("styles", () => {
         expect(document.body.innerHTML).toContain("color: red");
         expect(document.body.innerHTML).toContain("I must be red 42");
     });
+
+    it("can apply mutiple styles", ()=>{
+        const s1 = b.styleDef({ color: "red"});
+        const s2 = b.styleDef({ backgroundColor: "blue" });
+        b.init(()=> <div style={[s1,s2]}></div>);
+    });
 });

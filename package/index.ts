@@ -3505,7 +3505,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     var n: IBobrilCacheNode | null;
     var c: IBobrilComponent;
     var i = prevMousePath.length;
-    if (i > 0) {
+    if (i > 0 && (i > common || i != toPath.length)) {
         n = prevMousePath[i - 1];
         if (n) {
             c = n.component;
@@ -3529,7 +3529,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         i++;
     }
     prevMousePath = toPath;
-    if (i > 0) {
+    if (i > 0 && (i > common || i != prevMousePath.length)) {
         n = prevMousePath[i - 1];
         if (n) {
             c = n.component;
@@ -7165,7 +7165,7 @@ export interface IDataWithChildren {
 
 interface IGenericElementAttributes extends IBobrilEvents {
     children?: IBobrilChildren;
-    style?: IBobrilStyle;
+    style?: IBobrilStyles;
     [name: string]: any;
 }
 

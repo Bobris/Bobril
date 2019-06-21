@@ -76,6 +76,7 @@
         }
     }
     function beforeFrame() {
+        var _a;
         if (rebuildStyles) {
             var stylestr = "";
             for (var key in allStyles) {
@@ -139,7 +140,6 @@
             rebuildStyles = false;
         }
         chainedBeforeFrame();
-        var _a;
     }
     function style(node) {
         var styles = [];
