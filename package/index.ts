@@ -557,13 +557,14 @@ function updateStyle(el: HTMLElement, newStyle: any, oldStyle: any) {
         var rule: string;
         if (isObject(oldStyle)) {
             for (rule in oldStyle) {
-                if (!(rule in newStyle)) removeProperty(s, rule);
+                if (oldStyle[rule] === undefined) continue;
+                if (newStyle[rule] === undefined) removeProperty(s, rule);
             }
             for (rule in newStyle) {
                 var v = newStyle[rule];
                 if (v !== undefined) {
                     if (oldStyle[rule] !== v) setStyleProperty(s, rule, v);
-                } else {
+                } else if (oldStyle[rule] !== undefined) {
                     removeProperty(s, rule);
                 }
             }

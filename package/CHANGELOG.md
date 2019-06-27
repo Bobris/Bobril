@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.4.2
+
+Fixed renamed shimmed styles like `float` on update render in browsers which support `float` as well as `cssFloat`.
+
 ## 11.4.1
 
 Fixed missing s in TSX style property. Fixed onMouseIn and onMouseOut events - they should be called only on change of node under mouse.
