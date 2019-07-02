@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.4.3
+
+Fixed `useEffect` hook when called twice in same frame due to another `useLayoutEffect` hook.
+
 ## 11.4.2
 
 Fixed renamed shimmed styles like `float` on update render in browsers which support `float` as well as `cssFloat`.

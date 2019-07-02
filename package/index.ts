@@ -7094,8 +7094,8 @@ class EffectHook extends DepsChangeDetector implements IDisposable {
 
     run() {
         const c = this.callback;
-        this.dispose();
         if (c != undefined) {
+            this.dispose();
             this.lastDisposer = c() as any;
         }
     }
