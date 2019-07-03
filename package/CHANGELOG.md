@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.5.0
+
+Result of `b.keyframesDef` could be used as factory but also as string, in all places where it makes sense.
+
 ## 11.4.3
 
 Fixed `useEffect` hook when called twice in same frame due to another `useLayoutEffect` hook.

@@ -34,9 +34,25 @@ describe("styles", () => {
         expect(document.body.innerHTML).toContain("I must be red 42");
     });
 
-    it("can apply mutiple styles", ()=>{
-        const s1 = b.styleDef({ color: "red"});
+    it("can apply mutiple styles", () => {
+        const s1 = b.styleDef({ color: "red" });
         const s2 = b.styleDef({ backgroundColor: "blue" });
-        b.init(()=> <div style={[s1,s2]}></div>);
+        b.init(() => <div style={[s1, s2]} />);
+    });
+
+    describe("keyframes", () => {
+        it("can be used as function and string", () => {
+            var a = b.keyframesDef({}, "keyframesHint");
+            expect(a()).toBe("keyframesHint");
+            expect(a("1s")).toBe("1s keyframesHint");
+            expect("2s " + a).toBe("2s keyframesHint");
+            expect(`3s ${a}`).toBe("3s keyframesHint");
+            b.styleDef({ animationName: a });
+            b.syncUpdate();
+            expect(document.head.innerHTML).toContain("animation-name:keyframesHint");
+            b.init(() => <div style={{ animationName: a }}>I must be animated</div>);
+            b.syncUpdate();
+            expect(document.body.innerHTML).toContain("animation-name: keyframesHint;");
+        });
     });
 });

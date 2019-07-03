@@ -5934,14 +5934,18 @@ function makeName(nameHint?: string): string {
     return nameHint;
 }
 
-export function keyframesDef(def: Keyframes, nameHint?: string): (params?: string) => string {
+export type AnimationNameFactory = ((params?: string) => string) & ((styles: CSSInlineStyles, key: string) => string);
+
+export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFactory {
     nameHint = makeName(nameHint);
     allAnimations[nameHint] = { name: nameHint, def };
     invalidateStyles();
-    return (params?: string) => {
-        if (params != undefined) return params + " " + nameHint;
+    const res = (params?: string) => {
+        if (isString(params)) return params + " " + nameHint;
         return nameHint!;
     };
+    res.toString = res;
+    return res as AnimationNameFactory;
 }
 
 export function styleDefEx(
