@@ -42,15 +42,15 @@ describe("styles", () => {
 
     describe("keyframes", () => {
         it("can be used as function and string", () => {
-            var a = b.keyframesDef({}, "keyframesHint");
-            expect(a()).toBe("keyframesHint");
-            expect(a("1s")).toBe("1s keyframesHint");
-            expect("2s " + a).toBe("2s keyframesHint");
-            expect(`3s ${a}`).toBe("3s keyframesHint");
-            b.styleDef({ animationName: a });
+            var name = b.keyframesDef({}, "keyframesHint");
+            expect(name()).toBe("keyframesHint");
+            expect(name("1s")).toBe("1s keyframesHint");
+            expect("2s " + name).toBe("2s keyframesHint");
+            expect(`3s ${name}`).toBe("3s keyframesHint");
+            b.styleDef({ animationName: name });
             b.syncUpdate();
             expect(document.head.innerHTML).toContain("animation-name:keyframesHint");
-            b.init(() => <div style={{ animationName: a }}>I must be animated</div>);
+            b.init(() => <div style={{ animationName: name }}>I must be animated</div>);
             b.syncUpdate();
             expect(document.body.innerHTML).toContain("animation-name: keyframesHint;");
         });
