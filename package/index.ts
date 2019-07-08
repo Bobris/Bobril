@@ -6815,7 +6815,7 @@ export function component<TData extends object>(
 }
 
 function getId(name: string | undefined, classOrFunction: any): string {
-    return name || classOrFunction.id || classOrFunction.name || "C" + allocateMethodId();
+    return name || classOrFunction.id || classOrFunction.name + "_" + allocateMethodId();
 }
 
 function createFactory(comp: IComponentClass<any> | IComponentFunction<any>): Function {

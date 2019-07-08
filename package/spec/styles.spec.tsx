@@ -42,7 +42,7 @@ describe("styles", () => {
 
     describe("keyframes", () => {
         it("can be used as function and string", () => {
-            var name = b.keyframesDef({}, "keyframesHint");
+            const name = b.keyframesDef({}, "keyframesHint");
             expect(name()).toBe("keyframesHint");
             expect(name("1s")).toBe("1s keyframesHint");
             expect("2s " + name).toBe("2s keyframesHint");

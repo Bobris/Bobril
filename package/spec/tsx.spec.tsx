@@ -19,7 +19,7 @@ describe("tsx", () => {
         }
 
         const i = <Comp />;
-        expect(i.component!.id).toEqual("Comp");
+        expect(i.component!.id).toContain("Comp_");
     });
 
     it("supports function components with customized id", () => {
@@ -40,7 +40,7 @@ describe("tsx", () => {
         }
 
         const i = <Comp />;
-        expect(i.component!.id).toEqual("Comp");
+        expect(i.component!.id).toContain("Comp_");
     });
 
     it("supports class components with customized id", () => {

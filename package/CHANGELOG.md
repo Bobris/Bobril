@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.6.0
+
+Default component name from class or function name now appends unique sufix, so even after minification it stays unique.
+
 ## 11.5.0
 
 Result of `b.keyframesDef` could be used as factory but also as string, in all places where it makes sense.
