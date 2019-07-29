@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.7.0
+
+`useEffect` hook is now synchronously executed by `b.syncUpdate()`, so it could be easily tested without async waiting.
+
 ## 11.6.0
 
 Default component name from class or function name now appends unique sufix, so even after minification it stays unique.

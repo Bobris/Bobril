@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "11.6.0",
+    "version": "11.7.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -27,6 +27,11 @@
             "strict": true,
             "reactNamespace": "b"
         }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Bobris/Bobril.git",
+        "directory": "package"
     },
     "author": "Boris Letocha",
     "license": "MIT",

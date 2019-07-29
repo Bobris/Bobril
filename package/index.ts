@@ -2068,6 +2068,7 @@ var deferSyncUpdateRequested = false;
 export function syncUpdate() {
     deferSyncUpdateRequested = false;
     internalUpdate(now() - startTime);
+    executeEffectCallbacks();
 }
 
 export function deferSyncUpdate() {
@@ -2081,6 +2082,7 @@ export function deferSyncUpdate() {
 function update(time: number) {
     scheduled = false;
     internalUpdate(time);
+    asap(executeEffectCallbacks);
 }
 
 var rootIds: string[] | undefined;
@@ -7081,6 +7083,16 @@ export function useMemo<T>(factory: () => T, deps: DependencyList): T {
     return hook.memoize(factory, deps);
 }
 
+var effectCallbacks: Array<() => void> = [];
+
+function executeEffectCallbacks() {
+    var cbList = effectCallbacks;
+    effectCallbacks = [];
+    for (var i = 0, len = cbList.length; i < len; i++) {
+        cbList[i]();
+    }
+}
+
 class EffectHook extends DepsChangeDetector implements IDisposable {
     callback?: EffectCallback;
     lastDisposer?: () => void;
@@ -7093,7 +7105,7 @@ class EffectHook extends DepsChangeDetector implements IDisposable {
     }
 
     doRun() {
-        asap(this.run);
+        effectCallbacks.push(this.run);
     }
 
     run() {
