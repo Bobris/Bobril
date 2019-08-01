@@ -4761,7 +4761,7 @@ export const getDnds = () => dnds;
 // Bobril.Router
 
 export interface Params {
-    [name: string]: string;
+    [name: string]: string | undefined;
 }
 
 // Just marker interface
@@ -4866,7 +4866,7 @@ export function decodeUrl(url: string): string {
     return decodeURIComponent(url.replace(/\+/g, " "));
 }
 
-export function encodeUrlPath(path: string): string {
+export function encodeUrlPath(path: string | undefined): string {
     return String(path)
         .split("/")
         .map(encodeUrl)
@@ -4944,9 +4944,9 @@ function injectParams(pattern: string, params?: Params) {
             }
         }
 
-        var segment: string;
+        var segment: string | undefined;
         if (paramName === "splat" && Array.isArray(params![paramName])) {
-            segment = params![paramName][splatIndex++];
+            segment = params![paramName]![splatIndex++];
 
             if (segment == null) throw new Error("Missing splat # " + splatIndex + ' for path "' + pattern + '"');
         } else {
