@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 12.0.0
+
+BREAKING CHANGE - Router Params are now better typed to allow get undefined. Quick fix is to add `!` everythere it breaks code.
+
 ## 11.7.0
 
 `useEffect` hook is now synchronously executed by `b.syncUpdate()`, so it could be easily tested without async waiting.
