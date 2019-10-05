@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "12.0.0",
+    "version": "13.0.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -12,7 +12,8 @@
         "printWidth": 120
     },
     "scripts": {
-        "prepublishOnly": "prettier --write index.ts && tsc --noEmit && bb test",
+        "prepublishOnly": "prettier --write index.ts && npm run compile && bb test",
+        "compile": "tsc index.ts -d -m commonjs -t ES5 --lib es5,dom,es2015.core,es2015.promise,es2015.iterable,es2015.collection --strict",
         "test": "bb test"
     },
     "bobril": {

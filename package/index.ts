@@ -43,27 +43,25 @@ export interface IBobrilAttributes {
     [name: string]: any;
 }
 
-export interface IBobrilEvents {
-    // called on input element after any change with new value (string|boolean)
-    onChange?(value: any): void;
-    // called on string input element when selection or caret position changes
-    onSelectionChange?(event: ISelectionChangeEvent): void;
+export interface IEventParam {
+    target: IBobrilCacheNode;
+}
+
+export interface IBubblingAndBroadcastEvents {
+    onInput?(event: IInputEvent): GenericEventResult;
 
     onKeyDown?(event: IKeyDownUpEvent): GenericEventResult;
     onKeyUp?(event: IKeyDownUpEvent): GenericEventResult;
     onKeyPress?(event: IKeyPressEvent): GenericEventResult;
 
-    // called on input element after click/tap
+    /// called after click or tap
     onClick?(event: IBobrilMouseEvent): GenericEventResult;
     onDoubleClick?(event: IBobrilMouseEvent): GenericEventResult;
     onContextMenu?(event: IBobrilMouseEvent): GenericEventResult;
     onMouseDown?(event: IBobrilMouseEvent): GenericEventResult;
     onMouseUp?(event: IBobrilMouseEvent): GenericEventResult;
     onMouseOver?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseEnter?(event: IBobrilMouseEvent): void;
-    onMouseLeave?(event: IBobrilMouseEvent): void;
-    onMouseIn?(event: IBobrilMouseEvent): void;
-    onMouseOut?(event: IBobrilMouseEvent): void;
+
     onMouseMove?(event: IBobrilMouseEvent): GenericEventResult;
     onMouseWheel?(event: IBobrilMouseWheelEvent): GenericEventResult;
     onPointerDown?(event: IBobrilPointerEvent): GenericEventResult;
@@ -71,18 +69,8 @@ export interface IBobrilEvents {
     onPointerUp?(event: IBobrilPointerEvent): GenericEventResult;
     onPointerCancel?(event: IBobrilPointerEvent): GenericEventResult;
 
-    // this component gained focus
-    onFocus?(): void;
-    // this component lost focus
-    onBlur?(): void;
-    // focus moved from outside of this element to some child of this element
-    onFocusIn?(): void;
-    // focus moved from inside of this element to some outside element
-    onFocusOut?(): void;
-
     // if drag should start, bubbled
     onDragStart?(dndCtx: IDndStartCtx): GenericEventResult;
-
     // broadcasted after drag started/moved/changed
     onDrag?(dndCtx: IDndCtx): boolean;
     // broadcasted after drag ended even if without any action
@@ -92,6 +80,45 @@ export interface IBobrilEvents {
     onDragOver?(dndCtx: IDndOverCtx): GenericEventResult;
     // User want to drop dragged object here - do it - onDragOver before had to set you target
     onDrop?(dndCtx: IDndCtx): GenericEventResult;
+}
+
+/// These events could be used with `useEvent` or `useCaptureEvent`
+export interface IHookableEvents extends IBubblingAndBroadcastEvents {
+    /// called on string input element when selection or caret position changes
+    onSelectionChange?(event: ISelectionChangeEvent): GenericEventResult;
+
+    onFocus?(event: IEventParam): GenericEventResult;
+    onBlur?(event: IEventParam): GenericEventResult;
+}
+
+/// These events could be used with `useCaptureEvents`
+export interface ICapturableEvents extends IHookableEvents {
+    onScroll?(event: IBobrilScroll): GenericEventResult;
+}
+
+export interface IBobrilEvents extends IBubblingAndBroadcastEvents {
+    /// called on input element after any change with new value (string|boolean|string[]) - it does NOT bubble, use onInput if need bubbling
+    onChange?(value: any): void;
+    /// called on string input element when selection or caret position changes (void result is just for backward compatibility, bubbling)
+    onSelectionChange?(event: ISelectionChangeEvent): void | GenericEventResult;
+
+    /// does not bubble, called only when mouse comes into that node, onPointerMove could be used instead if need bubbling
+    onMouseEnter?(event: IBobrilMouseEvent): void;
+    /// does not bubble, called only when mouse leaves from that node, onPointerMove could be used instead if need bubbling
+    onMouseLeave?(event: IBobrilMouseEvent): void;
+    /// does not bubble, called when mouse comes to some child of that node, onPointerMove could be used instead if need bubbling
+    onMouseIn?(event: IBobrilMouseEvent): void;
+    /// does not bubble, called when mouse leaves from some child of that node, onPointerMove could be used instead if need bubbling
+    onMouseOut?(event: IBobrilMouseEvent): void;
+
+    // focus moved from outside of this element to some child of this element
+    onFocusIn?(): void;
+    // focus moved from inside of this element to some outside element
+    onFocusOut?(): void;
+    /// void result is for barward compatibility, it is bubbled
+    onFocus?(event: IEventParam): void | GenericEventResult;
+    /// void result is for barward compatibility, it is bubbled
+    onBlur?(event: IEventParam): void | GenericEventResult;
 }
 
 export type IBobrilEventsWithCtx<TCtx> = {
@@ -167,34 +194,39 @@ export interface IBobrilNodeCommon<T = any> {
     length?: never;
 }
 
+/// VDom node which Bobril will render and expand into IBobrilCacheNode
 export type IBobrilNode<T = any> = Exclude<IBobrilNodeCommon<T> & object, Function>;
 
 export interface IBobrilNodeWithKey<T = any> extends IBobrilNode<T> {
     key: string;
 }
 
-export interface IBobrilCacheNode {
-    tag: string | undefined;
-    key: string | undefined;
-    className: string | undefined;
-    style: any;
-    attrs: IBobrilAttributes | undefined;
-    children: IBobrilCacheChildren;
-    ref: RefType | undefined;
-    cfg: any;
-    component: IBobrilComponent;
-    data: any;
-    element: Node | Node[] | undefined;
-    parent: IBobrilCacheNode | undefined;
-    ctx: IBobrilCtx | undefined;
+/// remembered and rendered VDom node
+export interface IBobrilCacheNode<T = any> {
+    readonly tag: string | undefined;
+    readonly key: string | undefined;
+    readonly className: string | undefined;
+    readonly style: any;
+    readonly attrs: IBobrilAttributes | undefined;
+    readonly children: IBobrilCacheChildren;
+    readonly ref: RefType | undefined;
+    readonly cfg: any;
+    readonly component: IBobrilComponent<T>;
+    readonly data: T;
+    readonly element: Node | Node[] | undefined;
+    readonly parent: IBobrilCacheNode | undefined;
+    readonly ctx: IBobrilCtx | undefined;
     /// Originally created or updated from - used for partial updates
-    orig: IBobrilNode;
+    readonly orig: IBobrilNode<T>;
 }
+
+/// There are not many reasons why client code should be allowed to modify VDom, that's why it is called Unsafe.
+export type IBobrilCacheNodeUnsafe<T = any> = { -readonly [P in keyof IBobrilCacheNode<T>]: IBobrilCacheNode<T>[P] };
 
 export interface IBobrilCtx<TData = any> {
     // properties passed from parent component, treat it as immutable
     data: TData;
-    me: IBobrilCacheNode;
+    me: IBobrilCacheNode<TData>;
     // properties passed from parent component automatically, but could be extended for children to IBobrilNode.cfg
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode | undefined };
@@ -205,6 +237,8 @@ type HookFlags = number;
 const hasPostInitDom: HookFlags = 1;
 const hasPostUpdateDom: HookFlags = 2;
 const hasPostUpdateDomEverytime: HookFlags = 4;
+const hasEvents: HookFlags = 8;
+const hasCaptureEvents: HookFlags = 16;
 
 interface IBobrilCtxInternal<TData = any> extends IBobrilCtx<TData> {
     $hooks?: any[];
@@ -212,7 +246,7 @@ interface IBobrilCtxInternal<TData = any> extends IBobrilCtx<TData> {
 }
 
 export class BobrilCtx<TData> implements IBobrilCtx {
-    constructor(data?: TData, me?: IBobrilCacheNode) {
+    constructor(data?: TData, me?: IBobrilCacheNode<TData>) {
         this.data = data!;
         this.me = me!;
         this.cfg = undefined;
@@ -222,7 +256,7 @@ export class BobrilCtx<TData> implements IBobrilCtx {
     }
     $bobxCtx: object | undefined;
     data: TData;
-    me: IBobrilCacheNode;
+    me: IBobrilCacheNode<TData>;
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode | undefined };
     disposables?: IDisposableLike[];
@@ -232,7 +266,7 @@ export interface IBobrilScroll {
     node: IBobrilCacheNode | undefined;
 }
 
-export interface ISelectionChangeEvent {
+export interface ISelectionChangeEvent extends IEventParam {
     startPosition: number;
     // endPosition tries to be also caret position (does not work on any IE or Edge 12)
     endPosition: number;
@@ -788,7 +822,7 @@ export function createNode(
     createInto: Element,
     createBefore: Node | null
 ): IBobrilCacheNode {
-    var c = <IBobrilCacheNode>{
+    var c = <IBobrilCacheNodeUnsafe>{
         // This makes CacheNode just one object class = fast
         tag: n.tag,
         key: n.key,
@@ -952,7 +986,7 @@ function normalizeNode(n: any): IBobrilNode | undefined {
     return <IBobrilNode | undefined>n;
 }
 
-function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: Node | null): void {
+function createChildren(c: IBobrilCacheNodeUnsafe, createInto: Element, createBefore: Node | null): void {
     var ch = c.children;
     if (isString(ch)) {
         createInto.textContent = ch;
@@ -1127,7 +1161,7 @@ export function deref(n: Node | null | undefined): IBobrilCacheNode | undefined 
     return currentNode;
 }
 
-function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent | null | undefined) {
+function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNodeUnsafe, component: IBobrilComponent | null | undefined) {
     if (component) {
         if (component.postRender) {
             currentCtx = c.ctx!;
@@ -1187,19 +1221,19 @@ export function updateNode(
                     return c;
                 }
             (<any>ctx).data = n.data || {};
-            c.component = component;
+            (c as IBobrilCacheNodeUnsafe).component = component;
             if (beforeRenderCallback !== emptyBeforeRenderCallback)
                 beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
             if (component.render) {
-                c.orig = n;
+                (c as IBobrilCacheNodeUnsafe).orig = n;
                 n = assign({}, n); // need to clone me because it should not be modified for next updates
-                c.cfg = undefined;
+                (c as IBobrilCacheNodeUnsafe).cfg = undefined;
                 if (n.cfg !== undefined) n.cfg = undefined;
                 hookId = 0;
                 component.render(ctx, n, c);
                 hookId = -1;
                 if (n.cfg !== undefined) {
-                    if (c.cfg === undefined) c.cfg = n.cfg;
+                    if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
                     else assign(c.cfg, n.cfg);
                 }
             }
@@ -1211,7 +1245,7 @@ export function updateNode(
             finishUpdateNodeWithoutChange(c, createInto, createBefore);
             return c;
         }
-        c.orig = n;
+        (c as IBobrilCacheNodeUnsafe).orig = n;
         if (DEBUG) Object.freeze(n);
     }
     var newChildren = n.children;
@@ -1243,7 +1277,7 @@ export function updateNode(
                 if (newChildren !== cachedChildren) {
                     var el = <Element>c.element;
                     el.textContent = newChildren;
-                    c.children = newChildren;
+                    (c as IBobrilCacheNodeUnsafe).children = newChildren;
                 }
             } else {
                 if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
@@ -1251,7 +1285,14 @@ export function updateNode(
                     if (isArray(cachedChildren))
                         selectedUpdate(<IBobrilCacheNode[]>c.children, createInto, createBefore);
                 } else {
-                    c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
+                    (c as IBobrilCacheNodeUnsafe).children = updateChildren(
+                        createInto,
+                        newChildren,
+                        cachedChildren,
+                        c,
+                        createBefore,
+                        deepness - 1
+                    );
                 }
                 inSvg = backupInSvg;
                 inNotFocusable = backupInNotFocusable;
@@ -1280,17 +1321,17 @@ export function updateNode(
                     cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
                 }
             }
-            c.children = cachedChildren;
+            (c as IBobrilCacheNodeUnsafe).children = cachedChildren;
             if (inSvgForeignObject) inSvg = true;
             finishUpdateNode(n, c, component);
             if (c.attrs || n.attrs || inNotFocusable)
-                c.attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
+                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
             updateStyle(<HTMLElement>el, n.style, c.style);
-            c.style = n.style;
+            (c as IBobrilCacheNodeUnsafe).style = n.style;
             var className = n.className;
             if (className !== c.className) {
                 setClassName(el, className || "");
-                c.className = className;
+                (c as IBobrilCacheNodeUnsafe).className = className;
             }
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
@@ -2261,14 +2302,43 @@ export function setBeforeInit(callback: (cb: () => void) => void): void {
 
 let currentCtxWithEvents: IBobrilCtx | undefined;
 
-export function bubble(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined {
+export function bubble(node: IBobrilCacheNode | null | undefined, name: string, param?: any): IBobrilCtx | undefined {
+    if (param == undefined) {
+        param = { target: node };
+    } else if (isObject(param) && param.target == undefined) {
+        param.target = node;
+    }
+    let res: IBobrilCtx | undefined = captureBroadcast(name, param);
+    if (res != undefined) return res;
     const prevCtx = currentCtxWithEvents;
-    let res: IBobrilCtx | undefined;
     while (node) {
         var c = node.component;
         if (c) {
             var ctx = node.ctx!;
             currentCtxWithEvents = ctx;
+            if ((((ctx as IBobrilCtxInternal).$hookFlags || 0) & hasEvents) === hasEvents) {
+                var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+                for (var i = 0, l = hooks.length; i < l; i++) {
+                    var h = hooks[i];
+                    if (h instanceof EventsHook) {
+                        var m = (h.events as any)[name];
+                        if (m !== undefined) {
+                            const eventResult = +m.call(c, ctx, param) as EventResult;
+                            if (eventResult == EventResult.HandledPreventDefault) {
+                                currentCtxWithEvents = prevCtx;
+                                return ctx;
+                            }
+                            if (eventResult == EventResult.HandledButRunDefault) {
+                                currentCtxWithEvents = prevCtx;
+                                return undefined;
+                            }
+                            if (eventResult == EventResult.NotHandledPreventDefault) {
+                                res = ctx;
+                            }
+                        }
+                    }
+                }
+            }
             var m = (<any>c)[name];
             if (m) {
                 const eventResult = +m.call(c, ctx, param) as EventResult;
@@ -2307,6 +2377,29 @@ function broadcastEventToNode(
         var ctx = node.ctx!;
         var prevCtx = currentCtxWithEvents;
         currentCtxWithEvents = ctx;
+        if ((((ctx as IBobrilCtxInternal).$hookFlags || 0) & hasEvents) === hasEvents) {
+            var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+            for (var i = 0, l = hooks.length; i < l; i++) {
+                var h = hooks[i];
+                if (h instanceof EventsHook) {
+                    var m = (h.events as any)[name];
+                    if (m !== undefined) {
+                        const eventResult = +m.call(c, ctx, param) as EventResult;
+                        if (eventResult == EventResult.HandledPreventDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return ctx;
+                        }
+                        if (eventResult == EventResult.HandledButRunDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return undefined;
+                        }
+                        if (eventResult == EventResult.NotHandledPreventDefault) {
+                            res = ctx;
+                        }
+                    }
+                }
+            }
+        }
         var m = (<any>c)[name];
         if (m) {
             const eventResult = +m.call(c, ctx, param) as EventResult;
@@ -2341,12 +2434,73 @@ function broadcastEventToNode(
     return res;
 }
 
-export function broadcast(name: string, param: any): IBobrilCtx | undefined {
+function broadcastCapturedEventToNode(
+    node: IBobrilCacheNode | null | undefined,
+    name: string,
+    param: any
+): IBobrilCtx | undefined {
+    if (!node) return undefined;
+    let res: IBobrilCtx | undefined;
+    var c = node.component;
+    if (c) {
+        var ctx = node.ctx!;
+        if ((((ctx as IBobrilCtxInternal).$hookFlags || 0) & hasCaptureEvents) === hasCaptureEvents) {
+            var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
+            for (var i = 0, l = hooks.length; i < l; i++) {
+                var h = hooks[i];
+                if (h instanceof CaptureEventsHook) {
+                    var m = (h.events as any)[name];
+                    if (m !== undefined) {
+                        const eventResult = +m.call(c, ctx, param) as EventResult;
+                        if (eventResult == EventResult.HandledPreventDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return ctx;
+                        }
+                        if (eventResult == EventResult.HandledButRunDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return undefined;
+                        }
+                        if (eventResult == EventResult.NotHandledPreventDefault) {
+                            res = ctx;
+                        }
+                    }
+                }
+            }
+            currentCtxWithEvents = prevCtx;
+        }
+    }
+    var ch = node.children;
+    if (isArray(ch)) {
+        for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
+            var res2 = broadcastCapturedEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
+            if (res2 != undefined) return res2;
+        }
+    }
+    return res;
+}
+
+export function captureBroadcast(name: string, param: any): IBobrilCtx | undefined {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
         var ch = roots[k[i]].n;
         if (ch != null) {
-            var res = broadcastEventToNode(ch, name, param);
+            var res = broadcastCapturedEventToNode(ch, name, param);
+            if (res != null) return res;
+        }
+    }
+    return undefined;
+}
+
+export function broadcast(name: string, param: any): IBobrilCtx | undefined {
+    var res = captureBroadcast(name, param);
+    if (res != null) return res;
+    var k = Object.keys(roots);
+    for (var i = 0; i < k.length; i++) {
+        var ch = roots[k[i]].n;
+        if (ch != null) {
+            res = broadcastEventToNode(ch, name, param);
             if (res != null) return res;
         }
     }
@@ -2852,6 +3006,10 @@ if (!(<any>window).Promise) {
 
 // Bobril.OnChange
 
+export interface IInputEvent<T = string | boolean | string[]> extends IEventParam {
+    value: T;
+}
+
 var bValue = "b$value";
 var bSelectionStart = "b$selStart";
 var bSelectionEnd = "b$selEnd";
@@ -2886,7 +3044,7 @@ function selectedArray(options: HTMLOptionsCollection): string[] {
     return res;
 }
 
-var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => {
+var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNodeUnsafe, newValue: any, oldValue: any) => {
     var tagName = el.tagName;
     var isSelect = tagName === "SELECT";
     var isInput = tagName === "INPUT" || tagName === "TEXTAREA";
@@ -2974,27 +3132,17 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
     if (!node) {
         return false;
     }
-    var c = node.component;
-    const hasProp = node.attrs && node.attrs[bValue];
-    const hasOnChange = c && c.onChange != null;
-    const hasPropOrOnChange = hasProp || hasOnChange;
-    const hasOnSelectionChange = c && c.onSelectionChange != null;
-    if (!hasPropOrOnChange && !hasOnSelectionChange) return false;
     var ctx = node.ctx!;
     var tagName = (<Element>target).tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
-    if (hasPropOrOnChange && isMultiSelect) {
+    if (isMultiSelect) {
         var vs = selectedArray((<HTMLSelectElement>target).options);
         if (!stringArrayEqual((<any>ctx)[bValue], vs)) {
             (<any>ctx)[bValue] = vs;
-            var prevCtx = currentCtxWithEvents;
-            currentCtxWithEvents = ctx;
-            if (hasProp) hasProp(vs);
-            if (hasOnChange) c.onChange!(ctx, vs);
-            currentCtxWithEvents = prevCtx;
+            emitOnInput(node, vs);
         }
-    } else if (hasPropOrOnChange && isCheckboxLike(<HTMLInputElement>target)) {
+    } else if (isCheckboxLike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(() => {
@@ -3008,64 +3156,57 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
                 var radio = radios[j];
                 var radioNode = deref(radio);
                 if (!radioNode) continue;
-                const rbHasProp = node.attrs![bValue];
-                var radioComponent = radioNode.component;
-                const rbHasOnChange = radioComponent && radioComponent.onChange != null;
-                if (!rbHasProp && !rbHasOnChange) continue;
                 var radioCtx = radioNode.ctx;
                 var vrb = (<HTMLInputElement>radio).checked;
                 if ((<any>radioCtx)[bValue] !== vrb) {
                     (<any>radioCtx)[bValue] = vrb;
-                    var prevCtx = currentCtxWithEvents;
-                    currentCtxWithEvents = radioCtx;
-                    if (rbHasProp) rbHasProp(vrb);
-                    if (rbHasOnChange) radioComponent.onChange!(radioCtx!, vrb);
-                    currentCtxWithEvents = prevCtx;
+                    emitOnInput(radioNode, vrb);
                 }
             }
         } else {
             var vb = (<HTMLInputElement>target).checked;
             if ((<any>ctx)[bValue] !== vb) {
                 (<any>ctx)[bValue] = vb;
-                var prevCtx = currentCtxWithEvents;
-                currentCtxWithEvents = ctx;
-                if (hasProp) hasProp(vb);
-                if (hasOnChange) c.onChange!(ctx, vb);
-                currentCtxWithEvents = prevCtx;
+                emitOnInput(node, vb);
             }
         }
     } else {
-        if (hasPropOrOnChange) {
-            var v = (<HTMLInputElement>target).value;
-            if ((<any>ctx)[bValue] !== v) {
-                (<any>ctx)[bValue] = v;
-                var prevCtx = currentCtxWithEvents;
-                currentCtxWithEvents = ctx;
-                if (hasProp) hasProp(v);
-                if (hasOnChange) c.onChange!(ctx, v);
-                currentCtxWithEvents = prevCtx;
-            }
+        var v = (<HTMLInputElement>target).value;
+        if ((<any>ctx)[bValue] !== v) {
+            (<any>ctx)[bValue] = v;
+            emitOnInput(node, v);
         }
-        if (hasOnSelectionChange) {
-            let sStart = (<HTMLInputElement>target).selectionStart!;
-            let sEnd = (<HTMLInputElement>target).selectionEnd!;
-            let sDir = (<any>target).selectionDirection;
-            let swap = false;
-            let oStart = (<any>ctx)[bSelectionStart];
-            if (sDir == null) {
-                if (sEnd === oStart) swap = true;
-            } else if (sDir === "backward") {
-                swap = true;
-            }
-            if (swap) {
-                let s = sStart;
-                sStart = sEnd;
-                sEnd = s;
-            }
-            emitOnSelectionChange(node, sStart, sEnd);
+        let sStart = (<HTMLInputElement>target).selectionStart!;
+        let sEnd = (<HTMLInputElement>target).selectionEnd!;
+        let sDir = (<any>target).selectionDirection;
+        let swap = false;
+        let oStart = (<any>ctx)[bSelectionStart];
+        if (sDir == null) {
+            if (sEnd === oStart) swap = true;
+        } else if (sDir === "backward") {
+            swap = true;
         }
+        if (swap) {
+            let s = sStart;
+            sStart = sEnd;
+            sEnd = s;
+        }
+        emitOnSelectionChange(node, sStart, sEnd);
     }
     return false;
+}
+
+function emitOnInput(node: IBobrilCacheNode, value: any) {
+    var prevCtx = currentCtxWithEvents;
+    var ctx = node.ctx;
+    var component = node.component;
+    currentCtxWithEvents = ctx;
+    const hasProp = node.attrs && node.attrs[bValue];
+    if (isFunction(hasProp)) hasProp(value);
+    const hasOnChange = component && component.onChange;
+    if (isFunction(hasOnChange)) hasOnChange(ctx, value);
+    currentCtxWithEvents = prevCtx;
+    bubble(node, "onInput", { value });
 }
 
 function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: number) {
@@ -3074,15 +3215,10 @@ function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: numbe
     if (c && ((<any>ctx)[bSelectionStart] !== start || (<any>ctx)[bSelectionEnd] !== end)) {
         (<any>ctx)[bSelectionStart] = start;
         (<any>ctx)[bSelectionEnd] = end;
-        if (c.onSelectionChange) {
-            var prevCtx = currentCtxWithEvents;
-            currentCtxWithEvents = ctx;
-            c.onSelectionChange(ctx!, {
-                startPosition: start,
-                endPosition: end
-            });
-            currentCtxWithEvents = prevCtx;
-        }
+        bubble(node, "onSelectionChange", {
+            startPosition: start,
+            endPosition: end
+        });
     }
 }
 
@@ -3114,7 +3250,7 @@ for (var i = 0; i < mouseEvents.length; i++) addEvent(mouseEvents[i], 2, emitOnM
 
 // Bobril.OnKey
 
-export interface IKeyDownUpEvent {
+export interface IKeyDownUpEvent extends IEventParam {
     shift: boolean;
     ctrl: boolean;
     alt: boolean;
@@ -3122,18 +3258,19 @@ export interface IKeyDownUpEvent {
     which: number;
 }
 
-export interface IKeyPressEvent {
+export interface IKeyPressEvent extends IEventParam {
     charCode: number;
 }
 
 function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
     return {
+        target: undefined,
         shift: ev.shiftKey,
         ctrl: ev.ctrlKey,
         alt: ev.altKey,
         meta: ev.metaKey || false,
         which: ev.which || ev.keyCode
-    };
+    } as any;
 }
 
 function emitOnKeyDown(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
@@ -3145,6 +3282,7 @@ function emitOnKeyDown(ev: KeyboardEvent, _target: Node | undefined, node: IBobr
     }
     return false;
 }
+
 function emitOnKeyUp(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
     if (!node) return false;
     var param: IKeyDownUpEvent = buildParam(ev);
@@ -3161,7 +3299,7 @@ function emitOnKeyPress(ev: KeyboardEvent, _target: Node | undefined, node: IBob
         ev.altKey // Ignore Alt+num in Firefox
     )
         return false;
-    var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode };
+    var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode } as any;
     if (bubble(node, "onKeyPress", param)) {
         preventDefault(ev);
         return true;
@@ -3175,7 +3313,7 @@ addEvent("keypress", 50, emitOnKeyPress);
 
 // Bobril.Mouse
 
-export interface IBobrilMouseEvent {
+export interface IBobrilMouseEvent extends IEventParam {
     x: number;
     y: number;
     /// 1 - left (or touch), 2 - middle, 3 - right <- it does not make sense but that's W3C
@@ -3339,6 +3477,7 @@ function buildHandlerPointer(name: string) {
             }
         }
         var param: IBobrilPointerEvent = {
+            target: node!,
             id: ev.pointerId,
             cancelable: normalizeCancelable(ev),
             type: type,
@@ -3371,6 +3510,7 @@ function buildHandlerTouch(name: string) {
             target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
             node = deref(target);
             var param: IBobrilPointerEvent = {
+                target: node!,
                 id: t.identifier + 2,
                 cancelable: normalizeCancelable(ev),
                 type: BobrilPointerType.Touch,
@@ -3407,6 +3547,7 @@ function buildHandlerMouse(name: string) {
             node = fixed[1];
         }
         var param: IBobrilPointerEvent = {
+            target: node!,
             id: 1,
             type: BobrilPointerType.Mouse,
             cancelable: normalizeCancelable(ev),
@@ -3707,6 +3848,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
         let param: IBobrilMouseEvent = {
+            target: node!,
             x: ev.clientX,
             y: ev.clientY,
             button: button,
@@ -3791,6 +3933,7 @@ function handleMouseWheel(ev: any, target: Node | undefined, node: IBobrilCacheN
         dy = ev.deltaY;
     }
     var param: IBobrilMouseWheelEvent = {
+        target: node!,
         dx,
         dy,
         x: ev.clientX,
@@ -3841,10 +3984,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         var c: IBobrilComponent;
         if (i >= common) {
             n = nodeStack[i];
-            if (n) {
-                c = n.component;
-                if (c && c.onBlur) c.onBlur(n.ctx!);
-            }
+            bubble(n, "onBlur");
             i--;
         }
         while (i >= common) {
@@ -3866,11 +4006,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         }
         if (i < newStack.length) {
             n = newStack[i];
-            if (n) {
-                c = n.component;
-                if (c && c.onFocus) c.onFocus(n.ctx!);
-            }
-            i++;
+            bubble(n, "onFocus");
         }
         nodeStack = newStack;
         currentFocusedNode = nodeStack.length == 0 ? undefined : null2undefined(nodeStack[nodeStack.length - 1]);
@@ -3929,6 +4065,7 @@ function emitOnScroll(_ev: Event, _target: Node | undefined, node: IBobrilCacheN
     for (var i = 0; i < callbacks.length; i++) {
         callbacks[i](info);
     }
+    captureBroadcast("onScroll", info);
     return false;
 }
 
@@ -6336,7 +6473,7 @@ export function extendCfg(ctx: IBobrilCtx, propertyName: string, value: any): vo
     } else {
         c = Object.assign({}, ctx.cfg);
         c[propertyName] = value;
-        ctx.me.cfg = c;
+        (ctx.me as IBobrilCacheNodeUnsafe).cfg = c;
     }
 }
 
@@ -7174,6 +7311,42 @@ export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList)
         hooks[myHookId] = hook;
     }
     hook.update(callback, deps);
+}
+
+class EventsHook {
+    events!: IHookableEvents;
+}
+
+export function useEvents(events: IHookableEvents) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |= hasEvents;
+        hook = new EventsHook();
+        hooks[myHookId] = hook;
+    } else {
+        assert(hook instanceof EventsHook);
+    }
+    hook.events = events;
+}
+
+class CaptureEventsHook {
+    events!: ICapturableEvents;
+}
+
+export function useCaptureEvents(events: ICapturableEvents) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |= hasCaptureEvents;
+        hook = new CaptureEventsHook();
+        hooks[myHookId] = hook;
+    } else {
+        assert(hook instanceof CaptureEventsHook);
+    }
+    hook.events = events;
 }
 
 export interface IDataWithChildren {

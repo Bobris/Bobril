@@ -171,3 +171,5 @@ bobril.sublime-workspace
 /package/tsconfig.json
 /bbExamples/onsubmit/tsconfig.json
 /bbExamples/router/tsconfig.json
+/package/index.d.ts
+/package/index.js

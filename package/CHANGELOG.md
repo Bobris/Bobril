@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 13.0.0
+
+BREAKING CHANGE - `IBobrilCacheNode` has now just read only fields as it was always intended. Events `onFocus`, `onBlur`, `onSelectionChange` bubble now.
+
+Most event parameters now inherit from `IEventParam` which contains `target` of `IBobrilCacheNode` type.
+New hooks `useEvents` and `useCaptureEvents` (this is completely new capability `bubble` and `broadcast` now first broadcast to all useCaptureEvents). New types `IHookableEvents` and `ICapturableEvents`. New event `onInput` which is similar to `onChange` but parameter is object with `target` and `value` fields and bubbles.
+
+Npm now contains index.js (ES5) and index.d.ts.
+
 ## 12.0.0
 
 BREAKING CHANGE - Router Params are now better typed to allow get undefined. Quick fix is to add `!` everythere it breaks code.
