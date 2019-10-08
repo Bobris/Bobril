@@ -2323,7 +2323,7 @@ export function bubble(node: IBobrilCacheNode | null | undefined, name: string, 
                     if (h instanceof EventsHook) {
                         var m = (h.events as any)[name];
                         if (m !== undefined) {
-                            const eventResult = +m.call(c, ctx, param) as EventResult;
+                            const eventResult = +m.call(ctx, param) as EventResult;
                             if (eventResult == EventResult.HandledPreventDefault) {
                                 currentCtxWithEvents = prevCtx;
                                 return ctx;
@@ -2384,7 +2384,7 @@ function broadcastEventToNode(
                 if (h instanceof EventsHook) {
                     var m = (h.events as any)[name];
                     if (m !== undefined) {
-                        const eventResult = +m.call(c, ctx, param) as EventResult;
+                        const eventResult = +m.call(ctx, param) as EventResult;
                         if (eventResult == EventResult.HandledPreventDefault) {
                             currentCtxWithEvents = prevCtx;
                             return ctx;
@@ -2453,7 +2453,7 @@ function broadcastCapturedEventToNode(
                 if (h instanceof CaptureEventsHook) {
                     var m = (h.events as any)[name];
                     if (m !== undefined) {
-                        const eventResult = +m.call(c, ctx, param) as EventResult;
+                        const eventResult = +m.call(ctx, param) as EventResult;
                         if (eventResult == EventResult.HandledPreventDefault) {
                             currentCtxWithEvents = prevCtx;
                             return ctx;
