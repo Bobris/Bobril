@@ -7,6 +7,8 @@ BREAKING CHANGE - `IBobrilCacheNode` has now just read only fields as it was alw
 Most event parameters now inherit from `IEventParam` which contains `target` of `IBobrilCacheNode` type.
 New hooks `useEvents` and `useCaptureEvents` (this is completely new capability `bubble` and `broadcast` now first broadcast to all useCaptureEvents). New types `IHookableEvents` and `ICapturableEvents`. New event `onInput` which is similar to `onChange` but parameter is object with `target` and `value` fields and bubbles.
 
+`bubble`, `broadcast`, `captureBroadcast` now type check `EventNames` and `EventParam<TName>`
+
 Npm now contains index.js (ES5) and index.d.ts.
 
 ## 12.0.0

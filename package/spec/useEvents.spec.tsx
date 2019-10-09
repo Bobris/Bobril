@@ -45,7 +45,17 @@ describe("useEvents", () => {
         }
         b.init(() => <One />);
         b.syncUpdate();
-        b.bubble(b.deref(document.getElementById("here")), "onClick", { x: 10, y: 20 });
+        b.bubble(b.deref(document.getElementById("here")), "onClick", {
+            button: 0,
+            count: 1,
+            alt: false,
+            cancelable: false,
+            ctrl: false,
+            meta: false,
+            shift: false,
+            x: 10,
+            y: 20
+        });
         expect(called).toBe("Two1Two2One1One2");
     });
 });
