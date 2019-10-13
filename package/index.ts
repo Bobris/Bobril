@@ -129,7 +129,7 @@ export type IBobrilEventsWithCtx<TCtx> = {
                     ctx: TCtx,
                     event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
                 ) => ReturnType<NonNullable<IBobrilEvents[N]>>)
-        : never)
+        : never);
 };
 
 export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 13.0.0
+## 13.0.0 beta
 
 BREAKING CHANGE
 
