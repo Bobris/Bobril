@@ -19,6 +19,20 @@ describe("useEvents", () => {
                     return b.EventResult.NotHandled;
                 }
             });
+            b.useCaptureEvents({
+                onClick: param => {
+                    expect(param.target.attrs!.id).toBe("here");
+                    called += "CTwo1";
+                    return b.EventResult.NotHandled;
+                }
+            });
+            b.useCaptureEvents({
+                onClick: param => {
+                    expect(param.target.attrs!.id).toBe("here");
+                    called += "CTwo2";
+                    return b.EventResult.NotHandled;
+                }
+            });
             return <span id={id}>2</span>;
         }
         function One() {
@@ -33,6 +47,20 @@ describe("useEvents", () => {
                 onClick: param => {
                     expect(param.target.attrs!.id).toBe("here");
                     called += "One2";
+                    return b.EventResult.NotHandled;
+                }
+            });
+            b.useCaptureEvents({
+                onClick: param => {
+                    expect(param.target.attrs!.id).toBe("here");
+                    called += "COne1";
+                    return b.EventResult.NotHandled;
+                }
+            });
+            b.useCaptureEvents({
+                onClick: param => {
+                    expect(param.target.attrs!.id).toBe("here");
+                    called += "COne2";
                     return b.EventResult.NotHandled;
                 }
             });
@@ -56,6 +84,6 @@ describe("useEvents", () => {
             x: 10,
             y: 20
         });
-        expect(called).toBe("Two1Two2One1One2");
+        expect(called).toBe("COne1COne2CTwo1CTwo2CTwo1CTwo2Two1Two2One1One2");
     });
 });
