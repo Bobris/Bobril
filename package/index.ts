@@ -2304,9 +2304,17 @@ let currentCtxWithEvents: IBobrilCtx | undefined;
 
 export type AllEvents = IBobrilEvents | IBubblingAndBroadcastEvents | ICapturableEvents;
 export type EventNames = keyof ICapturableEvents;
-export type EventParam<T extends EventNames> = T extends keyof ICapturableEvents ? NonNullable<ICapturableEvents[T]> extends (p:infer P)=>any ? P : any : any;
+export type EventParam<T extends EventNames> = T extends keyof ICapturableEvents
+    ? NonNullable<ICapturableEvents[T]> extends (p: infer P) => any
+        ? P
+        : any
+    : any;
 
-export function bubble<T extends EventNames>(node: IBobrilCacheNode | null | undefined, name: T, param?: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }): IBobrilCtx | undefined {
+export function bubble<T extends EventNames>(
+    node: IBobrilCacheNode | null | undefined,
+    name: T,
+    param?: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+): IBobrilCtx | undefined {
     if (param == undefined) {
         param = { target: node! };
     } else if (isObject(param) && (param as any).target == undefined) {
@@ -2485,7 +2493,10 @@ function broadcastCapturedEventToNode(
     return res;
 }
 
-export function captureBroadcast<T extends EventNames>(name: T, param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }): IBobrilCtx | undefined {
+export function captureBroadcast<T extends EventNames>(
+    name: T,
+    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+): IBobrilCtx | undefined {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
         var ch = roots[k[i]].n;
@@ -2497,7 +2508,10 @@ export function captureBroadcast<T extends EventNames>(name: T, param: Omit<Even
     return undefined;
 }
 
-export function broadcast<T extends EventNames>(name: T, param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }): IBobrilCtx | undefined {
+export function broadcast<T extends EventNames>(
+    name: T,
+    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+): IBobrilCtx | undefined {
     var res = captureBroadcast(name, param);
     if (res != null) return res;
     var k = Object.keys(roots);
@@ -4367,14 +4381,8 @@ var lastDndId = 0;
 var dnds: IDndCtx[] = [];
 var systemDnd: (IDndStartCtx & IDndOverCtx) | null = null;
 var rootId: string | null = null;
-var bodyCursorBackup: string;
-var userSelectBackup: string;
-var shimmedStyle = { userSelect: "" };
-shimStyle(shimmedStyle);
-var shimedStyleKeys = Object.keys(shimmedStyle);
-var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 
-var DndCtx = function(this: IDndCtx, pointerId: number) {
+var DndCtx = (function(this: IDndCtx, pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -4406,14 +4414,14 @@ var DndCtx = function(this: IDndCtx, pointerId: number) {
     this.data = newHashObj();
     if (pointerId >= 0) pointer2Dnd[pointerId] = this;
     dnds.push(this);
-} as unknown as { new(pointerId: number):(IDndStartCtx & IDndOverCtx) };
+} as unknown) as { new (pointerId: number): IDndStartCtx & IDndOverCtx };
+
+const draggingStyle = "b-dragging";
 
 function lazyCreateRoot() {
     if (rootId == undefined) {
-        let dbs = <any>document.body.style;
-        bodyCursorBackup = dbs.cursor;
-        userSelectBackup = dbs[userSelectPropName];
-        dbs[userSelectPropName] = "none";
+        var dd = document.documentElement;
+        dd.classList.add(draggingStyle);
         rootId = addRoot(dndRootFactory);
     }
 }
@@ -4469,9 +4477,13 @@ var DndRootComp: IBobrilComponent = {
             right: 0,
             bottom: 0
         };
-        let dbs = document.body.style;
+        let dds = document.documentElement.style;
         let cur = currentCursor();
-        if (cur && dbs.cursor !== cur) dbs.cursor = cur;
+        if (cur) {
+            if (dds.cursor !== cur) dds.setProperty("cursor", cur, "important");
+        } else {
+            dds.setProperty("cursor", "");
+        }
         me.children = res;
     },
     onDrag(ctx: IBobrilCtx): boolean {
@@ -4535,9 +4547,9 @@ dndProto.destroy = function(this: IDndCtx): void {
     if (dnds.length === 0 && rootId != null) {
         removeRoot(rootId);
         rootId = null;
-        let dbs = <any>document.body.style;
-        dbs.cursor = bodyCursorBackup;
-        dbs[userSelectPropName] = userSelectBackup;
+        var dd = document.documentElement;
+        dd.classList.remove(draggingStyle);
+        dd.style.setProperty("cursor", "");
     }
 };
 
@@ -6371,6 +6383,8 @@ export function injectCss(css: string): void {
 export function asset(path: string): string {
     return path;
 }
+
+selectorStyleDef("html." + draggingStyle + " *", { cursor: "inherit !important", userSelect: "none !important" });
 
 // Bobril.svgExtensions
 
