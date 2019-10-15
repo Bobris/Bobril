@@ -3142,7 +3142,7 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNodeUnsaf
     }
 });
 
-function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBobrilCacheNode | undefined) {
+function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBobrilCacheNodeUnsafe | undefined) {
     if (target && target.nodeName === "OPTION") {
         target = document.activeElement!;
         node = deref(target);
@@ -3150,7 +3150,11 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
     if (!node) {
         return false;
     }
-    var ctx = node.ctx!;
+    if (node.ctx === undefined) {
+        node.ctx = { data: undefined, me: node };
+        node.component = emptyComponent;
+    }
+    var ctx = node.ctx;
     var tagName = (<Element>target).tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
@@ -6828,15 +6832,15 @@ export const __spread = assign;
 export enum EventResult {
     /// event propagation will continue. It's like returning falsy value.
     NotHandled = 0,
-    /// event propagation will stop and any browser default handing will be prevented. returning true has same meaning
+    /// event propagation will stop and default handing will be prevented. returning true has same meaning
     HandledPreventDefault = 1,
-    /// event propagation will stop but any browser default handing will still run
+    /// event propagation will stop but default handing will still run
     HandledButRunDefault = 2,
-    /// event propagation will continue but browser default handing will be prevented
+    /// event propagation will continue but default handing will be prevented
     NotHandledPreventDefault = 3
 }
 
-export type GenericEventResult = EventResult | boolean;
+export type GenericEventResult = EventResult | boolean | void;
 
 export class Component<TData = IDataWithChildren> implements IBobrilEvents {
     constructor(data?: TData, me?: IBobrilCacheNode) {
