@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.0.2
+
+Fixes in Drag and drop.
+
 ## 13.0.1 beta
 
 Fixed some regressions from 13.0.0

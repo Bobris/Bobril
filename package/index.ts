@@ -3484,6 +3484,8 @@ function buildHandlerPointer(name: string) {
         target: Node | undefined,
         node: IBobrilCacheNode | undefined
     ): boolean {
+        target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+        node = deref(target);
         if (hasPointerEventsNoneB(node)) {
             var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
             target = fixed[0];
@@ -4840,7 +4842,7 @@ function handleDrag(ev: DragEvent, _target: Node | undefined, _node: IBobrilCach
         systemDnd.operation = DndOp.None;
         broadcast("onDrag", systemDnd);
     }
-    return false;
+    return true;
 }
 
 function handleDragEnd(_ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
