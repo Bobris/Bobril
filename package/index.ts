@@ -28,8 +28,8 @@ export interface IBobrilRoot {
     n: IBobrilCacheNode | undefined;
 }
 
-export type ICtxClass = {
-    new (data?: any, me?: IBobrilCacheNode): BobrilCtx<any>;
+export type ICtxClass<TData = any> = {
+    new (data?: TData, me?: IBobrilCacheNode<TData>): BobrilCtx<TData>;
 };
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -139,7 +139,7 @@ export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = 
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;
-    ctxClass?: ICtxClass;
+    ctxClass?: ICtxClass<TData>;
     // called before new node in virtual dom should be created, me members (tag, attrs, children, ...) could be modified, ctx is initialized to { data: me.data||{}, me: me, cfg: fromParent }
     init?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this

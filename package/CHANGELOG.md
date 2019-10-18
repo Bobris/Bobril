@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.0.3
+
+Fixed regression in 13.0 to allows to use ctxClass with never TData with more generics and less any.
+
 ## 13.0.2
 
 Fixes in Drag and drop.
