@@ -245,6 +245,134 @@ interface IBobrilCtxInternal<TData = any> extends IBobrilCtx<TData> {
     $hookFlags?: HookFlags;
 }
 
+type RuleBehaviourType = "not"|"only";
+
+type MediaType = "all"|"print"|"screen"|"speech";
+
+type LogicalToken = "and"|"or";
+
+type MediaQueryToken = {
+    type: MediaType | LogicalToken | RuleBehaviourType;
+}
+
+type RangeRuleToken = {
+    type: "max-height"|"min-height"|"max-width"|"min-width"|"min-color";
+    value: number;
+}
+
+type OrientationRuleToken = {
+    type: "orientation";
+    value: "landscape"|"portrait";
+}
+
+type AspectRuleToken = {
+    type: "aspect-ratio",
+    height: number;
+    width: number;
+}
+
+type BoolRuleToken = {
+    type: "color"
+}
+
+type TokenType =  MediaQueryTokens | MediaQueryToken;
+
+export type MediaQueryTokens = RangeRuleToken | OrientationRuleToken | AspectRuleToken | BoolRuleToken ;
+
+
+class MediaRuleBuilder {
+    tokens: TokenType[] = [];
+
+    pushOptionalTokens<T extends RuleBehaviourType>(behaviour: T = undefined, mediaType: T extends undefined ? undefined : MediaType) {
+        !!behaviour && this.tokens.push({type: behaviour});
+        !!mediaType && this.tokens.push({type: mediaType});
+    }
+
+    add(mediaRule: MediaQueryTokens): this {
+        this.tokens.push({type: "and"});
+        this.tokens.push(mediaRule);
+        return this;
+    }
+
+    or<T extends RuleBehaviourType>(behaviour: T = undefined, mediaType: T extends undefined ? undefined : MediaType): this {
+        this.tokens.push({type: "or"});
+        this.pushOptionalTokens(behaviour, mediaType);
+        return this;
+    }
+
+    build(): MediaQuery {
+        return this.tokens.reduce(toRule, {mediaQuery: "", crc: 0})
+    }
+}
+
+interface MediaQuery {
+    mediaQuery: string;
+    crc: number;
+}
+
+function toRule(buffer: MediaQuery, token: TokenType) {
+    let str: string;
+    switch (token.type) {
+        case "aspect-ratio":
+            str = `(${token.type}: ${token.width}/${token.height})`;
+            break;
+        case "all":
+        case "and":
+        case "not":
+        case "only":
+        case "print":
+        case "screen":
+        case "speech":
+            str = `${token.type}`;
+            break;
+        case "or":
+            str = ",";
+            break;
+        case "color":
+            str = `(${token.type})`;
+            break;
+        case "max-height":
+        case "max-width":
+        case "min-height":
+        case "min-width":
+        case "min-color":
+        case "orientation":
+            str = `(${token.type}: ${token.value})`;
+            break;
+        default:
+            const _exhaustiveCheck: never = token;
+    }
+
+    buffer.crc = buffer.crc + crcToken[token.type];
+
+    return buffer;
+}
+
+const crcToken: {[P in TokenType["type"]]: number} = {
+    "aspect-ratio": 1,
+    "all": 2,
+    "and": 4,
+    "color": 8,
+    "max-height": 16,
+    "max-width": 32,
+    "min-height": 64,
+    "min-width": 128,
+    "min-color": 256,
+    "not": 512,
+    "only": 1024,
+    "or": 2048,
+    "orientation": 4096,
+    "print": 8192,
+    "screen": 16384,
+    "speech": 32768,
+};
+
+type MediaQueryDefinition = {
+    [key: string]: CSSStylesItem;
+}
+
+type MediaQuerySignature = string | MediaRuleBuilder;
+
 export class BobrilCtx<TData> implements IBobrilCtx {
     constructor(data?: TData, me?: IBobrilCacheNode<TData>) {
         this.data = data!;
@@ -5728,8 +5856,16 @@ interface IInternalKeyFrames {
     def: Keyframes;
 }
 
+interface IInteralMediaQuery {
+    signature: string;
+    defititions: {
+        [key: string]: CSSStylesItem;
+    }[];
+}
+
 var allStyles: { [id: string]: IInternalStyle } = newHashObj();
 var allAnimations: { [id: string]: IInternalKeyFrames } = newHashObj();
+var allMediaQueries: { [id: string]: IInteralMediaQuery } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
 var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
@@ -5938,6 +6074,25 @@ function beforeFrame() {
             }
             styleStr += "}\n";
         }
+        for (var key in allMediaQueries) {
+            var mediaQuery = allMediaQueries[key];
+            styleStr += "@media " + mediaQuery.signature + " {";
+            for (var definition of mediaQuery.defititions) {
+                for (var key2 in definition) {
+                    let item = definition[key2];
+                    let style = newHashObj();
+                    flattenStyle(style, undefined, item, undefined);
+                    shimStyle(style);
+                    styleStr +=
+                        key2 +
+                        (key2 == "from" || key2 == "to" ? "" : "%") +
+                        " {" +
+                        inlineStyleToCssDeclaration(style) +
+                        "}\n";
+                }
+            }
+            styleStr += "}\n";
+        }
         for (var key in allStyles) {
             var ss = allStyles[key];
             let parent = ss.parent;
@@ -6108,6 +6263,33 @@ export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFa
     };
     res.toString = res;
     return res as AnimationNameFactory;
+}
+
+export function mediaQueryDef(def: MediaQuerySignature, mediaQueryDefinition: MediaQueryDefinition): void {
+    let mediaQuery: IInteralMediaQuery;
+    if (typeof def === "string") {
+        mediaQuery = allMediaQueries[def];
+        if (!mediaQuery) {
+            mediaQuery = {
+                signature: def,
+                defititions: []
+            };
+            allMediaQueries[def] = mediaQuery;
+        }
+        mediaQuery.defititions.push(mediaQueryDefinition)
+    } else {
+        const buildedQuery = def.build();
+        mediaQuery = allMediaQueries[buildedQuery.crc];
+        if (!mediaQuery) {
+            mediaQuery = {
+                signature: buildedQuery.mediaQuery,
+                defititions: []
+            };
+            allMediaQueries[buildedQuery.crc] = mediaQuery;
+        }
+        mediaQuery.defititions.push(mediaQueryDefinition)
+    }
+    invalidateStyles();
 }
 
 export function styleDefEx(
