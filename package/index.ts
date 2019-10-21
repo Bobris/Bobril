@@ -6099,24 +6099,6 @@ function beforeFrame() {
             }
             styleStr += "}\n";
         }
-        for (var key in allMediaQueries) {
-            var mediaQuery = allMediaQueries[key];
-            styleStr += "@media " + mediaQuery.signature + " {";
-            for (var definition of mediaQuery.defititions) {
-                for (var key2 in definition) {
-                    let item = definition[key2];
-                    let style = newHashObj();
-                    flattenStyle(style, undefined, item, undefined);
-                    shimStyle(style);
-                    styleStr +=
-                        "." + key2 +
-                        " {" +
-                        inlineStyleToCssDeclaration(style) +
-                        "}\n";
-                }
-            }
-            styleStr += "}\n";
-        }
         for (var key in allStyles) {
             var ss = allStyles[key];
             let parent = ss.parent;
@@ -6155,6 +6137,24 @@ function beforeFrame() {
                     inlineStyleToCssDeclaration(item) +
                     "}\n";
             }
+        }
+        for (var key in allMediaQueries) {
+            var mediaQuery = allMediaQueries[key];
+            styleStr += "@media " + mediaQuery.signature + " {";
+            for (var definition of mediaQuery.defititions) {
+                for (var key2 in definition) {
+                    let item = definition[key2];
+                    let style = newHashObj();
+                    flattenStyle(style, undefined, item, undefined);
+                    shimStyle(style);
+                    styleStr +=
+                        "." + key2 +
+                        " {" +
+                        inlineStyleToCssDeclaration(style) +
+                        "}\n";
+                }
+            }
+            styleStr += "}\n";
         }
         var styleElement = document.createElement("style");
         styleElement.type = "text/css";
