@@ -17,6 +17,7 @@
         "test": "bb test"
     },
     "bobril": {
+        "bbVersion": "0.96.1",
         "compilerOptions": {
             "noImplicitAny": true,
             "noImplicitThis": true,

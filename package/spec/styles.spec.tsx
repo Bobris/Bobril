@@ -1,4 +1,5 @@
 import * as b from "../index";
+import {createMediaQuery} from "../index";
 
 describe("styles", () => {
     it("can declare merged style", () => {
@@ -53,6 +54,36 @@ describe("styles", () => {
             b.init(() => <div style={{ animationName: name }}>I must be animated</div>);
             b.syncUpdate();
             expect(document.body.innerHTML).toContain("animation-name: keyframesHint;");
+        });
+    });
+
+    describe("media query", () => {
+        it("basic usage with string definition", () => {
+            const style = b.styleDef({opacity: 0});
+            b.mediaQueryDef("only screen (min-width: 1200px)", {
+                [style]: {
+                    opacity: 1
+                }
+            });
+            b.syncUpdate();
+            debugger;
+            expect(document.head.innerHTML).toContain("animation-name:keyframesHint");
+        });
+
+        it("complex query with builder", () => {
+            const style = b.styleDef({opacity: 0});
+            b.mediaQueryDef(createMediaQuery()
+                .add({type: "max-width", value: 1200})
+                .add({type: "min-width", value: 768})
+                .or()
+                .add({type: "aspect-ratio", width: 11, height: 5}), {
+                [style]: {
+                    opacity: 1
+                }
+            });
+            b.syncUpdate();
+            debugger;
+            expect(document.head.innerHTML).toContain("animation-name:keyframesHint");
         });
     });
 });
