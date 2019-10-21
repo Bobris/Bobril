@@ -279,24 +279,41 @@ type TokenType =  MediaQueryTokens | MediaQueryToken;
 
 export type MediaQueryTokens = RangeRuleToken | OrientationRuleToken | AspectRuleToken | BoolRuleToken ;
 
+interface RuleBuilderBase {
+    build(): MediaQuery;
+}
+
+interface RuleBuilder extends RuleBuilderBase {
+    rule<T extends RuleBehaviourType>(mediaRule: MediaQueryTokens, behaviour?: T, mediaType?: T extends undefined ? undefined : MediaType): RuleEnhancer;
+}
+
+interface RuleEnhancer extends RuleBuilderBase {
+    and(mediaRule: MediaQueryTokens): RuleEnhancer;
+    or(): RuleBuilder;
+}
 
 class MediaRuleBuilder {
     tokens: TokenType[] = [];
 
-    pushOptionalTokens<T extends RuleBehaviourType>(behaviour: T = undefined, mediaType: T extends undefined ? undefined : MediaType) {
+    pushOptionalTokens<T extends RuleBehaviourType>(behaviour?: T, mediaType?: T extends undefined ? undefined : MediaType) {
         !!behaviour && this.tokens.push({type: behaviour});
         !!mediaType && this.tokens.push({type: mediaType});
     }
 
-    add(mediaRule: MediaQueryTokens): this {
+    rule<T extends RuleBehaviourType>(mediaRule: MediaQueryTokens, behaviour?: T, mediaType?: T extends undefined ? undefined : MediaType): RuleEnhancer {
+        this.pushOptionalTokens(behaviour, mediaType);
+        this.tokens.push(mediaRule);
+        return this;
+    }
+
+    and(mediaRule: MediaQueryTokens): RuleEnhancer {
         this.tokens.push({type: "and"});
         this.tokens.push(mediaRule);
         return this;
     }
 
-    or<T extends RuleBehaviourType>(behaviour: T = undefined, mediaType: T extends undefined ? undefined : MediaType): this {
+    or(): RuleBuilder {
         this.tokens.push({type: "or"});
-        this.pushOptionalTokens(behaviour, mediaType);
         return this;
     }
 
@@ -311,7 +328,7 @@ interface MediaQuery {
 }
 
 function toRule(buffer: MediaQuery, token: TokenType) {
-    let str: string;
+    let str: string = "";
     switch (token.type) {
         case "aspect-ratio":
             str = `(${token.type}: ${token.width}/${token.height})`;
@@ -341,9 +358,13 @@ function toRule(buffer: MediaQuery, token: TokenType) {
             break;
         default:
             const _exhaustiveCheck: never = token;
+            if (_exhaustiveCheck) {
+                throw new Error("all cases have to be covered")
+            }
     }
 
     buffer.crc = buffer.crc + crcToken[token.type];
+    buffer.mediaQuery = buffer.mediaQuery + str + " ";
 
     return buffer;
 }
@@ -371,7 +392,11 @@ type MediaQueryDefinition = {
     [key: string]: CSSStylesItem;
 }
 
-type MediaQuerySignature = string | MediaRuleBuilder;
+type MediaQuerySignature = string | RuleBuilderBase;
+
+export function createMediaQuery(): RuleBuilder {
+    return new MediaRuleBuilder();
+}
 
 export class BobrilCtx<TData> implements IBobrilCtx {
     constructor(data?: TData, me?: IBobrilCacheNode<TData>) {
@@ -6084,8 +6109,7 @@ function beforeFrame() {
                     flattenStyle(style, undefined, item, undefined);
                     shimStyle(style);
                     styleStr +=
-                        key2 +
-                        (key2 == "from" || key2 == "to" ? "" : "%") +
+                        "." + key2 +
                         " {" +
                         inlineStyleToCssDeclaration(style) +
                         "}\n";

@@ -66,24 +66,43 @@ describe("styles", () => {
                 }
             });
             b.syncUpdate();
-            debugger;
-            expect(document.head.innerHTML).toContain("animation-name:keyframesHint");
+            expect(document.head.innerHTML).toContain("only screen (min-width: 1200px)");
         });
 
         it("complex query with builder", () => {
             const style = b.styleDef({opacity: 0});
             b.mediaQueryDef(createMediaQuery()
-                .add({type: "max-width", value: 1200})
-                .add({type: "min-width", value: 768})
+                .rule({type: "max-width", value: 1200}, "only", "screen")
+                .and({type: "min-width", value: 768})
                 .or()
-                .add({type: "aspect-ratio", width: 11, height: 5}), {
+                .rule({type: "aspect-ratio", width: 11, height: 5}), {
                 [style]: {
                     opacity: 1
                 }
             });
             b.syncUpdate();
-            debugger;
-            expect(document.head.innerHTML).toContain("animation-name:keyframesHint");
+            expect(document.head.innerHTML).toContain("@media only screen (max-width: 1200) and (min-width: 768) , (aspect-ratio: 11/5)");
+        });
+
+        it("same media queries are grouped", () => {
+            const style = b.styleDef({opacity: 0});
+            const styleTwo = b.styleDef({opacity: 0});
+            b.mediaQueryDef(createMediaQuery()
+                .rule({type: "max-width", value: 1200}, "only", "screen")
+                .and({type: "min-width", value: 768}), {
+                [style]: {
+                    opacity: 1
+                }
+            });
+            b.mediaQueryDef(createMediaQuery()
+                .rule({type: "max-width", value: 1200}, "only", "screen")
+                .and({type: "min-width", value: 768}), {
+                [styleTwo]: {
+                    opacity: 1
+                }
+            });
+            b.syncUpdate();
+            expect(document.head.innerHTML).toContain("@media only screen (max-width: 1200) and (min-width: 768)");
         });
     });
 });
