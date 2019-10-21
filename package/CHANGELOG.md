@@ -1,8 +1,182 @@
 # CHANGELOG
 
-## 9.9.1
+## 13.0.3
 
-Fix ref callback
+Fixed regression in 13.0 to allows to use ctxClass with never TData with more generics and less any.
+
+## 13.0.2
+
+Fixes in Drag and drop.
+
+## 13.0.1 beta
+
+Fixed some regressions from 13.0.0
+
+## 13.0.0 beta
+
+BREAKING CHANGE
+
+-   `IBobrilCacheNode` has now just read only fields as it was always intended. Events `onFocus`, `onBlur`, `onSelectionChange` bubble now.
+-   `bubble`, `broadcast`, `captureBroadcast` now type check `EventNames` and `EventParam<TName>`
+
+Most event parameters now inherit from `IEventParam` which contains `target` of `IBobrilCacheNode` type.
+New hooks `useEvents` and `useCaptureEvents` (this is completely new capability `bubble` and `broadcast` now first broadcast to all useCaptureEvents). New types `IHookableEvents` and `ICapturableEvents`. New event `onInput` which is similar to `onChange` but parameter is object with `target` and `value` fields and bubbles.
+
+Improve mouse cursor override during drag and drop.
+
+Npm now contains index.js (ES5) and index.d.ts.
+
+## 12.0.0
+
+BREAKING CHANGE - Router Params are now better typed to allow get undefined. Quick fix is to add `!` everywhere it breaks code.
+
+## 11.7.0
+
+`useEffect` hook is now synchronously executed by `b.syncUpdate()`, so it could be easily tested without async waiting.
+
+## 11.6.0
+
+Default component name from class or function name now appends unique sufix, so even after minification it stays unique.
+
+## 11.5.0
+
+Result of `b.keyframesDef` could be used as factory but also as string, in all places where it makes sense.
+
+## 11.4.3
+
+Fixed `useEffect` hook when called twice in same frame due to another `useLayoutEffect` hook.
+
+## 11.4.2
+
+Fixed renamed shimmed styles like `float` on update render in browsers which support `float` as well as `cssFloat`.
+
+## 11.4.1
+
+Fixed missing s in TSX style property. Fixed onMouseIn and onMouseOut events - they should be called only on change of node under mouse.
+
+## 11.4.0
+
+Removed workaround for Chrome styling (hopefully it is fixed for long time). `b.ignoreShouldChange()` now also skip same reference for node optimization, making it true deep invalidate.
+
+## 11.3.1
+
+Fixed init for `anchor`.
+
+## 11.3.0
+
+New component lifecycle method `postRenderDom` which combines `postInitDom` and `postUpdateDom`
+
+Allow to define keyframes animations:
+
+```ts
+let red2green = b.keyframesDef({ from: { color: "red" }, to: { color: "green" } });
+b.init(() => <div style={{ animation: red2green("2s") }}>Hello</div>);
+```
+
+## 11.2.0
+
+New features: shouldChange in Component, PureComponent, useMemo
+
+## 11.1.2
+
+It is pity, but it has be `any`.
+
+## 11.1.1
+
+Better fix for IRouteHandler.
+
+## 11.1.0
+
+Better typing of IRouteHandler. New `Link` component which is more suited to TSX world.
+Allowed to use string inside `b.style` as class. It is still better to declare class name with `b.styleDef("class")` on one place.
+
+## 11.0.1
+
+Until Bobril 12 allowed to have `0` in styles. It is also correctly skipped in `b.style`.
+
+## 11.0.0
+
+Styles are now strictly secured by TypeScript definitions. Because of more strict typings increased major version, but hoping all errors will be true mistakes.
+
+## 10.2.2
+
+Fixed compatibility with TS 3.5.1
+
+## 10.2.1
+
+`float` could be now used in style instead of `cssFloat`.
+
+## 10.1.4
+
+setTimeout method is now use only from window so it should not have problem with nodejs types. Decreased size of library because of it.
+
+## 10.1.3
+
+It should be possible to pass children in TSX as attribute.
+
+## 10.1.2
+
+Fixed focus change events when focus change called from inside focus change events.
+
+## 10.1.1
+
+Fixed events in class components.
+
+## 10.1.0
+
+Focus method has optionally backwards search.
+Class component now supports also nonenumerable properties (Babel creates such code).
+Allow `never` type to be data/props type additionally to `object`.
+
+## 10.0.2
+
+Removed last const enum.
+
+## 10.0.1
+
+Had to workaround TS strange behavior by need to specify Ctx type default is any so all should compile, but it will be less type safe.
+
+## 10.0.0
+
+All these are possibly breaking changes but should be minor.
+Removed all const enums so now Babel could be used for "compiling TypeScript" (In future it will be optimized to same optimal code by bobril-build). IBobrilNode now cannot be function, it never worked but TS type allowed it.
+`provideContext` was renamed to `useProvideContext`.
+Exposed new `IBobrilEvents` with all events defined by Bobril.
+
+## 9.12.0
+
+Fixed Component, added mouseLeave and mouseEnter events.
+All methods starting on[A-Z] are considered events.
+Added support for class component inheritance.
+Added way to override component id without calling b.component.
+jsx.d.ts merged into index.ts as TSX is now always supported even without bobril-build.
+Fixed bind on whole class, oops.
+
+## 9.11.1
+
+Another fix for children in TSX.
+
+## 9.11.0
+
+New handy exported interface:
+
+    export interface IDataWithChildren {
+        children?: IBobrilChildren;
+    }
+
+Class `Component<TData = IDataWithChildren>` using this as generic default.
+
+Decorator bind fixed and extended to cover all methods in class.
+
+Fixed children typings in TSX.
+
+## 9.10.0
+
+Added `createContext` with similar API like in React. `useContext` and `provideContext` now additionally work with this type of context. Added decorator `context` which could be used in class components or classic component ctx.
+
+Added generic to `IBobrilCtx<TData>` and `IBobrilComponent<TData>`.
+
+Fix ref callback.
 
 ## 9.9.0
 

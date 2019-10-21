@@ -79,6 +79,7 @@
         }
     }
     function beforeFrame() {
+        var _a;
         if (rebuildStyles) {
             for (var i = 0; i < dynamicSprites.length; i++) {
                 var dynSprite = dynamicSprites[i];
@@ -164,7 +165,6 @@
             rebuildStyles = false;
         }
         chainedBeforeFrame();
-        var _a;
     }
     function style(node) {
         var styles = [];

@@ -166,3 +166,10 @@ $RECYCLE.BIN/
 bobril.sublime-project
 bobril.sublime-workspace
 /package/yarn.lock
+*/.idea
+/.idea
+/package/tsconfig.json
+/bbExamples/onsubmit/tsconfig.json
+/bbExamples/router/tsconfig.json
+/package/index.d.ts
+/package/index.js

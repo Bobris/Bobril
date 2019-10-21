@@ -1,0 +1,19 @@
+{
+  "name": "router",
+  "version": "0.1",
+  "typescript": {
+    "main": "index.tsx"
+  },
+  "dependencies": {
+    "bobril": "*"
+  },
+  "scripts": {
+    "test": "bb test"
+  },
+  "bobril": {
+    "title": "Router example",
+    "compilerOptions": { "strict": true }
+  },
+  "author": "Bobris",
+  "license": "MIT"
+}

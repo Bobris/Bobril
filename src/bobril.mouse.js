@@ -21,7 +21,7 @@
             return false;
         }
         var handler = ownerCtx.me.component[handlerName];
-        if (!handler) {
+        if (!handler) { // no handler available
             return false;
         }
         invokingOwner = true;
@@ -242,7 +242,7 @@
         var n;
         var c;
         var i = prevMousePath.length;
-        if (i > 0) {
+        if (i > 0 && (i > common || i != toPath.length)) {
             n = prevMousePath[i - 1];
             if (n) {
                 c = n.component;
@@ -269,7 +269,7 @@
             i++;
         }
         prevMousePath = toPath;
-        if (i > 0) {
+        if (i > 0 && (i > common || i != prevMousePath.length)) {
             n = prevMousePath[i - 1];
             if (n) {
                 c = n.component;

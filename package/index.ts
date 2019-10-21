@@ -1,12 +1,10 @@
 // Bobril.Core
 
 export type IBobrilChild<T = any> = boolean | number | string | IBobrilNode<T> | null | undefined;
-export type IBobrilChildren = IBobrilChild | IBobrilChildArray | null | undefined;
+export type IBobrilChildren = IBobrilChild | IBobrilChildArray;
 export interface IBobrilChildArray extends Array<IBobrilChildren> {}
 export type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
-export type IBobrilShimStyleMapping = {
-    [name: string]: null | ((style: any, value: any, oldName: string) => void);
-};
+export type IBobrilShimStyleMapping = Map<string, (style: any, value: any, oldName: string) => void>;
 
 export interface IDisposable {
     dispose(): void;
@@ -30,8 +28,8 @@ export interface IBobrilRoot {
     n: IBobrilCacheNode | undefined;
 }
 
-export type ICtxClass = {
-    new (data?: any, me?: IBobrilCacheNode): BobrilCtx<any>;
+export type ICtxClass<TData = any> = {
+    new (data?: TData, me?: IBobrilCacheNode<TData>): BobrilCtx<TData>;
 };
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
@@ -45,90 +43,131 @@ export interface IBobrilAttributes {
     [name: string]: any;
 }
 
-export interface IBobrilComponent {
+export interface IEventParam {
+    target: IBobrilCacheNode;
+}
+
+export interface IBubblingAndBroadcastEvents {
+    onInput?(event: IInputEvent): GenericEventResult;
+
+    onKeyDown?(event: IKeyDownUpEvent): GenericEventResult;
+    onKeyUp?(event: IKeyDownUpEvent): GenericEventResult;
+    onKeyPress?(event: IKeyPressEvent): GenericEventResult;
+
+    /// called after click or tap
+    onClick?(event: IBobrilMouseEvent): GenericEventResult;
+    onDoubleClick?(event: IBobrilMouseEvent): GenericEventResult;
+    onContextMenu?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseDown?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseUp?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseOver?(event: IBobrilMouseEvent): GenericEventResult;
+
+    onMouseMove?(event: IBobrilMouseEvent): GenericEventResult;
+    onMouseWheel?(event: IBobrilMouseWheelEvent): GenericEventResult;
+    onPointerDown?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerMove?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerUp?(event: IBobrilPointerEvent): GenericEventResult;
+    onPointerCancel?(event: IBobrilPointerEvent): GenericEventResult;
+
+    // if drag should start, bubbled
+    onDragStart?(dndCtx: IDndStartCtx): GenericEventResult;
+    // broadcasted after drag started/moved/changed
+    onDrag?(dndCtx: IDndCtx): boolean;
+    // broadcasted after drag ended even if without any action
+    onDragEnd?(dndCtx: IDndCtx): boolean;
+
+    // Do you want to allow to drop here? bubbled
+    onDragOver?(dndCtx: IDndOverCtx): GenericEventResult;
+    // User want to drop dragged object here - do it - onDragOver before had to set you target
+    onDrop?(dndCtx: IDndCtx): GenericEventResult;
+}
+
+/// These events could be used with `useEvent` or `useCaptureEvent`
+export interface IHookableEvents extends IBubblingAndBroadcastEvents {
+    /// called on string input element when selection or caret position changes
+    onSelectionChange?(event: ISelectionChangeEvent): GenericEventResult;
+
+    onFocus?(event: IEventParam): GenericEventResult;
+    onBlur?(event: IEventParam): GenericEventResult;
+}
+
+/// These events could be used with `useCaptureEvents`
+export interface ICapturableEvents extends IHookableEvents {
+    onScroll?(event: IBobrilScroll): GenericEventResult;
+}
+
+export interface IBobrilEvents extends IBubblingAndBroadcastEvents {
+    /// called on input element after any change with new value (string|boolean|string[]) - it does NOT bubble, use onInput if need bubbling
+    onChange?(value: any): void;
+    /// called on string input element when selection or caret position changes (void result is just for backward compatibility, bubbling)
+    onSelectionChange?(event: ISelectionChangeEvent): void | GenericEventResult;
+
+    /// does not bubble, called only when mouse comes into that node, onPointerMove could be used instead if need bubbling
+    onMouseEnter?(event: IBobrilMouseEvent): void;
+    /// does not bubble, called only when mouse leaves from that node, onPointerMove could be used instead if need bubbling
+    onMouseLeave?(event: IBobrilMouseEvent): void;
+    /// does not bubble, called when mouse comes to some child of that node, onPointerMove could be used instead if need bubbling
+    onMouseIn?(event: IBobrilMouseEvent): void;
+    /// does not bubble, called when mouse leaves from some child of that node, onPointerMove could be used instead if need bubbling
+    onMouseOut?(event: IBobrilMouseEvent): void;
+
+    // focus moved from outside of this element to some child of this element
+    onFocusIn?(): void;
+    // focus moved from inside of this element to some outside element
+    onFocusOut?(): void;
+    /// void result is for barward compatibility, it is bubbled
+    onFocus?(event: IEventParam): void | GenericEventResult;
+    /// void result is for barward compatibility, it is bubbled
+    onBlur?(event: IEventParam): void | GenericEventResult;
+}
+
+export type IBobrilEventsWithCtx<TCtx> = {
+    [N in keyof IBobrilEvents]?: (NonNullable<IBobrilEvents[N]> extends (...args: any) => any
+        ? (Parameters<NonNullable<IBobrilEvents[N]>>["length"] extends 0
+              ? (ctx: TCtx) => ReturnType<NonNullable<IBobrilEvents[N]>>
+              : (
+                    ctx: TCtx,
+                    event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
+                ) => ReturnType<NonNullable<IBobrilEvents[N]>>)
+        : never);
+};
+
+export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>
+    extends IBobrilEventsWithCtx<TCtx> {
     // parent component of derived/overriding component
     super?: IBobrilComponent;
     // if id of old node is different from new node it is considered completely different so init will be called before render directly
     // it does prevent calling render method twice on same node
     id?: string;
-    ctxClass?: ICtxClass;
+    ctxClass?: ICtxClass<TData>;
     // called before new node in virtual dom should be created, me members (tag, attrs, children, ...) could be modified, ctx is initialized to { data: me.data||{}, me: me, cfg: fromParent }
-    init?(ctx: IBobrilCtx, me: IBobrilCacheNode): void;
+    init?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode): void;
     // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
     // in case of init this is called after init method, oldMe is equal to undefined in that case
-    render?(ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
+    render?(ctx: IBobrilCtx<TData>, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
     // called after all children are rendered, but before updating own attrs
     // so this is useful for kind of layout in JS features
-    postRender?(ctx: IBobrilCtx, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
+    postRender?(ctx: IBobrilCtx<TData>, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
     // return false when whole subtree should not be changed from last time, you can still update any me members except key, default implementation always return true
-    shouldChange?(ctx: IBobrilCtx, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
+    shouldChange?(ctx: IBobrilCtx<TData>, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
     // called from children to parents order for new nodes
-    postInitDom?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
+    postInitDom?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode, element: HTMLElement): void;
     // called from children to parents order for updated nodes
-    postUpdateDom?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
+    postUpdateDom?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode, element: HTMLElement): void;
     // called from children to parents order for updated nodes but in every frame even when render was not run
-    postUpdateDomEverytime?(ctx: IBobrilCtx, me: IBobrilCacheNode, element: HTMLElement): void;
+    postUpdateDomEverytime?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode, element: HTMLElement): void;
     // called just before removing node from dom
-    destroy?(ctx: IBobrilCtx, me: IBobrilNode, element: HTMLElement): void;
+    destroy?(ctx: IBobrilCtx<TData>, me: IBobrilNode, element: HTMLElement): void;
     // called when bubbling event to parent so you could stop bubbling without preventing default handling
-    shouldStopBubble?(ctx: IBobrilCtx, name: string, param: Object): boolean;
+    shouldStopBubble?(ctx: IBobrilCtx<TData>, name: string, param: Object): boolean;
     // called when broadcast wants to dive in this node so you could silence broadcast for you and your children
-    shouldStopBroadcast?(ctx: IBobrilCtx, name: string, param: Object): boolean;
+    shouldStopBroadcast?(ctx: IBobrilCtx<TData>, name: string, param: Object): boolean;
     // used to implement any instance method which will be search by runMethodFrom using wave kind of broadcast stopping on first method returning true
-    runMethod?(ctx: IBobrilCtx, methodId: MethodId, param?: Object): boolean;
-
-    // called on input element after any change with new value (string|boolean)
-    onChange?(ctx: IBobrilCtx, value: any): void;
-    // called on string input element when selection or caret position changes
-    onSelectionChange?(ctx: IBobrilCtx, event: ISelectionChangeEvent): void;
-
-    onKeyDown?(ctx: IBobrilCtx, event: IKeyDownUpEvent): GenericEventResult;
-    onKeyUp?(ctx: IBobrilCtx, event: IKeyDownUpEvent): GenericEventResult;
-    onKeyPress?(ctx: IBobrilCtx, event: IKeyPressEvent): GenericEventResult;
-
-    // called on input element after click/tap
-    onClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
-    onDoubleClick?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
-    onContextMenu?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseDown?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseUp?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseOver?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseEnter?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
-    onMouseLeave?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
-    onMouseIn?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
-    onMouseOut?(ctx: IBobrilCtx, event: IBobrilMouseEvent): void;
-    onMouseMove?(ctx: IBobrilCtx, event: IBobrilMouseEvent): GenericEventResult;
-    onMouseWheel?(ctx: IBobrilCtx, event: IBobrilMouseWheelEvent): GenericEventResult;
-    onPointerDown?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
-    onPointerMove?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
-    onPointerUp?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
-    onPointerCancel?(ctx: IBobrilCtx, event: IBobrilPointerEvent): GenericEventResult;
-
-    // this component gained focus
-    onFocus?(ctx: IBobrilCtx): void;
-    // this component lost focus
-    onBlur?(ctx: IBobrilCtx): void;
-    // focus moved from outside of this element to some child of this element
-    onFocusIn?(ctx: IBobrilCtx): void;
-    // focus moved from inside of this element to some outside element
-    onFocusOut?(ctx: IBobrilCtx): void;
-
-    // if drag should start, bubbled
-    onDragStart?(ctx: IBobrilCtx, dndCtx: IDndStartCtx): GenericEventResult;
-
-    // broadcasted after drag started/moved/changed
-    onDrag?(ctx: IBobrilCtx, dndCtx: IDndCtx): boolean;
-    // broadcasted after drag ended even if without any action
-    onDragEnd?(ctx: IBobrilCtx, dndCtx: IDndCtx): boolean;
-
-    // Do you want to allow to drop here? bubbled
-    onDragOver?(ctx: IBobrilCtx, dndCtx: IDndOverCtx): GenericEventResult;
-    // User want to drop dragged object here - do it - onDragOver before had to set you target
-    onDrop?(ctx: IBobrilCtx, dndCtx: IDndCtx): GenericEventResult;
+    runMethod?(ctx: IBobrilCtx<TData>, methodId: MethodId, param?: Object): boolean;
 
     // this is "static" function that's why it does not have ctx - because it does not exists
     canActivate?(transition: IRouteTransition): IRouteCanResult;
-    canDeactivate?(ctx: IBobrilCtx, transition: IRouteTransition): IRouteCanResult;
+    canDeactivate?(ctx: IBobrilCtx<TData>, transition: IRouteTransition): IRouteCanResult;
 }
 
 export type RefType =
@@ -147,7 +186,7 @@ export interface IBobrilNodeCommon<T = any> {
     ref?: RefType;
     /// set this for children to be set to their ctx.cfg, if undefined your own ctx.cfg will be used anyway; but better to use `extendCfg`
     cfg?: any;
-    component?: IBobrilComponent;
+    component?: IBobrilComponent<T>;
     // Bobril does not touch this, it is completely for user passing custom data to component
     // It is very similar to props in ReactJs, it must be immutable, you have access to this through ctx.data
     data?: T;
@@ -155,53 +194,59 @@ export interface IBobrilNodeCommon<T = any> {
     length?: never;
 }
 
-export type IBobrilNode<T = any> = IBobrilNodeCommon<T> & object;
+/// VDom node which Bobril will render and expand into IBobrilCacheNode
+export type IBobrilNode<T = any> = Exclude<IBobrilNodeCommon<T> & object, Function>;
 
 export interface IBobrilNodeWithKey<T = any> extends IBobrilNode<T> {
     key: string;
 }
 
-export interface IBobrilCacheNode {
-    tag: string | undefined;
-    key: string | undefined;
-    className: string | undefined;
-    style: any;
-    attrs: IBobrilAttributes | undefined;
-    children: IBobrilCacheChildren;
-    ref: RefType | undefined;
-    cfg: any;
-    component: IBobrilComponent;
-    data: any;
-    element: Node | Node[] | undefined;
-    parent: IBobrilCacheNode | undefined;
-    ctx: IBobrilCtx | undefined;
+/// remembered and rendered VDom node
+export interface IBobrilCacheNode<T = any> {
+    readonly tag: string | undefined;
+    readonly key: string | undefined;
+    readonly className: string | undefined;
+    readonly style: any;
+    readonly attrs: IBobrilAttributes | undefined;
+    readonly children: IBobrilCacheChildren;
+    readonly ref: RefType | undefined;
+    readonly cfg: any;
+    readonly component: IBobrilComponent<T>;
+    readonly data: T;
+    readonly element: Node | Node[] | undefined;
+    readonly parent: IBobrilCacheNode | undefined;
+    readonly ctx: IBobrilCtx | undefined;
     /// Originally created or updated from - used for partial updates
-    orig: IBobrilNode;
+    readonly orig: IBobrilNode<T>;
 }
 
-export interface IBobrilCtx {
+/// There are not many reasons why client code should be allowed to modify VDom, that's why it is called Unsafe.
+export type IBobrilCacheNodeUnsafe<T = any> = { -readonly [P in keyof IBobrilCacheNode<T>]: IBobrilCacheNode<T>[P] };
+
+export interface IBobrilCtx<TData = any> {
     // properties passed from parent component, treat it as immutable
-    data?: any;
-    me: IBobrilCacheNode;
+    data: TData;
+    me: IBobrilCacheNode<TData>;
     // properties passed from parent component automatically, but could be extended for children to IBobrilNode.cfg
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode | undefined };
     disposables?: IDisposableLike[];
 }
 
-const enum HookFlags {
-    hasPostInitDom = 1,
-    hasPostUpdateDom = 2,
-    hasPostUpdateDomEverytime = 4
-}
+type HookFlags = number;
+const hasPostInitDom: HookFlags = 1;
+const hasPostUpdateDom: HookFlags = 2;
+const hasPostUpdateDomEverytime: HookFlags = 4;
+const hasEvents: HookFlags = 8;
+const hasCaptureEvents: HookFlags = 16;
 
-interface IBobrilCtxInternal extends IBobrilCtx {
+interface IBobrilCtxInternal<TData = any> extends IBobrilCtx<TData> {
     $hooks?: any[];
     $hookFlags?: HookFlags;
 }
 
 export class BobrilCtx<TData> implements IBobrilCtx {
-    constructor(data?: TData, me?: IBobrilCacheNode) {
+    constructor(data?: TData, me?: IBobrilCacheNode<TData>) {
         this.data = data!;
         this.me = me!;
         this.cfg = undefined;
@@ -211,7 +256,7 @@ export class BobrilCtx<TData> implements IBobrilCtx {
     }
     $bobxCtx: object | undefined;
     data: TData;
-    me: IBobrilCacheNode;
+    me: IBobrilCacheNode<TData>;
     cfg?: any;
     refs?: { [name: string]: IBobrilCacheNode | undefined };
     disposables?: IDisposableLike[];
@@ -221,7 +266,7 @@ export interface IBobrilScroll {
     node: IBobrilCacheNode | undefined;
 }
 
-export interface ISelectionChangeEvent {
+export interface ISelectionChangeEvent extends IEventParam {
     startPosition: number;
     // endPosition tries to be also caret position (does not work on any IE or Edge 12)
     endPosition: number;
@@ -277,13 +322,13 @@ export function isObject(val: any): val is { [name: string]: any } {
     return typeof val === "object";
 }
 
-if (Object.assign == null) {
+if (Object.assign == undefined) {
     Object.assign = function assign(target: Object, ..._sources: Object[]): Object {
-        if (target == null) throw new TypeError("Target in assign cannot be undefined or null");
+        if (target == undefined) throw new TypeError("Target in assign cannot be undefined or null");
         let totalArgs = arguments.length;
         for (let i = 1; i < totalArgs; i++) {
             let source = arguments[i];
-            if (source == null) continue;
+            if (source == undefined) continue;
             let keys = Object.keys(source);
             let totalKeys = keys.length;
             for (let j = 0; j < totalKeys; j++) {
@@ -304,6 +349,9 @@ if (!Object.is) {
         }
     };
 }
+
+const is = Object.is;
+const hOP = Object.prototype.hasOwnProperty;
 
 export let assign = Object.assign;
 
@@ -380,7 +428,7 @@ polyfill(String.prototype, "endsWith", function(this: any, search: string, pos?:
 
 export function flatten(a: any | any[]): any[] {
     if (!isArray(a)) {
-        if (a == null || a === false || a === true) return [];
+        if (a == undefined || a === false || a === true) return [];
         return [a];
     }
     a = a.slice(0);
@@ -392,7 +440,7 @@ export function flatten(a: any | any[]): any[] {
             aLen = a.length;
             continue;
         }
-        if (item == null || item === false || item === true) {
+        if (item == undefined || item === false || item === true) {
             a.splice(i, 1);
             aLen--;
             continue;
@@ -433,9 +481,9 @@ function testPropExistence(name: string) {
     return isString(testingDivStyle[name]);
 }
 
-var mapping: IBobrilShimStyleMapping = newHashObj();
+var mapping: IBobrilShimStyleMapping = new Map();
 
-var isUnitlessNumber = {
+var isUnitlessNumber: { [name: string]: true } = {
     boxFlex: true,
     boxFlexGroup: true,
     columnCount: true,
@@ -486,28 +534,26 @@ function shimStyle(newValue: any) {
     var k = Object.keys(newValue);
     for (var i = 0, l = k.length; i < l; i++) {
         var ki = k[i];
-        var mi = mapping[ki];
+        var mi = mapping.get(ki);
         var vi = newValue[ki];
         if (vi === undefined) continue; // don't want to map undefined
         if (mi === undefined) {
             if (DEBUG) {
-                if (ki === "float" && window.console && console.error)
-                    console.error("In style instead of 'float' you have to use 'cssFloat'");
                 if (/-/.test(ki) && window.console && console.warn)
                     console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
             }
             if (testPropExistence(ki)) {
-                mi = (<any>isUnitlessNumber)[ki] === true ? null : pxAdder;
+                mi = isUnitlessNumber[ki] === true ? noop : pxAdder;
             } else {
                 var titleCaseKi = ki.replace(/^\w/, match => match.toUpperCase());
                 for (var j = 0; j < vendors.length; j++) {
                     if (testPropExistence(vendors[j] + titleCaseKi)) {
-                        mi = ((<any>isUnitlessNumber)[ki] === true ? renamer : renamerPx)(vendors[j] + titleCaseKi);
+                        mi = (isUnitlessNumber[ki] === true ? renamer : renamerPx)(vendors[j] + titleCaseKi);
                         break;
                     }
                 }
                 if (mi === undefined) {
-                    mi = (<any>isUnitlessNumber)[ki] === true ? null : pxAdder;
+                    mi = isUnitlessNumber[ki] === true ? noop : pxAdder;
                     if (
                         DEBUG &&
                         window.console &&
@@ -517,9 +563,9 @@ function shimStyle(newValue: any) {
                         console.warn("Style property " + ki + " is not supported in this browser");
                 }
             }
-            mapping[ki] = mi;
+            mapping.set(ki, mi);
         }
-        if (mi !== null) mi(newValue, vi, ki);
+        mi(newValue, vi, ki);
     }
 }
 
@@ -545,13 +591,14 @@ function updateStyle(el: HTMLElement, newStyle: any, oldStyle: any) {
         var rule: string;
         if (isObject(oldStyle)) {
             for (rule in oldStyle) {
-                if (!(rule in newStyle)) removeProperty(s, rule);
+                if (oldStyle[rule] === undefined) continue;
+                if (newStyle[rule] === undefined) removeProperty(s, rule);
             }
             for (rule in newStyle) {
                 var v = newStyle[rule];
                 if (v !== undefined) {
                     if (oldStyle[rule] !== v) setStyleProperty(s, rule, v);
-                } else {
+                } else if (oldStyle[rule] !== undefined) {
                     removeProperty(s, rule);
                 }
             }
@@ -584,7 +631,7 @@ const focusableTag = /^input$|^select$|^textarea$|^button$/;
 const tabindexStr = "tabindex";
 
 function isNaturallyFocusable(tag: string | undefined, attrs: IBobrilAttributes | undefined): boolean {
-    if (tag == null) return false;
+    if (tag == undefined) return false;
     if (focusableTag.test(tag)) return true;
     if (tag === "a" && attrs != null && attrs.href != null) return true;
     return false;
@@ -630,7 +677,7 @@ function updateElement(
         el.setAttribute(tabindexStr, "-1");
         oldAttrs[tabindexStr] = -1;
     }
-    if (newAttrs == null) {
+    if (newAttrs == undefined) {
         for (attrName in oldAttrs) {
             if (oldAttrs[attrName] !== undefined) {
                 if (notFocusable && attrName === tabindexStr) continue;
@@ -663,7 +710,7 @@ function pushInitCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & HookFlags.hasPostInitDom) {
+        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & hasPostInitDom) {
             updateCall.push(hookPostInitDom);
             updateInstance.push(c);
         }
@@ -679,7 +726,7 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
             updateInstance.push(c);
         }
         const flags = (c.ctx! as IBobrilCtxInternal).$hookFlags || 0;
-        if (flags & HookFlags.hasPostUpdateDom) {
+        if (flags & hasPostUpdateDom) {
             updateCall.push(hookPostUpdateDom);
             updateInstance.push(c);
         }
@@ -688,7 +735,7 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (flags & HookFlags.hasPostUpdateDomEverytime) {
+        if (flags & hasPostUpdateDomEverytime) {
             updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
         }
@@ -703,7 +750,7 @@ function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & HookFlags.hasPostUpdateDomEverytime) {
+        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & hasPostUpdateDomEverytime) {
             updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
         }
@@ -775,7 +822,7 @@ export function createNode(
     createInto: Element,
     createBefore: Node | null
 ): IBobrilCacheNode {
-    var c = <IBobrilCacheNode>{
+    var c = <IBobrilCacheNodeUnsafe>{
         // This makes CacheNode just one object class = fast
         tag: n.tag,
         key: n.key,
@@ -855,7 +902,7 @@ export function createNode(
         var htmlText = <string>children;
         if (htmlText === "") {
             // nothing needs to be created
-        } else if (createBefore == null) {
+        } else if (createBefore == undefined) {
             var before = createInto.lastChild as Node | null;
             (<HTMLElement>createInto).insertAdjacentHTML("beforeend", htmlText);
             c.element = <Node[]>[];
@@ -939,7 +986,7 @@ function normalizeNode(n: any): IBobrilNode | undefined {
     return <IBobrilNode | undefined>n;
 }
 
-function createChildren(c: IBobrilCacheNode, createInto: Element, createBefore: Node | null): void {
+function createChildren(c: IBobrilCacheNodeUnsafe, createInto: Element, createBefore: Node | null): void {
     var ch = c.children;
     if (isString(ch)) {
         createInto.textContent = ch;
@@ -981,7 +1028,7 @@ function destroyNode(c: IBobrilCacheNode) {
 
 export function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike) {
     let disposables = ctx.disposables;
-    if (disposables == null) {
+    if (disposables == undefined) {
         disposables = [];
         ctx.disposables = disposables;
     }
@@ -1035,7 +1082,7 @@ function nodeContainsNode(
                 return null;
             }
         }
-    } else if (el == null) {
+    } else if (el == undefined) {
         if (isArray(ch)) {
             for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
                 var result = nodeContainsNode((<IBobrilCacheNode[]>ch)[i], n, resIndex, res);
@@ -1114,7 +1161,7 @@ export function deref(n: Node | null | undefined): IBobrilCacheNode | undefined 
     return currentNode;
 }
 
-function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNode, component: IBobrilComponent | null | undefined) {
+function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNodeUnsafe, component: IBobrilComponent | null | undefined) {
     if (component) {
         if (component.postRender) {
             currentCtx = c.ctx!;
@@ -1174,19 +1221,19 @@ export function updateNode(
                     return c;
                 }
             (<any>ctx).data = n.data || {};
-            c.component = component;
+            (c as IBobrilCacheNodeUnsafe).component = component;
             if (beforeRenderCallback !== emptyBeforeRenderCallback)
                 beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
             if (component.render) {
-                c.orig = n;
+                (c as IBobrilCacheNodeUnsafe).orig = n;
                 n = assign({}, n); // need to clone me because it should not be modified for next updates
-                c.cfg = undefined;
+                (c as IBobrilCacheNodeUnsafe).cfg = undefined;
                 if (n.cfg !== undefined) n.cfg = undefined;
                 hookId = 0;
                 component.render(ctx, n, c);
                 hookId = -1;
                 if (n.cfg !== undefined) {
-                    if (c.cfg === undefined) c.cfg = n.cfg;
+                    if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
                     else assign(c.cfg, n.cfg);
                 }
             }
@@ -1194,11 +1241,11 @@ export function updateNode(
         }
     } else {
         // In case there is no component and source is same reference it is considered not changed
-        if (c.orig === n) {
+        if (c.orig === n && !ignoringShouldChange) {
             finishUpdateNodeWithoutChange(c, createInto, createBefore);
             return c;
         }
-        c.orig = n;
+        (c as IBobrilCacheNodeUnsafe).orig = n;
         if (DEBUG) Object.freeze(n);
     }
     var newChildren = n.children;
@@ -1215,8 +1262,8 @@ export function updateNode(
     }
     if (
         bigChange ||
-        (component != null && ctx == null) ||
-        (component == null && ctx != null && ctx.me.component !== emptyComponent)
+        (component != undefined && ctx == undefined) ||
+        (component == undefined && ctx != undefined && ctx.me.component !== emptyComponent)
     ) {
         // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
     } else if (tag === "/") {
@@ -1230,7 +1277,7 @@ export function updateNode(
                 if (newChildren !== cachedChildren) {
                     var el = <Element>c.element;
                     el.textContent = newChildren;
-                    c.children = newChildren;
+                    (c as IBobrilCacheNodeUnsafe).children = newChildren;
                 }
             } else {
                 if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
@@ -1238,7 +1285,14 @@ export function updateNode(
                     if (isArray(cachedChildren))
                         selectedUpdate(<IBobrilCacheNode[]>c.children, createInto, createBefore);
                 } else {
-                    c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
+                    (c as IBobrilCacheNodeUnsafe).children = updateChildren(
+                        createInto,
+                        newChildren,
+                        cachedChildren,
+                        c,
+                        createBefore,
+                        deepness - 1
+                    );
                 }
                 inSvg = backupInSvg;
                 inNotFocusable = backupInNotFocusable;
@@ -1267,17 +1321,17 @@ export function updateNode(
                     cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
                 }
             }
-            c.children = cachedChildren;
+            (c as IBobrilCacheNodeUnsafe).children = cachedChildren;
             if (inSvgForeignObject) inSvg = true;
             finishUpdateNode(n, c, component);
             if (c.attrs || n.attrs || inNotFocusable)
-                c.attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
+                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
             updateStyle(<HTMLElement>el, n.style, c.style);
-            c.style = n.style;
+            (c as IBobrilCacheNodeUnsafe).style = n.style;
             var className = n.className;
             if (className !== c.className) {
                 setClassName(el, className || "");
-                c.className = className;
+                (c as IBobrilCacheNodeUnsafe).className = className;
             }
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
@@ -1286,7 +1340,7 @@ export function updateNode(
     }
     var parEl = c.element;
     if (isArray(parEl)) parEl = parEl[0];
-    if (parEl == null) parEl = createInto;
+    if (parEl == undefined) parEl = createInto;
     else parEl = <Element>parEl.parentNode;
     var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c));
     removeNode(c);
@@ -1312,7 +1366,7 @@ export function getDomNode(c: IBobrilCacheNode | undefined): Node | null {
 function findNextNode(a: IBobrilCacheNode[], i: number, len: number, def: Node | null): Node | null {
     while (++i < len) {
         var ai = a[i];
-        if (ai == null) continue;
+        if (ai == undefined) continue;
         var n = getDomNode(ai);
         if (n != null) return n;
     }
@@ -1434,7 +1488,7 @@ export function updateChildren(
     createBefore: Node | null,
     deepness: number
 ): IBobrilCacheNode[] {
-    if (cachedChildren == null) cachedChildren = [];
+    if (cachedChildren == undefined) cachedChildren = [];
     if (!isArray(cachedChildren)) {
         if (element.firstChild) element.removeChild(element.firstChild);
         cachedChildren = <any>[];
@@ -1604,19 +1658,19 @@ function updateChildrenCore(
             continue;
         }
         cachedKey = cachedChildren[cachedIndex].key;
-        if (cachedKey == null) {
+        if (cachedKey == undefined) {
             cachedIndex++;
             continue;
         }
         key = newChildren[newIndex].key;
-        if (key == null) {
+        if (key == undefined) {
             newIndex++;
             while (newIndex < newEnd) {
                 key = newChildren[newIndex].key;
-                if (key != null) break;
+                if (key != undefined) break;
                 newIndex++;
             }
-            if (key == null) break;
+            if (key == undefined) break;
         }
         var akPos = cachedKeys[key];
         if (akPos === undefined) {
@@ -1769,7 +1823,7 @@ function updateChildrenCore(
                 }
                 continue;
             }
-            while (cachedChildren[cachedIndex].key == null) cachedIndex++;
+            while (cachedChildren[cachedIndex].key == undefined) cachedIndex++;
             assert(key === cachedChildren[cachedIndex].key);
             cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
             cachedChildren.splice(cachedIndex + 1, 1);
@@ -1827,6 +1881,8 @@ if (nativeRaf) {
     });
 }
 
+const setTimeout = window.setTimeout;
+
 export const now = Date.now || (() => new Date().getTime());
 var startTime = now();
 var lastTickTime = 0;
@@ -1837,7 +1893,7 @@ function requestAnimationFrame(callback: (time: number) => void) {
     } else {
         var delay = 50 / 3 + lastTickTime - now();
         if (delay < 0) delay = 0;
-        window.setTimeout(() => {
+        setTimeout(() => {
             lastTickTime = now();
             callback(lastTickTime - startTime);
         }, delay);
@@ -1872,7 +1928,7 @@ export function addEvent(
     priority: number,
     callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean
 ): void {
-    if (registryEvents == null) registryEvents = {};
+    if (registryEvents == undefined) registryEvents = {};
     var list = registryEvents[name] || [];
     list.push({ priority: priority, callback: callback });
     registryEvents[name] = list;
@@ -1984,7 +2040,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
     }
 }
 
-export const enum RenderPhase {
+export enum RenderPhase {
     Create,
     Update,
     LocalUpdate,
@@ -2033,7 +2089,7 @@ function isLogicalParent(
     while (child != null) {
         if (parent === child) return true;
         let p = child.parent;
-        if (p == null) {
+        if (p == undefined) {
             for (var i = 0; i < rootIds.length; i++) {
                 var r = roots[rootIds[i]];
                 if (!r) continue;
@@ -2053,6 +2109,7 @@ var deferSyncUpdateRequested = false;
 export function syncUpdate() {
     deferSyncUpdateRequested = false;
     internalUpdate(now() - startTime);
+    executeEffectCallbacks();
 }
 
 export function deferSyncUpdate() {
@@ -2066,6 +2123,7 @@ export function deferSyncUpdate() {
 function update(time: number) {
     scheduled = false;
     internalUpdate(time);
+    asap(executeEffectCallbacks);
 }
 
 var rootIds: string[] | undefined;
@@ -2205,7 +2263,7 @@ export function updateRoot(id: string, factory?: (root: IBobrilRoot) => IBobrilC
     assert(root != null);
     if (factory != null) root.f = factory;
     let rootNode = root.n;
-    if (rootNode == null) return;
+    if (rootNode == undefined) return;
     let ctx = rootNode.ctx;
     (<any>ctx)[ctxInvalidated] = frameCounter;
     (<any>ctx)[ctxDeepness] = 1e6;
@@ -2228,8 +2286,8 @@ function firstInvalidate() {
     beforeInit = finishInitialize;
 }
 
-export function init(factory: () => any, element?: HTMLElement) {
-    assert(rootIds == null, "init should not be called from render");
+export function init(factory: () => IBobrilChildren, element?: HTMLElement) {
+    assert(rootIds == undefined, "init should not be called from render");
     removeRoot("0");
     roots["0"] = { f: factory, e: element, c: [], p: undefined, n: undefined };
     firstInvalidate();
@@ -2244,14 +2302,55 @@ export function setBeforeInit(callback: (cb: () => void) => void): void {
 
 let currentCtxWithEvents: IBobrilCtx | undefined;
 
-export function bubble(node: IBobrilCacheNode | null | undefined, name: string, param: any): IBobrilCtx | undefined {
+export type AllEvents = IBobrilEvents | IBubblingAndBroadcastEvents | ICapturableEvents;
+export type EventNames = keyof ICapturableEvents;
+export type EventParam<T extends EventNames> = T extends keyof ICapturableEvents
+    ? NonNullable<ICapturableEvents[T]> extends (p: infer P) => any
+        ? P
+        : any
+    : any;
+
+export function bubble<T extends EventNames>(
+    node: IBobrilCacheNode | null | undefined,
+    name: T,
+    param?: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+): IBobrilCtx | undefined {
+    if (param == undefined) {
+        param = { target: node! };
+    } else if (isObject(param) && (param as any).target == undefined) {
+        (param as any).target = node;
+    }
+    let res: IBobrilCtx | undefined = captureBroadcast(name, param!);
+    if (res != undefined) return res;
     const prevCtx = currentCtxWithEvents;
-    let res: IBobrilCtx | undefined;
     while (node) {
         var c = node.component;
         if (c) {
             var ctx = node.ctx!;
             currentCtxWithEvents = ctx;
+            if ((((ctx as IBobrilCtxInternal).$hookFlags || 0) & hasEvents) === hasEvents) {
+                var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+                for (var i = 0, l = hooks.length; i < l; i++) {
+                    var h = hooks[i];
+                    if (h instanceof EventsHook) {
+                        var m = (h.events as any)[name];
+                        if (m !== undefined) {
+                            const eventResult = +m.call(ctx, param) as EventResult;
+                            if (eventResult == EventResult.HandledPreventDefault) {
+                                currentCtxWithEvents = prevCtx;
+                                return ctx;
+                            }
+                            if (eventResult == EventResult.HandledButRunDefault) {
+                                currentCtxWithEvents = prevCtx;
+                                return undefined;
+                            }
+                            if (eventResult == EventResult.NotHandledPreventDefault) {
+                                res = ctx;
+                            }
+                        }
+                    }
+                }
+            }
             var m = (<any>c)[name];
             if (m) {
                 const eventResult = +m.call(c, ctx, param) as EventResult;
@@ -2290,6 +2389,29 @@ function broadcastEventToNode(
         var ctx = node.ctx!;
         var prevCtx = currentCtxWithEvents;
         currentCtxWithEvents = ctx;
+        if ((((ctx as IBobrilCtxInternal).$hookFlags || 0) & hasEvents) === hasEvents) {
+            var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+            for (var i = 0, l = hooks.length; i < l; i++) {
+                var h = hooks[i];
+                if (h instanceof EventsHook) {
+                    var m = (h.events as any)[name];
+                    if (m !== undefined) {
+                        const eventResult = +m.call(ctx, param) as EventResult;
+                        if (eventResult == EventResult.HandledPreventDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return ctx;
+                        }
+                        if (eventResult == EventResult.HandledButRunDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return undefined;
+                        }
+                        if (eventResult == EventResult.NotHandledPreventDefault) {
+                            res = ctx;
+                        }
+                    }
+                }
+            }
+        }
         var m = (<any>c)[name];
         if (m) {
             const eventResult = +m.call(c, ctx, param) as EventResult;
@@ -2324,12 +2446,79 @@ function broadcastEventToNode(
     return res;
 }
 
-export function broadcast(name: string, param: any): IBobrilCtx | undefined {
+function broadcastCapturedEventToNode(
+    node: IBobrilCacheNode | null | undefined,
+    name: string,
+    param: any
+): IBobrilCtx | undefined {
+    if (!node) return undefined;
+    let res: IBobrilCtx | undefined;
+    var c = node.component;
+    if (c) {
+        var ctx = node.ctx!;
+        if ((((ctx as IBobrilCtxInternal).$hookFlags || 0) & hasCaptureEvents) === hasCaptureEvents) {
+            var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
+            for (var i = 0, l = hooks.length; i < l; i++) {
+                var h = hooks[i];
+                if (h instanceof CaptureEventsHook) {
+                    var m = (h.events as any)[name];
+                    if (m !== undefined) {
+                        const eventResult = +m.call(ctx, param) as EventResult;
+                        if (eventResult == EventResult.HandledPreventDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return ctx;
+                        }
+                        if (eventResult == EventResult.HandledButRunDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return undefined;
+                        }
+                        if (eventResult == EventResult.NotHandledPreventDefault) {
+                            res = ctx;
+                        }
+                    }
+                }
+            }
+            currentCtxWithEvents = prevCtx;
+        }
+    }
+    var ch = node.children;
+    if (isArray(ch)) {
+        for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
+            var res2 = broadcastCapturedEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
+            if (res2 != undefined) return res2;
+        }
+    }
+    return res;
+}
+
+export function captureBroadcast<T extends EventNames>(
+    name: T,
+    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+): IBobrilCtx | undefined {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
         var ch = roots[k[i]].n;
         if (ch != null) {
-            var res = broadcastEventToNode(ch, name, param);
+            var res = broadcastCapturedEventToNode(ch, name, param);
+            if (res != null) return res;
+        }
+    }
+    return undefined;
+}
+
+export function broadcast<T extends EventNames>(
+    name: T,
+    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+): IBobrilCtx | undefined {
+    var res = captureBroadcast(name, param);
+    if (res != null) return res;
+    var k = Object.keys(roots);
+    for (var i = 0; i < k.length; i++) {
+        var ch = roots[k[i]].n;
+        if (ch != null) {
+            res = broadcastEventToNode(ch, name, param);
             if (res != null) return res;
         }
     }
@@ -2507,8 +2696,10 @@ export function cloneNode(node: IBobrilNode): IBobrilNode {
 }
 
 export function setStyleShim(name: string, action: (style: any, value: any, oldName: string) => void) {
-    mapping[name] = action;
+    mapping.set(name, action);
 }
+
+setStyleShim("float", renamer("cssFloat"));
 
 // PureFuncs: uptime, lastFrameDuration, frame, invalidated
 
@@ -2529,7 +2720,7 @@ export function invalidated() {
 }
 
 // Bobril.Media
-export const enum BobrilDeviceCategory {
+export enum BobrilDeviceCategory {
     Mobile = 0,
     Tablet = 1,
     Desktop = 2,
@@ -2573,17 +2764,17 @@ var isAndroid = /Android/i.test(navigator.userAgent);
 var weirdPortrait: boolean; // Some android devices provide reverted orientation
 
 export function getMedia(): IBobrilMedia {
-    if (media == null) {
+    if (media == undefined) {
         var w = viewport.clientWidth;
         var h = viewport.clientHeight;
         var o = window.orientation;
         var p = h >= w;
-        if (o == null) o = p ? 0 : 90;
+        if (o == undefined) o = p ? 0 : 90;
         else o = +o;
         if (isAndroid) {
             // without this keyboard change screen rotation because h or w changes
             let op = Math.abs(o) % 180 === 90;
-            if (weirdPortrait == null) {
+            if (weirdPortrait == undefined) {
                 weirdPortrait = op === p;
             } else {
                 p = op === weirdPortrait;
@@ -2621,8 +2812,7 @@ export const asap = (() => {
         }
     }
 
-    var onreadystatechange = "onreadystatechange";
-    // Modern browsers, fastest async
+    // Mainly IE11, fastest async
     if ((<any>window).MutationObserver) {
         var hiddenDiv = document.createElement("div");
         new MutationObserver(executeCallbacks).observe(hiddenDiv, {
@@ -2633,44 +2823,6 @@ export const asap = (() => {
                 hiddenDiv.setAttribute("yes", "no");
             }
             callbacks.push(callback);
-        };
-        // Browsers that support postMessage
-    } else if (!(window as any).setImmediate && window.postMessage && window.addEventListener) {
-        var MESSAGE_PREFIX = "basap" + Math.random(),
-            hasPostMessage = false;
-
-        var onGlobalMessage = (event: any) => {
-            if (event.source === window && event.data === MESSAGE_PREFIX) {
-                hasPostMessage = false;
-                executeCallbacks();
-            }
-        };
-
-        window.addEventListener("message", onGlobalMessage, false);
-
-        return (fn: () => void) => {
-            callbacks.push(fn);
-
-            if (!hasPostMessage) {
-                hasPostMessage = true;
-                window.postMessage(MESSAGE_PREFIX, "*");
-            }
-        };
-        // IE browsers without postMessage
-    } else if (!(window as any).setImmediate && onreadystatechange in document.createElement("script")) {
-        var scriptEl: any;
-        return (callback: () => void) => {
-            callbacks.push(callback);
-            if (!scriptEl) {
-                scriptEl = document.createElement("script");
-                scriptEl[onreadystatechange] = () => {
-                    scriptEl[onreadystatechange] = null;
-                    scriptEl.parentNode.removeChild(scriptEl);
-                    scriptEl = null;
-                    executeCallbacks();
-                };
-                document.body.appendChild(scriptEl);
-            }
         };
         // All other browsers
     } else {
@@ -2705,7 +2857,7 @@ if (!(<any>window).Promise) {
             }
             asap(() => {
                 var cb = this.s /*tate*/ ? deferred[0] : deferred[1];
-                if (cb == null) {
+                if (cb == undefined) {
                     (this.s /*tate*/ ? deferred[2] : deferred[3])(this.v /*alue*/);
                     return;
                 }
@@ -2872,6 +3024,10 @@ if (!(<any>window).Promise) {
 
 // Bobril.OnChange
 
+export interface IInputEvent<T = string | boolean | string[]> extends IEventParam {
+    value: T;
+}
+
 var bValue = "b$value";
 var bSelectionStart = "b$selStart";
 var bSelectionEnd = "b$selEnd";
@@ -2906,7 +3062,7 @@ function selectedArray(options: HTMLOptionsCollection): string[] {
     return res;
 }
 
-var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => {
+var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNodeUnsafe, newValue: any, oldValue: any) => {
     var tagName = el.tagName;
     var isSelect = tagName === "SELECT";
     var isInput = tagName === "INPUT" || tagName === "TEXTAREA";
@@ -2915,7 +3071,7 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, new
         return;
     }
     if (node.ctx === undefined) {
-        node.ctx = { me: node };
+        node.ctx = { data: undefined, me: node };
         node.component = emptyComponent;
     }
     if (oldValue === undefined) {
@@ -2986,7 +3142,7 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNode, new
     }
 });
 
-function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBobrilCacheNode | undefined) {
+function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBobrilCacheNodeUnsafe | undefined) {
     if (target && target.nodeName === "OPTION") {
         target = document.activeElement!;
         node = deref(target);
@@ -2994,27 +3150,21 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
     if (!node) {
         return false;
     }
-    var c = node.component;
-    const hasProp = node.attrs && node.attrs[bValue];
-    const hasOnChange = c && c.onChange != null;
-    const hasPropOrOnChange = hasProp || hasOnChange;
-    const hasOnSelectionChange = c && c.onSelectionChange != null;
-    if (!hasPropOrOnChange && !hasOnSelectionChange) return false;
-    var ctx = node.ctx!;
+    if (node.ctx === undefined) {
+        node.ctx = { data: undefined, me: node };
+        node.component = emptyComponent;
+    }
+    var ctx = node.ctx;
     var tagName = (<Element>target).tagName;
     var isSelect = tagName === "SELECT";
     var isMultiSelect = isSelect && (<HTMLSelectElement>target).multiple;
-    if (hasPropOrOnChange && isMultiSelect) {
+    if (isMultiSelect) {
         var vs = selectedArray((<HTMLSelectElement>target).options);
         if (!stringArrayEqual((<any>ctx)[bValue], vs)) {
             (<any>ctx)[bValue] = vs;
-            var prevCtx = currentCtxWithEvents;
-            currentCtxWithEvents = ctx;
-            if (hasProp) hasProp(vs);
-            if (hasOnChange) c.onChange!(ctx, vs);
-            currentCtxWithEvents = prevCtx;
+            emitOnInput(node, vs);
         }
-    } else if (hasPropOrOnChange && isCheckboxLike(<HTMLInputElement>target)) {
+    } else if (isCheckboxLike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
         if (ev && ev.type === "change") {
             setTimeout(() => {
@@ -3028,64 +3178,57 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
                 var radio = radios[j];
                 var radioNode = deref(radio);
                 if (!radioNode) continue;
-                const rbHasProp = node.attrs![bValue];
-                var radioComponent = radioNode.component;
-                const rbHasOnChange = radioComponent && radioComponent.onChange != null;
-                if (!rbHasProp && !rbHasOnChange) continue;
                 var radioCtx = radioNode.ctx;
                 var vrb = (<HTMLInputElement>radio).checked;
                 if ((<any>radioCtx)[bValue] !== vrb) {
                     (<any>radioCtx)[bValue] = vrb;
-                    var prevCtx = currentCtxWithEvents;
-                    currentCtxWithEvents = radioCtx;
-                    if (rbHasProp) rbHasProp(vrb);
-                    if (rbHasOnChange) radioComponent.onChange!(radioCtx!, vrb);
-                    currentCtxWithEvents = prevCtx;
+                    emitOnInput(radioNode, vrb);
                 }
             }
         } else {
             var vb = (<HTMLInputElement>target).checked;
             if ((<any>ctx)[bValue] !== vb) {
                 (<any>ctx)[bValue] = vb;
-                var prevCtx = currentCtxWithEvents;
-                currentCtxWithEvents = ctx;
-                if (hasProp) hasProp(vb);
-                if (hasOnChange) c.onChange!(ctx, vb);
-                currentCtxWithEvents = prevCtx;
+                emitOnInput(node, vb);
             }
         }
     } else {
-        if (hasPropOrOnChange) {
-            var v = (<HTMLInputElement>target).value;
-            if ((<any>ctx)[bValue] !== v) {
-                (<any>ctx)[bValue] = v;
-                var prevCtx = currentCtxWithEvents;
-                currentCtxWithEvents = ctx;
-                if (hasProp) hasProp(v);
-                if (hasOnChange) c.onChange!(ctx, v);
-                currentCtxWithEvents = prevCtx;
-            }
+        var v = (<HTMLInputElement>target).value;
+        if ((<any>ctx)[bValue] !== v) {
+            (<any>ctx)[bValue] = v;
+            emitOnInput(node, v);
         }
-        if (hasOnSelectionChange) {
-            let sStart = (<HTMLInputElement>target).selectionStart!;
-            let sEnd = (<HTMLInputElement>target).selectionEnd!;
-            let sDir = (<any>target).selectionDirection;
-            let swap = false;
-            let oStart = (<any>ctx)[bSelectionStart];
-            if (sDir == null) {
-                if (sEnd === oStart) swap = true;
-            } else if (sDir === "backward") {
-                swap = true;
-            }
-            if (swap) {
-                let s = sStart;
-                sStart = sEnd;
-                sEnd = s;
-            }
-            emitOnSelectionChange(node, sStart, sEnd);
+        let sStart = (<HTMLInputElement>target).selectionStart!;
+        let sEnd = (<HTMLInputElement>target).selectionEnd!;
+        let sDir = (<any>target).selectionDirection;
+        let swap = false;
+        let oStart = (<any>ctx)[bSelectionStart];
+        if (sDir == undefined) {
+            if (sEnd === oStart) swap = true;
+        } else if (sDir === "backward") {
+            swap = true;
         }
+        if (swap) {
+            let s = sStart;
+            sStart = sEnd;
+            sEnd = s;
+        }
+        emitOnSelectionChange(node, sStart, sEnd);
     }
     return false;
+}
+
+function emitOnInput(node: IBobrilCacheNode, value: any) {
+    var prevCtx = currentCtxWithEvents;
+    var ctx = node.ctx;
+    var component = node.component;
+    currentCtxWithEvents = ctx;
+    const hasProp = node.attrs && node.attrs[bValue];
+    if (isFunction(hasProp)) hasProp(value);
+    const hasOnChange = component && component.onChange;
+    if (isFunction(hasOnChange)) hasOnChange(ctx, value);
+    currentCtxWithEvents = prevCtx;
+    bubble(node, "onInput", { target: node, value });
 }
 
 function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: number) {
@@ -3094,15 +3237,11 @@ function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: numbe
     if (c && ((<any>ctx)[bSelectionStart] !== start || (<any>ctx)[bSelectionEnd] !== end)) {
         (<any>ctx)[bSelectionStart] = start;
         (<any>ctx)[bSelectionEnd] = end;
-        if (c.onSelectionChange) {
-            var prevCtx = currentCtxWithEvents;
-            currentCtxWithEvents = ctx;
-            c.onSelectionChange(ctx!, {
-                startPosition: start,
-                endPosition: end
-            });
-            currentCtxWithEvents = prevCtx;
-        }
+        bubble(node, "onSelectionChange", {
+            target: node,
+            startPosition: start,
+            endPosition: end
+        });
     }
 }
 
@@ -3134,7 +3273,7 @@ for (var i = 0; i < mouseEvents.length; i++) addEvent(mouseEvents[i], 2, emitOnM
 
 // Bobril.OnKey
 
-export interface IKeyDownUpEvent {
+export interface IKeyDownUpEvent extends IEventParam {
     shift: boolean;
     ctrl: boolean;
     alt: boolean;
@@ -3142,18 +3281,19 @@ export interface IKeyDownUpEvent {
     which: number;
 }
 
-export interface IKeyPressEvent {
+export interface IKeyPressEvent extends IEventParam {
     charCode: number;
 }
 
 function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
     return {
+        target: undefined,
         shift: ev.shiftKey,
         ctrl: ev.ctrlKey,
         alt: ev.altKey,
         meta: ev.metaKey || false,
         which: ev.which || ev.keyCode
-    };
+    } as any;
 }
 
 function emitOnKeyDown(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
@@ -3165,6 +3305,7 @@ function emitOnKeyDown(ev: KeyboardEvent, _target: Node | undefined, node: IBobr
     }
     return false;
 }
+
 function emitOnKeyUp(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
     if (!node) return false;
     var param: IKeyDownUpEvent = buildParam(ev);
@@ -3181,7 +3322,7 @@ function emitOnKeyPress(ev: KeyboardEvent, _target: Node | undefined, node: IBob
         ev.altKey // Ignore Alt+num in Firefox
     )
         return false;
-    var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode };
+    var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode } as any;
     if (bubble(node, "onKeyPress", param)) {
         preventDefault(ev);
         return true;
@@ -3195,7 +3336,7 @@ addEvent("keypress", 50, emitOnKeyPress);
 
 // Bobril.Mouse
 
-export interface IBobrilMouseEvent {
+export interface IBobrilMouseEvent extends IEventParam {
     x: number;
     y: number;
     /// 1 - left (or touch), 2 - middle, 3 - right <- it does not make sense but that's W3C
@@ -3209,7 +3350,7 @@ export interface IBobrilMouseEvent {
     cancelable: boolean;
 }
 
-export const enum BobrilPointerType {
+export enum BobrilPointerType {
     Mouse = 0,
     Touch = 1,
     Pen = 2
@@ -3255,7 +3396,7 @@ export function releaseMouseOwner(): void {
 }
 
 function invokeMouseOwner(handlerName: string, param: any): boolean {
-    if (ownerCtx == null) {
+    if (ownerCtx == undefined) {
         return false;
     }
 
@@ -3343,6 +3484,8 @@ function buildHandlerPointer(name: string) {
         target: Node | undefined,
         node: IBobrilCacheNode | undefined
     ): boolean {
+        target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+        node = deref(target);
         if (hasPointerEventsNoneB(node)) {
             var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
             target = fixed[0];
@@ -3359,6 +3502,7 @@ function buildHandlerPointer(name: string) {
             }
         }
         var param: IBobrilPointerEvent = {
+            target: node!,
             id: ev.pointerId,
             cancelable: normalizeCancelable(ev),
             type: type,
@@ -3391,6 +3535,7 @@ function buildHandlerTouch(name: string) {
             target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
             node = deref(target);
             var param: IBobrilPointerEvent = {
+                target: node!,
                 id: t.identifier + 2,
                 cancelable: normalizeCancelable(ev),
                 type: BobrilPointerType.Touch,
@@ -3427,6 +3572,7 @@ function buildHandlerMouse(name: string) {
             node = fixed[1];
         }
         var param: IBobrilPointerEvent = {
+            target: node!,
             id: 1,
             type: BobrilPointerType.Mouse,
             cancelable: normalizeCancelable(ev),
@@ -3480,7 +3626,7 @@ for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
             "!" + name,
             50,
             (ev: IBobrilPointerEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) => {
-                return invokeMouseOwner(onName, ev) || bubble(node, onName, ev) != undefined;
+                return invokeMouseOwner(onName, ev) || bubble(node, onName as EventNames, ev) != undefined;
             }
         );
     })(pointersEventNames[j]);
@@ -3514,7 +3660,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     var toPath = vdomPath(t);
     var node = toPath.length == 0 ? undefined : toPath[toPath.length - 1];
     if (hasPointerEventsNoneB(node)) {
-        var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node == null ? undefined : node);
+        var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node == undefined ? undefined : node);
         t = <HTMLElement>fixed[0];
         toPath = vdomPath(t);
     }
@@ -3528,7 +3674,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     var n: IBobrilCacheNode | null;
     var c: IBobrilComponent;
     var i = prevMousePath.length;
-    if (i > 0) {
+    if (i > 0 && (i > common || i != toPath.length)) {
         n = prevMousePath[i - 1];
         if (n) {
             c = n.component;
@@ -3552,7 +3698,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
         i++;
     }
     prevMousePath = toPath;
-    if (i > 0) {
+    if (i > 0 && (i > common || i != prevMousePath.length)) {
         n = prevMousePath[i - 1];
         if (n) {
             c = n.component;
@@ -3700,7 +3846,7 @@ for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
 function createHandlerMouse(handlerName: string) {
     return (ev: IBobrilPointerEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) => {
         if (firstPointerDown != ev.id && !noPointersDown()) return false;
-        if (invokeMouseOwner(handlerName, ev) || bubble(node, handlerName, ev)) {
+        if (invokeMouseOwner(handlerName, ev) || bubble(node, handlerName as EventNames, ev)) {
             return true;
         }
         return false;
@@ -3727,6 +3873,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
         let param: IBobrilMouseEvent = {
+            target: node!,
             x: ev.clientX,
             y: ev.clientY,
             button: button,
@@ -3741,7 +3888,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
         if (
             shouldPreventClickingSpree(param.count) ||
             invokeMouseOwner(handlerName, param) ||
-            bubble(node, handlerName, param)
+            bubble(node, handlerName as EventNames, param)
         ) {
             preventDefault(ev);
             return true;
@@ -3811,6 +3958,7 @@ function handleMouseWheel(ev: any, target: Node | undefined, node: IBobrilCacheN
         dy = ev.deltaY;
     }
     var param: IBobrilMouseWheelEvent = {
+        target: node!,
         dx,
         dy,
         x: ev.clientX,
@@ -3843,10 +3991,14 @@ export const ignoreClick = (x: number, y: number) => {
 let currentActiveElement: Element | undefined = undefined;
 let currentFocusedNode: IBobrilCacheNode | undefined = undefined;
 let nodeStack: (IBobrilCacheNode | null)[] = [];
+let focusChangeRunning = false;
 
 function emitOnFocusChange(inFocus: boolean): boolean {
-    var newActiveElement = document.hasFocus() || inFocus ? document.activeElement! : undefined;
-    if (newActiveElement !== currentActiveElement) {
+    if (focusChangeRunning) return false;
+    focusChangeRunning = true;
+    while (true) {
+        const newActiveElement = document.hasFocus() || inFocus ? document.activeElement! : undefined;
+        if (newActiveElement === currentActiveElement) break;
         currentActiveElement = newActiveElement;
         var newStack = vdomPath(currentActiveElement);
         var common = 0;
@@ -3857,10 +4009,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         var c: IBobrilComponent;
         if (i >= common) {
             n = nodeStack[i];
-            if (n) {
-                c = n.component;
-                if (c && c.onBlur) c.onBlur(n.ctx!);
-            }
+            bubble(n, "onBlur");
             i--;
         }
         while (i >= common) {
@@ -3882,15 +4031,12 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         }
         if (i < newStack.length) {
             n = newStack[i];
-            if (n) {
-                c = n.component;
-                if (c && c.onFocus) c.onFocus(n.ctx!);
-            }
-            i++;
+            bubble(n, "onFocus");
         }
         nodeStack = newStack;
         currentFocusedNode = nodeStack.length == 0 ? undefined : null2undefined(nodeStack[nodeStack.length - 1]);
     }
+    focusChangeRunning = false;
     return false;
 }
 
@@ -3906,8 +4052,8 @@ export function focused(): IBobrilCacheNode | undefined {
     return currentFocusedNode;
 }
 
-export function focus(node: IBobrilCacheNode): boolean {
-    if (node == null) return false;
+export function focus(node: IBobrilCacheNode, backwards?: boolean): boolean {
+    if (node == undefined) return false;
     if (isString(node)) return false;
     var style = node.style;
     if (style != null) {
@@ -3927,7 +4073,7 @@ export function focus(node: IBobrilCacheNode): boolean {
     var children = node.children;
     if (isArray(children)) {
         for (var i = 0; i < children.length; i++) {
-            if (focus(children[i])) return true;
+            if (focus(children[backwards ? children.length - 1 - i : i], backwards)) return true;
         }
         return false;
     }
@@ -3944,6 +4090,7 @@ function emitOnScroll(_ev: Event, _target: Node | undefined, node: IBobrilCacheN
     for (var i = 0; i < callbacks.length; i++) {
         callbacks[i](info);
     }
+    captureBroadcast("onScroll", info);
     return false;
 }
 
@@ -4154,7 +4301,7 @@ function getTransformationMatrix(element: Node) {
 
 export function convertPointFromClientToNode(node: IBobrilCacheNode, pageX: number, pageY: number): [number, number] {
     let element = getDomNode(node);
-    if (element == null) element = document.body;
+    if (element == undefined) element = document.body;
     return getTransformationMatrix(element)
         .inverse()
         .transformPoint(pageX, pageY);
@@ -4162,14 +4309,14 @@ export function convertPointFromClientToNode(node: IBobrilCacheNode, pageX: numb
 
 // Bobril.Dnd
 
-export const enum DndOp {
+export enum DndOp {
     None = 0,
     Link = 1,
     Copy = 2,
     Move = 3
 }
 
-export const enum DndEnabledOps {
+export enum DndEnabledOps {
     None = 0,
     Link = 1,
     Copy = 2,
@@ -4238,16 +4385,10 @@ export interface IDndOverCtx extends IDndCtx {
 
 var lastDndId = 0;
 var dnds: IDndCtx[] = [];
-var systemDnd: IDndCtx | null = null;
+var systemDnd: (IDndStartCtx & IDndOverCtx) | null = null;
 var rootId: string | null = null;
-var bodyCursorBackup: string;
-var userSelectBackup: string;
-var shimmedStyle = { userSelect: "" };
-shimStyle(shimmedStyle);
-var shimedStyleKeys = Object.keys(shimmedStyle);
-var userSelectPropName = shimedStyleKeys[shimedStyleKeys.length - 1]; // renamed is last
 
-var DndCtx = function(this: IDndCtx, pointerId: number) {
+var DndCtx = (function(this: IDndCtx, pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -4279,14 +4420,14 @@ var DndCtx = function(this: IDndCtx, pointerId: number) {
     this.data = newHashObj();
     if (pointerId >= 0) pointer2Dnd[pointerId] = this;
     dnds.push(this);
-};
+} as unknown) as { new (pointerId: number): IDndStartCtx & IDndOverCtx };
+
+const draggingStyle = "b-dragging";
 
 function lazyCreateRoot() {
-    if (rootId == null) {
-        let dbs = <any>document.body.style;
-        bodyCursorBackup = dbs.cursor;
-        userSelectBackup = dbs[userSelectPropName];
-        dbs[userSelectPropName] = "none";
+    if (rootId == undefined) {
+        var dd = document.documentElement;
+        dd.classList.add(draggingStyle);
         rootId = addRoot(dndRootFactory);
     }
 }
@@ -4342,9 +4483,13 @@ var DndRootComp: IBobrilComponent = {
             right: 0,
             bottom: 0
         };
-        let dbs = document.body.style;
+        let dds = document.documentElement.style;
         let cur = currentCursor();
-        if (cur && dbs.cursor !== cur) dbs.cursor = cur;
+        if (cur) {
+            if (dds.cursor !== cur) dds.setProperty("cursor", cur, "important");
+        } else {
+            dds.setProperty("cursor", "");
+        }
         me.children = res;
     },
     onDrag(ctx: IBobrilCtx): boolean {
@@ -4387,7 +4532,7 @@ dndProto.setEnabledOps = function(this: IDndCtx, ops: DndEnabledOps): void {
     this.enabledOperations = ops;
 };
 
-dndProto.cancelDnd = function(this: IDndCtx): void {
+dndProto.cancelDnd = function(this: IDndOverCtx): void {
     dndMoved(undefined, this);
     this.destroy();
 };
@@ -4408,9 +4553,9 @@ dndProto.destroy = function(this: IDndCtx): void {
     if (dnds.length === 0 && rootId != null) {
         removeRoot(rootId);
         rootId = null;
-        let dbs = <any>document.body.style;
-        dbs.cursor = bodyCursorBackup;
-        dbs[userSelectPropName] = userSelectBackup;
+        var dd = document.documentElement;
+        dd.classList.remove(draggingStyle);
+        dd.style.setProperty("cursor", "");
     }
 };
 
@@ -4436,7 +4581,7 @@ function handlePointerDown(
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
             var htmlNode = getDomNode(sourceCtx.me);
-            if (htmlNode == null) {
+            if (htmlNode == undefined) {
                 dnd.destroy();
                 return false;
             }
@@ -4459,10 +4604,10 @@ function handlePointerDown(
     return false;
 }
 
-function dndMoved(node: IBobrilCacheNode | undefined, dnd: IDndCtx) {
+function dndMoved(node: IBobrilCacheNode | undefined, dnd: IDndOverCtx) {
     dnd.overNode = node;
     dnd.targetCtx = bubble(node, "onDragOver", dnd);
-    if (dnd.targetCtx == null) {
+    if (dnd.targetCtx == undefined) {
         dnd.operation = DndOp.None;
     }
     broadcast("onDrag", dnd);
@@ -4540,7 +4685,7 @@ function handlePointerCancel(
     return false;
 }
 
-function updateFromNative(dnd: IDndCtx, ev: DragEvent) {
+function updateFromNative(dnd: IDndOverCtx, ev: DragEvent) {
     dnd.shift = ev.shiftKey;
     dnd.ctrl = ev.ctrlKey;
     dnd.alt = ev.altKey;
@@ -4558,7 +4703,7 @@ function updateFromNative(dnd: IDndCtx, ev: DragEvent) {
 var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
 
 function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
-    var dnd: IDndCtx | null = systemDnd;
+    var dnd: (IDndStartCtx & IDndOverCtx) | null = systemDnd;
     if (dnd != null) {
         (<any>dnd).destroy();
     }
@@ -4570,28 +4715,28 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
     } else {
         var startX = ev.clientX,
             startY = ev.clientY;
-        dnd = new (<any>DndCtx)(-1);
-        dnd!.system = true;
+        dnd = new DndCtx(-1);
+        dnd.system = true;
         systemDnd = dnd;
-        dnd!.x = startX;
-        dnd!.y = startY;
-        dnd!.lastX = startX;
-        dnd!.lastY = startY;
-        dnd!.startX = startX;
-        dnd!.startY = startY;
+        dnd.x = startX;
+        dnd.y = startY;
+        dnd.lastX = startX;
+        dnd.lastY = startY;
+        dnd.startX = startX;
+        dnd.startY = startY;
         var sourceCtx = bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
             var htmlNode = getDomNode(sourceCtx.me);
-            if (htmlNode == null) {
+            if (htmlNode == undefined) {
                 (<any>dnd).destroy();
                 return false;
             }
-            dnd!.started = true;
+            dnd.started = true;
             var boundFn = (<Element>htmlNode).getBoundingClientRect;
             if (boundFn) {
                 var rect = boundFn.call(htmlNode);
-                dnd!.deltaX = rect.left - startX;
-                dnd!.deltaY = rect.top - startY;
+                dnd.deltaX = rect.left - startX;
+                dnd.deltaY = rect.top - startY;
             }
             lazyCreateRoot();
         } else {
@@ -4618,7 +4763,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
         style.width = "0";
         style.height = "0";
         style.padding = "0";
-        window.setTimeout(() => {
+        setTimeout(() => {
             style.opacity = opacityBackup;
             style.width = widthBackup;
             style.height = heightBackup;
@@ -4647,15 +4792,15 @@ function setDropEffect(ev: DragEvent, op: DndOp) {
 
 function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
     var dnd = systemDnd;
-    if (dnd == null) {
-        dnd = new (<any>DndCtx)(-1);
-        dnd!.system = true;
+    if (dnd == undefined) {
+        dnd = new DndCtx(-1);
+        dnd.system = true;
         systemDnd = dnd;
-        dnd!.x = ev.clientX;
-        dnd!.y = ev.clientY;
-        dnd!.startX = dnd!.x;
-        dnd!.startY = dnd!.y;
-        dnd!.local = false;
+        dnd.x = ev.clientX;
+        dnd.y = ev.clientY;
+        dnd.startX = dnd.x;
+        dnd.startY = dnd.y;
+        dnd.local = false;
         var dt = ev.dataTransfer!;
         var eff = 0;
         var effectAllowed: string | undefined = undefined;
@@ -4665,7 +4810,7 @@ function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobril
         for (; eff < 7; eff++) {
             if (effectAllowedTable[eff] === effectAllowed) break;
         }
-        dnd!.enabledOperations = eff;
+        dnd.enabledOperations = eff;
         var dtTypes = dt.types;
         if (dtTypes) {
             for (var i = 0; i < dtTypes.length; i++) {
@@ -4678,7 +4823,7 @@ function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobril
             if (dt.getData("Text") !== undefined) (<any>dnd).data["Text"] = null;
         }
     }
-    updateFromNative(dnd!, ev);
+    updateFromNative(dnd, ev);
     setDropEffect(ev, dnd!.operation);
     if (dnd!.operation != DndOp.None) {
         preventDefault(ev);
@@ -4697,7 +4842,7 @@ function handleDrag(ev: DragEvent, _target: Node | undefined, _node: IBobrilCach
         systemDnd.operation = DndOp.None;
         broadcast("onDrag", systemDnd);
     }
-    return false;
+    return true;
 }
 
 function handleDragEnd(_ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
@@ -4709,7 +4854,7 @@ function handleDragEnd(_ev: DragEvent, _target: Node | undefined, _node: IBobril
 
 function handleDrop(ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
     var dnd = systemDnd;
-    if (dnd == null) return false;
+    if (dnd == undefined) return false;
     dnd.x = ev.clientX;
     dnd.y = ev.clientY;
     if (!dnd.local) {
@@ -4776,7 +4921,7 @@ export const getDnds = () => dnds;
 // Bobril.Router
 
 export interface Params {
-    [name: string]: string;
+    [name: string]: string | undefined;
 }
 
 // Just marker interface
@@ -4791,7 +4936,7 @@ export interface IRoute {
     isNotFound?: boolean;
 }
 
-export const enum RouteTransitionType {
+export enum RouteTransitionType {
     Push,
     Replace,
     Pop
@@ -4807,7 +4952,12 @@ export interface IRouteTransition {
 
 export type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
 
-export type IRouteHandler = IBobrilComponent | ((data: any) => IBobrilChildren);
+export interface IRouteHandlerData {
+    activeRouteHandler: () => IBobrilChildren;
+    routeParams: Params;
+}
+
+export type IRouteHandler = IBobrilComponent | ((data: IRouteHandlerData | any) => IBobrilChildren);
 
 export interface IRouteConfig {
     // name cannot contain ":" or "/"
@@ -4876,7 +5026,7 @@ export function decodeUrl(url: string): string {
     return decodeURIComponent(url.replace(/\+/g, " "));
 }
 
-export function encodeUrlPath(path: string): string {
+export function encodeUrlPath(path: string | undefined): string {
     return String(path)
         .split("/")
         .map(encodeUrl)
@@ -4945,20 +5095,20 @@ function injectParams(pattern: string, params?: Params) {
 
         // If param is optional don't check for existence
         if (paramName.slice(-1) !== "?") {
-            if (params![paramName] == null)
+            if (params![paramName] == undefined)
                 throw new Error('Missing "' + paramName + '" parameter for path "' + pattern + '"');
         } else {
             paramName = paramName.slice(0, -1);
-            if (params![paramName] == null) {
+            if (params![paramName] == undefined) {
                 return "";
             }
         }
 
-        var segment: string;
+        var segment: string | undefined;
         if (paramName === "splat" && Array.isArray(params![paramName])) {
-            segment = params![paramName][splatIndex++];
+            segment = params![paramName]![splatIndex++];
 
-            if (segment == null) throw new Error("Missing splat # " + splatIndex + ' for path "' + pattern + '"');
+            if (segment == undefined) throw new Error("Missing splat # " + splatIndex + ' for path "' + pattern + '"');
         } else {
             segment = params![paramName];
         }
@@ -5029,7 +5179,7 @@ function isAbsolute(url: string): boolean {
     return url[0] === "/";
 }
 
-function noop(): IBobrilNode | undefined {
+function noop(): undefined {
     return undefined;
 }
 
@@ -5070,14 +5220,14 @@ function rootNodeFactory(): IBobrilNode | undefined {
     if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
         programPath = browserPath;
         currentTransition.inApp = true;
-        if (currentTransition.name == null && matches.length > 0) {
+        if (currentTransition.name == undefined && matches.length > 0) {
             currentTransition.name = matches[0].name;
             currentTransition.params = out.p;
             nextIteration();
             if (currentTransition != null) return undefined;
         } else return undefined;
     }
-    if (currentTransition == null) {
+    if (currentTransition == undefined) {
         activeRoutes = matches;
         while (nodesArray.length > activeRoutes.length) nodesArray.pop();
         while (nodesArray.length < activeRoutes.length) nodesArray.push(undefined);
@@ -5205,12 +5355,41 @@ export function urlOfRoute(name: string, params?: Params): string {
     if (isInApp(name)) {
         var r = nameRouteMap[name];
         if (DEBUG) {
-            if (rootRoutes == null) throw Error("Cannot use urlOfRoute before defining routes");
-            if (r == null) throw Error("Route with name " + name + " if not defined in urlOfRoute");
+            if (rootRoutes == undefined) throw Error("Cannot use urlOfRoute before defining routes");
+            if (r == undefined) throw Error("Route with name " + name + " if not defined in urlOfRoute");
         }
         return "#" + injectParams(r.url!, params);
     }
     return name;
+}
+
+export function Link(data: {
+    name: string;
+    params?: Params;
+    replace?: boolean;
+    style?: IBobrilStyles;
+    activeStyle?: IBobrilStyles;
+    children: IBobrilChildren;
+}): IBobrilNode {
+    return style(
+        {
+            tag: "a",
+            component: {
+                id: "link",
+                onClick() {
+                    runTransition((data.replace ? createRedirectReplace : createRedirectPush)(data.name, data.params));
+                    return true;
+                }
+            },
+            children: data.children,
+            attrs: { href: urlOfRoute(data.name, data.params) }
+        },
+        isActive(data.name, data.params)
+            ? data.activeStyle != undefined
+                ? data.activeStyle
+                : [data.style, "active"]
+            : data.style
+    );
 }
 
 export function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
@@ -5375,7 +5554,7 @@ function nextIteration(): void {
             let handler = rr.handler;
             let comp: IBobrilComponent | undefined = undefined;
             if (isFunction(handler)) {
-                let node = handler({});
+                let node = handler({ activeRouteHandler: () => undefined, routeParams: currentTransition!.params! });
                 if (!node || !isObject(node) || isArray(node)) continue;
                 comp = node.component;
             } else {
@@ -5431,23 +5610,30 @@ export function anchor(children: IBobrilChildren, name?: string, params?: Params
         component: {
             id: "anchor",
             postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
-                let routeName: string | undefined;
-                if (name) {
-                    routeName = name;
-                } else {
-                    let firstChild = (me.children && me.children[0]) as IBobrilCacheNode;
-                    routeName = firstChild.attrs && firstChild.attrs.id;
-                }
-                if (!isActive(routeName, params)) {
-                    ctx.l = 0;
-                    return;
-                }
-                if (ctx.l === transitionRunCount) return;
-                (getDomNode(me) as HTMLElement).scrollIntoView();
-                ctx.l = transitionRunCount;
+                handleAnchorRoute(ctx, me, name, params);
+            },
+            postInitDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
+                handleAnchorRoute(ctx, me, name, params);
             }
         }
     };
+}
+
+function handleAnchorRoute(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, name?: string, params?: Params) {
+    let routeName: string | undefined;
+    if (name) {
+        routeName = name;
+    } else {
+        let firstChild = (me.children && me.children[0]) as IBobrilCacheNode;
+        routeName = firstChild.attrs && firstChild.attrs.id;
+    }
+    if (!isActive(routeName, params)) {
+        ctx.l = 0;
+        return;
+    }
+    if (ctx.l === transitionRunCount) return;
+    (getDomNode(me) as HTMLElement).scrollIntoView();
+    ctx.l = transitionRunCount;
 }
 
 export function getRoutes() {
@@ -5464,12 +5650,39 @@ export function getActiveParams() {
 
 // Bobril.Style
 
-// definition for Bobril defined class
+/// definition for Bobril defined class
 export type IBobrilStyleDef = string;
-// object case if for inline style declaration, undefined, null, true and false values are ignored
-export type IBobrilStyle = Object | IBobrilStyleDef | boolean | null | undefined;
-// place inline styles at end for optimal speed
-export type IBobrilStyles = IBobrilStyle | IBobrilStyle[];
+/// object case if for inline style declaration, undefined, null, true and false values are ignored
+export type IBobrilStyle = Readonly<CSSInlineStyles> | IBobrilStyleDef | 0 | boolean | undefined | null;
+/// place inline styles at end for optimal speed
+export type IBobrilStyles = IBobrilStyle | IBobrilStyleArray;
+export interface IBobrilStyleArray extends ReadonlyArray<IBobrilStyles> {
+    fill: any;
+    pop: any;
+    push: any;
+    concat: any;
+    reverse: any;
+    shift: any;
+    slice: any;
+    sort: any;
+    splice: any;
+    unshift: any;
+    indexOf: any;
+    lastIndexOf: any;
+    every: any;
+    some: any;
+    forEach: any;
+    map: any;
+    filter: any;
+    reduce: any;
+    reduceRight: any;
+    find: any;
+    findIndex: any;
+    [Symbol.iterator]: any;
+    entries: any;
+    values: any;
+    readonly [index: number]: IBobrilStyles;
+}
 
 interface ISprite {
     styleId: IBobrilStyleDef;
@@ -5504,12 +5717,19 @@ interface IInternalStyle {
     name: string | null;
     realName: string | null;
     parent?: IBobrilStyleDef | IBobrilStyleDef[];
-    style: any;
-    inlStyle?: any;
-    pseudo?: { [name: string]: string };
+    style: CSSStyles | (() => [CSSStyles, CSSPseudoStyles]);
+    inlStyle?: CSSInlineStyles;
+    pseudo?: CSSPseudoStyles;
+}
+
+export type Keyframes = { from?: CSSStyles; to?: CSSStyles; [step: number]: CSSStyles };
+interface IInternalKeyFrames {
+    name: string;
+    def: Keyframes;
 }
 
 var allStyles: { [id: string]: IInternalStyle } = newHashObj();
+var allAnimations: { [id: string]: IInternalKeyFrames } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
 var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
@@ -5566,7 +5786,7 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
         }
     } else if (typeof style === "object") {
         for (let key in style) {
-            if (!Object.prototype.hasOwnProperty.call(style, key)) continue;
+            if (!hOP.call(style, key)) continue;
             let val = style[key];
             if (isFunction(val)) {
                 val = val(cur, key);
@@ -5574,7 +5794,7 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
             cur[key] = val;
         }
     }
-    if (stylePseudo != null && curPseudo != null) {
+    if (stylePseudo != undefined && curPseudo != undefined) {
         for (let pseudoKey in stylePseudo) {
             let curPseudoVal = curPseudo[pseudoKey];
             if (curPseudoVal === undefined) {
@@ -5592,13 +5812,7 @@ let lastSpriteDppx = 1;
 let hasBundledSprites = false;
 let wasSpriteUrlChanged = true;
 
-let firstStyles = false;
 function beforeFrame() {
-    var dbs = document.body.style;
-    if (firstStyles && uptimeMs >= 150) {
-        dbs.opacity = "1";
-        firstStyles = false;
-    }
     if (hasBundledSprites && lastDppx != getMedia().dppx) {
         lastDppx = getMedia().dppx;
         let newSpriteUrl = bundlePath;
@@ -5619,12 +5833,6 @@ function beforeFrame() {
         }
     }
     if (rebuildStyles) {
-        // Hack around bug in Chrome to not have flash of unstyled content
-        if (frameCounter === 1 && "webkitAnimation" in dbs) {
-            firstStyles = true;
-            dbs.opacity = "0";
-            setTimeout(invalidate, 200);
-        }
         if (hasBundledSprites) {
             let imageSprite = imageCache[lastSpriteUrl];
             if (imageSprite === undefined) {
@@ -5689,12 +5897,12 @@ function beforeFrame() {
         for (let i = 0; i < dynamicSprites.length; i++) {
             let dynSprite = dynamicSprites[i];
             let image = imageCache[dynSprite.url];
-            if (image == null) continue;
+            if (image == undefined) continue;
             let colorStr = dynSprite.color();
             if (colorStr !== dynSprite.lastColor) {
                 dynSprite.lastColor = colorStr;
-                if (dynSprite.width == null) dynSprite.width = image.width;
-                if (dynSprite.height == null) dynSprite.height = image.height;
+                if (dynSprite.width == undefined) dynSprite.width = image.width;
+                if (dynSprite.height == undefined) dynSprite.height = image.height;
                 let lastUrl = recolorAndClip(
                     image,
                     colorStr,
@@ -5713,6 +5921,23 @@ function beforeFrame() {
             }
         }
         var styleStr = injectedCss;
+        for (var key in allAnimations) {
+            var anim = allAnimations[key];
+            styleStr += "@keyframes " + anim.name + " {";
+            for (var key2 in anim.def) {
+                let item = anim.def[key2];
+                let style = newHashObj();
+                flattenStyle(style, undefined, item, undefined);
+                shimStyle(style);
+                styleStr +=
+                    key2 +
+                    (key2 == "from" || key2 == "to" ? "" : "%") +
+                    " {" +
+                    inlineStyleToCssDeclaration(style) +
+                    "}\n";
+            }
+            styleStr += "}\n";
+        }
         for (var key in allStyles) {
             var ss = allStyles[key];
             let parent = ss.parent;
@@ -5720,11 +5945,11 @@ function beforeFrame() {
             let ssPseudo = ss.pseudo;
             let ssStyle = ss.style;
             if (isFunction(ssStyle) && ssStyle.length === 0) {
-                [ssStyle, ssPseudo] = ssStyle();
+                [ssStyle, ssPseudo] = (ssStyle as any)();
             }
-            if (isString(ssStyle) && ssPseudo == null) {
+            if (isString(ssStyle) && ssPseudo == undefined) {
                 ss.realName = ssStyle;
-                assert(name != null, "Cannot link existing class to selector");
+                assert(name != undefined, "Cannot link existing class to selector");
                 continue;
             }
             ss.realName = name;
@@ -5741,12 +5966,12 @@ function beforeFrame() {
             shimStyle(style);
             let cssStyle = inlineStyleToCssDeclaration(style);
             if (cssStyle.length > 0)
-                styleStr += (name == null ? parent : buildCssRule(parent, name)) + " {" + cssStyle + "}\n";
+                styleStr += (name == undefined ? parent : buildCssRule(parent, name)) + " {" + cssStyle + "}\n";
             for (var key2 in flattenPseudo) {
                 let item = flattenPseudo[key2];
                 shimStyle(item);
                 styleStr +=
-                    (name == null ? parent + ":" + key2 : buildCssRule(parent, name + ":" + key2)) +
+                    (name == undefined ? parent + ":" + key2 : buildCssRule(parent, name + ":" + key2)) +
                     " {" +
                     inlineStyleToCssDeclaration(item) +
                     "}\n";
@@ -5786,20 +6011,25 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             continue;
         }
         let s = ca[i];
-        if (s == null || s === true || s === false || s === "") {
+        if (s == undefined || s === true || s === false || s === "" || s === 0) {
             // skip
         } else if (isString(s)) {
             var sd = allStyles[s];
-            if (className == null) className = sd.realName!;
-            else className = className + " " + sd.realName;
-            var inlS = sd.inlStyle;
-            if (inlS) {
-                if (inlineStyle == null) inlineStyle = {};
-                inlineStyle = assign(inlineStyle, inlS);
+            if (sd != undefined) {
+                if (className == undefined) className = sd.realName!;
+                else className = className + " " + sd.realName;
+                var inlS = sd.inlStyle;
+                if (inlS) {
+                    if (inlineStyle == undefined) inlineStyle = {};
+                    inlineStyle = assign(inlineStyle, inlS);
+                }
+            } else {
+                if (className == undefined) className = s;
+                else className = className + " " + s;
             }
         } else if (isArray(s)) {
             if (ca.length > i + 1) {
-                if (stack == null) stack = [];
+                if (stack == undefined) stack = [];
                 stack.push(i);
                 stack.push(ca);
             }
@@ -5807,7 +6037,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             i = 0;
             continue;
         } else {
-            if (inlineStyle == null) inlineStyle = {};
+            if (inlineStyle == undefined) inlineStyle = {};
             for (let key in s) {
                 if (s.hasOwnProperty(key)) {
                     let val = (<any>s)[key];
@@ -5847,16 +6077,11 @@ function inlineStyleToCssDeclaration(style: any): string {
 
 // PureFuncs: styleDef, styleDefEx, sprite, spriteb, spritebc, asset
 
-export function styleDef(style: any, pseudo?: { [name: string]: any }, nameHint?: string): IBobrilStyleDef {
+export function styleDef(style: CSSStyles, pseudo?: CSSPseudoStyles, nameHint?: string): IBobrilStyleDef {
     return styleDefEx(undefined, style, pseudo, nameHint);
 }
 
-export function styleDefEx(
-    parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
-    style: any,
-    pseudo?: { [name: string]: any },
-    nameHint?: string
-): IBobrilStyleDef {
+function makeName(nameHint?: string): string {
     if (nameHint && nameHint !== "b-") {
         nameHint = nameHint.replace(/[^a-z0-9_-]/gi, "_").replace(/^[0-9]/, "_$&");
         if (allNameHints[nameHint]) {
@@ -5868,25 +6093,49 @@ export function styleDefEx(
     } else {
         nameHint = "b-" + globalCounter++;
     }
+    return nameHint;
+}
+
+export type AnimationNameFactory = ((params?: string) => string) & ((styles: CSSInlineStyles, key: string) => string);
+
+export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFactory {
+    nameHint = makeName(nameHint);
+    allAnimations[nameHint] = { name: nameHint, def };
+    invalidateStyles();
+    const res = (params?: string) => {
+        if (isString(params)) return params + " " + nameHint;
+        return nameHint!;
+    };
+    res.toString = res;
+    return res as AnimationNameFactory;
+}
+
+export function styleDefEx(
+    parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
+    style: CSSStyles,
+    pseudo?: CSSPseudoStyles,
+    nameHint?: string
+): IBobrilStyleDef {
+    nameHint = makeName(nameHint);
     allStyles[nameHint] = {
         name: nameHint,
         realName: nameHint,
         parent,
         style,
-        inlStyle: null,
+        inlStyle: undefined,
         pseudo
     };
     invalidateStyles();
     return nameHint;
 }
 
-export function selectorStyleDef(selector: string, style: any, pseudo?: { [name: string]: any }) {
+export function selectorStyleDef(selector: string, style: CSSStyles, pseudo?: CSSPseudoStyles) {
     allStyles["b-" + globalCounter++] = {
         name: null,
         realName: null,
         parent: selector,
         style,
-        inlStyle: null,
+        inlStyle: undefined,
         pseudo
     };
     invalidateStyles();
@@ -6017,7 +6266,7 @@ export function sprite(
     if (isFunction(color)) {
         isVarColor = true;
         colorId = (<any>color)[funcIdName];
-        if (colorId == null) {
+        if (colorId == undefined) {
             colorId = "" + lastFuncId++;
             (<any>color)[funcIdName] = colorId;
         }
@@ -6040,11 +6289,11 @@ export function sprite(
             });
         }
         invalidateStyles();
-    } else if (width == null || height == null || color != null) {
+    } else if (width == undefined || height == undefined || color != undefined) {
         loadImage(url, image => {
-            if (spDef.width == null) spDef.width = image.width;
-            if (spDef.height == null) spDef.height = image.height;
-            if (color != null) {
+            if (spDef.width == undefined) spDef.width = image.width;
+            if (spDef.height == undefined) spDef.height = image.height;
+            if (color != undefined) {
                 spDef.url = recolorAndClip(image, <string>color, spDef.width, spDef.height, spDef.left, spDef.top);
                 spDef.left = 0;
                 spDef.top = 0;
@@ -6107,7 +6356,7 @@ export function spritebc(
         colorId = color;
     } else {
         colorId = (<any>color)[funcIdName];
-        if (colorId == null) {
+        if (colorId == undefined) {
             colorId = "" + lastFuncId++;
             (<any>color)[funcIdName] = colorId;
         }
@@ -6140,6 +6389,8 @@ export function injectCss(css: string): void {
 export function asset(path: string): string {
     return path;
 }
+
+selectorStyleDef("html." + draggingStyle + " *", { cursor: "inherit !important", userSelect: "none !important" });
 
 // Bobril.svgExtensions
 
@@ -6247,7 +6498,7 @@ export function extendCfg(ctx: IBobrilCtx, propertyName: string, value: any): vo
     } else {
         c = Object.assign({}, ctx.cfg);
         c[propertyName] = value;
-        ctx.me.cfg = c;
+        (ctx.me as IBobrilCacheNodeUnsafe).cfg = c;
     }
 }
 
@@ -6261,21 +6512,23 @@ export type ChildrenType<TData extends { [name: string]: any }> = "children" ext
     ? TData["children"]
     : never;
 
-export interface IComponentFactory<TData extends Object> {
+export interface IComponentFactory<TData extends object | never> {
     (data?: TData, children?: ChildrenType<TData>): IBobrilNode<TData>;
 }
 
-export function createVirtualComponent<TData>(component: IBobrilComponent): IComponentFactory<TData> {
+export function createVirtualComponent<TData extends object | never, TCtx extends IBobrilCtx<TData> = any>(
+    component: IBobrilComponent<TData, TCtx>
+): IComponentFactory<TData> {
     return (data?: TData, children?: ChildrenType<TData>): IBobrilNode => {
         if (children !== undefined) {
-            if (data == null) data = <any>{};
-            (<any>data).children = children;
+            if (data == undefined) data = <any>{};
+            (data as any).children = children;
         }
         return { data, component: component };
     };
 }
 
-export function createOverridingComponent<TData, TDataOriginal = any>(
+export function createOverridingComponent<TData extends object | never, TDataOriginal = any>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
     after: IBobrilComponent
 ): IComponentFactory<TData> {
@@ -6284,7 +6537,9 @@ export function createOverridingComponent<TData, TDataOriginal = any>(
     return createVirtualComponent<TData>(overriding);
 }
 
-export function createComponent<TData extends Object>(component: IBobrilComponent): IComponentFactory<TData> {
+export function createComponent<TData extends object | never, TCtx extends IBobrilCtx<TData> = any>(
+    component: IBobrilComponent<TData, TCtx>
+): IComponentFactory<TData> {
     const originalRender = component.render;
     if (originalRender) {
         component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
@@ -6299,9 +6554,9 @@ export function createComponent<TData extends Object>(component: IBobrilComponen
     return createVirtualComponent<TData>(component);
 }
 
-export function createDerivedComponent<TData, TDataOriginal = any>(
-    original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
-    after: IBobrilComponent
+export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never = any>(
+    original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode<TDataOriginal>,
+    after: IBobrilComponent<TData>
 ): IComponentFactory<TData> {
     const originalComponent = original().component!;
     const merged = mergeComponents(originalComponent, after);
@@ -6358,7 +6613,7 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
 
 export function propim<T>(value: T, ctx?: IBobrilCtx, onChange?: (value: T, old: T) => void): IProp<T> {
     return (val?: T) => {
-        if (val !== undefined && !Object.is(val, value)) {
+        if (val !== undefined && !is(val, value)) {
             const oldVal = val;
             value = val;
             if (onChange !== undefined) onChange(val, oldVal);
@@ -6437,8 +6692,47 @@ if (!(<any>window).b)
         setBeforeInit
     };
 
+export function shallowEqual(a: any, b: any): boolean {
+    if (is(a, b)) {
+        return true;
+    }
+
+    if (!isObject(a) || !isObject(b)) {
+        return false;
+    }
+
+    const kA = Object.keys(a);
+    const kB = Object.keys(b);
+
+    if (kA.length !== kB.length) {
+        return false;
+    }
+
+    for (let i = 0; i < kA.length; i++) {
+        if (!hOP.call(b, kA[i]) || !is(a[kA[i]], b[kA[i]])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 // TSX reactNamespace emulation
-// PureFuncs: createElement
+// PureFuncs: createElement, getAllPropertyNames, component
+
+const jsxFactoryCache = new Map<IComponentClass<any> | IComponentFunction<any>, Function>();
+
+function getStringPropertyDescriptors(obj: any): Map<string, PropertyDescriptor> {
+    var props = new Map<string, PropertyDescriptor>();
+
+    do {
+        Object.getOwnPropertyNames(obj).forEach(function(this: Map<string, PropertyDescriptor>, prop: string) {
+            if (!this.has(prop)) this.set(prop, Object.getOwnPropertyDescriptor(obj, prop)!);
+        }, props);
+    } while ((obj = Object.getPrototypeOf(obj)));
+
+    return props;
+}
 
 export function createElement<T>(
     name: string | ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T>,
@@ -6447,14 +6741,21 @@ export function createElement<T>(
 ): IBobrilNode<T>;
 
 export function createElement(name: any, props: any): IBobrilNode {
-    var children: IBobrilChild[] = [];
-    for (var i = 2; i < arguments.length; i++) {
-        var ii = arguments[i];
-        children.push(ii);
+    let children: IBobrilChildren;
+    const argumentsCount = arguments.length - 2;
+    if (argumentsCount === 0) {
+    } else if (argumentsCount === 1) {
+        children = arguments[2];
+    } else {
+        children = new Array(argumentsCount);
+        for (let i = 0; i < argumentsCount; i++) {
+            children[i] = arguments[i + 2];
+        }
     }
+
     if (isString(name)) {
-        var res: IBobrilNode = { tag: name, children: children };
-        if (props == null) {
+        var res: IBobrilNode = argumentsCount === 0 ? { tag: name } : { tag: name, children: children };
+        if (props == undefined) {
             return res;
         }
         var attrs: IBobrilAttributes | undefined;
@@ -6473,7 +6774,7 @@ export function createElement(name: any, props: any): IBobrilNode {
                 } else res.ref = propValue;
                 continue;
             }
-            if (n === "key" || n === "className" || n === "component" || n === "data") {
+            if (n === "key" || n === "className" || n === "component" || n === "data" || n === "children") {
                 (<any>res)[n] = propValue;
                 continue;
             }
@@ -6495,17 +6796,21 @@ export function createElement(name: any, props: any): IBobrilNode {
         return res;
     } else {
         let res: IBobrilNode;
-        let factory = name.$bobrilFactory;
+        let factory = jsxFactoryCache.get(name);
         if (factory === undefined) {
             factory = createFactory(name);
-            name.$bobrilFactory = factory;
+            jsxFactoryCache.set(name, factory);
         }
-        if (factory.length == 1) {
-            if (props == undefined) props = { children };
-            else props.children = children;
+        if (argumentsCount == 0) {
             res = factory(props);
         } else {
-            res = factory(props, children);
+            if (factory.length == 1) {
+                if (props == undefined) props = { children };
+                else props.children = children;
+                res = factory(props);
+            } else {
+                res = factory(props, children);
+            }
         }
         if (props != undefined) {
             if (props.key != undefined) res.key = props.key;
@@ -6515,7 +6820,7 @@ export function createElement(name: any, props: any): IBobrilNode {
     }
 }
 
-export interface IFragmentData {
+export interface IFragmentData extends IBobrilEvents {
     children: IBobrilChildren;
     key?: string;
 }
@@ -6529,17 +6834,17 @@ export const __spread = assign;
 export enum EventResult {
     /// event propagation will continue. It's like returning falsy value.
     NotHandled = 0,
-    /// event propagation will stop and any browser default handing will be prevented. returning true has same meaning
+    /// event propagation will stop and default handing will be prevented. returning true has same meaning
     HandledPreventDefault = 1,
-    /// event propagation will stop but any browser default handing will still run
+    /// event propagation will stop but default handing will still run
     HandledButRunDefault = 2,
-    /// event propagation will continue but browser default handing will be prevented
+    /// event propagation will continue but default handing will be prevented
     NotHandledPreventDefault = 3
 }
 
-export type GenericEventResult = EventResult | boolean;
+export type GenericEventResult = EventResult | boolean | void;
 
-export class Component<TData> {
+export class Component<TData = IDataWithChildren> implements IBobrilEvents {
     constructor(data?: TData, me?: IBobrilCacheNode) {
         this.data = data!;
         this.me = me!;
@@ -6550,6 +6855,7 @@ export class Component<TData> {
     init?(data: TData): void;
     render?(data: TData): IBobrilChildren;
     destroy?(me: IBobrilCacheNode): void;
+    shouldChange?(newData: TData, oldData: TData): boolean;
 
     /// called from children to parents order for new nodes
     postInitDom?(me: IBobrilCacheNode): void;
@@ -6557,43 +6863,11 @@ export class Component<TData> {
     postUpdateDom?(me: IBobrilCacheNode): void;
     /// called from children to parents order for updated nodes but in every frame even when render was not run
     postUpdateDomEverytime?(me: IBobrilCacheNode): void;
+    /// called from children to parents order for new and updated nodes (combines postInitDom and postUpdateDom)
+    postRenderDom?(me: IBobrilCacheNode): void;
 
-    onKeyDown?(event: IKeyDownUpEvent): GenericEventResult;
-    onKeyUp?(event: IKeyDownUpEvent): GenericEventResult;
-    onKeyPress?(event: IKeyPressEvent): GenericEventResult;
-
+    /// declared here to remove "no properties in common" your component can `implements b.IBobrilEvents`
     onClick?(event: IBobrilMouseEvent): GenericEventResult;
-    onDoubleClick?(event: IBobrilMouseEvent): GenericEventResult;
-    onContextMenu?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseDown?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseUp?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseOver?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseIn?(event: IBobrilMouseEvent): void;
-    onMouseOut?(event: IBobrilMouseEvent): void;
-    onMouseMove?(event: IBobrilMouseEvent): GenericEventResult;
-    onMouseWheel?(event: IBobrilMouseWheelEvent): GenericEventResult;
-    onPointerDown?(event: IBobrilPointerEvent): GenericEventResult;
-    onPointerMove?(event: IBobrilPointerEvent): GenericEventResult;
-    onPointerUp?(event: IBobrilPointerEvent): GenericEventResult;
-    onPointerCancel?(event: IBobrilPointerEvent): GenericEventResult;
-
-    /// focus moved from outside of this component to some child of this component
-    onFocusIn?(): void;
-    /// focus moved from inside of this component to some outside component
-    onFocusOut?(): void;
-
-    /// if drag should start, bubbled
-    onDragStart?(dndCtx: IDndStartCtx): GenericEventResult;
-
-    /// broadcasted after drag started/moved/changed
-    onDrag?(dndCtx: IDndCtx): boolean | void;
-    /// broadcasted after drag ended even if without any action
-    onDragEnd?(dndCtx: IDndCtx): boolean | void;
-
-    /// Do you want to allow to drop here? bubbled
-    onDragOver?(dndCtx: IDndOverCtx): GenericEventResult;
-    /// User want to drop dragged object here - do it - onDragOver before had to set you as target
-    onDrop?(dndCtx: IDndCtx): boolean;
 
     static canActivate?(transition: IRouteTransition): IRouteCanResult;
 
@@ -6605,93 +6879,107 @@ export class Component<TData> {
     refs?: { [name: string]: IBobrilCacheNode | undefined };
 }
 
-export interface IComponentClass<TData extends Object> {
+export interface IComponentClass<TData extends Object = {}> {
     new (data?: any, me?: IBobrilCacheNode): Component<TData>;
 }
 
-export interface IComponentFunction<TData extends Object> extends Function {
+export class PureComponent<TData = IDataWithChildren> extends Component<TData> {
+    shouldChange(newData: TData, oldData: TData): boolean {
+        return !shallowEqual(newData, oldData);
+    }
+}
+
+export interface IComponentFunction<TData extends Object = {}> extends Function {
     (this: IBobrilCtx, data: TData): IBobrilChildren;
 }
 
-const componentEventNames = [
-    "onKeyDown",
-    "onKeyUp",
-    "onKeyPress",
-    "onClick",
-    "onDoubleClick",
-    "onContextMenu",
-    "onMouseDown",
-    "onMouseUp",
-    "onMouseOver",
-    "onMouseIn",
-    "onMouseOut",
-    "onMouseMove",
-    "onMouseWheel",
-    "onPointerDown",
-    "onPointerMove",
-    "onPointerUp",
-    "onPointerCancel",
-    "onFocusIn",
-    "onFocusOut",
-    "onDragStart",
-    "onDrag",
-    "onDragEnd",
-    "onDragOver",
-    "onDrop",
-    "canDeactivate"
-];
-
 function forwardRender(m: Function) {
-    if (m == undefined) return undefined;
     return (ctx: IBobrilCtx, me: IBobrilNode, _oldMe?: IBobrilCacheNode) => {
         me.children = m.call(ctx, ctx.data);
     };
 }
 
 function forwardInit(m: Function) {
-    if (m == undefined) return undefined;
     return (ctx: IBobrilCtx) => {
         m.call(ctx, ctx.data);
     };
 }
 
+function forwardShouldChange(m: Function) {
+    return (ctx: IBobrilCtx, me: IBobrilNode, oldMe: IBobrilNode) => {
+        return m.call(ctx, me.data, oldMe.data);
+    };
+}
+
 function forwardMe(m: Function) {
-    if (m == undefined) return undefined;
     return m.call.bind(m);
+}
+
+type PostLikeMethod = (ctx: IBobrilCtx, me: IBobrilCacheNode) => void;
+
+function combineWithForwardMe(
+    component: IBobrilComponent,
+    name: keyof IBobrilComponent,
+    func: (me: IBobrilCacheNode) => void
+) {
+    const existing = component[name] as PostLikeMethod;
+    if (existing != undefined) {
+        (component[name] as PostLikeMethod) = (ctx: IBobrilCtx, me: IBobrilCacheNode) => {
+            existing(ctx, me);
+            func.call(ctx, me);
+        };
+    } else {
+        (component[name] as PostLikeMethod) = forwardMe(func);
+    }
 }
 
 const methodsWithMeParam = ["destroy", "postInitDom", "postUpdateDom", "postUpdateDomEverytime"];
 
-export function component<TData>(
+export function component<TData extends object>(
     component: IComponentClass<TData> | IComponentFunction<TData>,
     name?: string
 ): IComponentFactory<TData> {
     const bobrilComponent = {} as IBobrilComponent;
     if (component.prototype instanceof Component) {
         const proto = component.prototype as any;
-        bobrilComponent.id = name || proto.constructor.name || "C" + allocateMethodId();
-        bobrilComponent.render = forwardRender(proto.render);
+        const protoStatic = proto.constructor;
+        bobrilComponent.id = getId(name, protoStatic);
+        const protoMap = getStringPropertyDescriptors(proto);
+        protoMap.forEach((descriptor, key) => {
+            const value = descriptor.value;
+            if (value == undefined) return;
+            let set = undefined as any;
+            if (key === "render") {
+                set = forwardRender(value);
+            } else if (key === "init") {
+                set = forwardInit(value);
+            } else if (key === "shouldChange") {
+                set = forwardShouldChange(value);
+            } else if (methodsWithMeParam.indexOf(key) >= 0) {
+                combineWithForwardMe(bobrilComponent, key as any, value);
+            } else if (key === "postRenderDom") {
+                combineWithForwardMe(bobrilComponent, methodsWithMeParam[1] as any, value);
+                combineWithForwardMe(bobrilComponent, methodsWithMeParam[2] as any, value);
+            } else if (isFunction(value) && /^(?:canDeactivate$|on[A-Z])/.test(key)) {
+                set = forwardMe(value);
+            }
+            if (set !== undefined) {
+                (bobrilComponent as any)[key] = set;
+            }
+        });
         bobrilComponent.ctxClass = (component as unknown) as ICtxClass;
-        bobrilComponent.init = forwardInit(proto.init);
-        for (let i = 0; i < methodsWithMeParam.length; i++) {
-            (bobrilComponent as any)[methodsWithMeParam[i]] = forwardMe(proto[methodsWithMeParam[i]]);
-        }
-        for (let i = 0; i < componentEventNames.length; i++) {
-            const name = componentEventNames[i];
-            const eventFunc = proto[name];
-            if (isFunction(eventFunc))
-                (bobrilComponent as any)[name] = (ctx: IBobrilCtx, event: any) => {
-                    return eventFunc.call(ctx, event);
-                };
-        }
-        bobrilComponent.canActivate = proto.constructor.canActivate;
+        bobrilComponent.canActivate = protoStatic.canActivate;
     } else {
-        bobrilComponent.id = name || component.name || "C" + allocateMethodId();
+        bobrilComponent.id = getId(name, component);
         bobrilComponent.render = forwardRender(component);
     }
     return (data?: TData): IBobrilNode => {
         return { data, component: bobrilComponent };
     };
+}
+
+function getId(name: string | undefined, classOrFunction: any): string {
+    return name || classOrFunction.id || classOrFunction.name + "_" + allocateMethodId();
 }
 
 function createFactory(comp: IComponentClass<any> | IComponentFunction<any>): Function {
@@ -6733,7 +7021,7 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
             initValue = initValue();
         }
         hook = (value?: T) => {
-            if (value !== undefined && !Object.is(value, hook[0])) {
+            if (value !== undefined && !is(value, hook[0])) {
                 hook[0] = value;
                 invalidate(ctx);
             }
@@ -6744,7 +7032,7 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
             if (isFunction(value)) {
                 value = value(hook[0]);
             }
-            if (!Object.is(value, hook[0])) {
+            if (!is(value, hook[0])) {
                 hook[0] = value;
                 invalidate(ctx);
             }
@@ -6754,16 +7042,53 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
     return hook;
 }
 
-export function useContext<T = unknown>(key: string): T | undefined {
-    checkCurrentRenderCtx();
-    const cfg = currentCtx!.cfg;
-    if (cfg == undefined) return undefined;
-    return cfg[key];
+export interface IContext<T> {
+    id: string;
+    dv: T;
 }
 
-export function provideContext(key: string, value: any) {
+export function createContext<T = unknown>(defaultValue: T, id?: string): IContext<T> {
+    if (id === undefined) {
+        id = "__b#" + allocateMethodId();
+    }
+    return { id, dv: defaultValue };
+}
+
+export function context<T>(key: IContext<T>): (target: object, propertyKey: string) => void {
+    return (target: object, propertyKey: string): void => {
+        Object.defineProperty(target, propertyKey, {
+            configurable: true,
+            get(this: IBobrilCtxInternal): T {
+                const cfg = this.me.cfg || this.cfg;
+                if (cfg == undefined || !(key.id in cfg)) return key.dv;
+                return cfg[key.id];
+            },
+            set(this: IBobrilCtxInternal, value: T) {
+                extendCfg(this, key.id, value);
+            }
+        });
+    };
+}
+
+export function useContext<T>(key: IContext<T>): T;
+export function useContext<T = unknown>(key: string): T | undefined;
+export function useContext<T>(key: string | IContext<T>): T | undefined {
     checkCurrentRenderCtx();
-    extendCfg(currentCtx!, key, value);
+    const cfg = currentCtx!.me.cfg || currentCtx!.cfg;
+    if (isString(key)) {
+        if (cfg == undefined) return undefined;
+        return cfg[key];
+    } else {
+        if (cfg == undefined || !(key.id in cfg)) return key.dv;
+        return cfg[key.id];
+    }
+}
+
+export function useProvideContext(key: string, value: any): void;
+export function useProvideContext<T>(key: IContext<T>, value: T): void;
+export function useProvideContext<T = any>(key: string | IContext<T>, value: T): void {
+    checkCurrentRenderCtx();
+    extendCfg(currentCtx!, isString(key) ? key : key.id, value);
 }
 
 export function useRef<T = unknown>(initialValue?: T): IProp<T> & { current: T } {
@@ -6833,44 +7158,48 @@ function hookPostUpdateDomEverytime(ctx: IBobrilCtxInternal) {
 type EffectCallback = () => void | (() => void | undefined);
 type DependencyList = ReadonlyArray<unknown>;
 
-export function bind<T extends Function>(
-    _target: object,
-    propertyKey: string,
-    descriptor: TypedPropertyDescriptor<T>
-): TypedPropertyDescriptor<T> | void {
-    const fn = descriptor.value;
-    assert(
-        !descriptor || !isFunction(fn),
-        `Only methods can be decorated with @bind. '{propertyKey}' is not a method!`
-    );
+export function bind(target: any, propertyKey?: string, descriptor?: PropertyDescriptor): any {
+    if (propertyKey != undefined && descriptor != undefined) {
+        const fn = descriptor.value;
+        assert(isFunction(fn), `Only methods can be decorated with @bind. '${propertyKey}' is not a method!`);
 
-    let definingProperty = false;
-    return {
-        configurable: true,
-        get() {
-            if (definingProperty) {
-                return fn;
+        let definingProperty = false;
+        return {
+            configurable: true,
+            get() {
+                if (definingProperty) {
+                    return fn;
+                }
+                let value = fn!.bind(this);
+                definingProperty = true;
+                Object.defineProperty(this, propertyKey, {
+                    value,
+                    configurable: true,
+                    writable: true
+                });
+                definingProperty = false;
+                return value;
             }
-            let value = fn!.bind(this);
-            definingProperty = true;
-            Object.defineProperty(this, propertyKey, {
-                value,
-                configurable: true,
-                writable: true
-            });
-            definingProperty = false;
-            return value;
+        };
+    }
+    const proto = target.prototype;
+    const keys = Object.getOwnPropertyNames(proto);
+    keys.forEach(key => {
+        if (key === "constructor") {
+            return;
         }
-    };
+        const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+        if (isFunction(descriptor!.value)) {
+            Object.defineProperty(proto, key, bind(target, key, descriptor));
+        }
+    });
+    return target;
 }
 
-class EffectHook implements IDisposable {
-    callback?: EffectCallback;
+class DepsChangeDetector {
     deps?: DependencyList;
-    lastDisposer?: () => void;
 
-    update(callback: EffectCallback, deps?: DependencyList) {
-        this.callback = callback;
+    detectChange(deps?: DependencyList): boolean {
         let changed = false;
         if (deps != undefined) {
             const lastDeps = this.deps;
@@ -6881,7 +7210,7 @@ class EffectHook implements IDisposable {
                 if (depsLen != lastDeps.length) changed = true;
                 else {
                     for (let i = 0; i < depsLen; i++) {
-                        if (!Object.is(deps[i], lastDeps[i])) {
+                        if (!is(deps[i], lastDeps[i])) {
                             changed = true;
                             break;
                         }
@@ -6890,19 +7219,61 @@ class EffectHook implements IDisposable {
             }
         } else changed = true;
         this.deps = deps;
-        if (changed) {
+        return changed;
+    }
+}
+
+class MemoHook<T> extends DepsChangeDetector {
+    current: T | undefined;
+
+    memoize(factory: () => T, deps: DependencyList): T {
+        if (this.detectChange(deps)) {
+            this.current = factory();
+        }
+        return this.current!;
+    }
+}
+
+export function useMemo<T>(factory: () => T, deps: DependencyList): T {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = new MemoHook();
+        hooks[myHookId] = hook;
+    }
+    return hook.memoize(factory, deps);
+}
+
+var effectCallbacks: Array<() => void> = [];
+
+function executeEffectCallbacks() {
+    var cbList = effectCallbacks;
+    effectCallbacks = [];
+    for (var i = 0, len = cbList.length; i < len; i++) {
+        cbList[i]();
+    }
+}
+
+class EffectHook extends DepsChangeDetector implements IDisposable {
+    callback?: EffectCallback;
+    lastDisposer?: () => void;
+
+    update(callback: EffectCallback, deps?: DependencyList) {
+        this.callback = callback;
+        if (this.detectChange(deps)) {
             this.doRun();
         }
     }
 
     doRun() {
-        asap(this.run);
+        effectCallbacks.push(this.run);
     }
 
     run() {
         const c = this.callback;
-        this.dispose();
         if (c != undefined) {
+            this.dispose();
             this.lastDisposer = c() as any;
         }
     }
@@ -6959,11 +7330,1855 @@ export function useLayoutEffect(callback: EffectCallback, deps?: DependencyList)
     const hooks = _getHooks();
     let hook = hooks[myHookId];
     if (hook === undefined) {
-        (currentCtx as IBobrilCtxInternal).$hookFlags! |=
-            HookFlags.hasPostInitDom | HookFlags.hasPostUpdateDomEverytime;
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |= hasPostInitDom | hasPostUpdateDomEverytime;
         hook = new LayoutEffectHook();
         addDisposable(currentCtx!, hook);
         hooks[myHookId] = hook;
     }
     hook.update(callback, deps);
 }
+
+class EventsHook {
+    events!: IHookableEvents;
+}
+
+export function useEvents(events: IHookableEvents) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |= hasEvents;
+        hook = new EventsHook();
+        hooks[myHookId] = hook;
+    } else {
+        assert(hook instanceof EventsHook);
+    }
+    hook.events = events;
+}
+
+class CaptureEventsHook {
+    events!: ICapturableEvents;
+}
+
+export function useCaptureEvents(events: ICapturableEvents) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |= hasCaptureEvents;
+        hook = new CaptureEventsHook();
+        hooks[myHookId] = hook;
+    } else {
+        assert(hook instanceof CaptureEventsHook);
+    }
+    hook.events = events;
+}
+
+export interface IDataWithChildren {
+    children?: IBobrilChildren;
+}
+
+interface IGenericElementAttributes extends IBobrilEvents {
+    children?: IBobrilChildren;
+    style?: IBobrilStyles;
+    [name: string]: any;
+}
+
+declare global {
+    namespace JSX {
+        type Element<T = Exclude<object, Function>> = IBobrilNode<T>;
+
+        interface ElementAttributesProperty {
+            data: {};
+        }
+        interface ElementChildrenAttribute {
+            children: IBobrilChildren;
+        }
+
+        interface IntrinsicAttributes {
+            key?: string;
+            ref?: RefType;
+        }
+
+        interface IntrinsicClassAttributes<T> {
+            key?: string;
+            ref?: RefType;
+        }
+
+        interface IntrinsicElements {
+            [name: string]: IGenericElementAttributes;
+        }
+    }
+}
+
+// CSS Style defs
+export type StringHint = string & { zz_ignore_me?: never };
+
+export type NumberHint = number & { zz_ignore_me?: never };
+
+export type CSSValueGeneral = NumberHint | StringHint;
+
+export type CSSGlobalValues =
+    | "initial"
+    | "inherit"
+    | /** combination of `initial` and `inherit` */ "unset"
+    | "revert"
+    | StringHint;
+
+export type CSSBlendMode =
+    | "normal"
+    | "multiply"
+    | "screen"
+    | "overlay"
+    | "darken"
+    | "lighten"
+    | "color-dodge"
+    | "color-burn"
+    | "hard-light"
+    | "soft-light"
+    | "difference"
+    | "exclusion"
+    | "hue"
+    | "saturation"
+    | "color"
+    | "luminosity";
+
+export type CSSBox = "border-box" | "padding-box" | "content-box" | CSSGlobalValues | StringHint;
+
+export type CSSColor = "transparent" | "currentColor" | CSSGlobalValues | StringHint;
+
+export type CSSFlexAlign = "flex-start" | "flex-end" | "center" | "baseline" | "stretch";
+
+export type CSSFontSize =
+    | CSSGlobalValues
+    | CSSValueGeneral
+    | "xx-small"
+    | "x-small"
+    | "small"
+    | "medium"
+    | "large"
+    | "x-large"
+    | "xx-large"
+    | "larger"
+    | "smaller";
+
+export type CSSLineStyle =
+    | StringHint
+    | "none"
+    | "hidden"
+    | "dotted"
+    | "dashed"
+    | "solid"
+    | "double"
+    | "groove"
+    | "ridge"
+    | "inset"
+    | "outset";
+
+export type CSSOverflow = "visible" | "hidden" | "scroll" | "clip" | "auto";
+
+export type CSSRepeatStyle = StringHint | "repeat-x" | "repeat-y" | "repeat" | "space" | "round" | "no-repeat";
+
+export type CSSFontWeight =
+    | "normal"
+    | "bold"
+    | "bolder"
+    | "lighter"
+    | 100
+    | 200
+    | 300
+    | 400
+    | 500
+    | 600
+    | 700
+    | 800
+    | 900
+    | CSSValueGeneral
+    | CSSGlobalValues;
+
+export type CSSLazy<T> = T | StringHint | ((styles: CSSInlineStyles, key: string) => T | StringHint);
+
+export type CSSLazyString = CSSLazy<string>;
+
+export type CSSLazyValueGeneral = CSSLazy<CSSValueGeneral>;
+/**
+ * This interface documents key CSS properties for autocomplete
+ */
+export interface CSSInlineStyles {
+    /**
+     * Smooth scrolling on an iPhone. Specifies whether to use native-style scrolling in an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/-webkit-overflow-scrolling
+     */
+    overflowScrolling?: CSSLazy<"auto" | "touch">;
+
+    /**
+     * Aligns a flex container's lines within the flex container when there is extra space in the cross-axis, similar to how justify-content aligns individual items within the main-axis.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/align-content
+     */
+    alignContent?: CSSLazy<
+        "stretch" | "center" | "flex-start" | "flex-end" | "space-between" | "space-around" | "initial" | "inherit"
+    >;
+
+    /**
+     * Sets the default alignment in the cross axis for all of the flex container's items, including anonymous flex items, similarly to how justify-content aligns items along the main axis.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/align-items
+     */
+    alignItems?: CSSLazy<CSSFlexAlign>;
+
+    /**
+     * Allows the default alignment to be overridden for individual flex items.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/align-self
+     */
+    alignSelf?: CSSLazy<"auto" | CSSFlexAlign>;
+
+    /**
+     * This property allows precise alignment of elements, such as graphics, that do not have a baseline-table or lack the desired baseline in their baseline-table. With the alignment-adjust property, the position of the baseline identified by the alignment-baseline can be explicitly determined. It also determines precisely the alignment point for each glyph within a textual element.
+     */
+    alignmentAdjust?: CSSLazyValueGeneral;
+
+    /**
+     * The alignment-baseline attribute specifies how an object is aligned with respect to its parent.
+     * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/alignment-baseline
+     */
+    alignmentBaseline?: CSSLazy<
+        | "auto"
+        | "baseline"
+        | "before-edge"
+        | "text-before-edge"
+        | "middle"
+        | "central"
+        | "after-edge"
+        | "text-after-edge"
+        | "ideographic"
+        | "alphabetic"
+        | "hanging"
+        | "mathematical"
+        | "inherit"
+    >;
+
+    /**
+     * Shorthand property for animation-name, animation-duration, animation-timing-function, animation-delay,
+     * animation-iteration-count, animation-direction, animation-fill-mode, and animation-play-state.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation
+     */
+    animation?: CSSLazyString;
+
+    /**
+     * Defines a length of time to elapse before an animation starts, allowing an animation to begin execution some time after it is applied.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-delay
+     */
+    animationDelay?: CSSLazyValueGeneral;
+
+    /**
+     * Defines whether an animation should run in reverse on some or all cycles.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction
+     */
+    animationDirection?: CSSLazy<CSSGlobalValues | "normal" | "alternate" | "reverse" | "alternate-reverse">;
+
+    /**
+     * The animation-duration CSS property specifies the length of time that an animation should take to complete one cycle.
+     * A value of '0s', which is the default value, indicates that no animation should occur.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-duration
+     */
+    animationDuration?: CSSLazyString;
+
+    /**
+     * Specifies how a CSS animation should apply styles to its target before and after it is executing.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-fill-mode
+     */
+    animationFillMode?: CSSLazy<"none" | "forwards" | "backwards" | "both">;
+
+    /**
+     * Specifies how many times an animation cycle should play.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-iteration-count
+     */
+    animationIterationCount?: CSSLazy<CSSValueGeneral | "infinite">;
+
+    /**
+     * Defines the list of animations that apply to the element.
+     * Note: You probably want animationDuration as well
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-name
+     */
+    animationName?: CSSLazyString;
+
+    /**
+     * Defines whether an animation is running or paused.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-play-state
+     */
+    animationPlayState?: CSSLazyString;
+
+    /**
+     * Sets the pace of an animation
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timing-function
+     */
+    animationTimingFunction?: CSSLazyString;
+
+    /**
+     * Allows changing the style of any element to platform-based interface elements or vice versa.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/appearance
+     */
+    appearance?: CSSLazy<"auto" | "none">;
+
+    /**
+     * Determines whether or not the “back” side of a transformed element is visible when facing the viewer.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/backface-visibility
+     */
+    backfaceVisibility?: CSSLazy<CSSGlobalValues | "visible" | "hidden">;
+
+    /**
+     * Shorthand property to set the values for one or more of:
+     * background-clip, background-color, background-image,
+     * background-origin, background-position, background-repeat,
+     * background-size, and background-attachment.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background
+     */
+    background?: CSSLazyString;
+
+    /**
+     * If a background-image is specified, this property determines
+     * whether that image's position is fixed within the viewport,
+     * or scrolls along with its containing block.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-attachment
+     */
+    backgroundAttachment?: CSSLazy<"scroll" | "fixed" | "local">;
+
+    /**
+     * This property describes how the element's background images should blend with each other and the element's background color.
+     * The value is a list of blend modes that corresponds to each background image. Each element in the list will apply to the corresponding element of background-image. If a property doesn’t have enough comma-separated values to match the number of layers, the UA must calculate its used value by repeating the list of values until there are enough.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-blend-mode
+     */
+    backgroundBlendMode?: CSSLazy<CSSBlendMode>;
+
+    /**
+     * Specifies whether an element's background, either the color or image, extends underneath its border.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-clip
+     */
+    backgroundClip?: CSSLazy<CSSBox | "text">;
+
+    /**
+     * Sets the background color of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-color
+     */
+    backgroundColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Sets a compositing style for background images and colors.
+     */
+    backgroundComposite?: CSSLazyString;
+
+    /**
+     * Applies one or more background images to an element. These can be any valid CSS image, including url() paths to image files or CSS gradients.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-image
+     */
+    backgroundImage?: CSSLazyString;
+
+    /**
+     * Specifies what the background-position property is relative to.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-origin
+     */
+    backgroundOrigin?: CSSLazy<CSSBox>;
+
+    /**
+     * Sets the position of a background image.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-position
+     */
+    backgroundPosition?: CSSLazy<CSSValueGeneral | "top" | "bottom" | "left" | "right" | "center" | CSSGlobalValues>;
+
+    /**
+     * Background-repeat defines if and how background images will be repeated after they have been sized and positioned
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-repeat
+     */
+    backgroundRepeat?: CSSLazy<CSSRepeatStyle>;
+
+    /**
+     * Background-size specifies the size of a background image
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/background-size
+     */
+    backgroundSize?: CSSLazy<"auto" | "cover" | "contain" | CSSValueGeneral | CSSGlobalValues>;
+
+    /**
+     * Shorthand property that defines the different properties of all four sides of an element's border in a single declaration. It can be used to set border-width, border-style and border-color, or a subset of these.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border
+     */
+    border?: CSSLazyValueGeneral;
+
+    /**
+     * Shorthand that sets the values of border-bottom-color,
+     * border-bottom-style, and border-bottom-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom
+     */
+    borderBottom?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the color of the bottom border of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-color
+     */
+    borderBottomColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Defines the shape of the border of the bottom-left corner.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-left-radius
+     */
+    borderBottomLeftRadius?: CSSLazyValueGeneral;
+
+    /**
+     * Defines the shape of the border of the bottom-right corner.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-right-radius
+     */
+    borderBottomRightRadius?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the line style of the bottom border of a box.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-style
+     */
+    borderBottomStyle?: CSSLazy<CSSLineStyle>;
+
+    /**
+     * Sets the width of an element's bottom border. To set all four borders, use the border-width shorthand property which sets the values simultaneously for border-top-width, border-right-width, border-bottom-width, and border-left-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom-width
+     */
+    borderBottomWidth?: CSSLazyValueGeneral;
+
+    /**
+     * Border-collapse can be used for collapsing the borders between table cells
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-collapse
+     */
+    borderCollapse?: CSSLazy<"collapse" | "separate" | "inherit">;
+
+    /**
+     * The CSS border-color property sets the color of an element's four borders. This property can have from one to four values, made up of the elementary properties:
+     *      •       border-top-color
+     *      •       border-right-color
+     *      •       border-bottom-color
+     *      •       border-left-color The default color is the currentColor of each of these values.
+     * If you provide one value, it sets the color for the element. Two values set the horizontal and vertical values, respectively. Providing three values sets the top, vertical, and bottom values, in that order. Four values set all for sides: top, right, bottom, and left, in that order.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-color
+     */
+    borderColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Specifies different corner clipping effects, such as scoop (inner curves), bevel (straight cuts) or notch (cut-off rectangles). Works along with border-radius to specify the size of each corner effect.
+     */
+    borderCornerShape?: CSSLazyValueGeneral;
+
+    /**
+     * The property border-image-source is used to set the image to be used instead of the border style. If this is set to none the border-style is used instead.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-image-source
+     */
+    borderImageSource?: CSSLazyString;
+
+    /**
+     * The border-image-width CSS property defines the offset to use for dividing the border image in nine parts, the top-left corner, central top edge, top-right-corner, central right edge, bottom-right corner, central bottom edge, bottom-left corner, and central right edge. They represent inward distance from the top, right, bottom, and left edges.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-image-width
+     */
+    borderImageWidth?: CSSLazyValueGeneral;
+
+    /**
+     * Shorthand property that defines the border-width, border-style and border-color of an element's left border in a single declaration. Note that you can use the corresponding longhand properties to set specific individual properties of the left border — border-left-width, border-left-style and border-left-color.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-left
+     */
+    borderLeft?: CSSLazyValueGeneral;
+
+    /**
+     * The CSS border-left-color property sets the color of an element's left border. This page explains the border-left-color value, but often you will find it more convenient to fix the border's left color as part of a shorthand set, either border-left or border-color.
+     * Colors can be defined several ways. For more information, see Usage.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-color
+     */
+    borderLeftColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Sets the style of an element's left border. To set all four borders, use the shorthand property, border-style. Otherwise, you can set the borders individually with border-top-style, border-right-style, border-bottom-style, border-left-style.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-style
+     */
+    borderLeftStyle?: CSSLazy<CSSLineStyle>;
+
+    /**
+     * Sets the width of an element's left border. To set all four borders, use the border-width shorthand property which sets the values simultaneously for border-top-width, border-right-width, border-bottom-width, and border-left-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-left-width
+     */
+    borderLeftWidth?: CSSLazyValueGeneral;
+
+    /**
+     * Allows Web authors to define how rounded border corners are
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius
+     */
+    borderRadius?: CSSLazyValueGeneral;
+
+    /**
+     * Shorthand property that defines the border-width, border-style and border-color of an element's right border in a single declaration. Note that you can use the corresponding longhand properties to set specific individual properties of the right border — border-right-width, border-right-style and border-right-color.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-right
+     */
+    borderRight?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the color of an element's right border. This page explains the border-right-color value, but often you will find it more convenient to fix the border's right color as part of a shorthand set, either border-right or border-color.
+     * Colors can be defined several ways. For more information, see Usage.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-color
+     */
+    borderRightColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Sets the style of an element's right border. To set all four borders, use the shorthand property, border-style. Otherwise, you can set the borders individually with border-top-style, border-right-style, border-bottom-style, border-left-style.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-style
+     */
+    borderRightStyle?: CSSLazy<CSSLineStyle>;
+
+    /**
+     * Sets the width of an element's right border. To set all four borders, use the border-width shorthand property which sets the values simultaneously for border-top-width, border-right-width, border-bottom-width, and border-left-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-right-width
+     */
+    borderRightWidth?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the distance between the borders of adjacent cells.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-spacing
+     */
+    borderSpacing?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the style of an element's four borders. This property can have from one to four values. With only one value, the value will be applied to all four borders; otherwise, this works as a shorthand property for each of border-top-style, border-right-style, border-bottom-style, border-left-style, where each border style may be assigned a separate value.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-style
+     */
+    borderStyle?: CSSLazy<CSSLineStyle>;
+
+    /**
+     * Shorthand property that defines the border-width, border-style and border-color of an element's top border in a single declaration. Note that you can use the corresponding longhand properties to set specific individual properties of the top border — border-top-width, border-top-style and border-top-color.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-top
+     */
+    borderTop?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the color of an element's top border. This page explains the border-top-color value, but often you will find it more convenient to fix the border's top color as part of a shorthand set, either border-top or border-color.
+     * Colors can be defined several ways. For more information, see Usage.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-color
+     */
+    borderTopColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Sets the rounding of the top-left corner of the element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-left-radius
+     */
+    borderTopLeftRadius?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the rounding of the top-right corner of the element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-right-radius
+     */
+    borderTopRightRadius?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the style of an element's top border. To set all four borders, use the shorthand property, border-style. Otherwise, you can set the borders individually with border-top-style, border-right-style, border-bottom-style, border-left-style.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-style
+     */
+    borderTopStyle?: CSSLazy<CSSLineStyle>;
+
+    /**
+     * Sets the width of an element's top border. To set all four borders, use the border-width shorthand property which sets the values simultaneously for border-top-width, border-right-width, border-bottom-width, and border-left-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-top-width
+     */
+    borderTopWidth?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the width of an element's four borders. This property can have from one to four values. This is a shorthand property for setting values simultaneously for border-top-width, border-right-width, border-bottom-width, and border-left-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/border-width
+     */
+    borderWidth?: CSSLazyValueGeneral;
+
+    /**
+     * This property specifies how far an absolutely positioned box's bottom margin edge is offset above the bottom edge of the box's containing block. For relatively positioned boxes, the offset is with respect to the bottom edges of the box itself (i.e., the box is given a position in the normal flow, then offset from that position according to these properties).
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/bottom
+     */
+    bottom?: CSSLazyValueGeneral;
+
+    /**
+     * Breaks a box into fragments creating new borders, padding and repeating backgrounds or lets it stay as a continuous box on a page break, column break, or, for inline elements, at a line break.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/box-decoration-break
+     */
+    boxDecorationBreak?: CSSLazy<"slice" | "clone">;
+
+    /**
+     * box sizing
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/box-sizing
+     */
+    boxSizing?: CSSLazy<CSSGlobalValues | "content-box" | "border-box">;
+
+    /**
+     * Box shadow
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow
+     */
+    boxShadow?: CSSLazyValueGeneral;
+
+    /**
+     * The CSS break-after property allows you to force a break on multi-column layouts. More specifically, it allows you to force a break after an element. It allows you to determine if a break should occur, and what type of break it should be. The break-after CSS property describes how the page, column or region break behaves after the generated box. If there is no generated box, the property is ignored.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/break-after
+     */
+    breakAfter?: CSSLazy<
+        | "auto"
+        | "avoid"
+        | "avoid-page"
+        | "page"
+        | "left"
+        | "right"
+        | "recto"
+        | "verso"
+        | "avoid-column"
+        | "column"
+        | "avoid-region"
+        | "region"
+    >;
+
+    /**
+     * Control page/column/region breaks that fall above a block of content
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/break-before
+     */
+    breakBefore?: CSSLazy<
+        | "auto"
+        | "avoid"
+        | "avoid-page"
+        | "page"
+        | "left"
+        | "right"
+        | "recto"
+        | "verso"
+        | "avoid-column"
+        | "column"
+        | "avoid-region"
+        | "region"
+    >;
+
+    /**
+     * Control page/column/region breaks that fall within a block of content
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/break-inside
+     */
+    breakInside?: CSSLazy<"auto" | "avoid" | "avoid-page" | "avoid-column" | "avoid-region">;
+
+    /**
+     * The caption-side CSS property positions the content of a table's <caption> on the specified side.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/caption-side
+     */
+    captionSide?: CSSLazy<
+        CSSGlobalValues | "top" | "bottom" | "block-start" | "block-end" | "inline-start" | "inline-end"
+    >;
+
+    /**
+     * The clear CSS property specifies if an element can be positioned next to or must be positioned below the floating elements that precede it in the markup.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/clear
+     */
+    clear?: CSSLazy<CSSGlobalValues | "none" | "left" | "right" | "both">;
+
+    /**
+     * Clipping crops an graphic, so that only a portion of the graphic is rendered, or filled. This clip-rule property, when used with the clip-path property, defines which clip rule, or algorithm, to use when filling the different parts of a graphics.
+     * @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/clip-rule
+     */
+    clipRule?: CSSLazyString;
+
+    /**
+     * The color property sets the color of an element's foreground content (usually text), accepting any standard CSS color from keywords and hex values to RGB(a) and HSL(a).
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/color
+     */
+    color?: CSSLazy<CSSColor>;
+
+    /**
+     * Describes the number of columns of the element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-count
+     */
+    columnCount?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies how to fill columns (balanced or sequential).
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-fill
+     */
+    columnFill?: CSSLazyString;
+
+    /**
+     * The column-gap property controls the width of the gap between columns in multi-column elements.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-gap
+     */
+    columnGap?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the width, style, and color of the rule between columns.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-rule
+     */
+    columnRule?: CSSLazyString;
+
+    /**
+     * Specifies the color of the rule between columns.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-rule-color
+     */
+    columnRuleColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Specifies the width of the rule between columns.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-rule-width
+     */
+    columnRuleWidth?: CSSLazyValueGeneral;
+
+    /**
+     * The column-span CSS property makes it possible for an element to span across all columns when its value is set to all. An element that spans more than one column is called a spanning element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-span
+     */
+    columnSpan?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the width of columns in multi-column elements.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/column-width
+     */
+    columnWidth?: CSSLazyValueGeneral;
+
+    /**
+     * This property is a shorthand property for setting column-width and/or column-count.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/columns
+     */
+    columns?: CSSLazyValueGeneral;
+
+    /**
+     * The content property is used with the :before and :after pseudo-elements, to insert generated content.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/content
+     */
+    content?: CSSLazyString;
+
+    /**
+     * The counter-increment property accepts one or more names of counters (identifiers), each one optionally followed by an integer which specifies the value by which the counter should be incremented (e.g. if the value is 2, the counter increases by 2 each time it is invoked).
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/counter-increment
+     */
+    counterIncrement?: CSSLazyValueGeneral;
+
+    /**
+     * The counter-reset property contains a list of one or more names of counters, each one optionally followed by an integer (otherwise, the integer defaults to 0.) Each time the given element is invoked, the counters specified by the property are set to the given integer.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/counter-reset
+     */
+    counterReset?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the mouse cursor displayed when the mouse pointer is over an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/cursor
+     */
+    cursor?: CSSLazy<
+        | CSSGlobalValues
+        | StringHint
+        | "auto"
+        | "default"
+        | "none"
+        | "context-menu"
+        | "help"
+        | "pointer"
+        | "progress"
+        | "wait"
+        | "cell"
+        | "crosshair"
+        | "text"
+        | "vertical-text"
+        | "alias"
+        | "copy"
+        | "move"
+        | "no-drop"
+        | "not-allowed"
+        | "e-resize"
+        | "n-resize"
+        | "ne-resize"
+        | "nw-resize"
+        | "s-resize"
+        | "se-resize"
+        | "sw-resize"
+        | "w-resize"
+        | "ew-resize"
+        | "ns-resize"
+        | "nesw-resize"
+        | "nwse-resize"
+        | "col-resize"
+        | "row-resize"
+        | "all-scroll"
+        | "zoom-in"
+        | "zoom-out"
+        | "grab"
+        | "grabbing"
+    >;
+
+    /**
+     * The direction CSS property specifies the text direction/writing direction. The rtl is used for Hebrew or Arabic text, the ltr is for other languages.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/direction
+     */
+    direction?: CSSLazy<CSSGlobalValues | "ltr" | "rtl">;
+
+    /**
+     * This property specifies the type of rendering box used for an element. It is a shorthand property for many other display properties.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/display
+     */
+    display?: CSSLazy<
+        | CSSGlobalValues
+        | StringHint
+        | "none"
+        | "inline"
+        | "block"
+        | "inline-block"
+        | "contents"
+        | "list-item"
+        | "inline-list-item"
+        | "table"
+        | "inline-table"
+        | "table-cell"
+        | "table-column"
+        | "table-column-group"
+        | "table-footer-group"
+        | "table-header-group"
+        | "table-row"
+        | "table-row-group"
+        | "table-caption"
+        | "flex"
+        | "inline-flex"
+        | "grid"
+        | "inline-grid"
+        | "ruby"
+        | "ruby-base"
+        | "ruby-text"
+        | "ruby-base-container"
+        | "ruby-text-container"
+        | "run-in"
+    >;
+
+    /**
+     * The ‘fill’ property paints the interior of the given graphical element. The area to be painted consists of any areas inside the outline of the shape. To determine the inside of the shape, all subpaths are considered, and the interior is determined according to the rules associated with the current value of the ‘fill-rule’ property. The zero-width geometric outline of a shape is included in the area to be painted.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/fill
+     */
+    fill?: CSSLazyString;
+
+    /**
+     * SVG: Specifies the opacity of the color or the content the current object is filled with.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/fill-opacity
+     */
+    fillOpacity?: CSSLazyValueGeneral;
+
+    /**
+     * The ‘fill-rule’ property indicates the algorithm which is to be used to determine what parts of the canvas are included inside the shape. For a simple, non-intersecting path, it is intuitively clear what region lies "inside"; however, for a more complex path, such as a path that intersects itself or where one subpath encloses another, the interpretation of "inside" is not so obvious.
+     * The ‘fill-rule’ property provides two options for how the inside of a shape is determined:
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/fill-rule
+     */
+    fillRule?: CSSLazyString;
+
+    /**
+     * Applies various image processing effects. This property is largely unsupported. See Compatibility section for more information.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/filter
+     */
+    filter?: CSSLazyString;
+
+    /**
+     * Shorthand for `flex-grow`, `flex-shrink`, and `flex-basis`.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex
+     */
+    flex?: CSSLazyValueGeneral;
+
+    /**
+     * The flex-basis CSS property describes the initial main size of the flex item before any free space is distributed according to the flex factors described in the flex property (flex-grow and flex-shrink).
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex-basis
+     */
+    flexBasis?: CSSLazyValueGeneral;
+
+    /**
+     * The flex-direction CSS property describes how flex items are placed in the flex container, by setting the direction of the flex container's main axis.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex-direction
+     */
+    flexDirection?: CSSLazy<CSSGlobalValues | "row" | "row-reverse" | "column" | "column-reverse">;
+
+    /**
+     * The flex-flow CSS property defines the flex container's main and cross axis. It is a shorthand property for the flex-direction and flex-wrap properties.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex-flow
+     */
+    flexFlow?: CSSLazyString;
+
+    /**
+     * Specifies the flex grow factor of a flex item.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex-grow
+     */
+    flexGrow?: CSSLazyValueGeneral;
+
+    /**
+     * Gets or sets a value that specifies the ordinal group that a flexbox element belongs to. This ordinal value identifies the display order for the group.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex-order
+     */
+    flexOrder?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the flex shrink factor of a flex item.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex-shrink
+     */
+    flexShrink?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies whether flex items are forced into a single line or can be wrapped onto multiple lines.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/flex-wrap
+     */
+    flexWrap?: CSSLazy<CSSGlobalValues | "nowrap" | "wrap" | "wrap-reverse">;
+
+    /**
+     * Elements which have the style float are floated horizontally. These elements can move as far to the left or right of the containing element. All elements after the floating element will flow around it, but elements before the floating element are not impacted. If several floating elements are placed after each other, they will float next to each other as long as there is room.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/float
+     */
+    float?: CSSLazy<CSSGlobalValues | "left" | "right" | "none" | "inline-start" | "inline-end">;
+
+    /**
+     * Flows content from a named flow (specified by a corresponding flow-into) through selected elements to form a dynamic chain of layout regions.
+     */
+    flowFrom?: CSSLazyValueGeneral;
+
+    /**
+     * The font property is shorthand that allows you to do one of two things: you can either set up six of the most mature font properties in one line, or you can set one of a choice of keywords to adopt a system font setting.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font
+     */
+    font?: CSSLazyString;
+
+    /**
+     * The font-family property allows one or more font family names and/or generic family names to be specified for usage on the selected element(s)' text. The browser then goes through the list; for each character in the selection it applies the first font family that has an available glyph for that character.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-family
+     */
+    fontFamily?: CSSLazyString;
+
+    /**
+     * The font-kerning property allows contextual adjustment of inter-glyph spacing, i.e. the spaces between the characters in text. This property controls <bold>metric kerning</bold> - that utilizes adjustment data contained in the font. Optical Kerning is not supported as yet.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-kerning
+     */
+    fontKerning?: CSSLazy<CSSGlobalValues | "auto" | "normal" | "none">;
+
+    /**
+     * Specifies the size of the font. Used to compute em and ex units.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-size
+     */
+    fontSize?: CSSLazy<CSSFontSize>;
+
+    /**
+     * The font-size-adjust property adjusts the font-size of the fallback fonts defined with font-family, so that the x-height is the same no matter what font is used. This preserves the readability of the text when fallback happens.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-size-adjust
+     */
+    fontSizeAdjust?: CSSLazyValueGeneral;
+
+    /**
+     * Allows you to expand or condense the widths for a normal, condensed, or expanded font face.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-stretch
+     */
+    fontStretch?: CSSLazy<
+        | CSSGlobalValues
+        | "normal"
+        | "ultra-condensed"
+        | "extra-condensed"
+        | "condensed"
+        | "semi-condensed"
+        | "semi-expanded"
+        | "expanded"
+        | "extra-expanded"
+        | "ultra-expanded"
+    >;
+
+    /**
+     * The font-style property allows normal, italic, or oblique faces to be selected. Italic forms are generally cursive in nature while oblique faces are typically sloped versions of the regular face. Oblique faces can be simulated by artificially sloping the glyphs of the regular face.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-style
+     */
+    fontStyle?: CSSLazy<CSSGlobalValues | "normal" | "italic" | "oblique">;
+
+    /**
+     * This value specifies whether the user agent is allowed to synthesize bold or oblique font faces when a font family lacks bold or italic faces.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-synthesis
+     */
+    fontSynthesis?: CSSLazyString;
+
+    /**
+     * The font-variant property enables you to select the small-caps font within a font family.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-variant
+     */
+    fontVariant?: CSSLazyString;
+
+    /**
+     * Fonts can provide alternate glyphs in addition to default glyph for a character. This property provides control over the selection of these alternate glyphs.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-variant-alternates
+     */
+    fontVariantAlternates?: CSSLazyString;
+
+    /**
+     * Specifies the weight or boldness of the font.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight
+     */
+    fontWeight?: CSSLazy<CSSFontWeight>;
+
+    /**
+     * Lays out one or more grid items bound by 4 grid lines. Shorthand for setting grid-column-start, grid-column-end, grid-row-start, and grid-row-end in a single declaration.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-area
+     */
+    gridArea?: CSSLazyString;
+
+    /**
+     * Controls a grid item's placement in a grid area, particularly grid position and a grid span. Shorthand for setting grid-column-start and grid-column-end in a single declaration.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column
+     */
+    gridColumn?: CSSLazyString;
+
+    /**
+     * Controls a grid item's placement in a grid area as well as grid position and a grid span. The grid-column-end property (with grid-row-start, grid-row-end, and grid-column-start) determines a grid item's placement by specifying the grid lines of a grid item's grid area.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column-end
+     */
+    gridColumnEnd?: CSSLazyValueGeneral;
+
+    /**
+     * Determines a grid item's placement by specifying the starting grid lines of a grid item's grid area . A grid item's placement in a grid area consists of a grid position and a grid span. See also ( grid-row-start, grid-row-end, and grid-column-end)
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column-start
+     */
+    gridColumnStart?: CSSLazyValueGeneral;
+
+    /**
+     * Gets or sets a value that indicates which row an element within a Grid should appear in. Shorthand for setting grid-row-start and grid-row-end in a single declaration.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row
+     */
+    gridRow?: CSSLazyString;
+
+    /**
+     * Determines a grid item’s placement by specifying the block-end. A grid item's placement in a grid area consists of a grid position and a grid span. The grid-row-end property (with grid-row-start, grid-column-start, and grid-column-end) determines a grid item's placement by specifying the grid lines of a grid item's grid area.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row-end
+     */
+    gridRowEnd?: CSSLazyValueGeneral;
+
+    /**
+     * Determines a grid item’s start position within the grid row by contributing a line, a span, or nothing (automatic) to its grid placement, thereby specifying the inline-start edge of its grid area.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row-start
+     */
+    gridRowStart?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies a row position based upon an integer location, string value, or desired row size.
+     * css/properties/grid-row is used as short-hand for grid-row-position and grid-row-position
+     */
+    gridRowPosition?: CSSLazyString;
+
+    gridRowSpan?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies named grid areas which are not associated with any particular grid item, but can be referenced from the grid-placement properties. The syntax of the grid-template-areas property also provides a visualization of the structure of the grid, making the overall layout of the grid container easier to understand.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-areas
+     */
+    gridTemplateAreas?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies (with grid-template-rows) the line names and track sizing functions of the grid. Each sizing function can be specified as a length, a percentage of the grid container’s size, a measurement of the contents occupying the column or row, or a fraction of the free space in the grid.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-columns
+     */
+    gridTemplateColumns?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies (with grid-template-columns) the line names and track sizing functions of the grid. Each sizing function can be specified as a length, a percentage of the grid container’s size, a measurement of the contents occupying the column or row, or a fraction of the free space in the grid.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-rows
+     */
+    gridTemplateRows?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the height of an element. The content area of the element height does not include the padding, border, and margin of the element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/height
+     */
+    height?: CSSLazy<"auto" | CSSValueGeneral | CSSGlobalValues>;
+
+    /**
+     * Specifies the minimum number of characters in a hyphenated word
+     * @see https://msdn.microsoft.com/en-us/library/hh771865(v=vs.85).aspx
+     */
+    hyphenateLimitChars?: CSSLazyValueGeneral;
+
+    /**
+     * Indicates the maximum number of successive hyphenated lines in an element. The ‘no-limit’ value means that there is no limit.
+     * @see https://msdn.microsoft.com/en-us/library/hh771867(v=vs.85).aspx
+     */
+    hyphenateLimitLines?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the maximum amount of trailing whitespace (before justification) that may be left in a line before hyphenation is triggered to pull part of a word from the next line back up into the current one.
+     * @see https://msdn.microsoft.com/en-us/library/hh771869(v=vs.85).aspx
+     */
+    hyphenateLimitZone?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies whether or not words in a sentence can be split by the use of a manual or automatic hyphenation mechanism.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/hyphens
+     */
+    hyphens?: CSSLazy<CSSGlobalValues | StringHint | "none" | "manual" | "auto">;
+
+    /**
+     * Controls the state of the input method editor for text fields.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/ime-mode
+     */
+    imeMode?: CSSLazy<CSSGlobalValues | "auto" | "normal" | "active" | "inactive" | "disabled">;
+
+    /**
+     * Defines how the browser distributes space between and around flex items
+     * along the main-axis of their container.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/justify-content
+     */
+    justifyContent?: CSSLazy<"flex-start" | "flex-end" | "center" | "space-between" | "space-around">;
+
+    layoutGrid?: CSSLazyValueGeneral;
+
+    layoutGridChar?: CSSLazyValueGeneral;
+
+    layoutGridLine?: CSSLazyValueGeneral;
+
+    layoutGridMode?: CSSLazyValueGeneral;
+
+    layoutGridType?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the left edge of an element
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/left
+     */
+    left?: CSSLazy<"auto" | CSSValueGeneral>;
+
+    /**
+     * The letter-spacing CSS property specifies the spacing behavior between text characters.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/letter-spacing
+     */
+    letterSpacing?: CSSLazyValueGeneral;
+
+    lineClamp?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the height of an inline block level element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/line-height
+     */
+    lineHeight?: CSSLazyValueGeneral;
+
+    /**
+     * Shorthand property that sets the list-style-type, list-style-position and list-style-image properties in one declaration.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/list-style
+     */
+    listStyle?: CSSLazyString;
+
+    /**
+     * This property sets the image that will be used as the list item marker. When the image is available, it will replace the marker set with the 'list-style-type' marker. That also means that if the image is not available, it will show the style specified by list-style-property
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/list-style-image
+     */
+    listStyleImage?: CSSLazyString;
+
+    /**
+     * Specifies if the list-item markers should appear inside or outside the content flow.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/list-style-position
+     */
+    listStylePosition?: CSSLazy<CSSGlobalValues | "inside" | "outside">;
+
+    /**
+     * Specifies the type of list-item marker in a list.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/list-style-type
+     */
+    listStyleType?: CSSLazyString;
+
+    /**
+     * The margin property is shorthand to allow you to set all four margins of an element at once. Its equivalent longhand properties are margin-top, margin-right, margin-bottom and margin-left. Negative values are also allowed.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/margin
+     */
+    margin?: CSSLazyValueGeneral;
+
+    /**
+     * margin-bottom sets the bottom margin of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/margin-bottom
+     */
+    marginBottom?: CSSLazyValueGeneral;
+
+    /**
+     * margin-left sets the left margin of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/margin-left
+     */
+    marginLeft?: CSSLazyValueGeneral;
+
+    /**
+     * margin-right sets the right margin of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/margin-right
+     */
+    marginRight?: CSSLazyValueGeneral;
+
+    /**
+     * margin-top sets the top margin of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/margin-top
+     */
+    marginTop?: CSSLazyValueGeneral;
+
+    /**
+     * This property is shorthand for setting mask-image, mask-mode, mask-repeat, mask-position, mask-clip, mask-origin, mask-composite and mask-size. Omitted values are set to their original properties' initial values.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/mask
+     */
+    mask?: CSSLazyString;
+
+    /**
+     * This property is shorthand for setting mask-border-source, mask-border-slice, mask-border-width, mask-border-outset, and mask-border-repeat. Omitted values are set to their original properties' initial values.
+     */
+    maskBorder?: CSSLazyString;
+
+    /**
+     * This property specifies how the images for the sides and the middle part of the mask image are scaled and tiled. The first keyword applies to the horizontal sides, the second one applies to the vertical ones. If the second keyword is absent, it is assumed to be the same as the first, similar to the CSS border-image-repeat property.
+     */
+    maskBorderRepeat?: CSSLazyValueGeneral;
+
+    /**
+     * This property specifies inward offsets from the top, right, bottom, and left edges of the mask image, dividing it into nine regions: four corners, four edges, and a middle. The middle image part is discarded and treated as fully transparent black unless the fill keyword is present. The four values set the top, right, bottom and left offsets in that order, similar to the CSS border-image-slice property.
+     */
+    maskBorderSlice?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies an image to be used as a mask. An image that is empty, fails to download, is non-existent, or cannot be displayed is ignored and does not mask the element.
+     */
+    maskBorderSource?: CSSLazyString;
+
+    /**
+     * This property sets the width of the mask box image, similar to the CSS border-image-width property.
+     */
+    maskBorderWidth?: CSSLazyValueGeneral;
+
+    /**
+     * Determines the mask painting area, which defines the area that is affected by the mask. The painted content of an element may be restricted to this area.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/mask-clip
+     */
+    maskClip?: CSSLazyString;
+
+    /**
+     * For elements rendered as a single box, specifies the mask positioning area. For elements rendered as multiple boxes (e.g., inline boxes on several lines, boxes on several pages) specifies which boxes box-decoration-break operates on to determine the mask positioning area(s).
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/mask-origin
+     */
+    maskOrigin?: CSSLazyString;
+
+    /**
+     * Sets the maximum height for an element. It prevents the height of the element to exceed the specified value. If min-height is specified and is greater than max-height, max-height is overridden.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/max-height
+     */
+    maxHeight?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the maximum width for an element. It limits the width property to be larger than the value specified in max-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/max-width
+     */
+    maxWidth?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the minimum height for an element. It prevents the height of the element to be smaller than the specified value. The value of min-height overrides both max-height and height.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/min-height
+     */
+    minHeight?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the minimum width of an element. It limits the width property to be not smaller than the value specified in min-width.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/min-width
+     */
+    minWidth?: CSSLazyValueGeneral;
+
+    /**
+     * The blend mode defines the formula that must be used to mix the colors with the backdrop
+     * @see https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+     */
+    mixBlendMode?: CSSLazy<CSSBlendMode>;
+
+    /**
+     * Specifies the transparency of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/opacity
+     */
+    opacity?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the order used to lay out flex items in their flex container.
+     * Elements are laid out in the ascending order of the order value.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/order
+     */
+    order?: CSSLazyValueGeneral;
+
+    /**
+     * In paged media, this property defines the minimum number of lines in
+     * a block container that must be left at the bottom of the page.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/orphans
+     */
+    orphans?: CSSLazyValueGeneral;
+
+    /**
+     * The CSS outline property is a shorthand property for setting one or more of the individual outline properties outline-style, outline-width and outline-color in a single rule. In most cases the use of this shortcut is preferable and more convenient.
+     * Outlines differ from borders in the following ways:
+     *  • Outlines do not take up space, they are drawn above the content.
+     *  • Outlines may be non-rectangular. They are rectangular in Gecko/Firefox. Internet Explorer attempts to place the smallest contiguous outline around all elements or shapes that are indicated to have an outline. Opera draws a non-rectangular shape around a construct.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/outline
+     */
+    outline?: CSSLazyValueGeneral;
+
+    /**
+     * The outline-color property sets the color of the outline of an element. An outline is a line that is drawn around elements, outside the border edge, to make the element stand out.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/outline-color
+     */
+    outlineColor?: CSSLazy<CSSColor>;
+
+    /**
+     * The outline-style property sets the style of the outline of an element.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/outline-style
+     */
+    outlineStyle?: CSSLazy<
+        | CSSGlobalValues
+        | "auto"
+        | "none"
+        | "dotted"
+        | "dashed"
+        | "solid"
+        | "double"
+        | "groove"
+        | "ridge"
+        | "inset"
+        | "outset"
+    >;
+
+    /**
+     * The outline-offset property offsets the outline and draw it beyond the border edge.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/outline-offset
+     */
+    outlineOffset?: CSSLazyValueGeneral;
+
+    /**
+     * The overflow property controls how extra content exceeding the bounding box of an element is rendered. It can be used in conjunction with an element that has a fixed width and height, to eliminate text-induced page distortion.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/overflow
+     */
+    overflow?: CSSLazy<CSSOverflow>;
+
+    /**
+     * Specifies the preferred scrolling methods for elements that overflow.
+     */
+    overflowStyle?: CSSLazyValueGeneral;
+
+    /**
+     * Controls how extra content exceeding the x-axis of the bounding box of an element is rendered.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-x
+     */
+    overflowX?: CSSLazy<CSSOverflow>;
+
+    /**
+     * Controls how extra content exceeding the y-axis of the bounding box of an element is rendered.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-y
+     */
+    overflowY?: CSSLazy<CSSOverflow>;
+
+    /**
+     * The padding optional CSS property sets the required padding space on one to four sides of an element. The padding area is the space between an element and its border. Negative values are not allowed but decimal values are permitted. The element size is treated as fixed, and the content of the element shifts toward the center as padding is increased.
+     * The padding property is a shorthand to avoid setting each side separately (padding-top, padding-right, padding-bottom, padding-left).
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/padding
+     */
+    padding?: CSSLazyValueGeneral;
+
+    /**
+     * The padding-bottom CSS property of an element sets the padding space required on the bottom of an element. The padding area is the space between the content of the element and its border. Contrary to margin-bottom values, negative values of padding-bottom are invalid.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/padding-bottom
+     */
+    paddingBottom?: CSSLazyValueGeneral;
+
+    /**
+     * The padding-left CSS property of an element sets the padding space required on the left side of an element. The padding area is the space between the content of the element and its border. Contrary to margin-left values, negative values of padding-left are invalid.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/padding-left
+     */
+    paddingLeft?: CSSLazyValueGeneral;
+
+    /**
+     * The padding-right CSS property of an element sets the padding space required on the right side of an element. The padding area is the space between the content of the element and its border. Contrary to margin-right values, negative values of padding-right are invalid.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/padding-right
+     */
+    paddingRight?: CSSLazyValueGeneral;
+
+    /**
+     * The padding-top CSS property of an element sets the padding space required on the top of an element. The padding area is the space between the content of the element and its border. Contrary to margin-top values, negative values of padding-top are invalid.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/padding-top
+     */
+    paddingTop?: CSSLazyValueGeneral;
+
+    /**
+     * The page-break-after property is supported in all major browsers. With CSS3, page-break-* properties are only aliases of the break-* properties. The CSS3 Fragmentation spec defines breaks for all CSS box fragmentation.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/page-break-after
+     */
+    pageBreakAfter?: CSSLazy<CSSGlobalValues | "auto" | "always" | "avoid" | "left" | "right" | "recto" | "verso">;
+
+    /**
+     * The page-break-before property sets the page-breaking behavior before an element. With CSS3, page-break-* properties are only aliases of the break-* properties. The CSS3 Fragmentation spec defines breaks for all CSS box fragmentation.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/page-break-before
+     */
+    pageBreakBefore?: CSSLazy<CSSGlobalValues | "auto" | "always" | "avoid" | "left" | "right" | "recto" | "verso">;
+
+    /**
+     * Sets the page-breaking behavior inside an element. With CSS3, page-break-* properties are only aliases of the break-* properties. The CSS3 Fragmentation spec defines breaks for all CSS box fragmentation.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/page-break-inside
+     */
+    pageBreakInside?: CSSLazy<CSSGlobalValues | "auto" | "avoid">;
+
+    /**
+     * The perspective property defines how far an element is placed from the view on the z-axis, from the screen to the viewer.
+     * Perspective defines how an object is viewed. In graphic arts, perspective is the representation on a flat surface of what the viewer's eye would see in a 3D space. (See Wikipedia for more information about graphical perspective and for related illustrations.)
+     * The illusion of perspective on a flat surface, such as a computer screen, is created by projecting points on the flat surface as they would appear if the flat surface were a window through which the viewer was looking at the object. In discussion of virtual environments, this flat surface is called a projection plane.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/perspective
+     */
+    perspective?: CSSLazyValueGeneral;
+
+    /**
+     * The perspective-origin property establishes the origin for the perspective property. It effectively sets the X and Y position at which the viewer appears to be looking at the children of the element.
+     * When used with perspective, perspective-origin changes the appearance of an object, as if a viewer were looking at it from a different origin. An object appears differently if a viewer is looking directly at it versus looking at it from below, above, or from the side. Thus, the perspective-origin is like a vanishing point.
+     * The default value of perspective-origin is 50% 50%. This displays an object as if the viewer's eye were positioned directly at the center of the screen, both top-to-bottom and left-to-right. A value of 0% 0% changes the object as if the viewer was looking toward the top left angle. A value of 100% 100% changes the appearance as if viewed toward the bottom right angle.
+     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/perspective-origin
+     */
+    perspectiveOrigin?: CSSLazyValueGeneral;
+
+    /**
+     * The pointer-events property allows you to control whether an element can be the target for the pointing device (e.g, mouse, pen) events.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/pointer-events
+     */
+    pointerEvents?: CSSLazy<
+        | CSSGlobalValues
+        | "auto"
+        | "none"
+        | "visiblePainted"
+        | "visibleFill"
+        | "visibleStroke"
+        | "visible"
+        | "painted"
+        | "fill"
+        | "stroke"
+        | "all"
+    >;
+
+    /**
+     * The position property controls the type of positioning used by an element within its parent elements. The effect of the position property depends on a lot of factors, for example the position property of parent elements.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/position
+     */
+    position?: CSSLazy<CSSGlobalValues | "static" | "relative" | "absolute" | "sticky" | "fixed">;
+
+    /**
+     * Sets the type of quotation marks for embedded quotations.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/quotes
+     */
+    quotes?: CSSLazyValueGeneral;
+
+    /**
+     * Controls whether the last region in a chain displays additional 'overset' content according its default overflow property, or if it displays a fragment of content as if it were flowing into a subsequent region.
+     */
+    regionFragment?: CSSLazyValueGeneral;
+
+    /**
+     * The resize CSS property lets you control the resizability of an element.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/resize
+     */
+    resize?: CSSLazy<CSSGlobalValues | "none" | "both " | "horizontal" | "vertical">;
+
+    /**
+     * The rest-after property determines how long a speech media agent should pause after presenting an element's main content, before presenting that element's exit cue sound. It may be replaced by the shorthand property rest, which sets rest time before and after.
+     */
+    restAfter?: CSSLazyValueGeneral;
+
+    /**
+     * The rest-before property determines how long a speech media agent should pause after presenting an intro cue sound for an element, before presenting that element's main content. It may be replaced by the shorthand property rest, which sets rest time before and after.
+     */
+    restBefore?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the position an element in relation to the right side of the containing element.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/right
+     */
+    right?: CSSLazy<"auto" | CSSValueGeneral | CSSGlobalValues>;
+
+    /**
+     * Specifies the distribution of the different ruby elements over the base.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/ruby-align
+     */
+    rubyAlign?: CSSLazy<CSSGlobalValues | "start" | "center" | "space-between" | "space-around">;
+
+    /**
+     * Specifies the position of a ruby element relatives to its base element. It can be position over the element (over), under it (under), or between the characters, on their right side (inter-character).
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/ruby-position
+     */
+    rubyPosition?: CSSLazy<CSSGlobalValues | "over" | "under" | "inter-character">;
+
+    /**
+     * Defines the alpha channel threshold used to extract a shape from an image. Can be thought of as a "minimum opacity" threshold; that is, a value of 0.5 means that the shape will enclose all the pixels that are more than 50% opaque.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/shape-image-threshold
+     */
+    shapeImageThreshold?: CSSLazyValueGeneral;
+
+    /**
+     * A future level of CSS Shapes will define a shape-inside property, which will define a shape to wrap content within the element. See Editor's Draft <http://dev.w3.org/csswg/css-shapes/> and CSSWG wiki page on next-level plans <http://wiki.csswg.org/spec/css-shapes>
+     */
+    shapeInside?: CSSLazyValueGeneral;
+
+    /**
+     * Adds a margin to a shape-outside. In effect, defines a new shape that is the smallest contour around all the points that are the shape-margin distance outward perpendicular to each point on the underlying shape. For points where a perpendicular direction is not defined (e.g., a triangle corner), takes all points on a circle centered at the point and with a radius of the shape-margin distance. This property accepts only non-negative values.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/shape-margin
+     */
+    shapeMargin?: CSSLazyValueGeneral;
+
+    /**
+     * Declares a shape around which text should be wrapped, with possible modifications from the shape-margin property. The shape defined by shape-outside and shape-margin changes the geometry of a float element's float area.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/shape-outside
+     */
+    shapeOutside?: CSSLazyValueGeneral;
+
+    /**
+     * The speak property determines whether or not a speech synthesizer will read aloud the contents of an element.
+     */
+    speak?: CSSLazyValueGeneral;
+
+    /**
+     * The speak-as property determines how the speech synthesizer interprets the content: words as whole words or as a sequence of letters, numbers as a numerical value or a sequence of digits, punctuation as pauses in speech or named punctuation characters.
+     */
+    speakAs?: CSSLazyValueGeneral;
+
+    /**
+     * SVG: Specifies the opacity of the outline on the current object.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/stroke-opacity
+     */
+    strokeOpacity?: CSSLazyValueGeneral;
+
+    /**
+     * SVG: Specifies the width of the outline on the current object.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/stroke-width
+     */
+    strokeWidth?: CSSLazyValueGeneral;
+
+    /**
+     * The tab-size CSS property is used to customise the width of a tab (U+0009) character.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/tab-size
+     */
+    tabSize?: CSSLazyValueGeneral;
+
+    /**
+     * The 'table-layout' property controls the algorithm used to lay out the table cells, rows, and columns.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/table-layout
+     */
+    tableLayout?: CSSLazyValueGeneral;
+
+    /**
+     * The text-align CSS property describes how inline content like text is aligned in its parent block element. text-align does not control the alignment of block elements itself, only their inline content.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-align
+     */
+    textAlign?: CSSLazy<
+        CSSGlobalValues | "start" | "end" | "left" | "right" | "center" | "justify" | "justify-all" | "match-parent"
+    >;
+
+    /**
+     * The text-align-last CSS property describes how the last line of a block element or a line before line break is aligned in its parent block element.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-align-last
+     */
+    textAlignLast?: CSSLazy<CSSGlobalValues | "auto" | "start" | "end" | "left" | "right" | "center" | "justify">;
+
+    /**
+     * The text-decoration CSS property is used to set the text formatting to underline, overline, line-through or blink.
+     * underline and overline decorations are positioned under the text, line-through over it.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-decoration
+     */
+    textDecoration?: CSSLazyValueGeneral;
+
+    /**
+     * Sets the color of any text decoration, such as underlines, overlines, and strike throughs.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-decoration-color
+     */
+    textDecorationColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Sets what kind of line decorations are added to an element, such as underlines, overlines, etc.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-decoration-line
+     */
+    textDecorationLine?: CSSLazyValueGeneral;
+
+    textDecorationLineThrough?: CSSLazyValueGeneral;
+
+    textDecorationNone?: CSSLazyValueGeneral;
+
+    textDecorationOverline?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies what parts of an element’s content are skipped over when applying any text decoration.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-decoration-skip
+     */
+    textDecorationSkip?: CSSLazyValueGeneral;
+
+    /**
+     * This property specifies the style of the text decoration line drawn on the specified element. The intended meaning for the values are the same as those of the border-style-properties.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-decoration-style
+     */
+    textDecorationStyle?: CSSLazy<CSSGlobalValues | "solid" | "double" | "dotted" | "dashed" | "wavy">;
+
+    textDecorationUnderline?: CSSLazyValueGeneral;
+
+    /**
+     * The text-emphasis property will apply special emphasis marks to the elements text. Slightly similar to the text-decoration property only that this property can have affect on the line-height. It also is noted that this is shorthand for text-emphasis-style and for text-emphasis-color.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-emphasis
+     */
+    textEmphasis?: CSSLazyValueGeneral;
+
+    /**
+     * The text-emphasis-color property specifies the foreground color of the emphasis marks.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-emphasis-color
+     */
+    textEmphasisColor?: CSSLazy<CSSColor>;
+
+    /**
+     * The text-emphasis-style property applies special emphasis marks to an element's text.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-emphasis-style
+     */
+    textEmphasisStyle?: CSSLazyValueGeneral;
+
+    /**
+     * This property helps determine an inline box's block-progression dimension, derived from the text-height and font-size properties for non-replaced elements, the height or the width for replaced elements, and the stacked block-progression dimension for inline-block elements. The block-progression dimension determines the position of the padding, border and margin for the element.
+     */
+    textHeight?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the amount of space horizontally that should be left on the first line of the text of an element. This horizontal spacing is at the beginning of the first line and is in respect to the left edge of the containing block box.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-indent
+     */
+    textIndent?: CSSLazyValueGeneral;
+
+    /**
+     * The text-overflow shorthand CSS property determines how overflowed content that is not displayed is signaled to the users. It can be clipped, display an ellipsis ('…', U+2026 HORIZONTAL ELLIPSIS) or a Web author-defined string. It covers the two long-hand properties text-overflow-mode and text-overflow-ellipsis
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-overflow
+     */
+    textOverflow?: CSSLazy<CSSGlobalValues | "clip" | "ellipsis" | StringHint>;
+
+    /**
+     * The text-overline property is the shorthand for the text-overline-style, text-overline-width, text-overline-color, and text-overline-mode properties.
+     */
+    textOverline?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the line color for the overline text decoration.
+     */
+    textOverlineColor?: CSSLazy<CSSColor>;
+
+    /**
+     * Sets the mode for the overline text decoration, determining whether the text decoration affects the space characters or not.
+     */
+    textOverlineMode?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the line style for overline text decoration.
+     */
+    textOverlineStyle?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the line width for the overline text decoration.
+     */
+    textOverlineWidth?: CSSLazyValueGeneral;
+
+    /**
+     * The text-rendering CSS property provides information to the browser about how to optimize when rendering text. Options are: legibility, speed or geometric precision.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-rendering
+     */
+    textRendering?: CSSLazy<CSSGlobalValues | "auto" | "optimizeSpeed" | "optimizeLegibility" | "geometricPrecision">;
+
+    /**
+     * The CSS text-shadow property applies one or more drop shadows to the text and <text-decorations> of an element. Each shadow is specified as an offset from the text, along with optional color and blur radius values.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-shadow
+     */
+    textShadow?: CSSLazyValueGeneral;
+
+    /**
+     * This property transforms text for styling purposes. (It has no effect on the underlying content.)
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/text-transform
+     */
+    textTransform?: CSSLazy<CSSGlobalValues | "none" | "capitalize" | "uppercase" | "lowercase" | "full-width">;
+
+    /**
+     * Unsupported.
+     * This property will add a underline position value to the element that has an underline defined.
+     */
+    textUnderlinePosition?: CSSLazyValueGeneral;
+
+    /**
+     * After review this should be replaced by text-decoration should it not?
+     * This property will set the underline style for text with a line value for underline, overline, and line-through.
+     */
+    textUnderlineStyle?: CSSLazyValueGeneral;
+
+    /**
+     * This property specifies how far an absolutely positioned box's top margin edge is offset below the top edge of the box's containing block. For relatively positioned boxes, the offset is with respect to the top edges of the box itself (i.e., the box is given a position in the normal flow, then offset from that position according to these properties).
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/top
+     */
+    top?: CSSLazy<"auto" | CSSValueGeneral | CSSGlobalValues>;
+
+    /**
+     * Determines whether touch input may trigger default behavior supplied by the user agent, such as panning or zooming.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/touch-action
+     */
+    touchAction?: CSSLazy<
+        | CSSGlobalValues
+        | "auto"
+        | "none"
+        | "pan-x"
+        | "pan-left"
+        | "pan-right"
+        | "pan-y"
+        | "pan-up"
+        | "pan-down"
+        | "manipulation"
+    >;
+
+    /**
+     * CSS transforms allow elements styled with CSS to be transformed in two-dimensional or three-dimensional space. Using this property, elements can be translated, rotated, scaled, and skewed. The value list may consist of 2D and/or 3D transform values.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/transform
+     */
+    transform?: CSSLazyString;
+
+    /**
+     * This property defines the origin of the transformation axes relative to the element to which the transformation is applied.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/transform-origin
+     */
+    transformOrigin?: CSSLazyValueGeneral;
+
+    /**
+     * This property allows you to define the relative position of the origin of the transformation grid along the z-axis.
+     */
+    transformOriginZ?: CSSLazyValueGeneral;
+
+    /**
+     * This property specifies how nested elements are rendered in 3D space relative to their parent.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/transform-style
+     */
+    transformStyle?: CSSLazy<CSSGlobalValues | "flat" | "preserve-3d">;
+
+    /**
+     * The transition CSS property is a shorthand property for transition-property, transition-duration, transition-timing-function, and transition-delay. It allows to define the transition between two states of an element.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/transition
+     */
+    transition?: CSSLazyValueGeneral;
+
+    /**
+     * The unicode-bidi CSS property specifies the level of embedding with respect to the bidirectional algorithm.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/unicode-bidi
+     */
+    unicodeBidi?: CSSLazyValueGeneral;
+
+    /**
+     * User select
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/user-select
+     */
+    userSelect?: CSSLazy<StringHint | "auto" | "text" | "none" | "contain" | "all">;
+
+    /**
+     * The vertical-align property controls how inline elements or text are vertically aligned compared to the baseline. If this property is used on table-cells it controls the vertical alignment of content of the table cell.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/vertical-align
+     */
+    verticalAlign?: CSSLazy<
+        | CSSGlobalValues
+        | "baseline"
+        | "sub"
+        | "super"
+        | "text-top"
+        | "text-bottom"
+        | "middle"
+        | "top"
+        | "bottom"
+        | CSSValueGeneral
+    >;
+
+    /**
+     * The visibility property specifies whether the boxes generated by an element are rendered.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/visibility
+     */
+    visibility?: CSSLazy<CSSGlobalValues | "visible" | "hidden" | "collapse">;
+
+    /**
+     * The white-space property controls whether and how white space inside the element is collapsed, and whether lines may wrap at unforced "soft wrap" opportunities.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/white-space
+     */
+    whiteSpace?: CSSLazy<CSSGlobalValues | "normal" | "nowrap" | "pre" | "pre-line" | "pre-wrap">;
+
+    /**
+     * In paged media, this property defines the mimimum number of lines
+     * that must be left at the top of the second page.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/widows
+     */
+    widows?: CSSLazyValueGeneral;
+
+    /**
+     * Specifies the width of the content area of an element. The content area of the element width does not include the padding, border, and margin of the element.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/width
+     */
+    width?: CSSLazy<"auto" | CSSValueGeneral | CSSGlobalValues>;
+
+    /**
+     * The word-break property is often used when there is long generated content that is strung together without and spaces or hyphens to beak apart. A common case of this is when there is a long URL that does not have any hyphens. This case could potentially cause the breaking of the layout as it could extend past the parent element.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/word-break
+     */
+    wordBreak?: CSSLazy<CSSGlobalValues | "normal" | "break-all" | "keep-all">;
+
+    /**
+     * The word-spacing CSS property specifies the spacing behavior between "words".
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/word-spacing
+     */
+    wordSpacing?: CSSLazy<CSSGlobalValues | "normal" | CSSValueGeneral>;
+
+    /**
+     * An alias of css/properties/overflow-wrap, word-wrap defines whether to break words when the content exceeds the boundaries of its container.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/word-wrap
+     */
+    wordWrap?: CSSLazy<CSSGlobalValues | "normal" | "break-word">;
+
+    /**
+     * writing-mode specifies if lines of text are laid out horizontally or vertically, and the direction which lines of text and blocks progress.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/writing-mode
+     */
+    writingMode?: CSSLazy<
+        CSSGlobalValues | "horizontal-tb" | "vertical-rl" | "vertical-lr" | "sideways-rl" | "sideways-lr"
+    >;
+
+    /**
+     * The z-index property specifies the z-order of an element and its descendants.
+     * When elements overlap, z-order determines which one covers the other.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/z-index
+     */
+    zIndex?: CSSLazy<"auto" | CSSValueGeneral>;
+
+    /**
+     * Sets the initial zoom factor of a document defined by @viewport.
+     * @see https://developer.mozilla.org/en/docs/Web/CSS/zoom
+     */
+    zoom?: CSSLazy<"auto" | CSSValueGeneral>;
+
+    [prop: string]: CSSLazyValueGeneral | undefined;
+}
+
+export type CSSStylesItem =
+    | IBobrilStyleDef
+    | ((styles: CSSInlineStyles, pseudo: CSSPseudoStyles) => void)
+    | Readonly<CSSInlineStyles>
+    | boolean
+    | null
+    | undefined;
+export type CSSStyles = CSSStylesItemArray | CSSStylesItem;
+export interface CSSStylesItemArray extends Array<CSSStyles> {
+    fill: any;
+    pop: any;
+    push: any;
+    concat: any;
+    reverse: any;
+    shift: any;
+    slice: any;
+    sort: any;
+    splice: any;
+    unshift: any;
+    indexOf: any;
+    lastIndexOf: any;
+    every: any;
+    some: any;
+    forEach: any;
+    map: any;
+    filter: any;
+    reduce: any;
+    reduceRight: any;
+    find: any;
+    findIndex: any;
+    [Symbol.iterator]: any;
+    entries: any;
+    values: any;
+    readonly [index: number]: CSSStyles;
+}
+
+export type CSSPseudoStyles = {
+    active?: CSSStyles;
+    checked?: CSSStyles;
+    disabled?: CSSStyles;
+    enabled?: CSSStyles;
+    "first-child"?: CSSStyles;
+    focus?: CSSStyles;
+    hover?: CSSStyles;
+    invalid?: CSSStyles;
+    "last-child"?: CSSStyles;
+    valid?: CSSStyles;
+    visited?: CSSStyles;
+
+    [selector: string]: CSSStyles;
+};
