@@ -255,8 +255,14 @@ type MediaQueryToken = {
     type: MediaType | LogicalToken | RuleBehaviourType;
 }
 
+type RangeRuleWithUnitToken = {
+    type: "max-height"|"min-height"|"max-width"|"min-width";
+    value: number;
+    unit: "px"|"em";
+}
+
 type RangeRuleToken = {
-    type: "max-height"|"min-height"|"max-width"|"min-width"|"min-color";
+    type: "min-color",
     value: number;
 }
 
@@ -277,14 +283,14 @@ type BoolRuleToken = {
 
 type TokenType =  MediaQueryTokens | MediaQueryToken;
 
-export type MediaQueryTokens = RangeRuleToken | OrientationRuleToken | AspectRuleToken | BoolRuleToken ;
+export type MediaQueryTokens = RangeRuleWithUnitToken | RangeRuleToken | OrientationRuleToken | AspectRuleToken | BoolRuleToken ;
 
 interface RuleBuilderBase {
-    build(): MediaQuery;
+    build(): MediaQueryDescriptor;
 }
 
 interface RuleBuilder extends RuleBuilderBase {
-    rule<T extends RuleBehaviourType>(mediaRule: MediaQueryTokens, behaviour?: T, mediaType?: T extends undefined ? undefined : MediaType): RuleEnhancer;
+    rule(behaviour?: RuleBehaviourType, mediaType?: MediaType): RuleEnhancer;
 }
 
 interface RuleEnhancer extends RuleBuilderBase {
@@ -300,9 +306,8 @@ class MediaRuleBuilder {
         !!mediaType && this.tokens.push({type: mediaType});
     }
 
-    rule<T extends RuleBehaviourType>(mediaRule: MediaQueryTokens, behaviour?: T, mediaType?: T extends undefined ? undefined : MediaType): RuleEnhancer {
+    rule(behaviour?: RuleBehaviourType, mediaType: MediaType = "all"): RuleEnhancer {
         this.pushOptionalTokens(behaviour, mediaType);
-        this.tokens.push(mediaRule);
         return this;
     }
 
@@ -317,17 +322,17 @@ class MediaRuleBuilder {
         return this;
     }
 
-    build(): MediaQuery {
+    build(): MediaQueryDescriptor {
         return this.tokens.reduce(toRule, {mediaQuery: "", crc: 0})
     }
 }
 
-interface MediaQuery {
+interface MediaQueryDescriptor {
     mediaQuery: string;
     crc: number;
 }
 
-function toRule(buffer: MediaQuery, token: TokenType) {
+function toRule(buffer: MediaQueryDescriptor, token: TokenType) {
     let str: string = "";
     switch (token.type) {
         case "aspect-ratio":
@@ -352,6 +357,8 @@ function toRule(buffer: MediaQuery, token: TokenType) {
         case "max-width":
         case "min-height":
         case "min-width":
+            str = `(${token.type}: ${token.value}${token.unit})`;
+            break;
         case "min-color":
         case "orientation":
             str = `(${token.type}: ${token.value})`;
@@ -392,7 +399,7 @@ type MediaQueryDefinition = {
     [key: string]: CSSStylesItem;
 }
 
-type MediaQuerySignature = string | RuleBuilderBase;
+type MediaQuerySignature = string | MediaQueryDescriptor;
 
 export function createMediaQuery(): RuleBuilder {
     return new MediaRuleBuilder();
@@ -6289,6 +6296,31 @@ export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFa
     return res as AnimationNameFactory;
 }
 
+/**
+ * create media query
+ * @example
+ * // can be called with string query definition
+ * mediaQueryDef("only screen (min-width: 1200px)", , {
+                [style]: {
+                    opacity: 1
+                }
+            });
+ * @example
+ * // also build can be used @see MediaRuleBuilder
+ * mediaQueryDef((createMediaQuery()
+ .rule("only", "screen")
+    .and({type: "max-width", value: 1200, unit: "px"})
+    .and({type: "min-width", value: 768, unit: "px"})
+ .or()
+ .rule()
+    .and({type: "aspect-ratio", width: 11, height: 5})
+ .build(), {
+        [style]: {
+            opacity: 1
+        }
+    });
+ *
+ **/
 export function mediaQueryDef(def: MediaQuerySignature, mediaQueryDefinition: MediaQueryDefinition): void {
     let mediaQuery: IInteralMediaQuery;
     if (typeof def === "string") {
@@ -6302,14 +6334,13 @@ export function mediaQueryDef(def: MediaQuerySignature, mediaQueryDefinition: Me
         }
         mediaQuery.defititions.push(mediaQueryDefinition)
     } else {
-        const buildedQuery = def.build();
-        mediaQuery = allMediaQueries[buildedQuery.crc];
+        mediaQuery = allMediaQueries[def.crc];
         if (!mediaQuery) {
             mediaQuery = {
-                signature: buildedQuery.mediaQuery,
+                signature: def.mediaQuery,
                 defititions: []
             };
-            allMediaQueries[buildedQuery.crc] = mediaQuery;
+            allMediaQueries[def.crc] = mediaQuery;
         }
         mediaQuery.defititions.push(mediaQueryDefinition)
     }

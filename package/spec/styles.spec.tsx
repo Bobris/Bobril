@@ -72,37 +72,49 @@ describe("styles", () => {
         it("complex query with builder", () => {
             const style = b.styleDef({opacity: 0});
             b.mediaQueryDef(createMediaQuery()
-                .rule({type: "max-width", value: 1200}, "only", "screen")
-                .and({type: "min-width", value: 768})
+                .rule("only", "screen")
+                    .and({type: "max-width", value: 1200, unit: "px"})
+                    .and({type: "min-width", value: 768, unit: "px"})
                 .or()
-                .rule({type: "aspect-ratio", width: 11, height: 5}), {
+                .rule()
+                    .and({type: "aspect-ratio", width: 11, height: 5})
+                .build(), {
                 [style]: {
                     opacity: 1
                 }
             });
             b.syncUpdate();
-            expect(document.head.innerHTML).toContain("@media only screen (max-width: 1200) and (min-width: 768) , (aspect-ratio: 11/5)");
+            expect(document.head.innerHTML).toContain("@media only screen and (max-width: 1200px) and (min-width:" +
+                " 768px) , all and (aspect-ratio: 11/5)");
         });
 
         it("same media queries are grouped", () => {
             const style = b.styleDef({opacity: 0});
             const styleTwo = b.styleDef({opacity: 0});
             b.mediaQueryDef(createMediaQuery()
-                .rule({type: "max-width", value: 1200}, "only", "screen")
-                .and({type: "min-width", value: 768}), {
+                .rule( "only", "screen")
+                    .and({type: "max-width", value: 1200, unit: "px"})
+                    .and({type: "min-width", value: 768, unit: "px"})
+                .build(), {
                 [style]: {
                     opacity: 1
                 }
             });
             b.mediaQueryDef(createMediaQuery()
-                .rule({type: "max-width", value: 1200}, "only", "screen")
-                .and({type: "min-width", value: 768}), {
+                .rule( "only", "screen")
+                    .and({type: "max-width", value: 1200, unit: "px"})
+                    .and({type: "min-width", value: 768, unit: "px"})
+                .build(), {
                 [styleTwo]: {
                     opacity: 1
                 }
             });
             b.syncUpdate();
-            expect(document.head.innerHTML).toContain("@media only screen (max-width: 1200) and (min-width: 768)");
+            expect(document.head.innerHTML).toContain("@media only screen and (max-width: 1200px) and (min-width:" +
+                " 768px)");
+            const reg = /@media\sonly\sscreen\sand\s\(max-width:\s1200px\)\sand\s\(min-width: 768px\)/;
+            const result = reg.exec(document.head.innerHTML);
+            expect(result && result.length).toBe(1);
         });
     });
 });
