@@ -364,13 +364,14 @@ function toRule(buffer: string, token: TokenType) {
             str = `(${token.type}: ${token.value})`;
             break;
         default:
-            const _exhaustiveCheck: never = token;
-            if (_exhaustiveCheck) {
-                throw new Error("all cases have to be covered");
-            }
+            str = emptyQuery(token);
     }
 
     return buffer + str + " ";
+}
+
+function emptyQuery(_token: never) {
+    return "";
 }
 
 type MediaQueryDefinition = {
