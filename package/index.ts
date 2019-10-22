@@ -297,7 +297,7 @@ interface RuleBuilder {
 interface RuleEnhancer {
     and(mediaRule: MediaQueryTokens): RuleEnhancer;
     or(): RuleBuilder;
-    build(): MediaQueryDescriptor;
+    build(): string;
 }
 
 class MediaRuleBuilder {
@@ -327,17 +327,12 @@ class MediaRuleBuilder {
         return this;
     }
 
-    build(): MediaQueryDescriptor {
-        return this.tokens.reduce(toRule, { mediaQuery: "", crc: 0 });
+    build(): string {
+        return this.tokens.reduce(toRule, "");
     }
 }
 
-interface MediaQueryDescriptor {
-    mediaQuery: string;
-    crc: number;
-}
-
-function toRule(buffer: MediaQueryDescriptor, token: TokenType) {
+function toRule(buffer: string, token: TokenType) {
     let str: string = "";
     switch (token.type) {
         case "aspect-ratio":
@@ -375,36 +370,12 @@ function toRule(buffer: MediaQueryDescriptor, token: TokenType) {
             }
     }
 
-    buffer.crc = buffer.crc + crcToken[token.type];
-    buffer.mediaQuery = buffer.mediaQuery + str + " ";
-
-    return buffer;
+    return buffer + str + " ";
 }
-
-const crcToken: { [P in TokenType["type"]]: number } = {
-    "aspect-ratio": 1,
-    "all": 2,
-    "and": 4,
-    "color": 8,
-    "max-height": 16,
-    "max-width": 32,
-    "min-height": 64,
-    "min-width": 128,
-    "min-color": 256,
-    "not": 512,
-    "only": 1024,
-    "or": 2048,
-    "orientation": 4096,
-    "print": 8192,
-    "screen": 16384,
-    "speech": 32768
-};
 
 type MediaQueryDefinition = {
     [key: string]: CSSStylesItem;
 };
-
-type MediaQuerySignature = string | MediaQueryDescriptor;
 
 export function createMediaQuery(): RuleBuilder {
     return new MediaRuleBuilder();
@@ -5894,15 +5865,12 @@ interface IInternalKeyFrames {
 }
 
 interface IInteralMediaQuery {
-    signature: string;
-    defititions: {
-        [key: string]: CSSStylesItem;
-    }[];
+    [key: string]: CSSStylesItem;
 }
 
 var allStyles: { [id: string]: IInternalStyle } = newHashObj();
 var allAnimations: { [id: string]: IInternalKeyFrames } = newHashObj();
-var allMediaQueries: { [id: string]: IInteralMediaQuery } = newHashObj();
+var allMediaQueries: { [id: string]: IInteralMediaQuery[] } = newHashObj();
 var allSprites: { [key: string]: ISprite } = newHashObj();
 var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
@@ -6152,8 +6120,8 @@ function beforeFrame() {
         }
         for (var key in allMediaQueries) {
             var mediaQuery = allMediaQueries[key];
-            styleStr += "@media " + mediaQuery.signature + "{";
-            for (var definition of mediaQuery.defititions) {
+            styleStr += "@media " + key + "{";
+            for (var definition of mediaQuery) {
                 for (var key2 in definition) {
                     let item = definition[key2];
                     let style = newHashObj();
@@ -6301,7 +6269,7 @@ export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFa
  * create media query
  * @example
  * // can be called with string query definition
- * mediaQueryDef("only screen (min-width: 1200px)", , {
+ * mediaQueryDef("only screen (min-width: 1200px)", {
                 [style]: {
                     opacity: 1
                 }
@@ -6322,29 +6290,13 @@ export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFa
     });
  *
  **/
-export function mediaQueryDef(def: MediaQuerySignature, mediaQueryDefinition: MediaQueryDefinition): void {
-    let mediaQuery: IInteralMediaQuery;
-    if (typeof def === "string") {
-        mediaQuery = allMediaQueries[def];
-        if (!mediaQuery) {
-            mediaQuery = {
-                signature: def,
-                defititions: []
-            };
-            allMediaQueries[def] = mediaQuery;
-        }
-        mediaQuery.defititions.push(mediaQueryDefinition);
-    } else {
-        mediaQuery = allMediaQueries[def.crc];
-        if (!mediaQuery) {
-            mediaQuery = {
-                signature: def.mediaQuery,
-                defititions: []
-            };
-            allMediaQueries[def.crc] = mediaQuery;
-        }
-        mediaQuery.defititions.push(mediaQueryDefinition);
+export function mediaQueryDef(def: string, mediaQueryDefinition: MediaQueryDefinition): void {
+    let mediaQuery = allMediaQueries[def];
+    if (!mediaQuery) {
+        mediaQuery = [];
+        allMediaQueries[def] = mediaQuery;
     }
+    mediaQuery.push(mediaQueryDefinition);
     invalidateStyles();
 }
 
