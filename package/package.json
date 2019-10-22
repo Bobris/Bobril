@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "13.0.3",
+    "version": "13.1.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -17,7 +17,6 @@
         "test": "bb test"
     },
     "bobril": {
-        "bbVersion": "0.96.1",
         "compilerOptions": {
             "noImplicitAny": true,
             "noImplicitThis": true,
