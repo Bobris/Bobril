@@ -6152,7 +6152,7 @@ function beforeFrame() {
         }
         for (var key in allMediaQueries) {
             var mediaQuery = allMediaQueries[key];
-            styleStr += "@media " + mediaQuery.signature + " {";
+            styleStr += "@media " + mediaQuery.signature + "{";
             for (var definition of mediaQuery.defititions) {
                 for (var key2 in definition) {
                     let item = definition[key2];
