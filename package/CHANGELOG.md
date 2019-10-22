@@ -4,6 +4,10 @@
 
 Add support for media queries
 
+## 13.0.4
+
+Fixed ICtxClass because Bobril will always send these parameters, users just don't need to use them.
+
 ## 13.0.3
 
 Fixed regression in 13.0 to allows to use ctxClass with never TData with more generics and less any.

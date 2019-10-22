@@ -29,7 +29,7 @@ export interface IBobrilRoot {
 }
 
 export type ICtxClass<TData = any> = {
-    new (data?: TData, me?: IBobrilCacheNode<TData>): BobrilCtx<TData>;
+    new (data: TData, me: IBobrilCacheNode<TData>): BobrilCtx<TData>;
 };
 
 export type IBobrilRoots = { [id: string]: IBobrilRoot };
