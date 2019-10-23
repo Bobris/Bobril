@@ -4,6 +4,10 @@
 
 Add support for media queries
 
+## 13.0.5
+
+Better typesafetyness for old style IBobrilComponent methods.
+
 ## 13.0.4
 
 Fixed ICtxClass because Bobril will always send these parameters, users just don't need to use them.
