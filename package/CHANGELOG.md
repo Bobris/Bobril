@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.1.0
+
+Add support for media queries
+
 ## 13.0.5
 
 Better typesafetyness for old style IBobrilComponent methods.
