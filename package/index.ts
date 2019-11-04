@@ -129,7 +129,7 @@ export type IBobrilEventsWithCtx<TCtx> = {
                     ctx: TCtx,
                     event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
                 ) => ReturnType<NonNullable<IBobrilEvents[N]>>)
-        : never)
+        : never);
 };
 
 export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>
@@ -899,7 +899,7 @@ function findCfg(parent: IBobrilCacheNode | undefined): any {
     while (parent) {
         cfg = parent.cfg;
         if (cfg !== undefined) break;
-        if (parent.ctx) {
+        if (parent.ctx !== undefined && parent.component !== emptyComponent) {
             cfg = parent.ctx.cfg;
             break;
         }
