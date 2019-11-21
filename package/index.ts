@@ -6748,10 +6748,10 @@ export function createComponent<TData extends object | never, TCtx extends IBobr
 export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never = any>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode<TDataOriginal>,
     after: IBobrilComponent<TData>
-): IComponentFactory<TData> {
+): IComponentFactory<TData & TDataOriginal> {
     const originalComponent = original().component!;
     const merged = mergeComponents(originalComponent, after);
-    return createVirtualComponent<TData>(merged);
+    return createVirtualComponent<TData & TDataOriginal>(merged);
 }
 
 export type IProp<T> = (value?: T) => T;

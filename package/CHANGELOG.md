@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.1.2
+
+Typings for createDerivedComponent
+
 ## 13.1.1
 
 Fix for regression in 13 of wrong propagation of cfg.
