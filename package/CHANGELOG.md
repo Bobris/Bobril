@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.1.1
+
+Fix for regression in 13 of wrong propagation of cfg.
+
 ## 13.1.0
 
 Add support for media queries
