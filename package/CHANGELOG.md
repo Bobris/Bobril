@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.0.0
+
+Breaking change createDerivedComponent requires to specify both data types.
+
 ## 13.1.2
 
 Typings for createDerivedComponent

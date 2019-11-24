@@ -6745,7 +6745,7 @@ export function createComponent<TData extends object | never, TCtx extends IBobr
     return createVirtualComponent<TData>(component);
 }
 
-export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never = any>(
+export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode<TDataOriginal>,
     after: IBobrilComponent<TData>
 ): IComponentFactory<TData & TDataOriginal> {
