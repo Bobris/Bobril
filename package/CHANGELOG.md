@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.0.1
+
+Made `flatten` work correctly with observable arrays from Bobx.
+
 ## 14.0.0
 
 Breaking change createDerivedComponent requires to specify both data types.

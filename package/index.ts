@@ -564,7 +564,7 @@ polyfill(String.prototype, "endsWith", function(this: any, search: string, pos?:
 });
 
 export function flatten(a: any | any[]): any[] {
-    if (!isArray(a)) {
+    if (!isArrayVdom(a)) {
         if (a == undefined || a === false || a === true) return [];
         return [a];
     }
@@ -572,7 +572,7 @@ export function flatten(a: any | any[]): any[] {
     let aLen = a.length;
     for (let i = 0; i < aLen; ) {
         let item = a[i];
-        if (isArray(item)) {
+        if (isArrayVdom(item)) {
             a.splice.apply(a, [i, 1].concat(item));
             aLen = a.length;
             continue;
