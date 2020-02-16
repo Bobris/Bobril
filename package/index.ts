@@ -587,6 +587,12 @@ export function flatten(a: any | any[]): any[] {
     return a;
 }
 
+export function swallowPromise<T>(promise: Promise<T>): void {
+    promise.catch(reason => {
+        console.error("Uncaught exception from swallowPromise", reason);
+    });
+}
+
 var inSvg: boolean = false;
 var inNotFocusable: boolean = false;
 var updateCall: Array<Function> = [];

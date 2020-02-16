@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 14.1.0
+
+New exported method
+
+```ts
+export function swallowPromise<T>(promise: Promise<T>): void {
+    promise.catch(reason => {
+        console.error("Uncaught exception from swallowPromise", reason);
+    });
+}
+```
+
 ## 14.0.0
 
 Breaking change createDerivedComponent requires to specify both data types.
