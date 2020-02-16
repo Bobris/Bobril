@@ -122,14 +122,14 @@ export interface IBobrilEvents extends IBubblingAndBroadcastEvents {
 }
 
 export type IBobrilEventsWithCtx<TCtx> = {
-    [N in keyof IBobrilEvents]?: (NonNullable<IBobrilEvents[N]> extends (...args: any) => any
-        ? (Parameters<NonNullable<IBobrilEvents[N]>>["length"] extends 0
-              ? (ctx: TCtx) => ReturnType<NonNullable<IBobrilEvents[N]>>
-              : (
-                    ctx: TCtx,
-                    event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
-                ) => ReturnType<NonNullable<IBobrilEvents[N]>>)
-        : never);
+    [N in keyof IBobrilEvents]?: NonNullable<IBobrilEvents[N]> extends (...args: any) => any
+        ? Parameters<NonNullable<IBobrilEvents[N]>>["length"] extends 0
+            ? (ctx: TCtx) => ReturnType<NonNullable<IBobrilEvents[N]>>
+            : (
+                  ctx: TCtx,
+                  event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
+              ) => ReturnType<NonNullable<IBobrilEvents[N]>>
+        : never;
 };
 
 export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>
@@ -564,7 +564,7 @@ polyfill(String.prototype, "endsWith", function(this: any, search: string, pos?:
 });
 
 export function flatten(a: any | any[]): any[] {
-    if (!isArray(a)) {
+    if (!isArrayVdom(a)) {
         if (a == undefined || a === false || a === true) return [];
         return [a];
     }
@@ -572,7 +572,7 @@ export function flatten(a: any | any[]): any[] {
     let aLen = a.length;
     for (let i = 0; i < aLen; ) {
         let item = a[i];
-        if (isArray(item)) {
+        if (isArrayVdom(item)) {
             a.splice.apply(a, [i, 1].concat(item));
             aLen = a.length;
             continue;

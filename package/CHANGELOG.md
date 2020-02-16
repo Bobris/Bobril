@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.1.1
+
+Just republished correctly.
+
 ## 14.1.0
 
 New exported method
@@ -11,6 +15,10 @@ export function swallowPromise<T>(promise: Promise<T>): void {
     });
 }
 ```
+
+## 14.0.1
+
+Made `flatten` work correctly with observable arrays from Bobx.
 
 ## 14.0.0
 
