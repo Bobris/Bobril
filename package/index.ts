@@ -459,6 +459,10 @@ export function isObject(val: any): val is { [name: string]: any } {
     return typeof val === "object";
 }
 
+export function assertNever(switchValue: never): never {
+    throw new Error("Switch is not exhaustive for value: " + JSON.stringify(switchValue));
+}
+
 if (Object.assign == undefined) {
     Object.assign = function assign(target: Object, ..._sources: Object[]): Object {
         if (target == undefined) throw new TypeError("Target in assign cannot be undefined or null");

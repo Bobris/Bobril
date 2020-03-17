@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.2.0
+
+New `assertNever` method use for exhaustive check in TypeScript.
+
 ## 14.1.1
 
 Just republished correctly.
