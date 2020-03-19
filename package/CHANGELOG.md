@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.3.0
+
+Changed zIndex of dragged container div to be 1e9, so hopefully above everything.
+
 ## 14.2.0
 
 New `assertNever` method use for exhaustive check in TypeScript.

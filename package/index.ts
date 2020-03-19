@@ -4623,6 +4623,7 @@ var DndRootComp: IBobrilComponent = {
         me.tag = "div";
         me.style = {
             position: "fixed",
+            zIndex: 1000000000,
             pointerEvents: "none",
             userSelect: "none",
             left: 0,
