@@ -7027,7 +7027,7 @@ export interface IFragmentData extends IBobrilEvents {
     key?: string;
 }
 
-export function Fragment(data?: IFragmentData) {
+export function Fragment(data: IFragmentData): IBobrilNode {
     return data;
 }
 

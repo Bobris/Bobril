@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.4.0
+
+`Fragment` now require its parameter. Should not be problem because TSX/createElement passes that parameter always nonnull. It can now return `IBobrilNode` type making it more compatible to functional components.
+
 ## 14.3.0
 
 Changed zIndex of dragged container div to be 1e9, so hopefully above everything.
