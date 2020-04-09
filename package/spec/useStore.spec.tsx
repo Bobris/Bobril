@@ -2,7 +2,7 @@ import * as b from "../index";
 import { useStore } from "../index";
 
 interface IData {
-    factory: jasmine.Spy;
+    factory: (() => object) | jasmine.Spy;
 }
 
 function TestComponent(data: IData): b.IBobrilNode {
@@ -28,5 +28,16 @@ describe("useStore", () => {
 
         b.updateNode(<TestComponent factory={storeFactory} />, node, div, null, 1e6);
         expect(storeFactory).toHaveBeenCalledTimes(1);
+    });
+
+    it("store is disposed", () => {
+        const spiedDispose = jasmine.createSpy("dispose");
+        const store = {
+            dispose: spiedDispose
+        }
+        const id = b.addRoot(() => <TestComponent factory={() => store} />)
+        b.syncUpdate();
+        b.removeRoot(id);
+        expect(spiedDispose).toHaveBeenCalled();
     });
 });
