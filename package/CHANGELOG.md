@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.5.0
+
+`useStore` hook now calls dispose on store automatically when destroying the context 
+
 ## 14.4.0
 
 `Fragment` now require its parameter. Should not be problem because TSX/createElement passes that parameter always nonnull. It can now return `IBobrilNode` type making it more compatible to functional components.
