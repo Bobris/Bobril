@@ -7321,7 +7321,7 @@ export function useStore<T>(factory: () => T): T {
     if (hook === undefined) {
         hook = factory();
         if (isDisposable(hook)) {
-            addDisposable(currentCtx!, () => hook.dispose())
+            addDisposable(currentCtx!, hook)
         }
         hooks[myHookId] = hook;
     }
