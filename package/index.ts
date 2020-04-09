@@ -1182,6 +1182,10 @@ export function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike) {
     disposables.push(disposable);
 }
 
+export function isDisposable(val: any): val is IDisposable {
+    return isObject(val) && val.dispose
+}
+
 function removeNodeRecursive(c: IBobrilCacheNode) {
     var el = c.element;
     if (isArray(el)) {
@@ -7316,6 +7320,9 @@ export function useStore<T>(factory: () => T): T {
     let hook = hooks[myHookId];
     if (hook === undefined) {
         hook = factory();
+        if (isDisposable(hook)) {
+            addDisposable(currentCtx!, () => hook.dispose())
+        }
         hooks[myHookId] = hook;
     }
     return hook;
