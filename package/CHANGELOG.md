@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## 14.4.0
+
+`Fragment` now require its parameter. Should not be problem because TSX/createElement passes that parameter always nonnull. It can now return `IBobrilNode` type making it more compatible to functional components.
+
+## 14.3.0
+
+Changed zIndex of dragged container div to be 1e9, so hopefully above everything.
+
+## 14.2.0
+
+New `assertNever` method use for exhaustive check in TypeScript.
+
+## 14.1.1
+
+Just republished correctly.
+
+## 14.1.0
+
+New exported method
+
+```ts
+export function swallowPromise<T>(promise: Promise<T>): void {
+    promise.catch(reason => {
+        console.error("Uncaught exception from swallowPromise", reason);
+    });
+}
+```
+
+## 14.0.1
+
+Made `flatten` work correctly with observable arrays from Bobx.
+
+## 14.0.0
+
+Breaking change createDerivedComponent requires to specify both data types.
+
+## 13.1.2
+
+Typings for createDerivedComponent
+
 ## 13.1.1
 
 Fix for regression in 13 of wrong propagation of cfg.

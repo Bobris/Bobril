@@ -122,14 +122,14 @@ export interface IBobrilEvents extends IBubblingAndBroadcastEvents {
 }
 
 export type IBobrilEventsWithCtx<TCtx> = {
-    [N in keyof IBobrilEvents]?: (NonNullable<IBobrilEvents[N]> extends (...args: any) => any
-        ? (Parameters<NonNullable<IBobrilEvents[N]>>["length"] extends 0
-              ? (ctx: TCtx) => ReturnType<NonNullable<IBobrilEvents[N]>>
-              : (
-                    ctx: TCtx,
-                    event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
-                ) => ReturnType<NonNullable<IBobrilEvents[N]>>)
-        : never);
+    [N in keyof IBobrilEvents]?: NonNullable<IBobrilEvents[N]> extends (...args: any) => any
+        ? Parameters<NonNullable<IBobrilEvents[N]>>["length"] extends 0
+            ? (ctx: TCtx) => ReturnType<NonNullable<IBobrilEvents[N]>>
+            : (
+                  ctx: TCtx,
+                  event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
+              ) => ReturnType<NonNullable<IBobrilEvents[N]>>
+        : never;
 };
 
 export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>
@@ -459,6 +459,10 @@ export function isObject(val: any): val is { [name: string]: any } {
     return typeof val === "object";
 }
 
+export function assertNever(switchValue: never): never {
+    throw new Error("Switch is not exhaustive for value: " + JSON.stringify(switchValue));
+}
+
 if (Object.assign == undefined) {
     Object.assign = function assign(target: Object, ..._sources: Object[]): Object {
         if (target == undefined) throw new TypeError("Target in assign cannot be undefined or null");
@@ -564,7 +568,7 @@ polyfill(String.prototype, "endsWith", function(this: any, search: string, pos?:
 });
 
 export function flatten(a: any | any[]): any[] {
-    if (!isArray(a)) {
+    if (!isArrayVdom(a)) {
         if (a == undefined || a === false || a === true) return [];
         return [a];
     }
@@ -572,7 +576,7 @@ export function flatten(a: any | any[]): any[] {
     let aLen = a.length;
     for (let i = 0; i < aLen; ) {
         let item = a[i];
-        if (isArray(item)) {
+        if (isArrayVdom(item)) {
             a.splice.apply(a, [i, 1].concat(item));
             aLen = a.length;
             continue;
@@ -585,6 +589,12 @@ export function flatten(a: any | any[]): any[] {
         i++;
     }
     return a;
+}
+
+export function swallowPromise<T>(promise: Promise<T>): void {
+    promise.catch(reason => {
+        console.error("Uncaught exception from swallowPromise", reason);
+    });
 }
 
 var inSvg: boolean = false;
@@ -4613,6 +4623,7 @@ var DndRootComp: IBobrilComponent = {
         me.tag = "div";
         me.style = {
             position: "fixed",
+            zIndex: 1000000000,
             pointerEvents: "none",
             userSelect: "none",
             left: 0,
@@ -6745,13 +6756,13 @@ export function createComponent<TData extends object | never, TCtx extends IBobr
     return createVirtualComponent<TData>(component);
 }
 
-export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never = any>(
+export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode<TDataOriginal>,
     after: IBobrilComponent<TData>
-): IComponentFactory<TData> {
+): IComponentFactory<TData & TDataOriginal> {
     const originalComponent = original().component!;
     const merged = mergeComponents(originalComponent, after);
-    return createVirtualComponent<TData>(merged);
+    return createVirtualComponent<TData & TDataOriginal>(merged);
 }
 
 export type IProp<T> = (value?: T) => T;
@@ -7016,7 +7027,7 @@ export interface IFragmentData extends IBobrilEvents {
     key?: string;
 }
 
-export function Fragment(data?: IFragmentData) {
+export function Fragment(data: IFragmentData): IBobrilNode {
     return data;
 }
 
