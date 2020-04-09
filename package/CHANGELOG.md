@@ -2,7 +2,9 @@
 
 ## 14.5.0
 
-`useStore` hook now calls dispose on store automatically when destroying the context 
+Added support for Portals. `IBobrilNode` for portal is `{ tag: "@", data: domElement, children }`. In TSX it is `<b.Portal element={domElement}>{children}</b.Portal>`.
+
+`useStore` hook now calls dispose on store automatically when destroying the context
 
 ## 14.4.0
 
@@ -26,7 +28,7 @@ New exported method
 
 ```ts
 export function swallowPromise<T>(promise: Promise<T>): void {
-    promise.catch(reason => {
+    promise.catch((reason) => {
         console.error("Uncaught exception from swallowPromise", reason);
     });
 }

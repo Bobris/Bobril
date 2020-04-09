@@ -482,7 +482,7 @@ if (Object.assign == undefined) {
 }
 
 if (!Object.is) {
-    Object.is = function(x, y) {
+    Object.is = function (x, y) {
         if (x === y) {
             return x !== 0 || 1 / x === 1 / y;
         } else {
@@ -501,12 +501,12 @@ function polyfill(prototype: any, method: string, value: Function): void {
         Object.defineProperty(prototype, method, {
             value,
             configurable: true,
-            writable: true
+            writable: true,
         });
     }
 }
 
-polyfill(Array.prototype, "find", function(this: any, pred: Function): any {
+polyfill(Array.prototype, "find", function (this: any, pred: Function): any {
     var o = Object(this);
     var len = o.length >>> 0;
     var thisArg = arguments[1];
@@ -519,7 +519,7 @@ polyfill(Array.prototype, "find", function(this: any, pred: Function): any {
     return;
 });
 
-polyfill(Array.prototype, "findIndex", function(this: any, pred: Function): number {
+polyfill(Array.prototype, "findIndex", function (this: any, pred: Function): number {
     var o = Object(this);
     var len = o.length >>> 0;
     var thisArg = arguments[1];
@@ -532,7 +532,7 @@ polyfill(Array.prototype, "findIndex", function(this: any, pred: Function): numb
     return -1;
 });
 
-polyfill(Array.prototype, "some", function(this: any, pred: Function): boolean {
+polyfill(Array.prototype, "some", function (this: any, pred: Function): boolean {
     var o = Object(this);
     var len = o.length >>> 0;
     var thisArg = arguments[1];
@@ -544,7 +544,7 @@ polyfill(Array.prototype, "some", function(this: any, pred: Function): boolean {
     return false;
 });
 
-polyfill(String.prototype, "includes", function(this: string, search: string, start: number): boolean {
+polyfill(String.prototype, "includes", function (this: string, search: string, start: number): boolean {
     if (!isNumber(start)) start = 0;
     if (start + search.length > this.length) {
         return false;
@@ -553,11 +553,11 @@ polyfill(String.prototype, "includes", function(this: string, search: string, st
     }
 });
 
-polyfill(String.prototype, "startsWith", function(this: any, search: string, pos?: number): boolean {
+polyfill(String.prototype, "startsWith", function (this: any, search: string, pos?: number): boolean {
     return this.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
 });
 
-polyfill(String.prototype, "endsWith", function(this: any, search: string, pos?: number): boolean {
+polyfill(String.prototype, "endsWith", function (this: any, search: string, pos?: number): boolean {
     var s = this.toString();
     if (!isNumber(pos) || !isFinite(pos) || Math.floor(pos) !== pos || pos > s.length) {
         pos = s.length;
@@ -592,7 +592,7 @@ export function flatten(a: any | any[]): any[] {
 }
 
 export function swallowPromise<T>(promise: Promise<T>): void {
-    promise.catch(reason => {
+    promise.catch((reason) => {
         console.error("Uncaught exception from swallowPromise", reason);
     });
 }
@@ -648,7 +648,7 @@ var isUnitlessNumber: { [name: string]: true } = {
     strokeDashoffset: true,
     widows: true,
     zIndex: true,
-    zoom: true
+    zoom: true,
 };
 
 function renamer(newName: string) {
@@ -692,7 +692,7 @@ function shimStyle(newValue: any) {
             if (testPropExistence(ki)) {
                 mi = isUnitlessNumber[ki] === true ? noop : pxAdder;
             } else {
-                var titleCaseKi = ki.replace(/^\w/, match => match.toUpperCase());
+                var titleCaseKi = ki.replace(/^\w/, (match) => match.toUpperCase());
                 for (var j = 0; j < vendors.length; j++) {
                     if (testPropExistence(vendors[j] + titleCaseKi)) {
                         mi = (isUnitlessNumber[ki] === true ? renamer : renamerPx)(vendors[j] + titleCaseKi);
@@ -984,7 +984,7 @@ export function createNode(
         parent: parentNode,
         element: undefined,
         ctx: undefined,
-        orig: n
+        orig: n,
     };
     var backupInSvg = inSvg;
     var backupInNotFocusable = inNotFocusable;
@@ -1022,6 +1022,10 @@ export function createNode(
         c.tag = undefined;
         c.children = undefined;
         return c;
+    } else if (tag === "@") {
+        createInto = c.data;
+        createBefore = null;
+        tag = undefined;
     }
     var children = c.children;
     var inSvgForeignObject = false;
@@ -1171,6 +1175,9 @@ function destroyNode(c: IBobrilCacheNode) {
         }
         currentCtx = undefined;
     }
+    if (c.tag === "@") {
+        removeNodeRecursive(c);
+    }
 }
 
 export function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike) {
@@ -1183,7 +1190,7 @@ export function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike) {
 }
 
 export function isDisposable(val: any): val is IDisposable {
-    return isObject(val) && val.dispose
+    return isObject(val) && val.dispose;
 }
 
 function removeNodeRecursive(c: IBobrilCacheNode) {
@@ -1257,7 +1264,7 @@ export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[
     var res: (IBobrilCacheNode | null)[] = [];
     if (n == undefined) return res;
     var rootIds = Object.keys(roots);
-    var rootElements = rootIds.map(i => roots[i].e || document.body);
+    var rootElements = rootIds.map((i) => roots[i].e || document.body);
     var nodeStack: Node[] = [];
     rootReallyFound: while (true) {
         rootFound: while (n) {
@@ -1423,6 +1430,17 @@ export function updateNode(
             return c;
         }
     } else if (tag === c.tag) {
+        if (tag === "@") {
+            if (n.data !== c.data) {
+                var r: IBobrilCacheNode = createNode(n, c.parent, n.data, null);
+                removeNode(c);
+                return r;
+            }
+            createInto = n.data;
+            createBefore = getLastDomNode(c);
+            if (createBefore != null) createBefore = createBefore.nextSibling;
+            tag = undefined;
+        }
         if (tag === undefined) {
             if (isString(newChildren) && isString(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
@@ -1509,6 +1527,22 @@ export function getDomNode(c: IBobrilCacheNode | undefined): Node | null {
     if (!isArray(ch)) return null;
     for (var i = 0; i < ch.length; i++) {
         el = getDomNode(ch[i]);
+        if (el) return el;
+    }
+    return null;
+}
+
+export function getLastDomNode(c: IBobrilCacheNode | undefined): Node | null {
+    if (c === undefined) return null;
+    var el: Node | Node[] | null | undefined = c.element;
+    if (el != null) {
+        if (isArray(el)) return el[el.length - 1];
+        return el;
+    }
+    var ch = c.children;
+    if (!isArray(ch)) return null;
+    for (var i = ch.length; i-- > 0; ) {
+        el = getLastDomNode(ch[i]);
         if (el) return el;
     }
     return null;
@@ -2027,7 +2061,7 @@ function updateChildrenCore(
 var hasNativeRaf = false;
 var nativeRaf = window.requestAnimationFrame;
 if (nativeRaf) {
-    nativeRaf(param => {
+    nativeRaf((param) => {
         if (param === +param) hasNativeRaf = true;
     });
 }
@@ -2102,9 +2136,9 @@ export function emitEvent(
 var isPassiveEventHandlerSupported = false;
 try {
     var options = Object.defineProperty({}, "passive", {
-        get: function() {
+        get: function () {
             isPassiveEventHandlerSupported = true;
-        }
+        },
     });
     window.addEventListener("test", options, options);
     window.removeEventListener("test", options, options);
@@ -2149,7 +2183,7 @@ function initEvents() {
         var eventName = eventNames[j];
         var arr = registryEvents[eventName];
         arr = arr.sort((a, b) => a.priority - b.priority);
-        regEvents[eventName] = arr.map(v => v.callback);
+        regEvents[eventName] = arr.map((v) => v.callback);
     }
     registryEvents = undefined;
     var body = document.body;
@@ -2195,7 +2229,7 @@ export enum RenderPhase {
     Create,
     Update,
     LocalUpdate,
-    Destroy
+    Destroy,
 }
 
 const emptyBeforeRenderCallback = () => {};
@@ -2288,7 +2322,7 @@ const RootComponent = createVirtualComponent<IBobrilRoot>({
         } else {
             me.children = c;
         }
-    }
+    },
 });
 
 function internalUpdate(time: number) {
@@ -2743,7 +2777,7 @@ export function allocateMethodId(): number {
 }
 
 function merge(f1: Function, f2: Function): Function {
-    return function(this: any, ...params: any[]) {
+    return function (this: any, ...params: any[]) {
         var result = f1.apply(this, params);
         if (result) return result;
         return f2.apply(this, params);
@@ -2875,7 +2909,7 @@ export enum BobrilDeviceCategory {
     Mobile = 0,
     Tablet = 1,
     Desktop = 2,
-    LargeDesktop = 3
+    LargeDesktop = 3,
 }
 
 export interface IBobrilMedia {
@@ -2890,7 +2924,7 @@ export interface IBobrilMedia {
 var media: IBobrilMedia | null = null;
 var breaks = [
     [414, 800, 900], //portrait widths
-    [736, 1280, 1440] //landscape widths
+    [736, 1280, 1440], //landscape widths
 ];
 
 function emitOnMediaChange() {
@@ -2939,7 +2973,7 @@ export function getMedia(): IBobrilMedia {
             orientation: o,
             deviceCategory: device,
             portrait: p,
-            dppx: window.devicePixelRatio
+            dppx: window.devicePixelRatio,
         };
     }
     return media;
@@ -2967,7 +3001,7 @@ export const asap = (() => {
     if ((<any>window).MutationObserver) {
         var hiddenDiv = document.createElement("div");
         new MutationObserver(executeCallbacks).observe(hiddenDiv, {
-            attributes: true
+            attributes: true,
         });
         return (callback: () => void) => {
             if (!callbacks.length) {
@@ -2992,10 +3026,10 @@ export const asap = (() => {
 })();
 
 if (!(<any>window).Promise) {
-    (function() {
+    (function () {
         // Polyfill for Function.prototype.bind
         function bind(fn: (...args: any[]) => void, thisArg: any) {
-            return function() {
+            return function () {
                 fn.apply(thisArg, arguments as any);
             };
         }
@@ -3098,18 +3132,18 @@ if (!(<any>window).Promise) {
             doResolve(fn, bind(resolve, this), bind(reject, this));
         }
 
-        Promise.prototype.then = function(this: any, onFulfilled: any, onRejected?: any) {
+        Promise.prototype.then = function (this: any, onFulfilled: any, onRejected?: any) {
             var me = this;
             return new (<any>Promise)((resolve: any, reject: any) => {
                 handle.call(me, [onFulfilled, onRejected, resolve, reject]);
             });
         };
 
-        Promise.prototype["catch"] = function(this: any, onRejected?: any) {
+        Promise.prototype["catch"] = function (this: any, onRejected?: any) {
             return this.then(undefined, onRejected);
         };
 
-        (<any>Promise).all = function() {
+        (<any>Promise).all = function () {
             var args = (<any>[]).slice.call(arguments.length === 1 && isArray(arguments[0]) ? arguments[0] : arguments);
 
             return new (<any>Promise)((resolve: (value: any) => void, reject: (reason: any) => void) => {
@@ -3391,7 +3425,7 @@ function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: numbe
         bubble(node, "onSelectionChange", {
             target: node,
             startPosition: start,
-            endPosition: end
+            endPosition: end,
         });
     }
 }
@@ -3443,7 +3477,7 @@ function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
         ctrl: ev.ctrlKey,
         alt: ev.altKey,
         meta: ev.metaKey || false,
-        which: ev.which || ev.keyCode
+        which: ev.which || ev.keyCode,
     } as any;
 }
 
@@ -3504,7 +3538,7 @@ export interface IBobrilMouseEvent extends IEventParam {
 export enum BobrilPointerType {
     Mouse = 0,
     Touch = 1,
-    Pen = 2
+    Pen = 2,
 }
 
 export interface IBobrilPointerEvent extends IBobrilMouseEvent {
@@ -3664,7 +3698,7 @@ function buildHandlerPointer(name: string) {
             ctrl: ev.ctrlKey,
             alt: ev.altKey,
             meta: ev.metaKey || false,
-            count: ev.detail
+            count: ev.detail,
         };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
@@ -3697,7 +3731,7 @@ function buildHandlerTouch(name: string) {
                 ctrl: ev.ctrlKey,
                 alt: ev.altKey,
                 meta: ev.metaKey || false,
-                count: ev.detail
+                count: ev.detail,
             };
             if (emitEvent("!" + name, param, target, node)) preventDef = true;
         }
@@ -3734,7 +3768,7 @@ function buildHandlerMouse(name: string) {
             ctrl: ev.ctrlKey,
             alt: ev.altKey,
             meta: ev.metaKey || false,
-            count: ev.detail
+            count: ev.detail,
         };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
@@ -3988,7 +4022,7 @@ var bustingEventHandlers = [
     bustingPointerMove,
     bustingPointerUp,
     bustingPointerCancel,
-    bustingClick
+    bustingClick,
 ];
 for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
     addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
@@ -4033,7 +4067,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
             ctrl: ev.ctrlKey,
             alt: ev.altKey,
             meta: ev.metaKey || false,
-            count: ev.detail || 1
+            count: ev.detail || 1,
         };
         if (handlerName == onDoubleClickText) param.count = 2;
         if (
@@ -4120,7 +4154,7 @@ function handleMouseWheel(ev: any, target: Node | undefined, node: IBobrilCacheN
         ctrl: ev.ctrlKey,
         alt: ev.altKey,
         meta: ev.metaKey || false,
-        count: ev.detail
+        count: ev.detail,
     };
     if (invokeMouseOwner("onMouseWheel", param) || bubble(node, "onMouseWheel", param)) {
         preventDefault(ev);
@@ -4236,7 +4270,7 @@ var callbacks: Array<(info: IBobrilScroll) => void> = [];
 
 function emitOnScroll(_ev: Event, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
     let info: IBobrilScroll = {
-        node
+        node,
     };
     for (var i = 0; i < callbacks.length; i++) {
         callbacks[i](info);
@@ -4319,7 +4353,7 @@ class CSSMatrix {
             parseFloat(c[3]),
             parseFloat(c[7]),
             parseFloat(c[11]),
-            parseFloat(c[15])
+            parseFloat(c[15]),
         ]);
     }
     static identity(): CSSMatrix {
@@ -4347,7 +4381,7 @@ class CSSMatrix {
             a[12] * b[0] + a[13] * b[4] + a[14] * b[8] + a[15] * b[12],
             a[12] * b[1] + a[13] * b[5] + a[14] * b[9] + a[15] * b[13],
             a[12] * b[2] + a[13] * b[6] + a[14] * b[10] + a[15] * b[14],
-            a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15]
+            a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15],
         ]);
     }
     translate(tx: number, ty: number, tz: number): CSSMatrix {
@@ -4391,7 +4425,7 @@ class CSSMatrix {
             0,
             0,
             0,
-            1
+            1,
         ]);
         var Y = new CSSMatrix([1, 0, 0, -m[3], 0, 1, 0, -m[7], 0, 0, 1, -m[11], 0, 0, 0, 1]);
         return X.multiply(Y);
@@ -4453,9 +4487,7 @@ function getTransformationMatrix(element: Node) {
 export function convertPointFromClientToNode(node: IBobrilCacheNode, pageX: number, pageY: number): [number, number] {
     let element = getDomNode(node);
     if (element == undefined) element = document.body;
-    return getTransformationMatrix(element)
-        .inverse()
-        .transformPoint(pageX, pageY);
+    return getTransformationMatrix(element).inverse().transformPoint(pageX, pageY);
 }
 
 // Bobril.Dnd
@@ -4464,7 +4496,7 @@ export enum DndOp {
     None = 0,
     Link = 1,
     Copy = 2,
-    Move = 3
+    Move = 3,
 }
 
 export enum DndEnabledOps {
@@ -4475,7 +4507,7 @@ export enum DndEnabledOps {
     Move = 4,
     MoveLink = 5,
     MoveCopy = 6,
-    MoveCopyLink = 7
+    MoveCopyLink = 7,
 }
 
 export interface IDndCtx {
@@ -4539,7 +4571,7 @@ var dnds: IDndCtx[] = [];
 var systemDnd: (IDndStartCtx & IDndOverCtx) | null = null;
 var rootId: string | null = null;
 
-var DndCtx = (function(this: IDndCtx, pointerId: number) {
+var DndCtx = (function (this: IDndCtx, pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -4589,7 +4621,7 @@ var DndComp: IBobrilComponent = {
         me.tag = "div";
         me.style = { position: "absolute", left: dnd.x, top: dnd.y };
         me.children = dnd.dragView!(dnd);
-    }
+    },
 };
 
 function currentCursor() {
@@ -4633,7 +4665,7 @@ var DndRootComp: IBobrilComponent = {
             left: 0,
             top: 0,
             right: 0,
-            bottom: 0
+            bottom: 0,
         };
         let dds = document.documentElement.style;
         let cur = currentCursor();
@@ -4647,7 +4679,7 @@ var DndRootComp: IBobrilComponent = {
     onDrag(ctx: IBobrilCtx): boolean {
         invalidate(ctx);
         return false;
-    }
+    },
 };
 
 function dndRootFactory(): IBobrilChildren {
@@ -4655,41 +4687,41 @@ function dndRootFactory(): IBobrilChildren {
 }
 
 var dndProto = DndCtx.prototype;
-dndProto.setOperation = function(this: IDndCtx, operation: DndOp): void {
+dndProto.setOperation = function (this: IDndCtx, operation: DndOp): void {
     this.operation = operation;
 };
 
-dndProto.setDragNodeView = function(this: IDndCtx, view: ((dnd: IDndCtx) => IBobrilChildren) | undefined): void {
+dndProto.setDragNodeView = function (this: IDndCtx, view: ((dnd: IDndCtx) => IBobrilChildren) | undefined): void {
     this.dragView = view;
 };
 
-dndProto.addData = function(this: IDndCtx, type: string, data: any): boolean {
+dndProto.addData = function (this: IDndCtx, type: string, data: any): boolean {
     this.data[type] = data;
     return true;
 };
 
-dndProto.listData = function(this: IDndCtx): string[] {
+dndProto.listData = function (this: IDndCtx): string[] {
     return Object.keys(this.data);
 };
 
-dndProto.hasData = function(this: IDndCtx, type: string): boolean {
+dndProto.hasData = function (this: IDndCtx, type: string): boolean {
     return this.data[type] !== undefined;
 };
 
-dndProto.getData = function(this: IDndCtx, type: string): any {
+dndProto.getData = function (this: IDndCtx, type: string): any {
     return this.data[type];
 };
 
-dndProto.setEnabledOps = function(this: IDndCtx, ops: DndEnabledOps): void {
+dndProto.setEnabledOps = function (this: IDndCtx, ops: DndEnabledOps): void {
     this.enabledOperations = ops;
 };
 
-dndProto.cancelDnd = function(this: IDndOverCtx): void {
+dndProto.cancelDnd = function (this: IDndOverCtx): void {
     dndMoved(undefined, this);
     this.destroy();
 };
 
-dndProto.destroy = function(this: IDndCtx): void {
+dndProto.destroy = function (this: IDndCtx): void {
     this.ended = true;
     if (this.started) broadcast("onDragEnd", this);
     delete pointer2Dnd[this.pointerid];
@@ -5091,7 +5123,7 @@ export interface IRoute {
 export enum RouteTransitionType {
     Push,
     Replace,
-    Pop
+    Pop,
 }
 
 export interface IRouteTransition {
@@ -5179,10 +5211,7 @@ export function decodeUrl(url: string): string {
 }
 
 export function encodeUrlPath(path: string | undefined): string {
-    return String(path)
-        .split("/")
-        .map(encodeUrl)
-        .join("/");
+    return String(path).split("/").map(encodeUrl).join("/");
 }
 
 const paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
@@ -5209,7 +5238,7 @@ function compilePattern(pattern: string) {
 
         compiledPatterns[pattern] = {
             matcher: new RegExp("^" + source + "$", "i"),
-            paramNames: paramNames
+            paramNames: paramNames,
         };
     }
 
@@ -5360,7 +5389,7 @@ function rootNodeFactory(): IBobrilNode | undefined {
             inApp: true,
             type: RouteTransitionType.Pop,
             name: undefined,
-            params: undefined
+            params: undefined,
         };
         transitionState = -1;
         programPath = browserPath;
@@ -5402,7 +5431,7 @@ function rootNodeFactory(): IBobrilNode | undefined {
                         key: undefined,
                         ref: undefined,
                         data,
-                        component: handler
+                        component: handler,
                     };
                 }
                 if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
@@ -5463,7 +5492,7 @@ export function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRout
         data: config.data,
         handler: config.handler,
         keyBuilder: config.keyBuilder,
-        children: nestedRoutes
+        children: nestedRoutes,
     };
 }
 
@@ -5473,7 +5502,7 @@ export function routeDefault(config: IRouteConfig): IRoute {
         data: config.data,
         handler: config.handler,
         keyBuilder: config.keyBuilder,
-        isDefault: true
+        isDefault: true,
     };
 }
 
@@ -5483,7 +5512,7 @@ export function routeNotFound(config: IRouteConfig): IRoute {
         data: config.data,
         handler: config.handler,
         keyBuilder: config.keyBuilder,
-        isNotFound: true
+        isNotFound: true,
     };
 }
 
@@ -5531,10 +5560,10 @@ export function Link(data: {
                 onClick() {
                     runTransition((data.replace ? createRedirectReplace : createRedirectPush)(data.name, data.params));
                     return true;
-                }
+                },
             },
             children: data.children,
-            attrs: { href: urlOfRoute(data.name, data.params) }
+            attrs: { href: urlOfRoute(data.name, data.params) },
         },
         isActive(data.name, data.params)
             ? data.activeStyle != undefined
@@ -5564,7 +5593,7 @@ export function link(node: IBobrilNode, name: string, params?: Params): IBobrilN
             let data = ctx.data;
             runTransition(createRedirectPush(data.routeName, data.routeParams));
             return true;
-        }
+        },
     });
     return node;
 }
@@ -5574,7 +5603,7 @@ export function createRedirectPush(name: string, params?: Params): IRouteTransit
         inApp: isInApp(name),
         type: RouteTransitionType.Push,
         name: name,
-        params: params || {}
+        params: params || {},
     };
 }
 
@@ -5583,7 +5612,7 @@ export function createRedirectReplace(name: string, params?: Params): IRouteTran
         inApp: isInApp(name),
         type: RouteTransitionType.Replace,
         name: name,
-        params: params || {}
+        params: params || {},
     };
 }
 
@@ -5594,7 +5623,7 @@ export function createBackTransition(distance?: number): IRouteTransition {
         type: RouteTransitionType.Pop,
         name: undefined,
         params: {},
-        distance
+        distance,
     };
 }
 
@@ -5766,8 +5795,8 @@ export function anchor(children: IBobrilChildren, name?: string, params?: Params
             },
             postInitDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
                 handleAnchorRoute(ctx, me, name, params);
-            }
-        }
+            },
+        },
     };
 }
 
@@ -5995,7 +6024,7 @@ function beforeFrame() {
             if (imageSprite === undefined) {
                 imageSprite = null;
                 imageCache[lastSpriteUrl] = imageSprite;
-                loadImage(lastSpriteUrl, image => {
+                loadImage(lastSpriteUrl, (image) => {
                     imageCache[lastSpriteUrl] = image;
                     invalidateStyles();
                 });
@@ -6023,7 +6052,7 @@ function beforeFrame() {
                             width: dynSprite.width,
                             height: dynSprite.height,
                             backgroundPosition: 0,
-                            backgroundSize: "100%"
+                            backgroundSize: "100%",
                         };
                     }
                 }
@@ -6042,9 +6071,10 @@ function beforeFrame() {
                             backgroundImage: `url(${lastSpriteUrl})`,
                             width: width,
                             height: height,
-                            backgroundPosition: `${(100 * sprite.left) / (iWidth - width)}% ${(100 * sprite.top) /
-                                (iHeight - height)}%`,
-                            backgroundSize: `${percentWidth}% ${percentHeight}%`
+                            backgroundPosition: `${(100 * sprite.left) / (iWidth - width)}% ${
+                                (100 * sprite.top) / (iHeight - height)
+                            }%`,
+                            backgroundSize: `${percentWidth}% ${percentHeight}%`,
                         };
                     }
                 }
@@ -6073,7 +6103,7 @@ function beforeFrame() {
                     backgroundImage: `url(${lastUrl})`,
                     width: dynSprite.width,
                     height: dynSprite.height,
-                    backgroundPosition: 0
+                    backgroundPosition: 0,
                 };
             }
         }
@@ -6229,10 +6259,7 @@ var msPattern = /^ms-/;
 
 function hyphenateStyle(s: string): string {
     if (s === "cssFloat") return "float";
-    return s
-        .replace(uppercasePattern, "-$1")
-        .toLowerCase()
-        .replace(msPattern, "-ms-");
+    return s.replace(uppercasePattern, "-$1").toLowerCase().replace(msPattern, "-ms-");
 }
 
 function inlineStyleToCssDeclaration(style: any): string {
@@ -6329,7 +6356,7 @@ export function styleDefEx(
         parent,
         style,
         inlStyle: undefined,
-        pseudo
+        pseudo,
     };
     invalidateStyles();
     return nameHint;
@@ -6342,7 +6369,7 @@ export function selectorStyleDef(selector: string, style: CSSStyles, pseudo?: CS
         parent: selector,
         style,
         inlStyle: undefined,
-        pseudo
+        pseudo,
     };
     invalidateStyles();
 }
@@ -6359,7 +6386,7 @@ function updateSprite(spDef: ISprite): void {
         width: spDef.width,
         height: spDef.height,
         backgroundPosition: `${-spDef.left}px ${-spDef.top}px`,
-        backgroundSize: `${spDef.width}px ${spDef.height}px`
+        backgroundSize: `${spDef.width}px ${spDef.height}px`,
     };
     stDef.style = style;
     invalidateStyles();
@@ -6489,14 +6516,14 @@ export function sprite(
         dynamicSprites.push(<IDynamicSprite>spDef);
         if (imageCache[url] === undefined) {
             imageCache[url] = null;
-            loadImage(url, image => {
+            loadImage(url, (image) => {
                 imageCache[url] = image;
                 invalidateStyles();
             });
         }
         invalidateStyles();
     } else if (width == undefined || height == undefined || color != undefined) {
-        loadImage(url, image => {
+        loadImage(url, (image) => {
             if (spDef.width == undefined) spDef.width = image.width;
             if (spDef.height == undefined) spDef.height = image.height;
             if (color != undefined) {
@@ -6540,7 +6567,7 @@ export function spriteb(width: number, height: number, left: number, top: number
         width,
         height,
         left,
-        top
+        top,
     };
     bundledSprites[key] = spDef;
     wasSpriteUrlChanged = true;
@@ -6577,7 +6604,7 @@ export function spritebc(
         width,
         height,
         left,
-        top
+        top,
     };
     (<IResponsiveDynamicSprite>spDef).color = color;
     (<IResponsiveDynamicSprite>spDef).lastColor = "";
@@ -6609,7 +6636,7 @@ function polarToCartesian(
     var angleInRadians = (angleInDegrees * Math.PI) / 180.0;
     return {
         x: centerX + radius * Math.sin(angleInRadians),
-        y: centerY - radius * Math.cos(angleInRadians)
+        y: centerY - radius * Math.cos(angleInRadians),
     };
 }
 
@@ -6648,7 +6675,7 @@ function svgDescribeArc(
         arcSweep,
         largeArg,
         end.x,
-        end.y
+        end.y,
     ].join(" ");
     if (close) d += "Z";
     return d;
@@ -6688,7 +6715,7 @@ export function withKey(content: IBobrilChildren, key: string): IBobrilNodeWithK
     }
     return {
         key,
-        children: content
+        children: content,
     };
 }
 
@@ -6748,7 +6775,7 @@ export function createComponent<TData extends object | never, TCtx extends IBobr
 ): IComponentFactory<TData> {
     const originalRender = component.render;
     if (originalRender) {
-        component.render = function(ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
+        component.render = function (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
             me.tag = "div";
             return originalRender.call(component, ctx, me, oldMe);
         };
@@ -6802,10 +6829,10 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
         if (val !== undefined) {
             if (typeof val === "object" && isFunction((<PromiseLike<T>>val).then)) {
                 (<PromiseLike<T>>val).then(
-                    v => {
+                    (v) => {
                         prop(v);
                     },
-                    err => {
+                    (err) => {
                         if (window["console"] && console.error) console.error(err);
                     }
                 );
@@ -6895,7 +6922,7 @@ if (!(<any>window).b)
         setAfterFrame,
         setBeforeFrame,
         getDnds,
-        setBeforeInit
+        setBeforeInit,
     };
 
 export function shallowEqual(a: any, b: any): boolean {
@@ -6932,7 +6959,7 @@ function getStringPropertyDescriptors(obj: any): Map<string, PropertyDescriptor>
     var props = new Map<string, PropertyDescriptor>();
 
     do {
-        Object.getOwnPropertyNames(obj).forEach(function(this: Map<string, PropertyDescriptor>, prop: string) {
+        Object.getOwnPropertyNames(obj).forEach(function (this: Map<string, PropertyDescriptor>, prop: string) {
             if (!this.has(prop)) this.set(prop, Object.getOwnPropertyDescriptor(obj, prop)!);
         }, props);
     } while ((obj = Object.getPrototypeOf(obj)));
@@ -7035,6 +7062,16 @@ export function Fragment(data: IFragmentData): IBobrilNode {
     return data;
 }
 
+export interface IPortalData {
+    element: Element;
+    children: IBobrilChildren;
+    key?: string;
+}
+
+export function Portal(data: IPortalData): IBobrilNode {
+    return { tag: "@", data: data.element, children: data.children, key: data.key };
+}
+
 export const __spread = assign;
 
 export enum EventResult {
@@ -7045,7 +7082,7 @@ export enum EventResult {
     /// event propagation will stop but default handing will still run
     HandledButRunDefault = 2,
     /// event propagation will continue but default handing will be prevented
-    NotHandledPreventDefault = 3
+    NotHandledPreventDefault = 3,
 }
 
 export type GenericEventResult = EventResult | boolean | void;
@@ -7271,7 +7308,7 @@ export function context<T>(key: IContext<T>): (target: object, propertyKey: stri
             },
             set(this: IBobrilCtxInternal, value: T) {
                 extendCfg(this, key.id, value);
-            }
+            },
         });
     };
 }
@@ -7321,7 +7358,7 @@ export function useStore<T>(factory: () => T): T {
     if (hook === undefined) {
         hook = factory();
         if (isDisposable(hook)) {
-            addDisposable(currentCtx!, hook)
+            addDisposable(currentCtx!, hook);
         }
         hooks[myHookId] = hook;
     }
@@ -7384,16 +7421,16 @@ export function bind(target: any, propertyKey?: string, descriptor?: PropertyDes
                 Object.defineProperty(this, propertyKey, {
                     value,
                     configurable: true,
-                    writable: true
+                    writable: true,
                 });
                 definingProperty = false;
                 return value;
-            }
+            },
         };
     }
     const proto = target.prototype;
     const keys = Object.getOwnPropertyNames(proto);
-    keys.forEach(key => {
+    keys.forEach((key) => {
         if (key === "constructor") {
             return;
         }
