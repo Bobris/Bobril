@@ -69,7 +69,8 @@ describe("events", ()=> {
 
             function Portal(props: IProps) {
                 return (
-                    <div onClick={() => {
+                    <div id="inner-portal"
+                        onClick={() => {
                         props.callback("inner");
                         return false
                     }} ref={ref => cacheNode = ref!}>
