@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.6.0
+
+Fixed `vdomPath` search for Portals. Portal element now defaults to document.body same as b.init.
+
 ## 14.5.0
 
 Added support for Portals. `IBobrilNode` for portal is `{ tag: "@", data: domElement, children }`. In TSX it is `<b.Portal element={domElement}>{children}</b.Portal>`.

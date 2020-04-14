@@ -1024,6 +1024,7 @@ export function createNode(
         return c;
     } else if (tag === "@") {
         createInto = c.data;
+        portalMap.set(createInto, c);
         createBefore = null;
         tag = undefined;
     }
@@ -1176,6 +1177,7 @@ function destroyNode(c: IBobrilCacheNode) {
         currentCtx = undefined;
     }
     if (c.tag === "@") {
+        portalMap.delete(c.data);
         removeNodeRecursive(c);
     }
 }
@@ -1221,6 +1223,7 @@ function removeNode(c: IBobrilCacheNode) {
 }
 
 var roots: IBobrilRoots = newHashObj();
+var portalMap: Map<Node, IBobrilCacheNode> = new Map();
 
 function nodeContainsNode(
     c: IBobrilCacheNode,
@@ -1265,6 +1268,11 @@ export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[
     if (n == undefined) return res;
     var rootIds = Object.keys(roots);
     var rootElements = rootIds.map((i) => roots[i].e || document.body);
+    var rootNodes = rootIds.map((i) => roots[i].n);
+    portalMap.forEach((v, k) => {
+        rootElements.push(k as HTMLElement);
+        rootNodes.push(v);
+    });
     var nodeStack: Node[] = [];
     rootReallyFound: while (true) {
         rootFound: while (n) {
@@ -1279,8 +1287,16 @@ export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[
         var currentNode = nodeStack.pop()!;
         for (j = 0; j < rootElements.length; j++) {
             if (n === rootElements[j]) {
-                var rn = roots[rootIds[j]].n;
+                var rn = rootNodes[j];
                 if (rn === undefined) continue;
+                res = [];
+                if (rn.parent !== undefined) {
+                    var rnp: IBobrilCacheNode | undefined = rn;
+                    while ((rnp = rnp.parent)) {
+                        res.push(rnp);
+                    }
+                    res.reverse();
+                }
                 var findResult = nodeContainsNode(rn, currentNode, res.length, res);
                 if (findResult !== undefined) {
                     currentCacheArray = findResult;
@@ -7056,6 +7072,7 @@ export function createElement(name: any, props: any): IBobrilNode {
 export interface IFragmentData extends IBobrilEvents {
     children: IBobrilChildren;
     key?: string;
+    ref?: RefType;
 }
 
 export function Fragment(data: IFragmentData): IBobrilNode {
@@ -7063,13 +7080,14 @@ export function Fragment(data: IFragmentData): IBobrilNode {
 }
 
 export interface IPortalData {
-    element: Element;
+    element?: Element;
     children: IBobrilChildren;
     key?: string;
+    ref?: RefType;
 }
 
 export function Portal(data: IPortalData): IBobrilNode {
-    return { tag: "@", data: data.element, children: data.children, key: data.key };
+    return { tag: "@", data: data.element ?? document.body, children: data.children, key: data.key, ref: data.ref };
 }
 
 export const __spread = assign;

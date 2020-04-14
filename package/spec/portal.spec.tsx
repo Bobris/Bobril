@@ -18,6 +18,23 @@ describe("Portal", () => {
         expect(document.body.innerHTML).not.toContain("portal");
     });
 
+    it("creates and destroys with body in div inside body because it is default", () => {
+        b.init(() => {
+            return (
+                <div>
+                    before_
+                    <b.Portal>portal</b.Portal>
+                    after
+                </div>
+            );
+        });
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain("<div>before_after</div>portal");
+        b.init(() => undefined);
+        b.syncUpdate();
+        expect(document.body.innerHTML).not.toContain("portal");
+    });
+
     it("creates and destroys with body in Fragment", () => {
         b.init(() => {
             return (
@@ -60,8 +77,15 @@ describe("Portal", () => {
         let el = document.createElement("div");
         let state: b.IProp<number>;
         let renderCalls = 0;
-        function Counter() {
+        function Counter(this: b.IBobrilCtx) {
             state = b.useState(1);
+            b.useLayoutEffect(() => {
+                var p = b.vdomPath(
+                    ((this.me.children![0] as b.IBobrilCacheNode).children![0] as b.IBobrilCacheNode).element as Node
+                );
+                // root, div, Portal, tag="@", div, Counter, Fragment, text
+                expect(p.length).toBe(8);
+            });
             return <>{state()}</>;
         }
         b.init(() => {
