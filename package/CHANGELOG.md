@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.6.1
+
+Fixed bug in router when routes had different nesting.
+
 ## 14.6.0
 
 Fixed `vdomPath` search for Portals. Portal element now defaults to document.body same as b.init.

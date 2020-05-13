@@ -5426,8 +5426,8 @@ function rootNodeFactory(): IBobrilNode | undefined {
     }
     if (currentTransition == undefined) {
         activeRoutes = matches;
-        while (nodesArray.length > activeRoutes.length) nodesArray.pop();
-        while (nodesArray.length < activeRoutes.length) nodesArray.push(undefined);
+        while (nodesArray.length > activeRoutes.length) nodesArray.shift();
+        while (nodesArray.length < activeRoutes.length) nodesArray.unshift(undefined);
         activeParams = out.p;
     }
     var fn: (otherData?: any) => IBobrilNode | undefined = noop;
