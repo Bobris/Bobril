@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.7.0
+
+Fixed JSX compatibility with TypeScript 3.9.2. Unfortunately `never` type cannot be used anymore for `data` type, use `{}` instead.
+
 ## 14.6.1
 
 Fixed bug in router when routes had different nesting.

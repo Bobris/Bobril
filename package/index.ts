@@ -7650,7 +7650,7 @@ interface IGenericElementAttributes extends IBobrilEvents {
 
 declare global {
     namespace JSX {
-        type Element<T = Exclude<object, Function>> = IBobrilNode<T>;
+        type Element = IBobrilNode<any>;
 
         interface ElementAttributesProperty {
             data: {};
