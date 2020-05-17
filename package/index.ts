@@ -5380,11 +5380,23 @@ function noop(): undefined {
     return undefined;
 }
 
+const renderActiveRouter: IBobrilComponent = {
+    render(_ctx: IBobrilCtx, me: IBobrilNode) {
+        me.children = me.data.activeRouteHandler();
+    },
+};
+
 function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode | undefined) => void {
     while (idx >= setterOfNodesArray.length) {
         setterOfNodesArray.push(
-            ((a: (IBobrilCacheNode | undefined)[], i: number) => (n: IBobrilCacheNode | undefined) => {
-                if (n) a[i] = n;
+            ((a: (IBobrilCacheNode | undefined)[], ii: number) => (n: IBobrilCacheNode | undefined) => {
+                if (n) {
+                    var i = ii;
+                    a[i] = n;
+                    while (i-- > 0) {
+                        a[i] = undefined;
+                    }
+                }
             })(nodesArray, setterOfNodesArray.length)
         );
     }
@@ -5447,7 +5459,7 @@ function rootNodeFactory(): IBobrilNode | undefined {
                         key: undefined,
                         ref: undefined,
                         data,
-                        component: handler,
+                        component: handler || renderActiveRouter,
                     };
                 }
                 if (r.keyBuilder) res.key = r.keyBuilder(routeParams);
@@ -7089,8 +7101,6 @@ export interface IPortalData {
 export function Portal(data: IPortalData): IBobrilNode {
     return { tag: "@", data: data.element ?? document.body, children: data.children, key: data.key, ref: data.ref };
 }
-
-export const __spread = assign;
 
 export enum EventResult {
     /// event propagation will continue. It's like returning falsy value.

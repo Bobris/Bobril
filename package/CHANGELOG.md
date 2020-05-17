@@ -3,6 +3,7 @@
 ## 14.7.0
 
 Fixed JSX compatibility with TypeScript 3.9.2. Unfortunately `never` type cannot be used anymore for `data` type, use `{}` instead.
+Fixed missing handler in chain by providing build in basic implementation instead. Also it should correctly handle cases when some route handler does not want to show child.
 
 ## 14.6.1
 
@@ -10,7 +11,7 @@ Fixed bug in router when routes had different nesting.
 
 ## 14.6.0
 
-Fixed `vdomPath` search for Portals. Portal element now defaults to document.body same as b.init.
+Fixed `vdomPath` search for Portals. Portal element now defaults to document.body same as `b.init`.
 
 ## 14.5.0
 
