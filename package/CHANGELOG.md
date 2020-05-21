@@ -2,7 +2,7 @@
 
 ## 14.8.0
 
-Added `useCallback` hook.
+Added `useCallback` and `useReducer` hooks.
 
 ## 14.7.0
 

@@ -7313,6 +7313,56 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
     return hook;
 }
 
+export type Dispatch<A> = (value: A) => void;
+export type Reducer<S, A> = (prevState: S, action: A) => S;
+export type ReducerState<R extends Reducer<any, any>> = R extends Reducer<infer S, any> ? S : never;
+export type ReducerAction<R extends Reducer<any, any>> = R extends Reducer<any, infer A> ? A : never;
+
+export function useReducer<R extends Reducer<any, any>, I>(
+    reducer: R,
+    initializerArg: I & ReducerState<R>,
+    initializer: (arg: I & ReducerState<R>) => ReducerState<R>
+): [ReducerState<R>, Dispatch<ReducerAction<R>>];
+
+export function useReducer<R extends Reducer<any, any>, I>(
+    reducer: R,
+    initializerArg: I,
+    initializer: (arg: I) => ReducerState<R>
+): [ReducerState<R>, Dispatch<ReducerAction<R>>];
+
+export function useReducer<R extends Reducer<any, any>>(
+    reducer: R,
+    initialState: ReducerState<R>,
+    initializer?: undefined
+): [ReducerState<R>, Dispatch<ReducerAction<R>>];
+
+export function useReducer<R extends Reducer<any, any>, I>(
+    reducer: R,
+    initializerArg: I,
+    initializer?: (arg: I) => ReducerState<R>
+): [ReducerState<R>, Dispatch<ReducerAction<R>>] {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    const ctx = currentCtx;
+    let hook = hooks[myHookId] as [ReducerState<R>, Dispatch<ReducerAction<R>>];
+    if (hook === undefined) {
+        var initValue = isFunction(initializer) ? initializer(initializerArg) : (initializerArg as ReducerState<R>);
+        hook = [
+            initValue,
+            (action: ReducerAction<R>) => {
+                let currentValue = hook[0];
+                let newValue = reducer(currentValue, action);
+                if (!is(newValue, currentValue)) {
+                    hook[0] = newValue;
+                    invalidate(ctx);
+                }
+            },
+        ];
+        hooks[myHookId] = hook;
+    }
+    return hook;
+}
+
 export interface IContext<T> {
     id: string;
     dv: T;
