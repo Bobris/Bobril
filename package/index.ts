@@ -7519,6 +7519,10 @@ export function useMemo<T>(factory: () => T, deps: DependencyList): T {
     return hook.memoize(factory, deps);
 }
 
+export function useCallback<T>(callback: T, deps: DependencyList): T {
+    return useMemo(() => callback, deps);
+}
+
 var effectCallbacks: Array<() => void> = [];
 
 function executeEffectCallbacks() {

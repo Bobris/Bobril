@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.8.0
+
+Added `useCallback` hook.
+
 ## 14.7.0
 
 Fixed JSX compatibility with TypeScript 3.9.2. Unfortunately `never` type cannot be used anymore for `data` type, use `{}` instead.
