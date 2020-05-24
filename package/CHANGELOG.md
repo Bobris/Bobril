@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.9.0
+
+Allow override `b.asset` behaviour by `b.setAsset` or from bobril build by setting defining global function `bobrilBAsset`.
+
 ## 14.8.0
 
 Added `useCallback` and `useReducer` hooks.

@@ -6647,8 +6647,14 @@ export function injectCss(css: string): void {
     invalidateStyles();
 }
 
-export function asset(path: string): string {
-    return path;
+export let asset: (path: string) => string =
+    (<any>window)["bobrilBAsset"] ||
+    function (path: string): string {
+        return path;
+    };
+
+export function setAsset(fn: (path: string) => string) {
+    asset = fn;
 }
 
 selectorStyleDef("html." + draggingStyle + " *", { cursor: "inherit !important", userSelect: "none !important" });
