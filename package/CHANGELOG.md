@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.10.0
+
+New functions `namedStyleDef` and `namedStyleDefEx` which are not modified by bobril-build and allows to define css classes with exact names.
+
 ## 14.9.0
 
 Allow override `b.asset` behaviour by `b.setAsset` or from bobril build by setting defining global function `bobrilBAsset`.

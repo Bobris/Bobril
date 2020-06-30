@@ -6371,6 +6371,21 @@ export function mediaQueryDef(def: string, mediaQueryDefinition: MediaQueryDefin
     invalidateStyles();
 }
 
+export function namedStyleDefEx(
+    name: string,
+    parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
+    style: CSSStyles,
+    pseudo?: CSSPseudoStyles
+): IBobrilStyleDef {
+    var res = styleDefEx(parent, style, pseudo, name);
+    if (res != name) throw new Error("named style " + name + " is not unique");
+    return res;
+}
+
+export function namedStyleDef(name: string, style: CSSStyles, pseudo?: CSSPseudoStyles): IBobrilStyleDef {
+    return namedStyleDefEx(name, undefined, style, pseudo);
+}
+
 export function styleDefEx(
     parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
     style: CSSStyles,
