@@ -963,6 +963,17 @@ export function setCurrentCtx(ctx: IBobrilCtx | undefined) {
     currentCtx = ctx;
 }
 
+let measureFullComponentDuration = false;
+let measureComponentMethods = false;
+
+export function setMeasureConfiguration(conf: {
+    measureFullComponentDuration: boolean;
+    measureComponentMethods: boolean;
+}) {
+    measureFullComponentDuration = conf.measureFullComponentDuration;
+    measureComponentMethods = conf.measureComponentMethods;
+}
+
 export function createNode(
     n: IBobrilNode,
     parentNode: IBobrilCacheNode | undefined,
@@ -990,6 +1001,10 @@ export function createNode(
     var backupInNotFocusable = inNotFocusable;
     var component = c.component;
     var el: Node | undefined;
+    if (DEBUG && component && measureFullComponentDuration) {
+        var componentStartMark = `create ${frameCounter} ${++visitedComponentCounter}`;
+        window.performance.mark(componentStartMark);
+    }
     setRef(c.ref, c);
     if (component) {
         var ctx: IBobrilCtx;
@@ -1004,12 +1019,18 @@ export function createNode(
         c.ctx = ctx;
         currentCtx = ctx;
         if (component.init) {
+            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} init-start`);
             component.init(ctx, c);
+            if (DEBUG && measureComponentMethods)
+                window.performance.measure(`${component.id} [init]`, `${component.id} init-start`);
         }
         if (beforeRenderCallback !== emptyBeforeRenderCallback) beforeRenderCallback(n, RenderPhase.Create);
         if (component.render) {
             hookId = 0;
+            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} render-start`);
             component.render(ctx, c);
+            if (DEBUG && measureComponentMethods)
+                window.performance.measure(`${component.id} [render]`, `${component.id} render-start`);
             hookId = -1;
         }
         currentCtx = undefined;
@@ -1021,6 +1042,8 @@ export function createNode(
         // Skip update
         c.tag = undefined;
         c.children = undefined;
+        if (DEBUG && component && measureFullComponentDuration)
+            window.performance.measure(`${component.id} create`, componentStartMark!);
         return c;
     } else if (tag === "@") {
         createInto = c.data;
@@ -1044,10 +1067,15 @@ export function createNode(
         }
         if (component) {
             if (component.postRender) {
+                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
                 component.postRender(c.ctx!, c);
+                if (DEBUG && measureComponentMethods)
+                    window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
             }
             pushInitCallback(c);
         }
+        if (DEBUG && component && measureFullComponentDuration)
+            window.performance.measure(`${component.id} create`, componentStartMark!);
         return c;
     }
     if (tag === "/") {
@@ -1094,10 +1122,15 @@ export function createNode(
         }
         if (component) {
             if (component.postRender) {
+                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
                 component.postRender(c.ctx!, c);
+                if (DEBUG && measureComponentMethods)
+                    window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
             }
             pushInitCallback(c);
         }
+        if (DEBUG && component && measureFullComponentDuration)
+            window.performance.measure(`${component.id} create`, componentStartMark!);
         return c;
     }
     if (inSvg || tag === "svg") {
@@ -1112,7 +1145,10 @@ export function createNode(
     createChildren(c, <Element>el, null);
     if (component) {
         if (component.postRender) {
+            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
             component.postRender(c.ctx!, c);
+            if (DEBUG && measureComponentMethods)
+                window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
         }
     }
     if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
@@ -1124,6 +1160,8 @@ export function createNode(
     inSvg = backupInSvg;
     inNotFocusable = backupInNotFocusable;
     pushInitCallback(c);
+    if (DEBUG && component && measureFullComponentDuration)
+        window.performance.measure(`${component.id} create`, componentStartMark!);
     return c;
 }
 
@@ -1377,6 +1415,11 @@ export function updateNode(
     var component = n.component;
     var bigChange = false;
     var ctx = c.ctx;
+    if (DEBUG && component && measureFullComponentDuration) {
+        var componentStartMark = `update ${frameCounter} ${++visitedComponentCounter}`;
+        window.performance.mark(componentStartMark);
+    }
+
     if (component != null && ctx != null) {
         let locallyInvalidated = false;
         if ((<any>ctx)[ctxInvalidated] >= frameCounter) {
@@ -1390,9 +1433,20 @@ export function updateNode(
             if (n.cfg !== undefined) ctx.cfg = n.cfg;
             else ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
-                if (!component.shouldChange(ctx, n, c) && !ignoringShouldChange && !locallyInvalidated) {
-                    finishUpdateNodeWithoutChange(c, createInto, createBefore);
-                    return c;
+                if (!ignoringShouldChange && !locallyInvalidated) {
+                    if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} shouldChange-start`);
+                    const shouldChange = component.shouldChange(ctx, n, c);
+                    if (DEBUG && measureComponentMethods)
+                        window.performance.measure(
+                            `${component.id} [shouldChange]`,
+                            `${component.id} shouldChange-start`
+                        );
+                    if (!shouldChange) {
+                        finishUpdateNodeWithoutChange(c, createInto, createBefore);
+                        if (DEBUG && measureFullComponentDuration)
+                            window.performance.measure(`${component.id} update`, componentStartMark!);
+                        return c;
+                    }
                 }
             (<any>ctx).data = n.data || {};
             (c as IBobrilCacheNodeUnsafe).component = component;
@@ -1404,7 +1458,10 @@ export function updateNode(
                 (c as IBobrilCacheNodeUnsafe).cfg = undefined;
                 if (n.cfg !== undefined) n.cfg = undefined;
                 hookId = 0;
+                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} render-start`);
                 component.render(ctx, n, c);
+                if (DEBUG && measureComponentMethods)
+                    window.performance.measure(`${component.id} [render]`, `${component.id} render-start`);
                 hookId = -1;
                 if (n.cfg !== undefined) {
                     if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
@@ -1417,6 +1474,8 @@ export function updateNode(
         // In case there is no component and source is same reference it is considered not changed
         if (c.orig === n && !ignoringShouldChange) {
             finishUpdateNodeWithoutChange(c, createInto, createBefore);
+            if (DEBUG && component && measureFullComponentDuration)
+                window.performance.measure(`${component.id} update`, componentStartMark!);
             return c;
         }
         (c as IBobrilCacheNodeUnsafe).orig = n;
@@ -1427,6 +1486,8 @@ export function updateNode(
     var tag = n.tag;
     if (tag === "-") {
         finishUpdateNodeWithoutChange(c, createInto, createBefore);
+        if (DEBUG && component && measureFullComponentDuration)
+            window.performance.measure(`${component.id} update`, componentStartMark!);
         return c;
     }
     const backupInSvg = inSvg;
@@ -1443,6 +1504,8 @@ export function updateNode(
     } else if (tag === "/") {
         if (c.tag === "/" && cachedChildren === newChildren) {
             finishUpdateNode(n, c, component);
+            if (DEBUG && component && measureFullComponentDuration)
+                window.performance.measure(`${component.id} update`, componentStartMark!);
             return c;
         }
     } else if (tag === c.tag) {
@@ -1450,6 +1513,8 @@ export function updateNode(
             if (n.data !== c.data) {
                 var r: IBobrilCacheNode = createNode(n, c.parent, n.data, null);
                 removeNode(c);
+                if (DEBUG && component && measureFullComponentDuration)
+                    window.performance.measure(`${component.id} update`, componentStartMark!);
                 return r;
             }
             createInto = n.data;
@@ -1483,6 +1548,8 @@ export function updateNode(
                 inNotFocusable = backupInNotFocusable;
             }
             finishUpdateNode(n, c, component);
+            if (DEBUG && component && measureFullComponentDuration)
+                window.performance.measure(`${component.id} update`, componentStartMark!);
             return c;
         } else {
             var inSvgForeignObject = false;
@@ -1520,6 +1587,8 @@ export function updateNode(
             }
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
+            if (DEBUG && component && measureFullComponentDuration)
+                window.performance.measure(`${component.id} update`, componentStartMark!);
             return c;
         }
     }
@@ -1529,6 +1598,8 @@ export function updateNode(
     else parEl = <Element>parEl.parentNode;
     var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c));
     removeNode(c);
+    if (DEBUG && component && measureFullComponentDuration)
+        window.performance.measure(`${component.id} update`, componentStartMark!);
     return r;
 }
 
@@ -1579,7 +1650,10 @@ export function callPostCallbacks() {
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i];
         currentCtx = n.ctx;
+        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} post-start`);
         updateCall[i].call(n.component, currentCtx, n, n.element);
+        if (DEBUG && measureComponentMethods)
+            window.performance.measure(`${n.component.id} [post*]`, `${n.component.id} post-start`);
     }
     currentCtx = undefined;
     updateCall = [];
@@ -2341,7 +2415,10 @@ const RootComponent = createVirtualComponent<IBobrilRoot>({
     },
 });
 
+let visitedComponentCounter = 0;
+
 function internalUpdate(time: number) {
+    visitedComponentCounter = 0;
     isInvalidated = false;
     renderFrameBegin = now();
     initEvents();
@@ -2357,6 +2434,10 @@ function internalUpdate(time: number) {
         fullRefresh = true;
     }
     listeningEventDeepness++;
+    if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) {
+        var renderStartMark = `render ${frameCounter}`;
+        window.performance.mark(renderStartMark);
+    }
     for (let repeat = 0; repeat < 2; repeat++) {
         focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
         inNotFocusable = false;
@@ -2396,6 +2477,8 @@ function internalUpdate(time: number) {
     listeningEventDeepness--;
     let r0 = roots["0"];
     afterFrameCallback(r0 ? r0.c : null);
+    if (DEBUG && (measureComponentMethods || measureFullComponentDuration))
+        window.performance.measure("render", renderStartMark!);
     lastFrameDurationMs = now() - renderFrameBegin;
 }
 
