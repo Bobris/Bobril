@@ -1,12 +1,20 @@
 # CHANGELOG
 
+## 14.11.0
+
+use User Timing API to measure component performance (#109)
+
+-   report component lifecycle method durations into User Timing API
+-   results are available in the performance tab of devtools (e.g. 'timings' timelane in Chrome)
+-   have to be manually switched on in the code `b.setMeasureConfiguration()`, since the performance impact is not known
+
 ## 14.10.0
 
 New functions `namedStyleDef` and `namedStyleDefEx` which are not modified by bobril-build and allows to define css classes with exact names.
 
 ## 14.9.0
 
-Allow override `b.asset` behaviour by `b.setAsset` or from bobril build by setting defining global function `bobrilBAsset`.
+Allow override `b.asset` behavior by `b.setAsset` or from bobril build by setting defining global function `bobrilBAsset`.
 
 ## 14.8.0
 
