@@ -3768,7 +3768,7 @@ function buildHandlerPointer(name: string) {
         target: Node | undefined,
         node: IBobrilCacheNode | undefined
     ): boolean {
-        target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+        target = ev.target as Node;
         node = deref(target);
         if (hasPointerEventsNoneB(node)) {
             var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
@@ -3816,7 +3816,7 @@ function buildHandlerTouch(name: string) {
         var preventDef = false;
         for (var i = 0; i < ev.changedTouches.length; i++) {
             var t = ev.changedTouches[i];
-            target = <HTMLElement>document.elementFromPoint(t.clientX, t.clientY);
+            target = t.target as Node;
             node = deref(target);
             var param: IBobrilPointerEvent = {
                 target: node!,
@@ -3848,7 +3848,7 @@ function buildHandlerMouse(name: string) {
         target: Node | undefined,
         node: IBobrilCacheNode | undefined
     ): boolean {
-        target = <HTMLElement>document.elementFromPoint(ev.clientX, ev.clientY);
+        target = ev.target as Node;
         node = deref(target);
         if (hasPointerEventsNoneB(node)) {
             var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
@@ -3894,11 +3894,6 @@ if ((<any>window).ontouchstart !== undefined) {
         var name = pointersEventNames[i];
         addEvent5(name.toLowerCase(), buildHandlerPointer(name));
     }
-} else if (window.onmspointerdown !== undefined) {
-    for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
-        var name = pointersEventNames[i];
-        addEvent5("@MS" + name, buildHandlerPointer(name));
-    }
 } else {
     listenMouse();
 }
@@ -3934,20 +3929,23 @@ var prevMousePath: (IBobrilCacheNode | null)[] = [];
 export function revalidateMouseIn() {
     if (lastMouseEv) {
         mouseEnterAndLeave(lastMouseEv);
-        handlePointerMove(lastMouseEv, undefined, deref(document.elementFromPoint(lastMouseEv.x, lastMouseEv.y)));
+        handlePointerMove(lastMouseEv, undefined, lastMouseEv.target);
     }
+}
+
+function vdomPathFromCacheNode(n: IBobrilCacheNode | undefined): IBobrilCacheNode[] {
+    var res = [];
+    while (n != undefined) {
+        res.push(n);
+        n = n.parent;
+    }
+    return res.reverse();
 }
 
 function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     lastMouseEv = ev;
-    var t = <HTMLElement>document.elementFromPoint(ev.x, ev.y);
-    var toPath = vdomPath(t);
-    var node = toPath.length == 0 ? undefined : toPath[toPath.length - 1];
-    if (hasPointerEventsNoneB(node)) {
-        var fixed = pointerEventsNoneFix(ev.x, ev.y, t, node == undefined ? undefined : node);
-        t = <HTMLElement>fixed[0];
-        toPath = vdomPath(t);
-    }
+    var node = ev.target;
+    var toPath = vdomPathFromCacheNode(node);
 
     bubble(node, "onMouseOver", ev);
 

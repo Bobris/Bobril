@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.12.0
+
+Optimized, simplified and shortened code for pointer events.
+
 ## 14.11.0
 
 use User Timing API to measure component performance (#109)
