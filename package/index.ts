@@ -6482,7 +6482,9 @@ export function styleDefEx(
         inlStyle: undefined,
         pseudo,
     };
-    invalidateStyles();
+    if (isString(style) && pseudo == undefined) {
+        allStyles[nameHint].realName = style;
+    } else invalidateStyles();
     return nameHint;
 }
 

@@ -4,6 +4,8 @@
 
 Optimized, simplified and shortened code for pointer events.
 
+b.style on b.styleDef(string) could be called outside of render now.
+
 ## 14.11.0
 
 use User Timing API to measure component performance (#109)
