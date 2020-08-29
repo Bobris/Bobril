@@ -6597,6 +6597,7 @@ function recolorAndClip(
 let lastFuncId = 0;
 const funcIdName = "b@funcId";
 let imagesWithCredentials = false;
+const colorLessSpriteMap = new Map<string, ISprite | IResponsiveSprite>();
 
 function loadImage(url: string, onload: (image: HTMLImageElement) => void) {
     var image = new Image();
@@ -6663,6 +6664,9 @@ export function sprite(
         updateSprite(spDef);
     }
     allSprites[key] = spDef;
+    if (colorId === "") {
+        colorLessSpriteMap.set(styleId, spDef);
+    }
     return styleId;
 }
 
@@ -6697,6 +6701,7 @@ export function spriteb(width: number, height: number, left: number, top: number
     };
     bundledSprites[key] = spDef;
     wasSpriteUrlChanged = true;
+    colorLessSpriteMap.set(styleId, spDef);
     return styleId;
 }
 
@@ -6738,6 +6743,16 @@ export function spritebc(
     bundledDynamicSprites.push(<IResponsiveDynamicSprite>spDef);
     bundledSprites[key] = spDef;
     return styleId;
+}
+
+export function spriteWithColor(colorLessSprite: IBobrilStyleDef, color: string): IBobrilStyleDef {
+    const original = colorLessSpriteMap.get(colorLessSprite);
+    if (original == undefined) throw new Error(colorLessSprite + " is not colorless sprite");
+    if ("url" in original) {
+        return sprite(original.url, color, original.width, original.height, original.left, original.top);
+    } else {
+        return spritebc(color, original.width, original.height, original.left, original.top);
+    }
 }
 
 export function injectCss(css: string): void {

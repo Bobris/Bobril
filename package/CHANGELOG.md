@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.13.0
+
+New function `spriteWithColor(colorLessSprite: IBobrilStyleDef, color: string): IBobrilStyleDef` for coloring already created sprites.
+
 ## 14.12.0
 
 Optimized, simplified and shortened code for pointer events.
