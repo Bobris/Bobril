@@ -6884,7 +6884,7 @@ export function extendCfg(ctx: IBobrilCtx, propertyName: string, value: any): vo
 
 // PureFuncs: styledDiv, createVirtualComponent, createComponent, createDerivedComponent, createOverridingComponent, prop, propi, propa, propim, getValue
 
-export function styledDiv(children: IBobrilChildren, ...styles: any[]): IBobrilNode {
+export function styledDiv(children: IBobrilChildren, ...styles: IBobrilStyles[]): IBobrilNode {
     return style({ tag: "div", children }, styles);
 }
 
@@ -6901,7 +6901,7 @@ export function createVirtualComponent<TData extends object | never, TCtx extend
 ): IComponentFactory<TData> {
     return (data?: TData, children?: ChildrenType<TData>): IBobrilNode => {
         if (children !== undefined) {
-            if (data == undefined) data = <any>{};
+            if (data == undefined) data = {} as TData;
             (data as any).children = children;
         }
         return { data, component: component };
@@ -6922,12 +6922,12 @@ export function createComponent<TData extends object | never, TCtx extends IBobr
 ): IComponentFactory<TData> {
     const originalRender = component.render;
     if (originalRender) {
-        component.render = function (ctx: any, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
+        component.render = function (ctx: IBobrilCtx<TData>, me: IBobrilNode, oldMe?: IBobrilCacheNode) {
             me.tag = "div";
             return originalRender.call(component, ctx, me, oldMe);
         };
     } else {
-        component.render = (_ctx: any, me: IBobrilNode) => {
+        component.render = (_ctx: IBobrilCtx<TData>, me: IBobrilNode) => {
             me.tag = "div";
         };
     }
@@ -7155,7 +7155,7 @@ export function createElement(name: any, props: any): IBobrilNode {
                 continue;
             }
             if (n === "key" || n === "className" || n === "component" || n === "data" || n === "children") {
-                (<any>res)[n] = propValue;
+                (res as any)[n] = propValue;
                 continue;
             }
             if (n.startsWith("on") && isFunction(propValue)) {

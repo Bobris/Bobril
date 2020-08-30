@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.14.0
+
+`b.styledDiv` is better typed.
+
 ## 14.13.0
 
 New function `spriteWithColor(colorLessSprite: IBobrilStyleDef, color: string): IBobrilStyleDef` for coloring already created sprites.
