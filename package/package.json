@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "14.14.0",
+    "version": "14.15.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -37,7 +37,7 @@
     "author": "Boris Letocha",
     "license": "MIT",
     "devDependencies": {
-        "prettier": "^2.0.2",
-        "typescript": "^3.8.3"
+        "prettier": "*",
+        "typescript": "^4.0.2"
     }
 }

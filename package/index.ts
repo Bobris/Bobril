@@ -421,7 +421,11 @@ export const isArray = Array.isArray;
 
 var isArrayVdom = isArray;
 
-export function setIsArrayVdom(isArrayFnc: <T>(arg: T | {}) => arg is T extends readonly any[] ? (unknown extends T ? never : readonly any[]) : any[]) {
+export function setIsArrayVdom(
+    isArrayFnc: <T>(
+        arg: T | {}
+    ) => arg is T extends readonly any[] ? (unknown extends T ? never : readonly any[]) : any[]
+) {
     isArrayVdom = isArrayFnc;
 }
 
@@ -4608,10 +4612,17 @@ export enum DndEnabledOps {
     MoveCopy = 6,
     MoveCopyLink = 7,
 }
-type TEffectAllowed = "all" | "link" | "none" | "move" | "copy" | "copyLink" | "linkMove" | "copyMove" | "uninitialized";
+type TEffectAllowed =
+    | "all"
+    | "link"
+    | "none"
+    | "move"
+    | "copy"
+    | "copyLink"
+    | "linkMove"
+    | "copyMove"
+    | "uninitialized";
 var effectAllowedTable: TEffectAllowed[] = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
-
-
 
 export interface IDndCtx {
     id: number;

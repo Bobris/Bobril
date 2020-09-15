@@ -1,8 +1,10 @@
 # CHANGELOG
 
+## 14.15.0
+
 `b.setIsArrayVdom` is better typed to support TS 4.1.x
 
-better typed dropEffect and effectAllowed in DnD 
+better typed dropEffect and effectAllowed in DnD
 
 ## 14.14.0
 
