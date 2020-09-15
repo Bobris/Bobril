@@ -1,5 +1,9 @@
 # CHANGELOG
 
+`b.setIsArrayVdom` is better typed to support TS 4.1.x
+
+better typed dropEffect and effectAllowed in DnD 
+
 ## 14.14.0
 
 `b.styledDiv` is better typed.

@@ -421,7 +421,7 @@ export const isArray = Array.isArray;
 
 var isArrayVdom = isArray;
 
-export function setIsArrayVdom(isArrayFnc: (arg: any) => arg is any[]) {
+export function setIsArrayVdom(isArrayFnc: <T>(arg: T | {}) => arg is T extends readonly any[] ? (unknown extends T ? never : readonly any[]) : any[]) {
     isArrayVdom = isArrayFnc;
 }
 
@@ -4595,6 +4595,8 @@ export enum DndOp {
     Copy = 2,
     Move = 3,
 }
+type TDropEffect = "none" | "copy" | "link" | "move";
+const dropEffectsAllowedTable: TDropEffect[] = ["none", "link", "copy", "move"];
 
 export enum DndEnabledOps {
     None = 0,
@@ -4606,6 +4608,10 @@ export enum DndEnabledOps {
     MoveCopy = 6,
     MoveCopyLink = 7,
 }
+type TEffectAllowed = "all" | "link" | "none" | "move" | "copy" | "copyLink" | "linkMove" | "copyMove" | "uninitialized";
+var effectAllowedTable: TEffectAllowed[] = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
+
+
 
 export interface IDndCtx {
     id: number;
@@ -4981,8 +4987,6 @@ function updateFromNative(dnd: IDndOverCtx, ev: DragEvent) {
     dnd.lastY = dnd.y;
 }
 
-var effectAllowedTable = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
-
 function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
     var dnd: (IDndStartCtx & IDndOverCtx) | null = systemDnd;
     if (dnd != null) {
@@ -5068,7 +5072,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
 }
 
 function setDropEffect(ev: DragEvent, op: DndOp) {
-    ev.dataTransfer!.dropEffect = ["none", "link", "copy", "move"][op];
+    ev.dataTransfer!.dropEffect = dropEffectsAllowedTable[op];
 }
 
 function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
