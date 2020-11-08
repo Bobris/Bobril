@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.16.0
+
+Changed `useEffect` body to be executed inside update frame. Before this change it was run asynchronously after frame using `b.asap`. This converts `useEffect` into another lifecycle method after `postUpdateDom`. Difference is that `postUpdateDom` (`useLayoutEffect`) can trigger another synchronous `Render`, but `useEffect` is executed always only once as last. Calling `deferSyncUpdate` from `useEffect` body does not have any effect.
+
 ## 14.15.0
 
 `b.setIsArrayVdom` is better typed to support TS 4.1.x

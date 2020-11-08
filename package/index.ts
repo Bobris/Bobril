@@ -239,6 +239,7 @@ const hasPostUpdateDom: HookFlags = 2;
 const hasPostUpdateDomEverytime: HookFlags = 4;
 const hasEvents: HookFlags = 8;
 const hasCaptureEvents: HookFlags = 16;
+const hasUseEffect: HookFlags = 32;
 
 interface IBobrilCtxInternal<TData = any> extends IBobrilCtx<TData> {
     $hooks?: any[];
@@ -605,6 +606,7 @@ var inSvg: boolean = false;
 var inNotFocusable: boolean = false;
 var updateCall: Array<Function> = [];
 var updateInstance: Array<IBobrilCacheNode> = [];
+var effectInstance: Array<IBobrilCacheNode> = [];
 var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (
     el: Element,
     _node: IBobrilCacheNode,
@@ -861,9 +863,13 @@ function pushInitCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (((c.ctx! as IBobrilCtxInternal).$hookFlags || 0) & hasPostInitDom) {
+        const flags = (c.ctx! as IBobrilCtxInternal).$hookFlags || 0;
+        if (flags & hasPostInitDom) {
             updateCall.push(hookPostInitDom);
             updateInstance.push(c);
+        }
+        if (flags & hasUseEffect) {
+            effectInstance.push(c);
         }
     }
 }
@@ -889,6 +895,9 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
         if (flags & hasPostUpdateDomEverytime) {
             updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
+        }
+        if (flags & hasUseEffect) {
+            effectInstance.push(c);
         }
     }
 }
@@ -1664,6 +1673,28 @@ export function callPostCallbacks() {
     updateInstance = [];
 }
 
+export function callEffects() {
+    var count = effectInstance.length;
+    for (var i = 0; i < count; i++) {
+        var n = effectInstance[i];
+        currentCtx = n.ctx;
+        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} effect-start`);
+        const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
+        const len = hooks.length;
+        for (let i = 0; i < len; i++) {
+            const hook = hooks[i];
+            const fn = hook.useEffect;
+            if (fn !== undefined) {
+                fn.call(hook, currentCtx);
+            }
+        }
+        if (DEBUG && measureComponentMethods)
+            window.performance.measure(`${n.component.id} [effect*]`, `${n.component.id} effect-start`);
+    }
+    currentCtx = undefined;
+    effectInstance = [];
+}
+
 function updateNodeInUpdateChildren(
     newNode: IBobrilNode,
     cachedChildren: IBobrilCacheNode[],
@@ -2388,7 +2419,6 @@ var deferSyncUpdateRequested = false;
 export function syncUpdate() {
     deferSyncUpdateRequested = false;
     internalUpdate(now() - startTime);
-    executeEffectCallbacks();
 }
 
 export function deferSyncUpdate() {
@@ -2402,7 +2432,6 @@ export function deferSyncUpdate() {
 function update(time: number) {
     scheduled = false;
     internalUpdate(time);
-    asap(executeEffectCallbacks);
 }
 
 var rootIds: string[] | undefined;
@@ -2477,6 +2506,7 @@ function internalUpdate(time: number) {
         callPostCallbacks();
         if (!deferSyncUpdateRequested) break;
     }
+    callEffects();
     deferSyncUpdateRequested = false;
     listeningEventDeepness--;
     let r0 = roots["0"];
@@ -7707,19 +7737,10 @@ export function useCallback<T>(callback: T, deps: DependencyList): T {
     return useMemo(() => callback, deps);
 }
 
-var effectCallbacks: Array<() => void> = [];
-
-function executeEffectCallbacks() {
-    var cbList = effectCallbacks;
-    effectCallbacks = [];
-    for (var i = 0, len = cbList.length; i < len; i++) {
-        cbList[i]();
-    }
-}
-
-class EffectHook extends DepsChangeDetector implements IDisposable {
+class CommonEffectHook extends DepsChangeDetector implements IDisposable {
     callback?: EffectCallback;
     lastDisposer?: () => void;
+    shouldRun = false;
 
     update(callback: EffectCallback, deps?: DependencyList) {
         this.callback = callback;
@@ -7729,7 +7750,7 @@ class EffectHook extends DepsChangeDetector implements IDisposable {
     }
 
     doRun() {
-        effectCallbacks.push(this.run);
+        this.shouldRun = true;
     }
 
     run() {
@@ -7747,25 +7768,29 @@ class EffectHook extends DepsChangeDetector implements IDisposable {
     }
 }
 
+class EffectHook extends CommonEffectHook {
+    useEffect() {
+        if (this.shouldRun) {
+            this.shouldRun = false;
+            this.run();
+        }
+    }
+}
+
 export function useEffect(callback: EffectCallback, deps?: DependencyList): void {
     const myHookId = hookId++;
     const hooks = _getHooks();
     let hook = hooks[myHookId];
     if (hook === undefined) {
+        (currentCtx as IBobrilCtxInternal).$hookFlags! |= hasUseEffect;
         hook = new EffectHook();
-        hook.run = hook.run.bind(hook);
         addDisposable(currentCtx!, hook);
         hooks[myHookId] = hook;
     }
     hook.update(callback, deps);
 }
 
-class LayoutEffectHook extends EffectHook {
-    constructor() {
-        super();
-        this.shouldRun = false;
-    }
-
+class LayoutEffectHook extends CommonEffectHook {
     postInitDom(ctx: IBobrilCtxInternal) {
         this.postUpdateDomEverytime(ctx);
     }
@@ -7778,12 +7803,6 @@ class LayoutEffectHook extends EffectHook {
                 deferSyncUpdate();
             }
         }
-    }
-
-    shouldRun: boolean;
-
-    doRun() {
-        this.shouldRun = true;
     }
 }
 
