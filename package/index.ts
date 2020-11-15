@@ -3356,7 +3356,9 @@ function isCheckboxLike(el: HTMLInputElement) {
     return t === "checkbox" || t === "radio";
 }
 
-function stringArrayEqual(a1: string[], a2: string[]): boolean {
+function stringArrayEqual(a1: string[] | undefined, a2?: string[] | undefined): boolean {
+    if (a1 === a2) return true;
+    if (a1 == undefined || a2 == undefined) return false;
     var l = a1.length;
     if (l !== a2.length) return false;
     for (var j = 0; j < l; j++) {
@@ -3365,7 +3367,8 @@ function stringArrayEqual(a1: string[], a2: string[]): boolean {
     return true;
 }
 
-function stringArrayContains(a: string[], v: string): boolean {
+function stringArrayContains(a: string[] | undefined, v: string): boolean {
+    if (a == undefined) return false;
     for (var j = 0; j < a.length; j++) {
         if (a[j] === v) return true;
     }
