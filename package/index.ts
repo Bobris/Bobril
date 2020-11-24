@@ -478,7 +478,7 @@ if (Object.assign == undefined) {
             let keys = Object.keys(source);
             let totalKeys = keys.length;
             for (let j = 0; j < totalKeys; j++) {
-                let key = keys[j];
+                let key = keys[j]!;
                 (<any>target)[key] = (<any>source)[key];
             }
         }
@@ -686,7 +686,7 @@ export function ieVersion() {
 function shimStyle(newValue: any) {
     var k = Object.keys(newValue);
     for (var i = 0, l = k.length; i < l; i++) {
-        var ki = k[i];
+        var ki = k[i]!;
         var mi = mapping.get(ki);
         var vi = newValue[ki];
         if (vi === undefined) continue; // don't want to map undefined
@@ -1198,7 +1198,7 @@ function createChildren(c: IBobrilCacheNodeUnsafe, createInto: Element, createBe
     let res = <IBobrilCacheNode[]>[];
     flattenVdomChildren(res, ch);
     for (let i = 0; i < res.length; i++) {
-        res[i] = createNode(res[i], c, createInto, createBefore);
+        res[i] = createNode(res[i]!, c, createInto, createBefore);
     }
     c.children = res;
 }
@@ -1208,7 +1208,7 @@ function destroyNode(c: IBobrilCacheNode) {
     let ch = c.children;
     if (isArray(ch)) {
         for (let i = 0, l = ch.length; i < l; i++) {
-            destroyNode(ch[i]);
+            destroyNode(ch[i]!);
         }
     }
     let component = c.component;
@@ -1220,7 +1220,7 @@ function destroyNode(c: IBobrilCacheNode) {
         let disposables = ctx.disposables;
         if (isArray(disposables)) {
             for (let i = disposables.length; i-- > 0; ) {
-                let d = disposables[i];
+                let d = disposables[i]!;
                 if (isFunction(d)) d(ctx);
                 else d.dispose();
             }
@@ -1249,10 +1249,10 @@ export function isDisposable(val: any): val is IDisposable {
 function removeNodeRecursive(c: IBobrilCacheNode) {
     var el = c.element;
     if (isArray(el)) {
-        var pa = (<Node[]>el)[0].parentNode;
+        var pa = (<Node[]>el)[0]!.parentNode;
         if (pa) {
             for (let i = 0; i < (<Node[]>el).length; i++) {
-                pa.removeChild((<Node[]>el)[i]);
+                pa.removeChild((<Node[]>el)[i]!);
             }
         }
     } else if (el != null) {
@@ -1262,7 +1262,7 @@ function removeNodeRecursive(c: IBobrilCacheNode) {
         var ch = c.children;
         if (isArray(ch)) {
             for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
-                removeNodeRecursive((<IBobrilCacheNode[]>ch)[i]);
+                removeNodeRecursive((<IBobrilCacheNode[]>ch)[i]!);
             }
         }
     }
@@ -1297,7 +1297,7 @@ function nodeContainsNode(
     } else if (el == undefined) {
         if (isArray(ch)) {
             for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-                var result = nodeContainsNode((<IBobrilCacheNode[]>ch)[i], n, resIndex, res);
+                var result = nodeContainsNode((<IBobrilCacheNode[]>ch)[i]!, n, resIndex, res);
                 if (result !== undefined) {
                     res.splice(resIndex, 0, c);
                     return result;
@@ -1318,8 +1318,8 @@ export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[
     var res: (IBobrilCacheNode | null)[] = [];
     if (n == undefined) return res;
     var rootIds = Object.keys(roots);
-    var rootElements = rootIds.map((i) => roots[i].e || document.body);
-    var rootNodes = rootIds.map((i) => roots[i].n);
+    var rootElements = rootIds.map((i) => roots[i]!.e || document.body);
+    var rootNodes = rootIds.map((i) => roots[i]!.n);
     portalMap.forEach((v, k) => {
         rootElements.push(k as HTMLElement);
         rootNodes.push(v);
@@ -1363,7 +1363,7 @@ export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[
         currentNode = nodeStack.pop()!;
         if (currentCacheArray && (<any>currentCacheArray).length)
             for (var i = 0, l = (<any>currentCacheArray).length; i < l; i++) {
-                var bn = (<IBobrilCacheNode[]>currentCacheArray)[i];
+                var bn = (<IBobrilCacheNode[]>currentCacheArray)[i]!;
                 var findResult = nodeContainsNode(bn, currentNode, res.length, res);
                 if (findResult !== undefined) {
                     currentCacheArray = findResult;
@@ -1620,7 +1620,7 @@ export function getDomNode(c: IBobrilCacheNode | undefined): Node | null {
     if (c === undefined) return null;
     var el: Node | Node[] | null | undefined = c.element;
     if (el != null) {
-        if (isArray(el)) return el[0];
+        if (isArray(el)) return el[0]!;
         return el;
     }
     var ch = c.children;
@@ -1636,7 +1636,7 @@ export function getLastDomNode(c: IBobrilCacheNode | undefined): Node | null {
     if (c === undefined) return null;
     var el: Node | Node[] | null | undefined = c.element;
     if (el != null) {
-        if (isArray(el)) return el[el.length - 1];
+        if (isArray(el)) return el[el.length - 1]!;
         return el;
     }
     var ch = c.children;
@@ -1661,10 +1661,10 @@ function findNextNode(a: IBobrilCacheNode[], i: number, len: number, def: Node |
 export function callPostCallbacks() {
     var count = updateInstance.length;
     for (var i = 0; i < count; i++) {
-        var n = updateInstance[i];
+        var n = updateInstance[i]!;
         currentCtx = n.ctx;
         if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} post-start`);
-        updateCall[i].call(n.component, currentCtx, n, n.element);
+        updateCall[i]!.call(n.component, currentCtx, n, n.element);
         if (DEBUG && measureComponentMethods)
             window.performance.measure(`${n.component.id} [post*]`, `${n.component.id} post-start`);
     }
@@ -1676,7 +1676,7 @@ export function callPostCallbacks() {
 export function callEffects() {
     var count = effectInstance.length;
     for (var i = 0; i < count; i++) {
-        var n = effectInstance[i];
+        var n = effectInstance[i]!;
         currentCtx = n.ctx;
         if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} effect-start`);
         const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
@@ -1706,7 +1706,7 @@ function updateNodeInUpdateChildren(
 ) {
     cachedChildren[cachedIndex] = updateNode(
         newNode,
-        cachedChildren[cachedIndex],
+        cachedChildren[cachedIndex]!,
         element,
         findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore),
         deepness
@@ -1718,7 +1718,7 @@ function reorderInUpdateChildrenRec(c: IBobrilCacheNode, element: Element, befor
     if (el != null) {
         if (isArray(el)) {
             for (var i = 0; i < el.length; i++) {
-                element.insertBefore(el[i], before);
+                element.insertBefore(el[i]!, before);
             }
         } else element.insertBefore(el, before);
         return;
@@ -1726,7 +1726,7 @@ function reorderInUpdateChildrenRec(c: IBobrilCacheNode, element: Element, befor
     var ch = c.children;
     if (!isArray(ch)) return;
     for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-        reorderInUpdateChildrenRec((<IBobrilCacheNode[]>ch)[i], element, before);
+        reorderInUpdateChildrenRec((<IBobrilCacheNode[]>ch)[i]!, element, before);
     }
 }
 
@@ -1738,7 +1738,7 @@ function reorderInUpdateChildren(
     element: Element
 ) {
     var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
-    var cur = cachedChildren[cachedIndex];
+    var cur = cachedChildren[cachedIndex]!;
     var what = getDomNode(cur);
     if (what != null && what !== before) {
         reorderInUpdateChildrenRec(cur, element, before);
@@ -1755,7 +1755,7 @@ function reorderAndUpdateNodeInUpdateChildren(
     deepness: number
 ) {
     var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
-    var cur = cachedChildren[cachedIndex];
+    var cur = cachedChildren[cachedIndex]!;
     var what = getDomNode(cur);
     if (what != null && what !== before) {
         reorderInUpdateChildrenRec(cur, element, before);
@@ -1780,7 +1780,7 @@ function flattenVdomChildren(res: IBobrilNode[], children: IBobrilChildren) {
     if (DEBUG) {
         var set = new Set();
         for (let i = 0; i < res.length; i++) {
-            const key = res[i].key;
+            const key = res[i]!.key;
             if (key == undefined) continue;
             if (set.has(key)) {
                 console.warn("Duplicate Bobril node key " + key);
@@ -1829,9 +1829,9 @@ function updateChildrenCore(
     let newIndex = 0;
     let cachedIndex = 0;
     while (newIndex < newEnd && cachedIndex < cachedEnd) {
-        if (newChildren[newIndex].key === cachedChildren[cachedIndex].key) {
+        if (newChildren[newIndex]!.key === cachedChildren[cachedIndex]!.key) {
             updateNodeInUpdateChildren(
-                newChildren[newIndex],
+                newChildren[newIndex]!,
                 cachedChildren,
                 cachedIndex,
                 cachedLength,
@@ -1844,11 +1844,11 @@ function updateChildrenCore(
             continue;
         }
         while (true) {
-            if (newChildren[newEnd - 1].key === cachedChildren[cachedEnd - 1].key) {
+            if (newChildren[newEnd - 1]!.key === cachedChildren[cachedEnd - 1]!.key) {
                 newEnd--;
                 cachedEnd--;
                 updateNodeInUpdateChildren(
-                    newChildren[newEnd],
+                    newChildren[newEnd]!,
                     cachedChildren,
                     cachedEnd,
                     cachedLength,
@@ -1861,11 +1861,11 @@ function updateChildrenCore(
             break;
         }
         if (newIndex < newEnd && cachedIndex < cachedEnd) {
-            if (newChildren[newIndex].key === cachedChildren[cachedEnd - 1].key) {
-                cachedChildren.splice(cachedIndex, 0, cachedChildren[cachedEnd - 1]);
+            if (newChildren[newIndex]!.key === cachedChildren[cachedEnd - 1]!.key) {
+                cachedChildren.splice(cachedIndex, 0, cachedChildren[cachedEnd - 1]!);
                 cachedChildren.splice(cachedEnd, 1);
                 reorderAndUpdateNodeInUpdateChildren(
-                    newChildren[newIndex],
+                    newChildren[newIndex]!,
                     cachedChildren,
                     cachedIndex,
                     cachedLength,
@@ -1877,13 +1877,13 @@ function updateChildrenCore(
                 cachedIndex++;
                 continue;
             }
-            if (newChildren[newEnd - 1].key === cachedChildren[cachedIndex].key) {
-                cachedChildren.splice(cachedEnd, 0, cachedChildren[cachedIndex]);
+            if (newChildren[newEnd - 1]!.key === cachedChildren[cachedIndex]!.key) {
+                cachedChildren.splice(cachedEnd, 0, cachedChildren[cachedIndex]!);
                 cachedChildren.splice(cachedIndex, 1);
                 cachedEnd--;
                 newEnd--;
                 reorderAndUpdateNodeInUpdateChildren(
-                    newChildren[newEnd],
+                    newChildren[newEnd]!,
                     cachedChildren,
                     cachedEnd,
                     cachedLength,
@@ -1906,7 +1906,7 @@ function updateChildrenCore(
                 cachedIndex,
                 0,
                 createNode(
-                    newChildren[newIndex],
+                    newChildren[newIndex]!,
                     parentNode,
                     element,
                     findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)
@@ -1923,7 +1923,7 @@ function updateChildrenCore(
         // Only work left is to remove old nodes
         while (cachedIndex < cachedEnd) {
             cachedEnd--;
-            removeNode(cachedChildren[cachedEnd]);
+            removeNode(cachedChildren[cachedEnd]!);
             cachedChildren.splice(cachedEnd, 1);
         }
         return cachedChildren;
@@ -1937,7 +1937,7 @@ function updateChildrenCore(
     var backupCachedIndex = cachedIndex;
     var deltaKeyless = 0;
     for (; cachedIndex < cachedEnd; cachedIndex++) {
-        node = cachedChildren[cachedIndex];
+        node = cachedChildren[cachedIndex]!;
         key = node.key;
         if (key != null) {
             assert(!(key in <any>cachedKeys));
@@ -1946,7 +1946,7 @@ function updateChildrenCore(
     }
     var keyLess = -deltaKeyless - deltaKeyless;
     for (; newIndex < newEnd; newIndex++) {
-        node = newChildren[newIndex];
+        node = newChildren[newIndex]!;
         key = node.key;
         if (key != null) {
             assert(!(key in <any>newKeys));
@@ -1967,16 +1967,16 @@ function updateChildrenCore(
             delta--;
             continue;
         }
-        cachedKey = cachedChildren[cachedIndex].key;
+        cachedKey = cachedChildren[cachedIndex]!.key;
         if (cachedKey == undefined) {
             cachedIndex++;
             continue;
         }
-        key = newChildren[newIndex].key;
+        key = newChildren[newIndex]!.key;
         if (key == undefined) {
             newIndex++;
             while (newIndex < newEnd) {
-                key = newChildren[newIndex].key;
+                key = newChildren[newIndex]!.key;
                 if (key != undefined) break;
                 newIndex++;
             }
@@ -1989,7 +1989,7 @@ function updateChildrenCore(
                 cachedIndex,
                 0,
                 createNode(
-                    newChildren[newIndex],
+                    newChildren[newIndex]!,
                     parentNode,
                     element,
                     findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)
@@ -2004,7 +2004,7 @@ function updateChildrenCore(
         }
         if (!(cachedKey in <any>newKeys)) {
             // Old key
-            removeNode(cachedChildren[cachedIndex]);
+            removeNode(cachedChildren[cachedIndex]!);
             cachedChildren.splice(cachedIndex, 1);
             delta--;
             cachedEnd--;
@@ -2014,7 +2014,7 @@ function updateChildrenCore(
         if (cachedIndex === akPos + delta) {
             // In-place update
             updateNodeInUpdateChildren(
-                newChildren[newIndex],
+                newChildren[newIndex]!,
                 cachedChildren,
                 cachedIndex,
                 cachedLength,
@@ -2026,11 +2026,11 @@ function updateChildrenCore(
             cachedIndex++;
         } else {
             // Move
-            cachedChildren.splice(cachedIndex, 0, cachedChildren[akPos + delta]);
+            cachedChildren.splice(cachedIndex, 0, cachedChildren[akPos + delta]!);
             delta++;
             cachedChildren[akPos + delta] = null!;
             reorderAndUpdateNodeInUpdateChildren(
-                newChildren[newIndex],
+                newChildren[newIndex]!,
                 cachedChildren,
                 cachedIndex,
                 cachedLength,
@@ -2053,9 +2053,9 @@ function updateChildrenCore(
             cachedLength--;
             continue;
         }
-        if (cachedChildren[cachedIndex].key != null) {
+        if (cachedChildren[cachedIndex]!.key != null) {
             // this key is only in old
-            removeNode(cachedChildren[cachedIndex]);
+            removeNode(cachedChildren[cachedIndex]!);
             cachedChildren.splice(cachedIndex, 1);
             cachedEnd--;
             cachedLength--;
@@ -2065,13 +2065,13 @@ function updateChildrenCore(
     }
     // add new keyed nodes
     while (newIndex < newEnd) {
-        key = newChildren[newIndex].key;
+        key = newChildren[newIndex]!.key;
         if (key != null) {
             cachedChildren.splice(
                 cachedIndex,
                 0,
                 createNode(
-                    newChildren[newIndex],
+                    newChildren[newIndex]!,
                     parentNode,
                     element,
                     findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)
@@ -2093,20 +2093,20 @@ function updateChildrenCore(
     cachedIndex = backupCachedIndex;
     while (newIndex < newEnd) {
         if (cachedIndex < cachedEnd) {
-            cachedKey = cachedChildren[cachedIndex].key;
+            cachedKey = cachedChildren[cachedIndex]!.key;
             if (cachedKey != null) {
                 cachedIndex++;
                 continue;
             }
         }
-        key = newChildren[newIndex].key;
-        if (newIndex < cachedEnd && key === cachedChildren[newIndex].key) {
+        key = newChildren[newIndex]!.key;
+        if (newIndex < cachedEnd && key === cachedChildren[newIndex]!.key) {
             if (key != null) {
                 newIndex++;
                 continue;
             }
             updateNodeInUpdateChildren(
-                newChildren[newIndex],
+                newChildren[newIndex]!,
                 cachedChildren,
                 newIndex,
                 cachedLength,
@@ -2123,19 +2123,19 @@ function updateChildrenCore(
             assert(newIndex === cachedIndex);
             if (keyLess === 0 && deltaKeyless < 0) {
                 while (true) {
-                    removeNode(cachedChildren[cachedIndex]);
+                    removeNode(cachedChildren[cachedIndex]!);
                     cachedChildren.splice(cachedIndex, 1);
                     cachedEnd--;
                     cachedLength--;
                     deltaKeyless++;
                     assert(cachedIndex !== cachedEnd, "there still need to exist key node");
-                    if (cachedChildren[cachedIndex].key != null) break;
+                    if (cachedChildren[cachedIndex]!.key != null) break;
                 }
                 continue;
             }
-            while (cachedChildren[cachedIndex].key == undefined) cachedIndex++;
-            assert(key === cachedChildren[cachedIndex].key);
-            cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
+            while (cachedChildren[cachedIndex]!.key == undefined) cachedIndex++;
+            assert(key === cachedChildren[cachedIndex]!.key);
+            cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]!);
             cachedChildren.splice(cachedIndex + 1, 1);
             reorderInUpdateChildren(cachedChildren, newIndex, cachedLength, createBefore, element);
             // just moving keyed node it was already updated before
@@ -2144,10 +2144,10 @@ function updateChildrenCore(
             continue;
         }
         if (cachedIndex < cachedEnd) {
-            cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
+            cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]!);
             cachedChildren.splice(cachedIndex + 1, 1);
             reorderAndUpdateNodeInUpdateChildren(
-                newChildren[newIndex],
+                newChildren[newIndex]!,
                 cachedChildren,
                 newIndex,
                 cachedLength,
@@ -2163,7 +2163,7 @@ function updateChildrenCore(
                 newIndex,
                 0,
                 createNode(
-                    newChildren[newIndex],
+                    newChildren[newIndex]!,
                     parentNode,
                     element,
                     findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore)
@@ -2177,7 +2177,7 @@ function updateChildrenCore(
     }
     while (cachedEnd > newIndex) {
         cachedEnd--;
-        removeNode(cachedChildren[cachedEnd]);
+        removeNode(cachedChildren[cachedEnd]!);
         cachedChildren.splice(cachedEnd, 1);
     }
     return cachedChildren;
@@ -2253,7 +2253,7 @@ export function emitEvent(
     var events = regEvents[name];
     if (events)
         for (var i = 0; i < events.length; i++) {
-            if (events[i](ev, target, node)) return true;
+            if (events[i]!(ev, target, node)) return true;
         }
     return false;
 }
@@ -2305,22 +2305,22 @@ function initEvents() {
     if (registryEvents === undefined) return;
     var eventNames = Object.keys(registryEvents);
     for (var j = 0; j < eventNames.length; j++) {
-        var eventName = eventNames[j];
-        var arr = registryEvents[eventName];
+        var eventName = eventNames[j]!;
+        var arr = registryEvents[eventName]!;
         arr = arr.sort((a, b) => a.priority - b.priority);
         regEvents[eventName] = arr.map((v) => v.callback);
     }
     registryEvents = undefined;
     var body = document.body;
     for (var i = 0; i < eventNames.length; i++) {
-        addListener(body, eventNames[i]);
+        addListener(body, eventNames[i]!);
     }
 }
 
 function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefore: Node | null) {
     var len = cache.length;
     for (var i = 0; i < len; i++) {
-        var node = cache[i];
+        var node = cache[i]!;
         var ctx = node.ctx;
         if (ctx != null && (<any>ctx)[ctxInvalidated] >= frameCounter) {
             cache[i] = updateNode(
@@ -2401,7 +2401,7 @@ function isLogicalParent(
         let p = child.parent;
         if (p == undefined) {
             for (var i = 0; i < rootIds.length; i++) {
-                var r = roots[rootIds[i]];
+                var r = roots[rootIds[i]!];
                 if (!r) continue;
                 if (r.n === child) {
                     p = r.p;
@@ -2472,16 +2472,16 @@ function internalUpdate(time: number) {
         window.performance.mark(renderStartMark);
     }
     for (let repeat = 0; repeat < 2; repeat++) {
-        focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1];
+        focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1]!;
         inNotFocusable = false;
         rootIds = Object.keys(roots);
         for (var i = 0; i < rootIds.length; i++) {
-            var r = roots[rootIds[i]];
+            var r = roots[rootIds[i]!];
             if (!r) continue;
             var rc = r.n;
             var insertBefore: Node | null = null;
             for (var j = i + 1; j < rootIds.length; j++) {
-                let rafter = roots[rootIds[j]];
+                let rafter = roots[rootIds[j]!];
                 if (rafter === undefined) continue;
                 insertBefore = getDomNode(rafter.n);
                 if (insertBefore != null) break;
@@ -2577,7 +2577,7 @@ export function removeRoot(id: string): void {
 
 export function updateRoot(id: string, factory?: (root: IBobrilRoot) => IBobrilChildren) {
     assert(rootIds != null, "updateRoot could be called only from render");
-    var root = roots[id];
+    var root = roots[id]!;
     assert(root != null);
     if (factory != null) root.f = factory;
     let rootNode = root.n;
@@ -2817,7 +2817,7 @@ export function captureBroadcast<T extends EventNames>(
 ): IBobrilCtx | undefined {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
-        var ch = roots[k[i]].n;
+        var ch = roots[k[i]!]!.n;
         if (ch != null) {
             var res = broadcastCapturedEventToNode(ch, name, param);
             if (res != null) return res;
@@ -2834,7 +2834,7 @@ export function broadcast<T extends EventNames>(
     if (res != null) return res;
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
-        var ch = roots[k[i]].n;
+        var ch = roots[k[i]!]!.n;
         if (ch != null) {
             res = broadcastEventToNode(ch, name, param);
             if (res != null) return res;
@@ -2869,7 +2869,7 @@ export function runMethodFrom(ctx: IBobrilCtx | undefined, methodId: MethodId, p
 
     function loopChildNodes(children: IBobrilCacheNode[]) {
         for (var i = children.length - 1; i >= 0; i--) {
-            var child: IBobrilCacheNode = children[i];
+            var child: IBobrilCacheNode = children[i]!;
             if (child === previousRoot) continue;
             isArray(child.children) && loopChildNodes(child.children);
             if (done) return;
@@ -3067,7 +3067,7 @@ function emitOnMediaChange() {
 }
 
 var events = ["resize", "orientationchange"];
-for (var i = 0; i < events.length; i++) addEvent(events[i], 10, emitOnMediaChange);
+for (var i = 0; i < events.length; i++) addEvent(events[i]!, 10, emitOnMediaChange);
 
 export function accDeviceBreaks(newBreaks?: number[][]): number[][] {
     if (newBreaks != null) {
@@ -3099,7 +3099,7 @@ export function getMedia(): IBobrilMedia {
             }
         }
         var device = 0;
-        while (w > breaks[+!p][device]) device++;
+        while (w > breaks[+!p]![device]!) device++;
         media = {
             width: w,
             height: h,
@@ -3126,7 +3126,7 @@ export const asap = (() => {
         var cbList = callbacks;
         callbacks = [];
         for (var i = 0, len = cbList.length; i < len; i++) {
-            cbList[i]();
+            cbList[i]!();
         }
     }
 
@@ -3176,17 +3176,17 @@ if (!(<any>window).Promise) {
             asap(() => {
                 var cb = this.s /*tate*/ ? deferred[0] : deferred[1];
                 if (cb == undefined) {
-                    (this.s /*tate*/ ? deferred[2] : deferred[3])(this.v /*alue*/);
+                    (this.s /*tate*/ ? deferred[2] : deferred[3])!(this.v /*alue*/);
                     return;
                 }
                 var ret: any;
                 try {
                     ret = cb(this.v /*alue*/);
                 } catch (e) {
-                    deferred[3](e);
+                    deferred[3]!(e);
                     return;
                 }
-                deferred[2](ret);
+                deferred[2]!(ret);
             });
         }
 
@@ -3378,7 +3378,7 @@ function stringArrayContains(a: string[] | undefined, v: string): boolean {
 function selectedArray(options: HTMLOptionsCollection): string[] {
     var res: string[] = [];
     for (var j = 0; j < options.length; j++) {
-        if (options[j].selected) res.push(options[j].value);
+        if (options[j]!.selected) res.push(options[j]!.value);
     }
     return res;
 }
@@ -3410,7 +3410,7 @@ var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNodeUnsaf
                 !stringArrayEqual(newValue, (<any>node.ctx)[bValue])
             ) {
                 for (var j = 0; j < options.length; j++) {
-                    options[j].selected = stringArrayContains(newValue, options[j].value);
+                    options[j]!.selected = stringArrayContains(newValue, options[j]!.value);
                 }
                 currentMulti = selectedArray(options);
                 if (stringArrayEqual(currentMulti, newValue)) {
@@ -3587,10 +3587,10 @@ function emitOnMouseChange(
 
 // click here must have lower priority (higher number) over mouse handlers
 var events = ["input", "cut", "paste", "keydown", "keypress", "keyup", "click", "change"];
-for (var i = 0; i < events.length; i++) addEvent(events[i], 10, emitOnChange);
+for (var i = 0; i < events.length; i++) addEvent(events[i]!, 10, emitOnChange);
 
 var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
-for (var i = 0; i < mouseEvents.length; i++) addEvent(mouseEvents[i], 2, emitOnMouseChange);
+for (var i = 0; i < mouseEvents.length; i++) addEvent(mouseEvents[i]!, 2, emitOnMouseChange);
 
 // Bobril.OnKey
 
@@ -3754,7 +3754,7 @@ function hasPointerEventsNoneB(node: IBobrilCacheNode | null | undefined): boole
 function revertVisibilityChanges(hiddenEls: { t: HTMLElement; p: string }[]): boolean {
     if (hiddenEls.length) {
         for (var i = hiddenEls.length - 1; i >= 0; --i) {
-            hiddenEls[i].t.style.visibility = hiddenEls[i].p;
+            hiddenEls[i]!.t.style.visibility = hiddenEls[i]!.p;
         }
         return true;
     }
@@ -3773,7 +3773,7 @@ function addEvent5(
     addEvent(name, 5, callback);
 }
 
-var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"];
+var pointersEventNames = ["PointerDown", "PointerMove", "PointerUp", "PointerCancel"] as const;
 var i: number;
 
 function type2Bobril(t: any): BobrilPointerType {
@@ -3852,7 +3852,7 @@ function buildHandlerTouch(name: string) {
     ): boolean {
         var preventDef = false;
         for (var i = 0; i < ev.changedTouches.length; i++) {
-            var t = ev.changedTouches[i];
+            var t = ev.changedTouches[i]!;
             target = t.target as Node;
             node = deref(target);
             var param: IBobrilPointerEvent = {
@@ -3928,7 +3928,7 @@ if ((<any>window).ontouchstart !== undefined) {
     listenMouse();
 } else if (window.onpointerdown !== undefined) {
     for (i = 0; i < 4 /*pointersEventNames.length*/; i++) {
-        var name = pointersEventNames[i];
+        var name = pointersEventNames[i]!;
         addEvent5(name.toLowerCase(), buildHandlerPointer(name));
     }
 } else {
@@ -3945,7 +3945,7 @@ for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
                 return invokeMouseOwner(onName, ev) || bubble(node, onName as EventNames, ev) != undefined;
             }
         );
-    })(pointersEventNames[j]);
+    })(pointersEventNames[j]!);
 }
 
 var pointersDown: { [id: number]: BobrilPointerType } = newHashObj();
@@ -3994,7 +3994,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     var c: IBobrilComponent;
     var i = prevMousePath.length;
     if (i > 0 && (i > common || i != toPath.length)) {
-        n = prevMousePath[i - 1];
+        n = prevMousePath[i - 1]!;
         if (n) {
             c = n.component;
             if (c && c.onMouseOut) c.onMouseOut(n.ctx!, ev);
@@ -4002,14 +4002,14 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     }
     while (i > common) {
         i--;
-        n = prevMousePath[i];
+        n = prevMousePath[i]!;
         if (n) {
             c = n.component;
             if (c && c.onMouseLeave) c.onMouseLeave(n.ctx!, ev);
         }
     }
     while (i < toPath.length) {
-        n = toPath[i];
+        n = toPath[i]!;
         if (n) {
             c = n.component;
             if (c && c.onMouseEnter) c.onMouseEnter(n.ctx!, ev);
@@ -4018,7 +4018,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     }
     prevMousePath = toPath;
     if (i > 0 && (i > common || i != prevMousePath.length)) {
-        n = prevMousePath[i - 1];
+        n = prevMousePath[i - 1]!;
         if (n) {
             c = n.component;
             if (c && c.onMouseIn) c.onMouseIn(n.ctx!, ev);
@@ -4135,13 +4135,13 @@ function bustingPointerCancel(
 function bustingClick(ev: MouseEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
     var n = now();
     for (var i = 0; i < toBust.length; i++) {
-        var j = toBust[i];
-        if (j[2] < n) {
+        var j = toBust[i]!;
+        if (j[2]! < n) {
             toBust.splice(i, 1);
             i--;
             continue;
         }
-        if (diffLess(j[0], ev.clientX, BustDistance) && diffLess(j[1], ev.clientY, BustDistance)) {
+        if (diffLess(j[0]!, ev.clientX, BustDistance) && diffLess(j[1]!, ev.clientY, BustDistance)) {
             toBust.splice(i, 1);
             if (j[3]) preventDefault(ev);
             return true;
@@ -4159,7 +4159,7 @@ var bustingEventHandlers = [
     bustingClick,
 ];
 for (var i = 0; i < 5 /*bustingEventNames.length*/; i++) {
-    addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
+    addEvent(bustingEventNames[i]!, 3, bustingEventHandlers[i]!);
 }
 
 function createHandlerMouse(handlerName: string) {
@@ -4174,7 +4174,7 @@ function createHandlerMouse(handlerName: string) {
 
 var mouseHandlerNames = ["Down", "Move", "Up", "Up"];
 for (var i = 0; i < 4; i++) {
-    addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
+    addEvent(bustingEventNames[i]!, 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
 }
 
 function decodeButton(ev: MouseEvent): number {
@@ -4327,12 +4327,12 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         var n: IBobrilCacheNode | null;
         var c: IBobrilComponent;
         if (i >= common) {
-            n = nodeStack[i];
+            n = nodeStack[i]!;
             bubble(n, "onBlur");
             i--;
         }
         while (i >= common) {
-            n = nodeStack[i];
+            n = nodeStack[i]!;
             if (n) {
                 c = n.component;
                 if (c && c.onFocusOut) c.onFocusOut(n.ctx!);
@@ -4341,7 +4341,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         }
         i = common;
         while (i + 1 < newStack.length) {
-            n = newStack[i];
+            n = newStack[i]!;
             if (n) {
                 c = n.component;
                 if (c && c.onFocusIn) c.onFocusIn(n.ctx!);
@@ -4349,7 +4349,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
             i++;
         }
         if (i < newStack.length) {
-            n = newStack[i];
+            n = newStack[i]!;
             bubble(n, "onFocus");
         }
         nodeStack = newStack;
@@ -4392,7 +4392,7 @@ export function focus(node: IBobrilCacheNode, backwards?: boolean): boolean {
     var children = node.children;
     if (isArray(children)) {
         for (var i = 0; i < children.length; i++) {
-            if (focus(children[backwards ? children.length - 1 - i : i], backwards)) return true;
+            if (focus(children[backwards ? children.length - 1 - i : i]!, backwards)) return true;
         }
         return false;
     }
@@ -4407,7 +4407,7 @@ function emitOnScroll(_ev: Event, _target: Node | undefined, node: IBobrilCacheN
         node,
     };
     for (var i = 0; i < callbacks.length; i++) {
-        callbacks[i](info);
+        callbacks[i]!(info);
     }
     captureBroadcast("onScroll", info);
     return false;
@@ -4461,33 +4461,52 @@ export function nodePagePos(node: IBobrilCacheNode): [number, number] {
 }
 
 type Point = [number, number];
+type Number16 = [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
+];
+
 class CSSMatrix {
-    data: number[];
-    constructor(data: number[]) {
+    data: Number16;
+    constructor(data: Number16) {
         this.data = data;
     }
     static fromString(s: string): CSSMatrix {
-        var c = s.match(/matrix3?d?\(([^\)]+)\)/i)![1].split(",");
+        var c = s.match(/matrix3?d?\(([^\)]+)\)/i)![1]!.split(",");
         if (c.length === 6) {
-            c = [c[0], c[1], "0", "0", c[2], c[3], "0", "0", "0", "0", "1", "0", c[4], c[5], "0", "1"];
+            c = [c[0]!, c[1]!, "0", "0", c[2]!, c[3]!, "0", "0", "0", "0", "1", "0", c[4]!, c[5]!, "0", "1"];
         }
         return new CSSMatrix([
-            parseFloat(c[0]),
-            parseFloat(c[4]),
-            parseFloat(c[8]),
-            parseFloat(c[12]),
-            parseFloat(c[1]),
-            parseFloat(c[5]),
-            parseFloat(c[9]),
-            parseFloat(c[13]),
-            parseFloat(c[2]),
-            parseFloat(c[6]),
-            parseFloat(c[10]),
-            parseFloat(c[14]),
-            parseFloat(c[3]),
-            parseFloat(c[7]),
-            parseFloat(c[11]),
-            parseFloat(c[15]),
+            parseFloat(c[0]!),
+            parseFloat(c[4]!),
+            parseFloat(c[8]!),
+            parseFloat(c[12]!),
+            parseFloat(c[1]!),
+            parseFloat(c[5]!),
+            parseFloat(c[9]!),
+            parseFloat(c[13]!),
+            parseFloat(c[2]!),
+            parseFloat(c[6]!),
+            parseFloat(c[10]!),
+            parseFloat(c[14]!),
+            parseFloat(c[3]!),
+            parseFloat(c[7]!),
+            parseFloat(c[11]!),
+            parseFloat(c[15]!),
         ]);
     }
     static identity(): CSSMatrix {
@@ -4774,7 +4793,7 @@ var DndComp: IBobrilComponent = {
 function currentCursor() {
     let cursor = "no-drop";
     if (dnds.length !== 0) {
-        let dnd = dnds[0];
+        let dnd = dnds[0]!;
         if (dnd.beforeDrag) return "";
         if (dnd.cursor != null) return dnd.cursor;
         if (dnd.system) return "";
@@ -4797,7 +4816,7 @@ var DndRootComp: IBobrilComponent = {
     render(_ctx: IBobrilCtx, me: IBobrilNode) {
         var res: IBobrilNode[] = [];
         for (var i = 0; i < dnds.length; i++) {
-            var dnd = dnds[i];
+            var dnd = dnds[i]!;
             if (dnd.beforeDrag) continue;
             if (dnd.dragView != null && (dnd.x != 0 || dnd.y != 0)) {
                 res.push({ key: "" + dnd.id, data: dnd, component: DndComp });
@@ -5038,7 +5057,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
     }
     var activePointerIds = Object.keys(pointer2Dnd);
     if (activePointerIds.length > 0) {
-        dnd = pointer2Dnd[activePointerIds[0]];
+        dnd = pointer2Dnd[activePointerIds[0]!];
         dnd!.system = true;
         systemDnd = dnd;
     } else {
@@ -5074,7 +5093,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
         }
     }
     dnd!.beforeDrag = false;
-    var eff = effectAllowedTable[dnd!.enabledOperations];
+    var eff = effectAllowedTable[dnd!.enabledOperations]!;
     var dt = ev.dataTransfer!;
     dt.effectAllowed = eff;
     if ((<any>dt).setDragImage) {
@@ -5103,7 +5122,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
     var dataKeys = Object.keys(data);
     for (var i = 0; i < dataKeys.length; i++) {
         try {
-            var k = dataKeys[i];
+            var k = dataKeys[i]!;
             var d = data[k];
             if (!isString(d)) d = JSON.stringify(d);
             ev.dataTransfer!.setData(k, d);
@@ -5116,7 +5135,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
 }
 
 function setDropEffect(ev: DragEvent, op: DndOp) {
-    ev.dataTransfer!.dropEffect = dropEffectsAllowedTable[op];
+    ev.dataTransfer!.dropEffect = dropEffectsAllowedTable[op]!;
 }
 
 function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
@@ -5143,7 +5162,7 @@ function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobril
         var dtTypes = dt.types;
         if (dtTypes) {
             for (var i = 0; i < dtTypes.length; i++) {
-                var tt = dtTypes[i];
+                var tt = dtTypes[i]!;
                 if (tt === "text/plain") tt = "Text";
                 else if (tt === "text/uri-list") tt = "Url";
                 (<any>dnd).data[tt] = null;
@@ -5190,7 +5209,7 @@ function handleDrop(ev: DragEvent, _target: Node | undefined, _node: IBobrilCach
         var dataKeys = Object.keys(dnd.data);
         var dt = ev.dataTransfer!;
         for (let i = 0; i < dataKeys.length; i++) {
-            var k = dataKeys[i];
+            var k = dataKeys[i]!;
             var d: any;
             if (k === "Files") {
                 d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
@@ -5225,7 +5244,7 @@ function handleDndSelectStart(ev: any, _target: Node | undefined, _node: IBobril
 
 export function anyActiveDnd(): IDndCtx | undefined {
     for (let i = 0; i < dnds.length; i++) {
-        let dnd = dnds[i];
+        let dnd = dnds[i]!;
         if (dnd.beforeDrag) continue;
         return dnd;
     }
@@ -5387,7 +5406,7 @@ function compilePattern(pattern: string) {
         };
     }
 
-    return compiledPatterns[pattern];
+    return compiledPatterns[pattern]!;
 }
 
 // Extracts the portions of the given URL path that match the given pattern.
@@ -5403,7 +5422,7 @@ function extractParams(pattern: string, path: string): Params | null {
     var pn = object.paramNames;
     var l = pn.length;
     for (var i = 0; i < l; i++) {
-        params[pn[i]] = match[i + 1];
+        params[pn[i]!] = match[i + 1]!;
     }
 
     return params;
@@ -5449,7 +5468,7 @@ function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IR
     var defaultRoute: IRoute | undefined;
     var params: Params | null;
     for (var i = 0; i < l; i++) {
-        var r = rs[i];
+        var r = rs[i]!;
         if (r.isNotFound) {
             notFoundRoute = r;
             continue;
@@ -5529,7 +5548,7 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode | undefined
             })(nodesArray, setterOfNodesArray.length)
         );
     }
-    return setterOfNodesArray[idx];
+    return setterOfNodesArray[idx]!;
 }
 
 var firstRouting = true;
@@ -5552,14 +5571,14 @@ function rootNodeFactory(): IBobrilNode | undefined {
         programPath = browserPath;
     } else {
         if (!currentTransition && matches.length > 0 && browserPath != programPath) {
-            runTransition(createRedirectPush(matches[0].name!, out.p));
+            runTransition(createRedirectPush(matches[0]!.name!, out.p));
         }
     }
     if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
         programPath = browserPath;
         currentTransition.inApp = true;
         if (currentTransition.name == undefined && matches.length > 0) {
-            currentTransition.name = matches[0].name;
+            currentTransition.name = matches[0]!.name;
             currentTransition.params = out.p;
             nextIteration();
             if (currentTransition != null) return undefined;
@@ -5596,7 +5615,7 @@ function rootNodeFactory(): IBobrilNode | undefined {
                 res.ref = getSetterOfNodesArray(i);
                 return res;
             };
-        })(fn, activeRoutes[i], activeParams, i);
+        })(fn, activeRoutes[i]!, activeParams, i);
     }
     return fn();
 }
@@ -5610,7 +5629,7 @@ function joinPath(p1: string, p2: string): string {
 function registerRoutes(url: string, rs: Array<IRoute>): void {
     var l = rs.length;
     for (var i = 0; i < l; i++) {
-        var r = rs[i];
+        var r = rs[i]!;
         var u = url;
         var name = r.name;
         if (!name && url === "/") {
@@ -5682,7 +5701,7 @@ export function isActive(name: string | undefined, params?: Params): boolean {
         }
     }
     for (var i = 0, l = activeRoutes.length; i < l; i++) {
-        if (activeRoutes[i].name === name) {
+        if (activeRoutes[i]!.name === name) {
             return true;
         }
     }
@@ -5691,7 +5710,7 @@ export function isActive(name: string | undefined, params?: Params): boolean {
 
 export function urlOfRoute(name: string, params?: Params): string {
     if (isInApp(name)) {
-        var r = nameRouteMap[name];
+        var r = nameRouteMap[name]!;
         if (DEBUG) {
             if (rootRoutes == undefined) throw Error("Cannot use urlOfRoute before defining routes");
             if (r == undefined) throw Error("Route with name " + name + " if not defined in urlOfRoute");
@@ -5887,7 +5906,7 @@ function nextIteration(): void {
                 transitionState = activeRoutes.length;
                 continue;
             }
-            let rr = futureRoutes[futureRoutes.length + 1 + transitionState];
+            let rr = futureRoutes[futureRoutes.length + 1 + transitionState]!;
             transitionState--;
             let handler = rr.handler;
             let comp: IBobrilComponent | undefined = undefined;
@@ -6090,9 +6109,9 @@ const cssSubRuleDelimiter = /\:|\ |\>/;
 
 function buildCssSubRule(parent: string): string | null {
     let matchSplit = cssSubRuleDelimiter.exec(parent);
-    if (!matchSplit) return allStyles[parent].name;
+    if (!matchSplit) return allStyles[parent]!.name;
     let posSplit = matchSplit.index;
-    return allStyles[parent.substring(0, posSplit)].name + parent.substring(posSplit);
+    return allStyles[parent.substring(0, posSplit)]!.name + parent.substring(posSplit);
 }
 
 function buildCssRule(parent: string | string[] | undefined, name: string): string {
@@ -6103,7 +6122,7 @@ function buildCssRule(parent: string | string[] | undefined, name: string): stri
                 if (i > 0) {
                     result += ",";
                 }
-                result += "." + buildCssSubRule(parent[i]) + "." + name;
+                result += "." + buildCssSubRule(parent[i]!) + "." + name;
             }
         } else {
             result = "." + buildCssSubRule(<string>parent) + "." + name;
@@ -6162,9 +6181,9 @@ function beforeFrame() {
         let newSpriteDppx = 1;
         if (lastDppx > 1) {
             for (let i = 0; i < bundlePath2.length; i++) {
-                if (i == bundlePath2.length - 1 || bundlePath2[i][1] >= lastDppx) {
-                    newSpriteUrl = bundlePath2[i][0];
-                    newSpriteDppx = bundlePath2[i][1];
+                if (i == bundlePath2.length - 1 || bundlePath2[i]![1] >= lastDppx) {
+                    newSpriteUrl = bundlePath2[i]![0];
+                    newSpriteDppx = bundlePath2[i]![1];
                 } else break;
             }
         }
@@ -6188,7 +6207,7 @@ function beforeFrame() {
             }
             if (imageSprite != null) {
                 for (let i = 0; i < bundledDynamicSprites.length; i++) {
-                    let dynSprite = bundledDynamicSprites[i];
+                    let dynSprite = bundledDynamicSprites[i]!;
                     let colorStr = dynSprite.color;
                     if (!isString(colorStr)) colorStr = colorStr();
                     if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
@@ -6203,7 +6222,7 @@ function beforeFrame() {
                             (dynSprite.left * lastSpriteDppx) | 0,
                             (dynSprite.top * lastSpriteDppx) | 0
                         );
-                        var stDef = allStyles[dynSprite.styleId];
+                        var stDef = allStyles[dynSprite.styleId]!;
                         stDef.style = {
                             backgroundImage: `url(${lastUrl})`,
                             width: dynSprite.width,
@@ -6217,9 +6236,9 @@ function beforeFrame() {
                     let iWidth = imageSprite.width / lastSpriteDppx;
                     let iHeight = imageSprite.height / lastSpriteDppx;
                     for (let key in bundledSprites) {
-                        let sprite = bundledSprites[key];
+                        let sprite = bundledSprites[key]!;
                         if ((sprite as IResponsiveDynamicSprite).color !== undefined) continue;
-                        var stDef = allStyles[sprite.styleId];
+                        var stDef = allStyles[sprite.styleId]!;
                         let width = sprite.width;
                         let height = sprite.height;
                         let percentWidth = (100 * iWidth) / width;
@@ -6239,7 +6258,7 @@ function beforeFrame() {
             }
         }
         for (let i = 0; i < dynamicSprites.length; i++) {
-            let dynSprite = dynamicSprites[i];
+            let dynSprite = dynamicSprites[i]!;
             let image = imageCache[dynSprite.url];
             if (image == undefined) continue;
             let colorStr = dynSprite.color();
@@ -6255,7 +6274,7 @@ function beforeFrame() {
                     dynSprite.left,
                     dynSprite.top
                 );
-                var stDef = allStyles[dynSprite.styleId];
+                var stDef = allStyles[dynSprite.styleId]!;
                 stDef.style = {
                     backgroundImage: `url(${lastUrl})`,
                     width: dynSprite.width,
@@ -6266,7 +6285,7 @@ function beforeFrame() {
         }
         var styleStr = injectedCss;
         for (var key in allAnimations) {
-            var anim = allAnimations[key];
+            var anim = allAnimations[key]!;
             styleStr += "@keyframes " + anim.name + " {";
             for (var key2 in anim.def) {
                 let item = anim.def[key2];
@@ -6283,7 +6302,7 @@ function beforeFrame() {
             styleStr += "}\n";
         }
         for (var key in allStyles) {
-            var ss = allStyles[key];
+            var ss = allStyles[key]!;
             let parent = ss.parent;
             let name = ss.name;
             let ssPseudo = ss.pseudo;
@@ -6322,7 +6341,7 @@ function beforeFrame() {
             }
         }
         for (var key in allMediaQueries) {
-            var mediaQuery = allMediaQueries[key];
+            var mediaQuery = allMediaQueries[key]!;
             styleStr += "@media " + key + "{";
             for (var definition of mediaQuery) {
                 for (var key2 in definition) {
@@ -6531,7 +6550,7 @@ export function styleDefEx(
         pseudo,
     };
     if (isString(style) && pseudo == undefined) {
-        allStyles[nameHint].realName = style;
+        allStyles[nameHint]!.realName = style;
     } else invalidateStyles();
     return nameHint;
 }
@@ -6554,7 +6573,7 @@ export function invalidateStyles(): void {
 }
 
 function updateSprite(spDef: ISprite): void {
-    var stDef = allStyles[spDef.styleId];
+    var stDef = allStyles[spDef.styleId]!;
     var style: any = {
         backgroundImage: `url(${spDef.url})`,
         width: spDef.width,
@@ -6590,10 +6609,10 @@ function recolorAndClip(
     let rgba = rgbaRegex.exec(colorStr);
     let cRed: number, cGreen: number, cBlue: number, cAlpha: number;
     if (rgba) {
-        cRed = parseInt(rgba[1], 10);
-        cGreen = parseInt(rgba[2], 10);
-        cBlue = parseInt(rgba[3], 10);
-        cAlpha = Math.round(parseFloat(rgba[4]) * 255);
+        cRed = parseInt(rgba[1]!, 10);
+        cGreen = parseInt(rgba[2]!, 10);
+        cBlue = parseInt(rgba[3]!, 10);
+        cAlpha = Math.round(parseFloat(rgba[4]!) * 255);
     } else {
         cRed = parseInt(colorStr.substr(1, 2), 16);
         cGreen = parseInt(colorStr.substr(3, 2), 16);
@@ -6603,11 +6622,11 @@ function recolorAndClip(
     if (cAlpha === 0xff) {
         for (var i = 0; i < imgDataData.length; i += 4) {
             // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
-            let red = imgDataData[i];
+            let red = imgDataData[i]!;
             if (
                 red === imgDataData[i + 1] &&
                 red === imgDataData[i + 2] &&
-                (red === 0x80 || (imgDataData[i + 3] < 0xff && red > 0x70))
+                (red === 0x80 || (imgDataData[i + 3]! < 0xff && red > 0x70))
             ) {
                 imgDataData[i] = cRed;
                 imgDataData[i + 1] = cGreen;
@@ -6616,8 +6635,8 @@ function recolorAndClip(
         }
     } else {
         for (var i = 0; i < imgDataData.length; i += 4) {
-            let red = imgDataData[i];
-            let alpha = imgDataData[i + 3];
+            let red = imgDataData[i]!;
+            let alpha = imgDataData[i + 3]!;
             if (
                 red === imgDataData[i + 1] &&
                 red === imgDataData[i + 2] &&
@@ -6680,7 +6699,7 @@ export function sprite(
         }
     }
     var key = url + ":" + colorId + ":" + (width || 0) + ":" + (height || 0) + ":" + left + ":" + top;
-    var spDef = allSprites[key];
+    var spDef = allSprites[key]!;
     if (spDef) return spDef.styleId;
     var styleId = emptyStyleDef(url);
     spDef = { styleId, url, width, height, left, top };
@@ -7137,7 +7156,7 @@ export function shallowEqual(a: any, b: any): boolean {
     }
 
     for (let i = 0; i < kA.length; i++) {
-        if (!hOP.call(b, kA[i]) || !is(a[kA[i]], b[kA[i]])) {
+        if (!hOP.call(b, kA[i]!) || !is(a[kA[i]!], b[kA[i]!])) {
             return false;
         }
     }

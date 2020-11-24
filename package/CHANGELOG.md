@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.17.0
+
+Make it typecheck with noUncheckedIndexedAccess.
+
 ## 14.16.1
 
 Fixed crash on uncontrolled multi-select.

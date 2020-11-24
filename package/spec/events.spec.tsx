@@ -1,6 +1,6 @@
 import * as b from "../index";
 
-describe("events", ()=> {
+describe("events", () => {
     afterEach(() => {
         b.init(() => undefined);
         b.syncUpdate();
@@ -11,8 +11,7 @@ describe("events", ()=> {
             value?: number;
         }
 
-        interface ICompCtx extends b.IBobrilCtx<ICompData>
-        {
+        interface ICompCtx extends b.IBobrilCtx<ICompData> {
             local: number;
         }
 
@@ -25,7 +24,7 @@ describe("events", ()=> {
             onFocusOut(ctx: ICompCtx): b.GenericEventResult {
                 ctx.local++;
                 return true;
-            }
+            },
         });
 
         b.init(() => Comp({ value: 42 }));
@@ -46,46 +45,43 @@ describe("events", ()=> {
             }
 
             function PortalWrapper(props: IProps) {
-                const [el, setEl] = b.useState<Element|null>(null);
-                const component = <Portal callback={props.callback}/>
+                const [el, setEl] = b.useState<Element | null>(null);
+                const component = <Portal callback={props.callback} />;
                 b.useEvents({
                     onClick(): b.GenericEventResult {
                         props.callback("parent");
                         return false;
-                    }
+                    },
                 });
                 b.useEffect(() => {
                     setEl(document.getElementById("portal"));
-                },[]);
+                }, []);
 
-                return (
-                    <div>
-                        {el && <b.Portal element={el}>
-                            {component}
-                        </b.Portal>}
-                    </div>
-                )
+                return <div>{el && <b.Portal element={el}>{component}</b.Portal>}</div>;
             }
 
             function Portal(props: IProps) {
                 return (
-                    <div id="inner-portal"
+                    <div
+                        id="inner-portal"
                         onClick={() => {
-                        props.callback("inner");
-                        return false
-                    }} ref={ref => cacheNode = ref!}>
+                            props.callback("inner");
+                            return false;
+                        }}
+                        ref={(ref) => (cacheNode = ref!)}
+                    >
                         Portal
                     </div>
-                )
+                );
             }
 
             b.init(() => {
                 return (
                     <div>
-                        <PortalWrapper callback={callback}/>
-                        <div id="portal" onClick={() => callback("portal")}/>
+                        <PortalWrapper callback={callback} />
+                        <div id="portal" onClick={() => callback("portal")} />
                     </div>
-                )
+                );
             });
             // first render
             b.syncUpdate();
@@ -97,8 +93,8 @@ describe("events", ()=> {
             b.bubble(cacheNode, "onClick");
             expect(callback).toHaveBeenCalledTimes(2);
             const calls = callback.calls.all();
-            expect(calls[0].args).toEqual(["inner"]);
-            expect(calls[1].args).toEqual(["parent"]);
+            expect(calls[0]!.args).toEqual(["inner"]);
+            expect(calls[1]!.args).toEqual(["parent"]);
         });
 
         it("portal event bubbling - DOM", () => {
@@ -106,8 +102,8 @@ describe("events", ()=> {
             domEl.click();
             expect(callback).toHaveBeenCalledTimes(2);
             const calls = callback.calls.all();
-            expect(calls[0].args).toEqual(["inner"]);
-            expect(calls[1].args).toEqual(["parent"]);
+            expect(calls[0]!.args).toEqual(["inner"]);
+            expect(calls[1]!.args).toEqual(["parent"]);
         });
     });
 });
