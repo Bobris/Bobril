@@ -5957,39 +5957,53 @@ export function runTransition(transition: IRouteTransition): void {
     nextIteration();
 }
 
+export interface IAnchorData extends IDataWithChildren {
+    name?: string, 
+    params?: Params,
+    onAnchor?: (el:HTMLElement)=>boolean
+}
+
+export function Anchor({children, name, params, onAnchor}: IAnchorData): IBobrilNode {
+    return anchor(children, name, params, onAnchor);
+}
+
 interface IBobrilAnchorCtx extends IBobrilCtx {
     l: number;
 } // shortened lastTransitionRunCount
 
-export function anchor(children: IBobrilChildren, name?: string, params?: Params): IBobrilNode {
+export function anchor(children: IBobrilChildren, name?: string, params?: Params,  onAnchor?: (el:HTMLElement) => boolean): IBobrilNode {
     return {
         children,
         component: {
             id: "anchor",
             postUpdateDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
-                handleAnchorRoute(ctx, me, name, params);
+                handleAnchorRoute(ctx, me, name, params, onAnchor);
             },
             postInitDom(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode) {
-                handleAnchorRoute(ctx, me, name, params);
+                handleAnchorRoute(ctx, me, name, params, onAnchor);
             },
         },
     };
 }
 
-function handleAnchorRoute(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, name?: string, params?: Params) {
+function handleAnchorRoute(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, name?: string, params?: Params, onAnchor?: (el:HTMLElement) => boolean) {
     let routeName: string | undefined;
     if (name) {
         routeName = name;
     } else {
-        let firstChild = (me.children && me.children[0]) as IBobrilCacheNode;
+        const firstChild = (me.children && me.children[0]) as IBobrilCacheNode;
         routeName = firstChild.attrs && firstChild.attrs.id;
     }
     if (!isActive(routeName, params)) {
         ctx.l = 0;
         return;
     }
-    if (ctx.l === transitionRunCount) return;
-    (getDomNode(me) as HTMLElement).scrollIntoView();
+    if (ctx.l === transitionRunCount) {
+        return;
+    }
+
+    const element = getDomNode(me) as HTMLElement;
+    (onAnchor && onAnchor(element)) || element.scrollIntoView();
     ctx.l = transitionRunCount;
 }
 
