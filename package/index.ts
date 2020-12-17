@@ -5958,12 +5958,12 @@ export function runTransition(transition: IRouteTransition): void {
 }
 
 export interface IAnchorData extends IDataWithChildren {
-    name?: string, 
-    params?: Params,
-    onAnchor?: (el:HTMLElement)=>boolean
+    name?: string;
+    params?: Params;
+    onAnchor?: (el: HTMLElement) => boolean;
 }
 
-export function Anchor({children, name, params, onAnchor}: IAnchorData): IBobrilNode {
+export function Anchor({ children, name, params, onAnchor }: IAnchorData): IBobrilNode {
     return anchor(children, name, params, onAnchor);
 }
 
@@ -5971,7 +5971,12 @@ interface IBobrilAnchorCtx extends IBobrilCtx {
     l: number;
 } // shortened lastTransitionRunCount
 
-export function anchor(children: IBobrilChildren, name?: string, params?: Params,  onAnchor?: (el:HTMLElement) => boolean): IBobrilNode {
+export function anchor(
+    children: IBobrilChildren,
+    name?: string,
+    params?: Params,
+    onAnchor?: (el: HTMLElement) => boolean
+): IBobrilNode {
     return {
         children,
         component: {
@@ -5986,7 +5991,13 @@ export function anchor(children: IBobrilChildren, name?: string, params?: Params
     };
 }
 
-function handleAnchorRoute(ctx: IBobrilAnchorCtx, me: IBobrilCacheNode, name?: string, params?: Params, onAnchor?: (el:HTMLElement) => boolean) {
+function handleAnchorRoute(
+    ctx: IBobrilAnchorCtx,
+    me: IBobrilCacheNode,
+    name?: string,
+    params?: Params,
+    onAnchor?: (el: HTMLElement) => boolean
+) {
     let routeName: string | undefined;
     if (name) {
         routeName = name;

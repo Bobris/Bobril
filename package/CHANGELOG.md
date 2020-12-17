@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.18.0
+
+Improved `anchor` and added `Anchor` TSX component. (Contrib by https://github.com/keeema)
+
 ## 14.17.0
 
 Make it typecheck with noUncheckedIndexedAccess.
