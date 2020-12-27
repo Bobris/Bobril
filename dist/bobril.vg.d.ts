@@ -1,3 +1,0 @@
-interface IBobrilStatic {
-	vg?: IBobrilComponent;
-}

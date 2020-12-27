@@ -1,33 +1,43 @@
 {
-  "name": "bobril",
-  "version": "0.0.1",
-  "description": "Component Oriented MVC Framework with virtual DOM",
-  "main": "index.js",
-  "scripts": {
-    "test": "node node_modules/karma/bin/karma start debugkarma.conf.js"
-  },
-  "author": "Boris Letocha",
-  "license": "MIT",
-  "devDependencies": {
-    "browserify-zlib": "*",
-    "graceful-fs": "*",
-    "gulp": "*",
-    "gulp-bump": "*",
-    "gulp-concat": "*",
-    "gulp-gh-pages": "*",
-    "gulp-html-rebuild": "*",
-    "gulp-if": "*",
-    "gulp-rename": "*",
-    "gulp-uglify": "*",
-    "karma": "*",
-    "karma-coverage": "*",
-    "karma-jasmine": "*",
-    "jasmine-core": "*",
-    "karma-phantomjs-launcher": "*",
-    "phantomjs-prebuilt": "*",
-    "rimraf": "*",
-    "through2": "*",
-    "typescript": "*",
-    "uglifyjs": "*"
-  }
+    "name": "bobril",
+    "version": "15.0.0",
+    "description": "Component Oriented MVC Framework with virtual DOM and CSS",
+    "main": "index.js",
+    "types": "index.d.ts",
+    "typescript": {
+        "main": "index.ts"
+    },
+    "prettier": {
+        "tabWidth": 4,
+        "printWidth": 120
+    },
+    "scripts": {
+        "prepublishOnly": "prettier --write index.ts src/ spec/ && bb test",
+        "test": "bb test"
+    },
+    "bobril": {
+        "compilerOptions": {
+            "noImplicitAny": true,
+            "noImplicitThis": true,
+            "noUnusedLocals": true,
+            "noUnusedParameters": true,
+            "noImplicitReturns": true,
+            "noFallthroughCasesInSwitch": true,
+            "noUncheckedIndexedAccess": true,
+            "strictNullChecks": true,
+            "strict": true,
+            "reactNamespace": "b"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Bobris/Bobril.git",
+        "directory": "package"
+    },
+    "author": "Boris Letocha",
+    "license": "MIT",
+    "devDependencies": {
+        "prettier": "*",
+        "typescript": "^4.1.2"
+    }
 }
