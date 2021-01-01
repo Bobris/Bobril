@@ -479,22 +479,6 @@ var inNotFocusable: boolean = false;
 var updateCall: Array<Function> = [];
 var updateInstance: Array<IBobrilCacheNode> = [];
 var effectInstance: Array<IBobrilCacheNode> = [];
-var setValueCallback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void = (
-    el: Element,
-    _node: IBobrilCacheNode,
-    newValue: any,
-    oldValue: any
-): void => {
-    if (newValue !== oldValue) (<any>el)[tValue] = newValue;
-};
-
-export function setSetValue(
-    callback: (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void
-): (el: Element, node: IBobrilCacheNode, newValue: any, oldValue: any) => void {
-    var prev = setValueCallback;
-    setValueCallback = callback;
-    return prev;
-}
 
 var vendors = ["Webkit", "Moz", "ms", "O"];
 var testingDivStyle: any = document.createElement("div").style;
@@ -718,9 +702,89 @@ function updateElement(
         }
     }
     if (valueNewAttr !== undefined) {
-        setValueCallback(el, n, valueNewAttr, valueOldAttr);
+        setValueAttribute(el, n, valueNewAttr, valueOldAttr);
     }
     return oldAttrs;
+}
+
+function setValueAttribute(el: Element, node: IBobrilCacheNodeUnsafe, newValue: any, oldValue: any) {
+    var tagName = el.tagName;
+    var isSelect = tagName === "SELECT";
+    var isInput = tagName === "INPUT" || tagName === "TEXTAREA";
+    if (!isInput && !isSelect) {
+        if (newValue !== oldValue) (<any>el)[tValue] = newValue;
+        return;
+    }
+    if (node.ctx === undefined) {
+        node.ctx = new BobrilCtx(undefined, node);
+        node.component = emptyComponent;
+    }
+    if (oldValue === undefined) {
+        (<any>node.ctx)[bValue] = newValue;
+    }
+    var isMultiSelect = isSelect && (<HTMLSelectElement>el).multiple;
+    var emitDiff = false;
+    if (isMultiSelect) {
+        var options = (<HTMLSelectElement>el).options;
+        var currentMulti = selectedArray(options);
+        if (!stringArrayEqual(newValue, currentMulti)) {
+            if (
+                oldValue === undefined ||
+                stringArrayEqual(currentMulti, oldValue) ||
+                !stringArrayEqual(newValue, (<any>node.ctx)[bValue])
+            ) {
+                for (var j = 0; j < options.length; j++) {
+                    options[j]!.selected = stringArrayContains(newValue, options[j]!.value);
+                }
+                currentMulti = selectedArray(options);
+                if (stringArrayEqual(currentMulti, newValue)) {
+                    emitDiff = true;
+                }
+            } else {
+                emitDiff = true;
+            }
+        }
+    } else if (isInput || isSelect) {
+        if (isInput && isCheckboxLike(<HTMLInputElement>el)) {
+            var currentChecked = (<any>el).checked;
+            if (newValue !== currentChecked) {
+                if (oldValue === undefined || currentChecked === oldValue || newValue !== (<any>node.ctx)[bValue]) {
+                    (<any>el).checked = newValue;
+                } else {
+                    emitDiff = true;
+                }
+            }
+        } else {
+            var isCombobox = isSelect && (<HTMLSelectElement>el).size < 2;
+            var currentValue = (<any>el)[tValue];
+            if (newValue !== currentValue) {
+                if (oldValue === undefined || currentValue === oldValue || newValue !== (<any>node.ctx)[bValue]) {
+                    if (isSelect) {
+                        if (newValue === "") {
+                            (<HTMLSelectElement>el).selectedIndex = isCombobox ? 0 : -1;
+                        } else {
+                            (<any>el)[tValue] = newValue;
+                        }
+                        if (newValue !== "" || isCombobox) {
+                            currentValue = (<any>el)[tValue];
+                            if (newValue !== currentValue) {
+                                emitDiff = true;
+                            }
+                        }
+                    } else {
+                        (<any>el)[tValue] = newValue;
+                    }
+                } else {
+                    emitDiff = true;
+                }
+            }
+        }
+    }
+    if (emitDiff) {
+        emitOnChange(undefined, el, node);
+    } else {
+        (<any>node.ctx)[bValue] = newValue;
+    }
 }
 
 function pushInitCallback(c: IBobrilCacheNode) {
@@ -3034,86 +3098,6 @@ function selectedArray(options: HTMLOptionsCollection): string[] {
     }
     return res;
 }
-
-var prevSetValueCallback = setSetValue((el: Element, node: IBobrilCacheNodeUnsafe, newValue: any, oldValue: any) => {
-    var tagName = el.tagName;
-    var isSelect = tagName === "SELECT";
-    var isInput = tagName === "INPUT" || tagName === "TEXTAREA";
-    if (!isInput && !isSelect) {
-        prevSetValueCallback(el, node, newValue, oldValue);
-        return;
-    }
-    if (node.ctx === undefined) {
-        node.ctx = new BobrilCtx(undefined, node);
-        node.component = emptyComponent;
-    }
-    if (oldValue === undefined) {
-        (<any>node.ctx)[bValue] = newValue;
-    }
-    var isMultiSelect = isSelect && (<HTMLSelectElement>el).multiple;
-    var emitDiff = false;
-    if (isMultiSelect) {
-        var options = (<HTMLSelectElement>el).options;
-        var currentMulti = selectedArray(options);
-        if (!stringArrayEqual(newValue, currentMulti)) {
-            if (
-                oldValue === undefined ||
-                stringArrayEqual(currentMulti, oldValue) ||
-                !stringArrayEqual(newValue, (<any>node.ctx)[bValue])
-            ) {
-                for (var j = 0; j < options.length; j++) {
-                    options[j]!.selected = stringArrayContains(newValue, options[j]!.value);
-                }
-                currentMulti = selectedArray(options);
-                if (stringArrayEqual(currentMulti, newValue)) {
-                    emitDiff = true;
-                }
-            } else {
-                emitDiff = true;
-            }
-        }
-    } else if (isInput || isSelect) {
-        if (isInput && isCheckboxLike(<HTMLInputElement>el)) {
-            var currentChecked = (<any>el).checked;
-            if (newValue !== currentChecked) {
-                if (oldValue === undefined || currentChecked === oldValue || newValue !== (<any>node.ctx)[bValue]) {
-                    (<any>el).checked = newValue;
-                } else {
-                    emitDiff = true;
-                }
-            }
-        } else {
-            var isCombobox = isSelect && (<HTMLSelectElement>el).size < 2;
-            var currentValue = (<any>el)[tValue];
-            if (newValue !== currentValue) {
-                if (oldValue === undefined || currentValue === oldValue || newValue !== (<any>node.ctx)[bValue]) {
-                    if (isSelect) {
-                        if (newValue === "") {
-                            (<HTMLSelectElement>el).selectedIndex = isCombobox ? 0 : -1;
-                        } else {
-                            (<any>el)[tValue] = newValue;
-                        }
-                        if (newValue !== "" || isCombobox) {
-                            currentValue = (<any>el)[tValue];
-                            if (newValue !== currentValue) {
-                                emitDiff = true;
-                            }
-                        }
-                    } else {
-                        (<any>el)[tValue] = newValue;
-                    }
-                } else {
-                    emitDiff = true;
-                }
-            }
-        }
-    }
-    if (emitDiff) {
-        emitOnChange(undefined, el, node);
-    } else {
-        (<any>node.ctx)[bValue] = newValue;
-    }
-});
 
 function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBobrilCacheNodeUnsafe | undefined) {
     if (target && target.nodeName === "OPTION") {
