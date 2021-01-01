@@ -235,143 +235,6 @@ interface IBobrilCtxInternal<TData = any> extends IBobrilCtx<TData> {
     $bobxCtx: object | undefined;
 }
 
-type RuleBehaviourType = "not" | "only";
-
-type MediaType = "all" | "print" | "screen" | "speech";
-
-type LogicalToken = "and" | "or";
-
-type MediaQueryToken = {
-    type: MediaType | LogicalToken | RuleBehaviourType;
-};
-
-type RangeRuleWithUnitToken = {
-    type: "max-height" | "min-height" | "max-width" | "min-width";
-    value: number;
-    unit: "px" | "em";
-};
-
-type RangeRuleToken = {
-    type: "min-color";
-    value: number;
-};
-
-type OrientationRuleToken = {
-    type: "orientation";
-    value: "landscape" | "portrait";
-};
-
-type AspectRuleToken = {
-    type: "aspect-ratio";
-    height: number;
-    width: number;
-};
-
-type BoolRuleToken = {
-    type: "color";
-};
-
-type TokenType = MediaQueryTokens | MediaQueryToken;
-
-export type MediaQueryTokens =
-    | RangeRuleWithUnitToken
-    | RangeRuleToken
-    | OrientationRuleToken
-    | AspectRuleToken
-    | BoolRuleToken;
-
-interface RuleBuilder {
-    rule(behaviour?: RuleBehaviourType, mediaType?: MediaType): RuleEnhancer;
-}
-
-interface RuleEnhancer {
-    and(mediaRule: MediaQueryTokens): RuleEnhancer;
-    or(): RuleBuilder;
-    build(): string;
-}
-
-class MediaRuleBuilder {
-    tokens: TokenType[] = [];
-
-    pushOptionalTokens<T extends RuleBehaviourType>(
-        behaviour?: T,
-        mediaType?: T extends undefined ? undefined : MediaType
-    ) {
-        !!behaviour && this.tokens.push({ type: behaviour });
-        !!mediaType && this.tokens.push({ type: mediaType });
-    }
-
-    rule(behaviour?: RuleBehaviourType, mediaType: MediaType = "all"): RuleEnhancer {
-        this.pushOptionalTokens(behaviour, mediaType);
-        return this;
-    }
-
-    and(mediaRule: MediaQueryTokens): RuleEnhancer {
-        this.tokens.push({ type: "and" });
-        this.tokens.push(mediaRule);
-        return this;
-    }
-
-    or(): RuleBuilder {
-        this.tokens.push({ type: "or" });
-        return this;
-    }
-
-    build(): string {
-        return this.tokens.reduce(toRule, "");
-    }
-}
-
-function toRule(buffer: string, token: TokenType) {
-    let str: string = "";
-    switch (token.type) {
-        case "aspect-ratio":
-            str = `(${token.type}: ${token.width}/${token.height})`;
-            break;
-        case "all":
-        case "and":
-        case "not":
-        case "only":
-        case "print":
-        case "screen":
-        case "speech":
-            str = `${token.type}`;
-            break;
-        case "or":
-            str = ",";
-            break;
-        case "color":
-            str = `(${token.type})`;
-            break;
-        case "max-height":
-        case "max-width":
-        case "min-height":
-        case "min-width":
-            str = `(${token.type}: ${token.value}${token.unit})`;
-            break;
-        case "min-color":
-        case "orientation":
-            str = `(${token.type}: ${token.value})`;
-            break;
-        default:
-            str = emptyQuery(token);
-    }
-
-    return buffer + str + " ";
-}
-
-function emptyQuery(_token: never) {
-    return "";
-}
-
-type MediaQueryDefinition = {
-    [key: string]: CSSStylesItem;
-};
-
-export function createMediaQuery(): RuleBuilder {
-    return new MediaRuleBuilder();
-}
-
 export class BobrilCtx<TData> implements IBobrilCtxInternal {
     constructor(data?: TData, me?: IBobrilCacheNode<TData>) {
         this.data = data!;
@@ -4675,6 +4538,10 @@ export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFa
     return res as AnimationNameFactory;
 }
 
+type MediaQueryDefinition = {
+    [key: string]: CSSStylesItem;
+};
+
 /**
  * create media query
  * @example
@@ -4685,8 +4552,8 @@ export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFa
                 }
             });
  * @example
- * // also build can be used @see MediaRuleBuilder
- * mediaQueryDef((createMediaQuery()
+ * // also build can be used with builder           
+ * mediaQueryDef(createMediaQuery()
  .rule("only", "screen")
     .and({type: "max-width", value: 1200, unit: "px"})
     .and({type: "min-width", value: 768, unit: "px"})
