@@ -431,10 +431,6 @@ function createEl(name: string): HTMLElement {
     return document.createElement(name);
 }
 
-function null2undefined<T>(value: T | null | undefined): T | undefined {
-    return value === null ? undefined : value;
-}
-
 export function assertNever(switchValue: never): never {
     throw new Error("Switch is not exhaustive for value: " + JSON.stringify(switchValue));
 }
@@ -1006,7 +1002,6 @@ export function createNode(
         return c;
     } else if (tag === "@") {
         createInto = c.data;
-        portalMap.set(createInto, c);
         createBefore = null;
         tag = undefined;
     }
@@ -1020,6 +1015,7 @@ export function createNode(
         if (isString(children)) {
             el = createTextNode(<string>children);
             c.element = el;
+            domNode2node.set(el, c);
             createInto.insertBefore(el, createBefore);
         } else {
             createChildren(c, createInto, createBefore);
@@ -1051,6 +1047,7 @@ export function createNode(
                 before = createInto.firstChild;
             }
             while (before) {
+                domNode2node.set(before, c);
                 (<Node[]>c.element).push(before);
                 before = before.nextSibling;
             }
@@ -1071,6 +1068,7 @@ export function createNode(
             }
             var newElements: Array<Node> = [];
             while (elPrev !== el) {
+                domNode2node.set(elPrev!, c);
                 newElements.push(elPrev!);
                 elPrev = elPrev!.nextSibling;
             }
@@ -1100,6 +1098,7 @@ export function createNode(
         el = createEl(tag);
     }
     createInto.insertBefore(el, createBefore);
+    domNode2node.set(el, c);
     c.element = el;
     createChildren(c, <Element>el, null);
     if (component) {
@@ -1174,7 +1173,6 @@ function destroyNode(c: IBobrilCacheNode) {
         currentCtx = undefined;
     }
     if (c.tag === "@") {
-        portalMap.delete(c.data);
         removeNodeRecursive(c);
     }
 }
@@ -1220,116 +1218,36 @@ function removeNode(c: IBobrilCacheNode) {
 }
 
 var roots: IBobrilRoots = newHashObj();
-var portalMap: Map<Node, IBobrilCacheNode> = new Map();
 
-function nodeContainsNode(
-    c: IBobrilCacheNode,
-    n: Node,
-    resIndex: number,
-    res: (IBobrilCacheNode | null)[]
-): IBobrilCacheNode[] | null | undefined {
-    var el = c.element;
-    var ch = c.children;
-    if (isArray(el)) {
-        for (var ii = 0; ii < (<Node[]>el).length; ii++) {
-            if ((<Node[]>el)[ii] === n) {
-                res.push(c);
-                if (isArray(ch)) {
-                    return <IBobrilCacheNode[]>ch;
-                }
-                return null;
-            }
-        }
-    } else if (el == undefined) {
-        if (isArray(ch)) {
-            for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-                var result = nodeContainsNode((<IBobrilCacheNode[]>ch)[i]!, n, resIndex, res);
-                if (result !== undefined) {
-                    res.splice(resIndex, 0, c);
-                    return result;
-                }
-            }
-        }
-    } else if (el === n) {
-        res.push(c);
-        if (isArray(ch)) {
-            return <IBobrilCacheNode[]>ch;
-        }
-        return null;
-    }
-    return undefined;
-}
+var domNode2node: WeakMap<Node, IBobrilCacheNode> = new WeakMap();
 
-export function vdomPath(n: Node | null | undefined): (IBobrilCacheNode | null)[] {
-    var res: (IBobrilCacheNode | null)[] = [];
-    if (n == undefined) return res;
-    var rootIds = Object.keys(roots);
-    var rootElements = rootIds.map((i) => roots[i]!.e || document.body);
-    var rootNodes = rootIds.map((i) => roots[i]!.n);
-    portalMap.forEach((v, k) => {
-        rootElements.push(k as HTMLElement);
-        rootNodes.push(v);
-    });
-    var nodeStack: Node[] = [];
-    rootReallyFound: while (true) {
-        rootFound: while (n) {
-            for (var j = 0; j < rootElements.length; j++) {
-                if (n === rootElements[j]) break rootFound;
-            }
-            nodeStack.push(n);
-            n = n.parentNode;
+export function vdomPath(n: Node | null | undefined): IBobrilCacheNode[] {
+    var res: IBobrilCacheNode[] = [];
+    while (n != undefined) {
+        var bn = domNode2node.get(n);
+        if (bn !== undefined) {
+            do {
+                res.push(bn);
+                bn = bn.parent;
+            } while (bn !== undefined);
+            res.reverse();
+            return res;
         }
-        if (!n || nodeStack.length === 0) return res;
-        var currentCacheArray: IBobrilChildren | null = null;
-        var currentNode = nodeStack.pop()!;
-        for (j = 0; j < rootElements.length; j++) {
-            if (n === rootElements[j]) {
-                var rn = rootNodes[j];
-                if (rn === undefined) continue;
-                res = [];
-                if (rn.parent !== undefined) {
-                    var rnp: IBobrilCacheNode | undefined = rn;
-                    while ((rnp = rnp.parent)) {
-                        res.push(rnp);
-                    }
-                    res.reverse();
-                }
-                var findResult = nodeContainsNode(rn, currentNode, res.length, res);
-                if (findResult !== undefined) {
-                    currentCacheArray = findResult;
-                    break rootReallyFound;
-                }
-            }
-        }
-        nodeStack.push(currentNode);
-        nodeStack.push(n);
         n = n.parentNode;
-    }
-    subtreeSearch: while (nodeStack.length) {
-        currentNode = nodeStack.pop()!;
-        if (currentCacheArray && (<any>currentCacheArray).length)
-            for (var i = 0, l = (<any>currentCacheArray).length; i < l; i++) {
-                var bn = (<IBobrilCacheNode[]>currentCacheArray)[i]!;
-                var findResult = nodeContainsNode(bn, currentNode, res.length, res);
-                if (findResult !== undefined) {
-                    currentCacheArray = findResult;
-                    continue subtreeSearch;
-                }
-            }
-        res.push(null);
-        break;
     }
     return res;
 }
 
 // PureFuncs: deref, getDomNode
 export function deref(n: Node | null | undefined): IBobrilCacheNode | undefined {
-    var p = vdomPath(n);
-    var currentNode: IBobrilCacheNode | null | undefined = null;
-    while (currentNode === null) {
-        currentNode = p.pop();
+    while (n != undefined) {
+        var bn = domNode2node.get(n);
+        if (bn !== undefined) {
+            return bn;
+        }
+        n = n.parentNode;
     }
-    return currentNode;
+    return undefined;
 }
 
 function finishUpdateNode(n: IBobrilNode, c: IBobrilCacheNodeUnsafe, component: IBobrilComponent | null | undefined) {
@@ -3948,7 +3866,7 @@ export const ignoreClick = (x: number, y: number) => {
 
 let currentActiveElement: Element | undefined = undefined;
 let currentFocusedNode: IBobrilCacheNode | undefined = undefined;
-let nodeStack: (IBobrilCacheNode | null)[] = [];
+let nodeStack: IBobrilCacheNode[] = [];
 let focusChangeRunning = false;
 
 function emitOnFocusChange(inFocus: boolean): boolean {
@@ -3972,19 +3890,15 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         }
         while (i >= common) {
             n = nodeStack[i]!;
-            if (n) {
-                c = n.component;
-                if (c && c.onFocusOut) c.onFocusOut(n.ctx!);
-            }
+            c = n.component;
+            if (c && c.onFocusOut) c.onFocusOut(n.ctx!);
             i--;
         }
         i = common;
         while (i + 1 < newStack.length) {
             n = newStack[i]!;
-            if (n) {
-                c = n.component;
-                if (c && c.onFocusIn) c.onFocusIn(n.ctx!);
-            }
+            c = n.component;
+            if (c && c.onFocusIn) c.onFocusIn(n.ctx!);
             i++;
         }
         if (i < newStack.length) {
@@ -3992,7 +3906,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
             bubble(n, "onFocus");
         }
         nodeStack = newStack;
-        currentFocusedNode = nodeStack.length == 0 ? undefined : null2undefined(nodeStack[nodeStack.length - 1]);
+        currentFocusedNode = nodeStack.length == 0 ? undefined : nodeStack[nodeStack.length - 1];
     }
     focusChangeRunning = false;
     return false;
