@@ -126,35 +126,35 @@ export type IBobrilEventsWithCtx<TCtx> = {
 
 export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>
     extends IBobrilEventsWithCtx<TCtx> {
-    // parent component of derived/overriding component
+    /// parent component of derived/overriding component
     super?: IBobrilComponent;
-    // if id of old node is different from new node it is considered completely different so init will be called before render directly
-    // it does prevent calling render method twice on same node
+    /// if id of old node is different from new node it is considered completely different so init will be called before render directly
+    /// it does prevent calling render method twice on same node
     id?: string;
     ctxClass?: ICtxClass<TData>;
-    // called before new node in virtual dom should be created, me members (tag, attrs, children, ...) could be modified, ctx is initialized to { data: me.data||{}, me: me, cfg: fromParent }
+    /// called before new node in virtual dom should be created, me members (tag, attrs, children, ...) could be modified, ctx is initialized to { data: me.data||{}, me: me, cfg: fromParent }
     init?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode): void;
-    // in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
-    // in case of init this is called after init method, oldMe is equal to undefined in that case
+    /// in case of update after shouldChange returns true, you can do any update/init tasks, ctx.data is updated to me.data and oldMe.component updated to me.component before calling this
+    /// in case of init this is called after init method, oldMe is equal to undefined in that case
     render?(ctx: IBobrilCtx<TData>, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
-    // called after all children are rendered, but before updating own attrs
-    // so this is useful for kind of layout in JS features
+    /// called after all children are rendered, but before updating own attrs
+    /// so this is useful for kind of layout in JS features
     postRender?(ctx: IBobrilCtx<TData>, me: IBobrilNode, oldMe?: IBobrilCacheNode): void;
-    // return false when whole subtree should not be changed from last time, you can still update any me members except key, default implementation always return true
+    /// return false when whole subtree should not be changed from last time, you can still update any me members except key, default implementation always return true
     shouldChange?(ctx: IBobrilCtx<TData>, me: IBobrilNode, oldMe: IBobrilCacheNode): boolean;
-    // called from children to parents order for new nodes
+    /// called from children to parents order for new nodes
     postInitDom?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode, element: HTMLElement): void;
-    // called from children to parents order for updated nodes
+    /// called from children to parents order for updated nodes
     postUpdateDom?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode, element: HTMLElement): void;
-    // called from children to parents order for updated nodes but in every frame even when render was not run
+    /// called from children to parents order for updated nodes but in every frame even when render was not run
     postUpdateDomEverytime?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode, element: HTMLElement): void;
-    // called just before removing node from dom
+    /// called just before removing node from dom
     destroy?(ctx: IBobrilCtx<TData>, me: IBobrilNode, element: HTMLElement): void;
-    // called when bubbling event to parent so you could stop bubbling without preventing default handling
+    /// called when bubbling event to parent so you could stop bubbling without preventing default handling
     shouldStopBubble?(ctx: IBobrilCtx<TData>, name: string, param: Object): boolean;
-    // called when broadcast wants to dive in this node so you could silence broadcast for you and your children
+    /// called when broadcast wants to dive in this node so you could silence broadcast for you and your children
     shouldStopBroadcast?(ctx: IBobrilCtx<TData>, name: string, param: Object): boolean;
-    // used to implement any instance method which will be search by runMethodFrom using wave kind of broadcast stopping on first method returning true
+    /// used to implement any instance method which will be search by runMethodFrom using wave kind of broadcast stopping on first method returning true
     runMethod?(ctx: IBobrilCtx<TData>, methodId: MethodId, param?: Object): boolean;
 }
 
@@ -284,7 +284,7 @@ export function setIsArrayVdom(
     isArrayVdom = isArrayFnc;
 }
 
-const emptyComponent = {};
+const emptyObject = {};
 
 function createTextNode(content: string): Text {
     return document.createTextNode(content);
@@ -576,7 +576,7 @@ function setValueAttribute(el: Element, node: IBobrilCacheNodeUnsafe, newValue: 
     }
     if (node.ctx === undefined) {
         node.ctx = new BobrilCtx(undefined, node);
-        node.component = emptyComponent;
+        node.component = emptyObject;
     }
     if (oldValue === undefined) {
         (<any>node.ctx)[bValue] = newValue;
@@ -713,7 +713,7 @@ function findCfg(parent: IBobrilCacheNode | undefined): any {
     while (parent) {
         cfg = parent.cfg;
         if (cfg !== undefined) break;
-        if (parent.ctx !== undefined && parent.component !== emptyComponent) {
+        if (parent.ctx !== undefined && parent.component !== emptyObject) {
             cfg = parent.ctx.cfg;
             break;
         }
@@ -821,6 +821,7 @@ export function createNode(
             ctx.refs = undefined;
             ctx.$hookFlags = 0;
             ctx.$hooks = undefined;
+            ctx.$bobxCtx = undefined;
         } else {
             ctx = {
                 data: c.data || {},
@@ -974,7 +975,7 @@ export function createNode(
     }
     if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
     if (inSvgForeignObject) inSvg = true;
-    if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
+    if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, emptyObject, inNotFocusable);
     if (c.style) updateStyle(<HTMLElement>el, c.style, undefined);
     var className = c.className;
     if (className) setClassName(<HTMLElement>el, className);
@@ -1238,7 +1239,7 @@ export function updateNode(
     if (
         bigChange ||
         (component != undefined && ctx == undefined) ||
-        (component == undefined && ctx != undefined && ctx.me.component !== emptyComponent)
+        (component == undefined && ctx != undefined && ctx.me.component !== emptyObject)
     ) {
         // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
     } else if (tag === "/") {
@@ -1317,7 +1318,13 @@ export function updateNode(
             if (inSvgForeignObject) inSvg = true;
             finishUpdateNode(n, c, component);
             if (c.attrs || n.attrs || inNotFocusable)
-                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
+                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(
+                    c,
+                    el,
+                    n.attrs,
+                    c.attrs || emptyObject,
+                    inNotFocusable
+                );
             updateStyle(<HTMLElement>el, n.style, c.style);
             (c as IBobrilCacheNodeUnsafe).style = n.style;
             var className = n.className;
@@ -1950,7 +1957,7 @@ var renderFrameBegin = 0;
 
 var regEvents: {
     [name: string]: Array<(ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean>;
-} = {};
+} = newHashObj();
 var registryEvents:
     | {
           [name: string]: Array<{
@@ -1965,7 +1972,7 @@ export function addEvent(
     priority: number,
     callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean
 ): void {
-    if (registryEvents == undefined) registryEvents = {};
+    if (registryEvents == undefined) registryEvents = newHashObj();
     var list = registryEvents[name] || [];
     list.push({ priority: priority, callback: callback });
     registryEvents[name] = list;
@@ -2644,8 +2651,6 @@ function merge(f1: Function, f2: Function): Function {
     };
 }
 
-var emptyObject = {};
-
 function mergeComponents(c1: IBobrilComponent, c2: IBobrilComponent): IBobrilComponent {
     let res: IBobrilComponent = Object.create(c1)!;
     res.super = c1;
@@ -2890,7 +2895,7 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
     }
     if (node.ctx === undefined) {
         node.ctx = new BobrilCtx(undefined, node);
-        node.component = emptyComponent;
+        node.component = emptyObject;
     }
     var ctx = node.ctx;
     var tagName = (<Element>target).tagName;
@@ -3153,36 +3158,6 @@ function invokeMouseOwner(handlerName: string, param: any): boolean {
     return stop;
 }
 
-function hasPointerEventsNoneB(node: IBobrilCacheNode | null | undefined): boolean {
-    while (node) {
-        var s = node.style;
-        if (s) {
-            var e = s.pointerEvents;
-            if (e !== undefined) {
-                if (e === "none") return true;
-                return false;
-            }
-        }
-        node = node.parent;
-    }
-    return false;
-}
-
-function revertVisibilityChanges(hiddenEls: { t: HTMLElement; p: string }[]): boolean {
-    if (hiddenEls.length) {
-        for (var i = hiddenEls.length - 1; i >= 0; --i) {
-            hiddenEls[i]!.t.style.visibility = hiddenEls[i]!.p;
-        }
-        return true;
-    }
-    return false;
-}
-
-function pushAndHide(hiddenEls: { t: HTMLElement; p: string | null }[], t: HTMLElement) {
-    hiddenEls.push({ t: t, p: t.style.visibility });
-    t.style.visibility = "hidden";
-}
-
 function addEvent5(
     name: string,
     callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean
@@ -3199,23 +3174,6 @@ function type2Bobril(t: any): BobrilPointerType {
     return BobrilPointerType.Touch;
 }
 
-function pointerEventsNoneFix(
-    x: number,
-    y: number,
-    target: Node | undefined,
-    node: IBobrilCacheNode | undefined
-): [Node, IBobrilCacheNode | undefined] {
-    var hiddenEls: { t: HTMLElement; p: string }[] = [];
-    var t = <HTMLElement>target;
-    while (hasPointerEventsNoneB(node)) {
-        pushAndHide(hiddenEls, t);
-        t = <HTMLElement>document.elementFromPoint(x, y);
-        node = deref(t);
-    }
-    revertVisibilityChanges(hiddenEls);
-    return [t, node];
-}
-
 function buildHandlerPointer(name: string) {
     return function handlePointerDown(
         ev: PointerEvent,
@@ -3224,11 +3182,6 @@ function buildHandlerPointer(name: string) {
     ): boolean {
         target = ev.target as Node;
         node = deref(target);
-        if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
-            target = fixed[0];
-            node = fixed[1];
-        }
         let button = ev.button + 1;
         let type = type2Bobril(ev.pointerType);
         let buttons = ev.buttons;
@@ -3304,11 +3257,6 @@ function buildHandlerMouse(name: string) {
     ): boolean {
         target = ev.target as Node;
         node = deref(target);
-        if (hasPointerEventsNoneB(node)) {
-            var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
-            target = fixed[0];
-            node = fixed[1];
-        }
         var param: IBobrilPointerEvent = {
             target: node!,
             id: 1,
@@ -3639,10 +3587,6 @@ function createHandler(handlerName: string, allButtons?: boolean) {
 export function nodeOnPoint(x: number, y: number): IBobrilCacheNode | undefined {
     var target = <HTMLElement>document.elementFromPoint(x, y);
     var node = deref(target);
-    if (hasPointerEventsNoneB(node)) {
-        var fixed = pointerEventsNoneFix(x, y, target, node);
-        node = fixed[1];
-    }
     return node;
 }
 
@@ -3672,12 +3616,7 @@ addEvent5("^dblclick", createHandler(onDoubleClickText));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 
 let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
-function handleMouseWheel(ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
-    if (hasPointerEventsNoneB(node)) {
-        var fixed = pointerEventsNoneFix(ev.x, ev.y, target, node);
-        target = fixed[0];
-        node = fixed[1];
-    }
+function handleMouseWheel(ev: any, _target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
     let button = ev.button + 1;
     let buttons = ev.buttons;
     if (button === 0 && buttons) {
@@ -4129,7 +4068,6 @@ interface IInternalStyle {
     realName: string | null;
     parent?: IBobrilStyleDef | IBobrilStyleDef[];
     style: CSSStyles | (() => [CSSStyles, CSSPseudoStyles]);
-    inlStyle?: CSSInlineStyles;
     pseudo?: CSSPseudoStyles;
 }
 
@@ -4374,12 +4312,6 @@ function beforeFrame() {
             let flattenPseudo = newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, ssPseudo);
             flattenStyle(style, flattenPseudo, ssStyle, undefined);
-            var extractedInlStyle: any = null;
-            if (style["pointerEvents"]) {
-                extractedInlStyle = newHashObj();
-                extractedInlStyle["pointerEvents"] = style["pointerEvents"];
-            }
-            ss.inlStyle = extractedInlStyle;
             shimStyle(style);
             let cssStyle = inlineStyleToCssDeclaration(style);
             if (cssStyle.length > 0)
@@ -4447,17 +4379,10 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
         } else if (isString(s)) {
             var sd = allStyles[s];
             if (sd != undefined) {
-                if (className == undefined) className = sd.realName!;
-                else className = className + " " + sd.realName;
-                var inlS = sd.inlStyle;
-                if (inlS) {
-                    if (inlineStyle == undefined) inlineStyle = {};
-                    inlineStyle = assign(inlineStyle, inlS);
-                }
-            } else {
-                if (className == undefined) className = s;
-                else className = className + " " + s;
+                s = sd.realName!;
             }
+            if (className == undefined) className = s;
+            else className = className + " " + s;
         } else if (isArray(s)) {
             if (ca.length > i + 1) {
                 if (stack == undefined) stack = [];
@@ -4604,7 +4529,6 @@ export function styleDefEx(
         realName: nameHint,
         parent,
         style,
-        inlStyle: undefined,
         pseudo,
     };
     if (isString(style) && pseudo == undefined) {
@@ -4619,7 +4543,6 @@ export function selectorStyleDef(selector: string, style: CSSStyles, pseudo?: CS
         realName: null,
         parent: selector,
         style,
-        inlStyle: undefined,
         pseudo,
     };
     invalidateStyles();
