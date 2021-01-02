@@ -6,6 +6,7 @@ export * from "./src/core";
 export * from "./src/router";
 export * from "./src/dnd";
 export * from "./src/mediaQueryBuilder";
+export * from "./src/svgExtensions";
 
 import {
     deref,
