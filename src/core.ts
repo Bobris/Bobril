@@ -4395,7 +4395,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
         } else {
             if (inlineStyle == undefined) inlineStyle = {};
             for (let key in s) {
-                if (s.hasOwnProperty(key)) {
+                if (hOP.call(s, key)) {
                     let val = (<any>s)[key];
                     if (isFunction(val)) val = val();
                     inlineStyle[key] = val;
@@ -5091,7 +5091,7 @@ export function createElement(name: any, props: any): IBobrilNode {
         var attrs: IBobrilAttributes | undefined;
         var component: IBobrilComponent | undefined;
         for (var n in props) {
-            if (!props.hasOwnProperty(n)) continue;
+            if (!hOP.call(props, n)) continue;
             var propValue = props[n];
             if (n === "style") {
                 style(res, propValue);
