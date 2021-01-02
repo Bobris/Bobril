@@ -649,7 +649,7 @@ function setValueAttribute(el: Element, node: IBobrilCacheNodeUnsafe, newValue: 
 function pushInitCallback(c: IBobrilCacheNode) {
     var cc = c.component;
     if (cc) {
-        let fn = cc.postInitDom;
+        let fn = cc[postInitDom];
         if (fn) {
             updateCall.push(fn);
             updateInstance.push(c);
@@ -668,7 +668,7 @@ function pushInitCallback(c: IBobrilCacheNode) {
 function pushUpdateCallback(c: IBobrilCacheNode) {
     var cc = c.component;
     if (cc) {
-        let fn = cc.postUpdateDom;
+        let fn = cc[postUpdateDom];
         if (fn) {
             updateCall.push(fn);
             updateInstance.push(c);
@@ -678,7 +678,7 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
             updateCall.push(hookPostUpdateDom);
             updateInstance.push(c);
         }
-        fn = cc.postUpdateDomEverytime;
+        fn = cc[postUpdateDomEverytime];
         if (fn) {
             updateCall.push(fn);
             updateInstance.push(c);
@@ -696,7 +696,7 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
 function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
     var cc = c.component;
     if (cc) {
-        let fn = cc.postUpdateDomEverytime;
+        let fn = cc[postUpdateDomEverytime];
         if (fn) {
             updateCall.push(fn);
             updateInstance.push(c);
@@ -5349,7 +5349,10 @@ function combineWithForwardMe(
     }
 }
 
-const methodsWithMeParam = ["destroy", "postInitDom", "postUpdateDom", "postUpdateDomEverytime"];
+const postInitDom = "postInitDom";
+const postUpdateDom = "postUpdateDom";
+const postUpdateDomEverytime = "postUpdateDomEverytime";
+const methodsWithMeParam = ["destroy", postInitDom, postUpdateDom, postUpdateDomEverytime];
 
 export function component<TData extends object>(
     component: IComponentClass<TData> | IComponentFunction<TData>,
@@ -5593,7 +5596,7 @@ function hookPostInitDom(ctx: IBobrilCtxInternal) {
     const len = hooks.length;
     for (let i = 0; i < len; i++) {
         const hook = hooks[i];
-        const fn = hook.postInitDom;
+        const fn = hook[postInitDom];
         if (fn !== undefined) {
             fn.call(hook, ctx);
         }
@@ -5605,7 +5608,7 @@ function hookPostUpdateDom(ctx: IBobrilCtxInternal) {
     const len = hooks.length;
     for (let i = 0; i < len; i++) {
         const hook = hooks[i];
-        const fn = hook.postUpdateDom;
+        const fn = hook[postUpdateDom];
         if (fn !== undefined) {
             fn.call(hook, ctx);
         }
@@ -5617,7 +5620,7 @@ function hookPostUpdateDomEverytime(ctx: IBobrilCtxInternal) {
     const len = hooks.length;
     for (let i = 0; i < len; i++) {
         const hook = hooks[i];
-        const fn = hook.postUpdateDomEverytime;
+        const fn = hook[postUpdateDomEverytime];
         if (fn !== undefined) {
             fn.call(hook, ctx);
         }
@@ -5773,7 +5776,7 @@ export function useEffect(callback: EffectCallback, deps?: DependencyList): void
 
 class LayoutEffectHook extends CommonEffectHook {
     postInitDom(ctx: IBobrilCtxInternal) {
-        this.postUpdateDomEverytime(ctx);
+        this[postUpdateDomEverytime].call(this, ctx);
     }
 
     postUpdateDomEverytime(ctx: IBobrilCtxInternal) {
