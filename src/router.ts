@@ -10,12 +10,12 @@ import {
     assign,
     init,
     IBobrilStyles,
-    style,
     postEnhance,
     IDataWithChildren,
     preventClickingSpree,
     getDomNode,
 } from "./core";
+import { style } from "./cssInJs";
 import { isArray, isFunction, isObject } from "./isFunc";
 import { newHashObj, noop } from "./localHelpers";
 

@@ -1,3 +1,5 @@
+// PureFuncs: isNumber, isString, isBoolean, isFunction, isObject, isArray
+
 export function isNumber(val: any): val is number {
     return typeof val == "number";
 }

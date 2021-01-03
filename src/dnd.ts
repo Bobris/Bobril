@@ -17,8 +17,8 @@ import {
     pointerRevalidateEventName,
     preventDefault,
     removeRoot,
-    selectorStyleDef,
 } from "./core";
+import { selectorStyleDef } from "./cssInJs";
 import { isString } from "./isFunc";
 import { newHashObj } from "./localHelpers";
 
