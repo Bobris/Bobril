@@ -1,4 +1,3 @@
-import { Thenable } from "./asap";
 import {
     IBobrilCtx,
     IBobrilComponent,
@@ -64,7 +63,7 @@ export interface IRouteTransition {
     distance?: number;
 }
 
-export type IRouteCanResult = boolean | Thenable<boolean> | IRouteTransition | Thenable<IRouteTransition>;
+export type IRouteCanResult = boolean | IRouteTransition | PromiseLike<boolean | IRouteTransition>;
 
 export interface IRouteHandlerData {
     activeRouteHandler: () => IBobrilChildren;
@@ -125,7 +124,7 @@ function replace(path: string, inApp: boolean) {
 
 function pop(distance: number) {
     myAppHistoryDeepness -= distance;
-    waitingForPopHashChange = setTimeout(emitOnHashChange, 50);
+    waitingForPopHashChange = (setTimeout(emitOnHashChange, 50) as unknown) as number;
     window.history.go(-distance);
 }
 
@@ -584,8 +583,6 @@ function doAction(transition: IRouteTransition) {
     invalidate();
 }
 
-declare var Promise: any;
-
 function nextIteration(): void {
     while (true) {
         if (transitionState >= 0 && transitionState < activeRoutes.length) {
@@ -684,7 +681,7 @@ function nextIteration(): void {
             if (!fn) continue;
             let res = fn.call(comp, currentTransition!);
             if (res === true) continue;
-            Promise.resolve(res)
+            Promise.resolve<boolean | IRouteTransition>(res)
                 .then((resp: boolean | IRouteTransition) => {
                     if (resp === true) {
                     } else if (resp === false) {
