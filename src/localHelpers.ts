@@ -17,3 +17,7 @@ export const hOP = Object.prototype.hasOwnProperty;
 export function assert(shouldBeTrue: boolean, messageIfFalse?: string) {
     if (DEBUG && !shouldBeTrue) throw Error(messageIfFalse || "assertion failed");
 }
+
+export function newMap<K, V>(): Map<K, V> {
+    return new Map();
+}

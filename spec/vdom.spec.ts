@@ -22,25 +22,6 @@ describe("updateElement", () => {
         expectInsensitive((<HTMLElement>r.element).outerHTML, '<divstyle="font-size:10px"></div>');
     });
 
-    it("set style by string", () => {
-        var r = b.createNode({ tag: "div", style: "font-size:10px" }, undefined, document.createElement("div"), null);
-        expectInsensitive((<HTMLElement>r.element).outerHTML, '<divstyle="font-size:10px"></div>');
-    });
-
-    it("update style from string to object", () => {
-        var scope = document.createElement("div");
-        var r = b.createNode({ tag: "div", style: "font-size:5px" }, undefined, scope, null);
-        r = b.updateNode({ tag: "div", style: { fontSize: "10px" } }, r, scope, null, 1e6);
-        expectInsensitive((<HTMLElement>r.element).outerHTML, '<divstyle="font-size:10px"></div>');
-    });
-
-    it("update style from object to string", () => {
-        var scope = document.createElement("div");
-        var r = b.createNode({ tag: "div", style: { fontSize: "5px" } }, undefined, scope, null);
-        r = b.updateNode({ tag: "div", style: "font-size:10px" }, r, scope, null, 1e6);
-        expectInsensitive((<HTMLElement>r.element).outerHTML, '<divstyle="font-size:10px"></div>');
-    });
-
     it("update style by removing property", () => {
         var scope = document.createElement("div");
         var r = b.createNode({ tag: "div", style: { fontSize: "10px", color: "black" } }, undefined, scope, null);

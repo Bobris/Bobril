@@ -1,5 +1,4 @@
 import * as b from "../index";
-import { createMediaQuery } from "../index";
 
 describe("styles", () => {
     it("can declare merged style", () => {
@@ -35,10 +34,13 @@ describe("styles", () => {
         expect(document.body.innerHTML).toContain("I must be red 42");
     });
 
-    it("can apply mutiple styles", () => {
+    it("can apply multiple styles", () => {
         const s1 = b.styleDef({ color: "red" });
         const s2 = b.styleDef({ backgroundColor: "blue" });
         b.init(() => <div style={[s1, s2]} />);
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain(s1);
+        expect(document.body.innerHTML).toContain(s2);
     });
 
     describe("keyframes", () => {
@@ -57,13 +59,116 @@ describe("styles", () => {
         });
     });
 
+    describe("dynamic style", () => {
+        afterEach(() => {
+            b.init(() => undefined);
+            b.syncUpdate();
+        });
+
+        it("basic", () => {
+            b.init(() => (
+                <div
+                    style={() => {
+                        return { color: "blue" };
+                    }}
+                ></div>
+            ));
+            b.syncUpdate();
+            expect(document.body.innerHTML).toContain("color: blue");
+        });
+
+        it("basic changes", () => {
+            var c = "green";
+            var ctx: b.IBobrilCtx | undefined;
+            var r1 = 0;
+            var r2 = 0;
+            b.init(() => {
+                r1++;
+                return (
+                    <div
+                        style={() => {
+                            r2++;
+                            ctx = b.getCurrentCtx();
+                            return { color: c };
+                        }}
+                    ></div>
+                );
+            });
+            b.syncUpdate();
+            expect([r1, r2]).toEqual([1, 1]);
+            expect(document.body.innerHTML).toContain("color: green");
+            c = "red";
+            b.invalidate();
+            b.syncUpdate();
+            expect([r1, r2]).toEqual([2, 2]);
+            expect(document.body.innerHTML).toContain("color: red");
+            c = "blue";
+            b.invalidate(ctx);
+            b.syncUpdate();
+            expect([r1, r2]).toEqual([2, 3]);
+            expect(document.body.innerHTML).toContain("color: blue");
+        });
+
+        it("supports hooks", () => {
+            var p: b.IProp<number>;
+            b.init(() => {
+                return (
+                    <div
+                        style={() => {
+                            p = b.useState(0);
+                            return { border: p() };
+                        }}
+                    ></div>
+                );
+            });
+            b.syncUpdate();
+            expect(document.body.innerHTML).toContain("border: 0px");
+            p!(1);
+            b.syncUpdate();
+            expect(document.body.innerHTML).toContain("border: 1px");
+        });
+
+        it("supports events", () => {
+            var ref = { current: undefined };
+            b.init(() => {
+                return (
+                    <div
+                        ref={ref}
+                        style={() => {
+                            var p = b.useState(0);
+                            b.useEvents({
+                                onClick: (ev) => p(ev.x),
+                            });
+                            return { border: p() };
+                        }}
+                    ></div>
+                );
+            });
+            b.syncUpdate();
+            expect(document.body.innerHTML).toContain("border: 0px");
+            b.bubble(ref.current, "onClick", {
+                x: 1,
+                y: 0,
+                alt: false,
+                button: 0,
+                cancelable: true,
+                count: 1,
+                ctrl: false,
+                meta: false,
+                shift: false,
+            });
+            b.syncUpdate();
+            expect(document.body.innerHTML).toContain("border: 1px");
+        });
+    });
+
     describe("media query", () => {
         it("basic usage with string definition", () => {
             const style = b.styleDef({ opacity: 0 });
             b.mediaQueryDef("only screen (min-width: 1200px)", {
                 [style]: {
-                    opacity: 1
-                }
+                    opacity: 1,
+                },
             });
             b.syncUpdate();
             expect(document.head.innerHTML).toContain("only screen (min-width: 1200px)");
@@ -72,7 +177,8 @@ describe("styles", () => {
         it("complex query with builder", () => {
             const style = b.styleDef({ opacity: 0 });
             b.mediaQueryDef(
-                createMediaQuery()
+                b
+                    .createMediaQuery()
                     .rule("only", "screen")
                     .and({ type: "max-width", value: 1200, unit: "px" })
                     .and({ type: "min-width", value: 768, unit: "px" })
@@ -82,8 +188,8 @@ describe("styles", () => {
                     .build(),
                 {
                     [style]: {
-                        opacity: 1
-                    }
+                        opacity: 1,
+                    },
                 }
             );
             b.syncUpdate();
@@ -96,27 +202,29 @@ describe("styles", () => {
             const style = b.styleDef({ opacity: 0 });
             const styleTwo = b.styleDef({ opacity: 0 });
             b.mediaQueryDef(
-                createMediaQuery()
+                b
+                    .createMediaQuery()
                     .rule("only", "screen")
                     .and({ type: "max-width", value: 1200, unit: "px" })
                     .and({ type: "min-width", value: 768, unit: "px" })
                     .build(),
                 {
                     [style]: {
-                        opacity: 1
-                    }
+                        opacity: 1,
+                    },
                 }
             );
             b.mediaQueryDef(
-                createMediaQuery()
+                b
+                    .createMediaQuery()
                     .rule("only", "screen")
                     .and({ type: "max-width", value: 1200, unit: "px" })
                     .and({ type: "min-width", value: 768, unit: "px" })
                     .build(),
                 {
                     [styleTwo]: {
-                        opacity: 1
-                    }
+                        opacity: 1,
+                    },
                 }
             );
             b.syncUpdate();

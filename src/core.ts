@@ -175,7 +175,7 @@ export interface IBobrilNodeCommon<T = any> {
     tag?: string;
     key?: string;
     className?: string;
-    style?: any;
+    style?: Record<string, string | number | undefined> | (() => IBobrilStyle);
     attrs?: IBobrilAttributes;
     children?: IBobrilChildren;
     ref?: RefType;
@@ -201,7 +201,8 @@ export interface IBobrilCacheNode<T = any> {
     readonly tag: string | undefined;
     readonly key: string | undefined;
     readonly className: string | undefined;
-    readonly style: any;
+    readonly style: Record<string, string | undefined> | undefined;
+    readonly ctxStyle: IBobrilCtx<IBobrilStyles> | undefined;
     readonly attrs: IBobrilAttributes | undefined;
     readonly children: IBobrilCacheChildren;
     readonly ref: RefType | undefined;
@@ -832,15 +833,65 @@ export function createNode(
     if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
     if (inSvgForeignObject) inSvg = true;
     if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
-    if (c.style) updateElementStyle(<HTMLElement>el, c.style, undefined);
-    var className = c.className;
-    if (className) setClassName(<HTMLElement>el, className);
+    createNodeStyle(el as HTMLElement, c.style, c.className, c);
     inSvg = backupInSvg;
     inNotFocusable = backupInNotFocusable;
     pushInitCallback(c);
     if (DEBUG && component && measureFullComponentDuration)
         window.performance.measure(`${component.id} create`, componentStartMark!);
     return c;
+}
+
+function createNodeStyle(
+    el: HTMLElement,
+    newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
+    newClass: string | undefined,
+    c: IBobrilCacheNode
+) {
+    if (isFunction(newStyle)) {
+        assert(newClass === undefined);
+        var appliedStyle = applyDynamicStyle(newStyle, c);
+        newStyle = appliedStyle.style as Record<string, string | number | undefined> | undefined;
+        newClass = appliedStyle.className;
+    }
+    if (newStyle) updateElementStyle(el, newStyle, undefined);
+    if (newClass) setClassName(el, newClass);
+}
+
+function applyDynamicStyle(factory: () => IBobrilStyles, c: IBobrilCacheNode): IBobrilNode {
+    var ctxStyle = c.ctxStyle;
+    var backupCtx = currentCtx;
+    if (ctxStyle === undefined) {
+        ctxStyle = new BobrilCtx(factory, c);
+        (c as IBobrilCacheNodeUnsafe).ctxStyle = ctxStyle;
+        currentCtx = ctxStyle;
+        if (beforeRenderCallback !== noop) beforeRenderCallback(ctxStyle, RenderPhase.Create);
+    } else {
+        currentCtx = ctxStyle;
+        if (beforeRenderCallback !== noop) beforeRenderCallback(ctxStyle, RenderPhase.Update);
+    }
+    hookId = 0;
+    var s = factory();
+    hookId = -1;
+    currentCtx = backupCtx;
+    return style({}, s);
+}
+
+function destroyDynamicStyle(c: IBobrilCacheNode) {
+    let ctxStyle = c.ctxStyle;
+    if (ctxStyle !== undefined) {
+        currentCtx = ctxStyle;
+        if (beforeRenderCallback !== noop) beforeRenderCallback(ctxStyle, RenderPhase.Destroy);
+        let disposables = ctxStyle.disposables;
+        if (isArray(disposables)) {
+            for (let i = disposables.length; i-- > 0; ) {
+                let d = disposables[i]!;
+                if (isFunction(d)) d(ctxStyle);
+                else d.dispose();
+            }
+        }
+        currentCtx = undefined;
+    }
 }
 
 function normalizeNode(n: any): IBobrilNode | undefined {
@@ -892,6 +943,7 @@ function destroyNode(c: IBobrilCacheNode) {
         }
         currentCtx = undefined;
     }
+    destroyDynamicStyle(c);
     if (c.tag === "@") {
         removeNodeRecursive(c);
     }
@@ -1001,6 +1053,7 @@ function finishUpdateNodeWithoutChange(c: IBobrilCacheNode, createInto: Element,
     }
     pushUpdateEverytimeCallback(c);
 }
+
 export function updateNode(
     n: IBobrilNode,
     c: IBobrilCacheNode,
@@ -1181,13 +1234,7 @@ export function updateNode(
                     c.attrs || emptyObject,
                     inNotFocusable
                 );
-            updateElementStyle(<HTMLElement>el, n.style, c.style);
-            (c as IBobrilCacheNodeUnsafe).style = n.style;
-            var className = n.className;
-            if (className !== c.className) {
-                setClassName(el, className || "");
-                (c as IBobrilCacheNodeUnsafe).className = className;
-            }
+            updateNodeStyle(el as HTMLElement, n.style, n.className, c);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
             if (DEBUG && component && measureFullComponentDuration)
@@ -1204,6 +1251,28 @@ export function updateNode(
     if (DEBUG && component && measureFullComponentDuration)
         window.performance.measure(`${component.id} update`, componentStartMark!);
     return r;
+}
+
+function updateNodeStyle(
+    el: HTMLElement,
+    newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
+    newClass: string | undefined,
+    c: IBobrilCacheNode
+) {
+    if (isFunction(newStyle)) {
+        assert(newClass === undefined);
+        var appliedStyle = applyDynamicStyle(newStyle, c);
+        newStyle = appliedStyle.style as Record<string, string | number | undefined> | undefined;
+        newClass = appliedStyle.className;
+    } else {
+        destroyDynamicStyle(c);
+    }
+    updateElementStyle(el, newStyle, c.style);
+    (c as IBobrilCacheNodeUnsafe).style = newStyle as Record<string, string | undefined>;
+    if (newClass !== c.className) {
+        setClassName(el, newClass || "");
+        (c as IBobrilCacheNodeUnsafe).className = newClass;
+    }
 }
 
 export function getDomNode(c: IBobrilCacheNode | undefined): Node | null {
@@ -1921,21 +1990,27 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
                 (<any>ctx)[ctxDeepness],
                 true
             );
-        } else if (isArray(node.children)) {
-            var backupInSvg = inSvg;
-            var backupInNotFocusable = inNotFocusable;
-            if (inNotFocusable && focusRootTop === node) inNotFocusable = false;
-            if (node.tag === "svg") inSvg = true;
-            else if (inSvg && node.tag === "foreignObject") inSvg = false;
-            var thisElement = node.element;
-            if (thisElement != undefined) {
-                selectedUpdate(node.children, <Element>thisElement, null);
-            } else {
-                selectedUpdate(node.children, element, findNextNode(cache, i, len, createBefore));
+        } else {
+            ctx = node.ctxStyle;
+            if (ctx != null && (<any>ctx)[ctxInvalidated] >= frameCounter) {
+                updateNodeStyle(node.element as HTMLElement, ctx.data, undefined, node);
             }
-            pushUpdateEverytimeCallback(node);
-            inSvg = backupInSvg;
-            inNotFocusable = backupInNotFocusable;
+            if (isArray(node.children)) {
+                var backupInSvg = inSvg;
+                var backupInNotFocusable = inNotFocusable;
+                if (inNotFocusable && focusRootTop === node) inNotFocusable = false;
+                if (node.tag === "svg") inSvg = true;
+                else if (inSvg && node.tag === "foreignObject") inSvg = false;
+                var thisElement = node.element;
+                if (thisElement != undefined) {
+                    selectedUpdate(node.children, <Element>thisElement, null);
+                } else {
+                    selectedUpdate(node.children, element, findNextNode(cache, i, len, createBefore));
+                }
+                pushUpdateEverytimeCallback(node);
+                inSvg = backupInSvg;
+                inNotFocusable = backupInNotFocusable;
+            }
         }
     }
 }
@@ -2192,8 +2267,35 @@ export function bubble<T extends EventNames>(
     const prevCtx = currentCtxWithEvents;
     while (node) {
         var c = node.component;
+        var ctx = node.ctxStyle;
+        if (ctx) {
+            currentCtxWithEvents = ctx;
+            if ((((ctx as IBobrilCtxInternal).$hookFlags | 0) & hasEvents) === hasEvents) {
+                var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+                for (var i = 0, l = hooks.length; i < l; i++) {
+                    var h = hooks[i];
+                    if (h instanceof EventsHook) {
+                        var m = (h.events as any)[name];
+                        if (m !== undefined) {
+                            const eventResult = +m.call(ctx, param) as EventResult;
+                            if (eventResult == EventResult.HandledPreventDefault) {
+                                currentCtxWithEvents = prevCtx;
+                                return ctx;
+                            }
+                            if (eventResult == EventResult.HandledButRunDefault) {
+                                currentCtxWithEvents = prevCtx;
+                                return undefined;
+                            }
+                            if (eventResult == EventResult.NotHandledPreventDefault) {
+                                res = ctx;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (c) {
-            var ctx = node.ctx!;
+            ctx = node.ctx!;
             currentCtxWithEvents = ctx;
             if ((((ctx as IBobrilCtxInternal).$hookFlags | 0) & hasEvents) === hasEvents) {
                 var hooks = (ctx as IBobrilCtxInternal).$hooks!;
@@ -2321,9 +2423,38 @@ function broadcastCapturedEventToNode(
     if (!node) return undefined;
     let res: IBobrilCtx | undefined;
     var c = node.component;
+    var ctx = node.ctxStyle;
+    if (ctx) {
+        if (((ctx as IBobrilCtxInternal).$hookFlags & hasCaptureEvents) === hasCaptureEvents) {
+            var hooks = (ctx as IBobrilCtxInternal).$hooks!;
+            var prevCtx = currentCtxWithEvents;
+            currentCtxWithEvents = ctx;
+            for (var i = 0, l = hooks.length; i < l; i++) {
+                var h = hooks[i];
+                if (h instanceof CaptureEventsHook) {
+                    var m = (h.events as any)[name];
+                    if (m !== undefined) {
+                        const eventResult = +m.call(ctx, param) as EventResult;
+                        if (eventResult == EventResult.HandledPreventDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return ctx;
+                        }
+                        if (eventResult == EventResult.HandledButRunDefault) {
+                            currentCtxWithEvents = prevCtx;
+                            return undefined;
+                        }
+                        if (eventResult == EventResult.NotHandledPreventDefault) {
+                            res = ctx;
+                        }
+                    }
+                }
+            }
+            currentCtxWithEvents = prevCtx;
+        }
+    }
     if (c) {
-        var ctx = node.ctx!;
-        if ((((ctx as IBobrilCtxInternal).$hookFlags | 0) & hasCaptureEvents) === hasCaptureEvents) {
+        ctx = node.ctx!;
+        if (((ctx as IBobrilCtxInternal).$hookFlags & hasCaptureEvents) === hasCaptureEvents) {
             var hooks = (ctx as IBobrilCtxInternal).$hooks!;
             var prevCtx = currentCtxWithEvents;
             currentCtxWithEvents = ctx;
@@ -4094,6 +4225,8 @@ function getStringPropertyDescriptors(obj: any): Map<string, PropertyDescriptor>
     return props;
 }
 
+const jsxSimpleProps = new Set("key className component data children".split(" "));
+
 export function createElement<T>(
     name: string | ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T>,
     data?: T,
@@ -4123,34 +4256,33 @@ export function createElement(name: any, props: any): IBobrilNode {
         for (var n in props) {
             if (!hOP.call(props, n)) continue;
             var propValue = props[n];
-            if (n === "style") {
-                style(res, propValue);
-                continue;
-            }
-            if (n === "ref") {
+            if (jsxSimpleProps.has(n)) {
+                (res as any)[n] = propValue;
+            } else if (n === "style") {
+                if (isFunction(propValue)) {
+                    (res as any)[n] = propValue;
+                } else {
+                    style(res, propValue);
+                }
+            } else if (n === "ref") {
                 if (isString(propValue)) {
                     assert(getCurrentCtx() != undefined);
                     res.ref = [getCurrentCtx()!, propValue];
                 } else res.ref = propValue;
-                continue;
-            }
-            if (n === "key" || n === "className" || n === "component" || n === "data" || n === "children") {
-                (res as any)[n] = propValue;
-                continue;
-            }
-            if (n.startsWith("on") && isFunction(propValue)) {
+            } else if (n.startsWith("on") && isFunction(propValue)) {
                 if (component == undefined) {
-                    component = {};
+                    component = newHashObj();
                     res.component = component;
                 }
                 (component as any)[n] = propValue.call.bind(propValue);
                 continue;
+            } else {
+                if (attrs == undefined) {
+                    attrs = newHashObj();
+                    res.attrs = attrs;
+                }
+                attrs[n] = propValue;
             }
-            if (attrs == undefined) {
-                attrs = {};
-                res.attrs = attrs;
-            }
-            attrs[n] = propValue;
         }
 
         return res;
@@ -4798,7 +4930,7 @@ export interface IDataWithChildren {
 
 interface IGenericElementAttributes extends IBobrilEvents {
     children?: IBobrilChildren;
-    style?: IBobrilStyles;
+    style?: IBobrilStyles | (() => IBobrilStyles);
     [name: string]: any;
 }
 

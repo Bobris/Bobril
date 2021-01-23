@@ -14,7 +14,7 @@ import {
     preventClickingSpree,
     getDomNode,
 } from "./core";
-import { style } from "./cssInJs";
+import { style, styleDef } from "./cssInJs";
 import { isArray, isFunction, isObject } from "./isFunc";
 import { newHashObj, noop } from "./localHelpers";
 
@@ -481,6 +481,8 @@ export function urlOfRoute(name: string, params?: Params): string {
     return name;
 }
 
+const activeStyleDef = styleDef("active");
+
 export function Link(data: {
     name: string;
     params?: Params;
@@ -505,7 +507,7 @@ export function Link(data: {
         isActive(data.name, data.params)
             ? data.activeStyle != undefined
                 ? data.activeStyle
-                : [data.style, "active"]
+                : [data.style, activeStyleDef]
             : data.style
     );
 }
@@ -517,8 +519,8 @@ export function link(node: IBobrilNode, name: string, params?: Params): IBobrilN
     postEnhance(node, {
         render(ctx: any, me: IBobrilNode) {
             let data = ctx.data;
-            me.attrs = me.attrs || {};
             if (me.tag === "a") {
+                me.attrs = me.attrs || {};
                 me.attrs.href = urlOfRoute(data.routeName, data.routeParams);
             }
             me.className = me.className || "";

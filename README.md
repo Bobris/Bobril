@@ -43,6 +43,7 @@ Features:
 -   automatic passing of global configuration/context to children
 -   automatic adding of "px" to length like inline style
 -   reference to children nodes ala React
+-   style as function which behaves like mini component with its own context
 -   OnChange event and value attribute normalization
 -   Key events
 -   Mouse, Touch Events

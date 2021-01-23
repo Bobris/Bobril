@@ -40,6 +40,34 @@ function polyfill(type: any, method: string, value: Function): void {
     }
 }
 
+if (new Set([0]).size === 0) {
+    const BuiltinSet = Set;
+    Set = function Set(iterable: any[] | null | undefined) {
+        const set = new BuiltinSet();
+        if (iterable) {
+            iterable.forEach(set.add, set);
+        }
+        return set;
+    } as any;
+    (Set as any).prototype = BuiltinSet.prototype;
+    Set.prototype.constructor = Set;
+}
+
+if (new Map([[0, 0]]).size === 0) {
+    const BuiltinMap = Map;
+    Map = function Map(iterable: any[] | null | undefined) {
+        const map = new BuiltinMap();
+        if (iterable) {
+            iterable.forEach(function (this: Map<any, any>, v: [any, any]) {
+                this.set(v[0], v[1]);
+            }, map);
+        }
+        return map;
+    } as any;
+    (Map as any).prototype = BuiltinMap.prototype;
+    Map.prototype.constructor = Map;
+}
+
 polyfill(Array, "find", function (this: any, pred: Function): any {
     var o = Object(this);
     var len = o.length >>> 0;

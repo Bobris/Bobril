@@ -16,26 +16,11 @@ export type IBobrilShimStyleMapping = Map<string, (style: any, value: any, oldNa
 
 var mapping: IBobrilShimStyleMapping = new Map();
 
-var isUnitlessNumber: { [name: string]: true } = {
-    boxFlex: true,
-    boxFlexGroup: true,
-    columnCount: true,
-    flex: true,
-    flexGrow: true,
-    flexNegative: true,
-    flexPositive: true,
-    flexShrink: true,
-    fontWeight: true,
-    lineClamp: true,
-    lineHeight: true,
-    opacity: true,
-    order: true,
-    orphans: true,
-    strokeDashoffset: true,
-    widows: true,
-    zIndex: true,
-    zoom: true,
-};
+var isUnitlessNumber: ReadonlySet<string> = new Set(
+    "boxFlex boxFlexGroup columnCount flex flexGrow flexNegative flexPositive flexShrink fontWeight lineClamp lineHeight opacity order orphans strokeDashoffset widows zIndex zoom".split(
+        " "
+    )
+);
 
 function renamer(newName: string) {
     return (style: any, value: any, oldName: string) => {
@@ -68,25 +53,23 @@ function shimStyle(newValue: any) {
         if (vi === undefined) continue; // don't want to map undefined
         if (mi === undefined) {
             if (DEBUG) {
-                if (/-/.test(ki) && window.console && console.warn)
+                if (/-/.test(ki))
                     console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
             }
             if (testPropExistence(ki)) {
-                mi = isUnitlessNumber[ki] === true ? noop : pxAdder;
+                mi = isUnitlessNumber.has(ki) ? noop : pxAdder;
             } else {
                 var titleCaseKi = ki.replace(/^\w/, (match) => match.toUpperCase());
                 for (var j = 0; j < vendors.length; j++) {
                     if (testPropExistence(vendors[j] + titleCaseKi)) {
-                        mi = (isUnitlessNumber[ki] === true ? renamer : renamerPx)(vendors[j] + titleCaseKi);
+                        mi = (isUnitlessNumber.has(ki) ? renamer : renamerPx)(vendors[j] + titleCaseKi);
                         break;
                     }
                 }
                 if (mi === undefined) {
-                    mi = isUnitlessNumber[ki] === true ? noop : pxAdder;
+                    mi = isUnitlessNumber.has(ki) ? noop : pxAdder;
                     if (
                         DEBUG &&
-                        window.console &&
-                        console.warn &&
                         ["overflowScrolling", "touchCallout"].indexOf(ki) < 0 // whitelist rare but useful
                     )
                         console.warn("Style property " + ki + " is not supported in this browser");
@@ -98,55 +81,48 @@ function shimStyle(newValue: any) {
     }
 }
 
-function removeProperty(s: any, name: string) {
-    (<any>s)[name] = "";
+function removeStyleProperty(s: CSSStyleDeclaration, name: string) {
+    s.removeProperty(name);
 }
 
-function setStyleProperty(s: any, name: string, value: string) {
-    if (isString(value)) {
-        let len = value.length;
-        if (len > 11 && value.substr(len - 11, 11) === " !important") {
-            s.setProperty(hyphenateStyle(name), value.substr(0, len - 11), "important");
-            return;
-        }
+function setStyleProperty(s: CSSStyleDeclaration, name: string, value: string) {
+    let len = value.length;
+    if (len > 11 && value.substr(len - 11, 11) === " !important") {
+        s.setProperty(hyphenateStyle(name), value.substr(0, len - 11), "important");
+        return;
     }
-    s[name] = value;
+    s.setProperty(hyphenateStyle(name), value);
 }
 
-export function updateElementStyle(el: HTMLElement, newStyle: any, oldStyle: any) {
+export function updateElementStyle(
+    el: HTMLElement,
+    newStyle: Record<string, string | number | undefined> | undefined,
+    oldStyle: Record<string, string | undefined> | undefined
+) {
     var s = el.style;
-    if (isObject(newStyle)) {
+    if (newStyle !== undefined) {
         shimStyle(newStyle);
         var rule: string;
-        if (isObject(oldStyle)) {
+        if (oldStyle !== undefined) {
             for (rule in oldStyle) {
                 if (oldStyle[rule] === undefined) continue;
-                if (newStyle[rule] === undefined) removeProperty(s, rule);
+                if (newStyle[rule] === undefined) removeStyleProperty(s, rule);
             }
             for (rule in newStyle) {
                 var v = newStyle[rule];
-                if (v !== undefined) {
-                    if (oldStyle[rule] !== v) setStyleProperty(s, rule, v);
-                } else if (oldStyle[rule] !== undefined) {
-                    removeProperty(s, rule);
-                }
+                if (v !== undefined && oldStyle[rule] !== v) setStyleProperty(s, rule, v as string);
             }
         } else {
-            if (oldStyle) s.cssText = "";
             for (rule in newStyle) {
                 var v = newStyle[rule];
-                if (v !== undefined) setStyleProperty(s, rule, v);
+                if (v !== undefined) setStyleProperty(s, rule, v as string);
             }
         }
-    } else if (newStyle) {
-        s.cssText = newStyle;
     } else {
-        if (isObject(oldStyle)) {
+        if (oldStyle !== undefined) {
             for (rule in oldStyle) {
-                removeProperty(s, rule);
+                removeStyleProperty(s, rule);
             }
-        } else if (oldStyle) {
-            s.cssText = "";
         }
     }
 }
@@ -255,7 +231,7 @@ function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): v
         for (let i = 0; i < style.length; i++) {
             flattenStyle(cur, curPseudo, style[i], undefined);
         }
-    } else if (typeof style === "object") {
+    } else if (isObject(style)) {
         for (let key in style) {
             if (!hOP.call(style, key)) continue;
             let val = style[key];
@@ -499,7 +475,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
                 s = sd.realName!;
             }
             if (className == undefined) className = s;
-            else className = className + " " + s;
+            else className += " " + s;
         } else if (isArray(s)) {
             if (ca.length > i + 1) {
                 if (stack == undefined) stack = [];
@@ -510,12 +486,12 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
             i = 0;
             continue;
         } else {
-            if (inlineStyle == undefined) inlineStyle = {};
+            if (inlineStyle == undefined) inlineStyle = newHashObj();
             for (let key in s) {
                 if (hOP.call(s, key)) {
                     let val = (<any>s)[key];
                     if (isFunction(val)) val = val();
-                    inlineStyle[key] = val;
+                    (inlineStyle as any)[key] = val;
                 }
             }
         }
@@ -529,9 +505,15 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
 const uppercasePattern = /([A-Z])/g;
 const msPattern = /^ms-/;
 
+const hyphenateCache = new Map([["cssFloat", "float"]]);
+
 function hyphenateStyle(s: string): string {
-    if (s === "cssFloat") return "float";
-    return s.replace(uppercasePattern, "-$1").toLowerCase().replace(msPattern, "-ms-");
+    var res = hyphenateCache.get(s);
+    if (res === undefined) {
+        res = s.replace(uppercasePattern, "-$1").toLowerCase().replace(msPattern, "-ms-");
+        hyphenateCache.set(s, res);
+    }
+    return res;
 }
 
 function inlineStyleToCssDeclaration(style: any): string {
