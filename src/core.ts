@@ -61,10 +61,6 @@ export interface IEventParam {
 export interface IBubblingAndBroadcastEvents {
     onInput?(event: IInputEvent): GenericEventResult;
 
-    onKeyDown?(event: IKeyDownUpEvent): GenericEventResult;
-    onKeyUp?(event: IKeyDownUpEvent): GenericEventResult;
-    onKeyPress?(event: IKeyPressEvent): GenericEventResult;
-
     /// called after click or tap
     onClick?(event: IBobrilMouseEvent): GenericEventResult;
     onDoubleClick?(event: IBobrilMouseEvent): GenericEventResult;
@@ -2929,7 +2925,7 @@ function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: numbe
 }
 
 export function select(node: IBobrilCacheNode, start: number, end = start): void {
-    (<any>node.element).setSelectionRange(
+    (node.element as HTMLInputElement).setSelectionRange(
         Math.min(start, end),
         Math.max(start, end),
         start > end ? "backward" : "forward"
@@ -2953,69 +2949,6 @@ for (var i = 0; i < events.length; i++) addEvent(events[i]!, 10, emitOnChange);
 
 var mouseEvents = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel"];
 for (var i = 0; i < mouseEvents.length; i++) addEvent(mouseEvents[i]!, 2, emitOnMouseChange);
-
-// Bobril.OnKey
-
-export interface IKeyDownUpEvent extends IEventParam {
-    shift: boolean;
-    ctrl: boolean;
-    alt: boolean;
-    meta: boolean;
-    which: number;
-}
-
-export interface IKeyPressEvent extends IEventParam {
-    charCode: number;
-}
-
-function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
-    return {
-        target: undefined,
-        shift: ev.shiftKey,
-        ctrl: ev.ctrlKey,
-        alt: ev.altKey,
-        meta: ev.metaKey || false,
-        which: ev.which || ev.keyCode,
-    } as any;
-}
-
-function emitOnKeyDown(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
-    if (!node) return false;
-    var param: IKeyDownUpEvent = buildParam(ev);
-    if (bubble(node, "onKeyDown", param)) {
-        preventDefault(ev);
-        return true;
-    }
-    return false;
-}
-
-function emitOnKeyUp(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
-    if (!node) return false;
-    var param: IKeyDownUpEvent = buildParam(ev);
-    if (bubble(node, "onKeyUp", param)) {
-        preventDefault(ev);
-        return true;
-    }
-    return false;
-}
-function emitOnKeyPress(ev: KeyboardEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
-    if (!node) return false;
-    if (
-        ev.which === 0 || // don't want special key presses
-        ev.altKey // Ignore Alt+num in Firefox
-    )
-        return false;
-    var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode } as any;
-    if (bubble(node, "onKeyPress", param)) {
-        preventDefault(ev);
-        return true;
-    }
-    return false;
-}
-
-addEvent("keydown", 50, emitOnKeyDown);
-addEvent("keyup", 50, emitOnKeyUp);
-addEvent("keypress", 50, emitOnKeyPress);
 
 // Bobril.Mouse
 
@@ -3525,30 +3458,8 @@ function createHandler(handlerName: string, allButtons?: boolean) {
 }
 
 export function nodeOnPoint(x: number, y: number): IBobrilCacheNode | undefined {
-    var target = <HTMLElement>document.elementFromPoint(x, y);
-    var node = deref(target);
-    return node;
+    return deref(document.elementFromPoint(x, y) as HTMLElement);
 }
-
-function handleSelectStart(ev: any, _target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
-    while (node) {
-        var s = node.style;
-        if (s) {
-            var us = s.userSelect;
-            if (us === "none") {
-                preventDefault(ev);
-                return true;
-            }
-            if (us) {
-                break;
-            }
-        }
-        node = node.parent;
-    }
-    return false;
-}
-
-addEvent5("selectstart", handleSelectStart);
 
 // click must have higher priority over onchange detection
 addEvent5("^click", createHandler(onClickText));

@@ -195,7 +195,7 @@ function extractParams(pattern: string, path: string): Params | null {
 
 // Returns a version of the given route path with params interpolated.
 // Throws if there is a dynamic segment of the route path for which there is no param.
-function injectParams(pattern: string, params?: Params) {
+export function injectParams(pattern: string, params?: Params) {
     params = params || {};
 
     var splatIndex = 0;

@@ -1,8 +1,30 @@
 # CHANGELOG
 
-## 15.0.0 (In progress)
+## 15.0.0
 
-Clean up repository from old non npm version. Port old tests.
+Breaking change - string styles are not anymore supported `{ tag: 'div', style: 'color: red' }` use objects instead.
+
+Cleaned up repository from old non npm version. Port old tests.
+
+New dynamic styles feature allowing very efficient update of element inline styles and classes.
+
+```tsx
+<div
+    style={() => {
+        let s = b.useStore(0);
+        s((s() + 1) % 101);
+        return { opacity: s() * 0.01 };
+    }}
+>
+    Pulsing
+</div>
+```
+
+Key down up events have `key` property (same meaning as `KeyboardEvent.key`) and is normalized on IE11 and Firefox.
+
+New polyfills for IE11: `new Set(array)`, `new Map(array)`
+
+Router `injectParams` function is exported.
 
 ## 14.18.0
 
