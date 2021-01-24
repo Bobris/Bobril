@@ -11,12 +11,12 @@ import {
     IBobrilStyles,
     postEnhance,
     IDataWithChildren,
-    preventClickingSpree,
     getDomNode,
 } from "./core";
 import { style, styleDef } from "./cssInJs";
 import { isArray, isFunction, isObject } from "./isFunc";
 import { newHashObj, noop } from "./localHelpers";
+import { preventClickingSpree } from "./mouseEvents";
 
 declare var DEBUG: boolean;
 

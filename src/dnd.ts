@@ -4,23 +4,20 @@ import {
     broadcast,
     bubble,
     getDomNode,
-    getMedia,
     IBobrilCacheNode,
     IBobrilChildren,
     IBobrilComponent,
     IBobrilCtx,
     IBobrilNode,
-    IBobrilPointerEvent,
-    ignoreClick,
     invalidate,
-    nodeOnPoint,
-    pointerRevalidateEventName,
     preventDefault,
     removeRoot,
 } from "./core";
 import { selectorStyleDef } from "./cssInJs";
 import { isString } from "./isFunc";
 import { newHashObj } from "./localHelpers";
+import { getMedia } from "./media";
+import { IBobrilPointerEvent, ignoreClick, nodeOnPoint, pointerRevalidateEventName } from "./mouseEvents";
 
 declare var DEBUG: boolean;
 

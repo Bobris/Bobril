@@ -1,8 +1,20 @@
 import { CSSStyles, CSSPseudoStyles, CSSStylesItem, CSSInlineStyles } from "./cssTypes";
-import { getMedia, IBobrilChildren, IBobrilNode, IBobrilStyleDef, IBobrilStyles, invalidate } from "./core";
+import {
+    applyDynamicStyle,
+    destroyDynamicStyle,
+    IBobrilCacheNode,
+    IBobrilCacheNodeUnsafe,
+    IBobrilChildren,
+    IBobrilNode,
+    IBobrilStyleDef,
+    IBobrilStyles,
+    internalSetCssInJsCallbacks,
+    invalidate,
+} from "./core";
 import { assert, hOP, newHashObj, noop } from "./localHelpers";
 import { isArray, isFunction, isNumber, isObject, isString } from "./isFunc";
 import { setBeforeFrame } from "./frameCallbacks";
+import { getMedia } from "./media";
 
 declare var DEBUG: boolean;
 
@@ -94,6 +106,11 @@ function setStyleProperty(s: CSSStyleDeclaration, name: string, value: string) {
     s.setProperty(hyphenateStyle(name), value);
 }
 
+function setClassName(el: Element, className: string, inSvg: boolean) {
+    if (inSvg) el.setAttribute("class", className);
+    else (<HTMLElement>el).className = className;
+}
+
 export function updateElementStyle(
     el: HTMLElement,
     newStyle: Record<string, string | number | undefined> | undefined,
@@ -124,6 +141,46 @@ export function updateElementStyle(
                 removeStyleProperty(s, rule);
             }
         }
+    }
+}
+
+function createNodeStyle(
+    el: HTMLElement,
+    newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
+    newClass: string | undefined,
+    c: IBobrilCacheNode,
+    inSvg: boolean
+) {
+    if (isFunction(newStyle)) {
+        assert(newClass === undefined);
+        var appliedStyle = applyDynamicStyle(newStyle, c);
+        newStyle = appliedStyle.style as Record<string, string | number | undefined> | undefined;
+        newClass = appliedStyle.className;
+    }
+    if (newStyle) updateElementStyle(el, newStyle, undefined);
+    if (newClass) setClassName(el, newClass, inSvg);
+}
+
+function updateNodeStyle(
+    el: HTMLElement,
+    newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
+    newClass: string | undefined,
+    c: IBobrilCacheNode,
+    inSvg: boolean
+) {
+    if (isFunction(newStyle)) {
+        assert(newClass === undefined);
+        var appliedStyle = applyDynamicStyle(newStyle, c);
+        newStyle = appliedStyle.style as Record<string, string | number | undefined> | undefined;
+        newClass = appliedStyle.className;
+    } else {
+        destroyDynamicStyle(c);
+    }
+    updateElementStyle(el, newStyle, c.style);
+    (c as IBobrilCacheNodeUnsafe).style = newStyle as Record<string, string | undefined>;
+    if (newClass !== c.className) {
+        setClassName(el, newClass || "", inSvg);
+        (c as IBobrilCacheNodeUnsafe).className = newClass;
     }
 }
 
@@ -260,8 +317,9 @@ let hasBundledSprites = false;
 let wasSpriteUrlChanged = true;
 
 function beforeFrame() {
-    if (hasBundledSprites && lastDppx != getMedia().dppx) {
-        lastDppx = getMedia().dppx;
+    var currentDppx = getMedia().dppx;
+    if (hasBundledSprites && lastDppx != currentDppx) {
+        lastDppx = currentDppx;
         let newSpriteUrl = bundlePath;
         let newSpriteDppx = 1;
         if (lastDppx > 1) {
@@ -917,3 +975,5 @@ export function setStyleShim(name: string, action: (style: any, value: any, oldN
 }
 
 setStyleShim("float", renamer("cssFloat"));
+
+internalSetCssInJsCallbacks(createNodeStyle, updateNodeStyle, style);

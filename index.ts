@@ -5,6 +5,8 @@ export * from "./src/cssTypes";
 export * from "./src/frameCallbacks";
 export * from "./src/core";
 export * from "./src/keyEvents";
+export * from "./src/mouseEvents";
+export * from "./src/media";
 export * from "./src/router";
 export * from "./src/dnd";
 export * from "./src/mediaQueryBuilder";
