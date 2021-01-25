@@ -4,6 +4,8 @@
 
 Breaking change - string styles are not anymore supported `{ tag: 'div', style: 'color: red' }` use objects instead.
 
+Subtle breaking change/optimization - when tsx components render returns Fragment then it is inlined in vdom.
+
 Cleaned up repository from old non npm version. Port old tests.
 
 New dynamic styles feature allowing very efficient update of element inline styles and classes.
@@ -18,6 +20,15 @@ New dynamic styles feature allowing very efficient update of element inline styl
 >
     Pulsing
 </div>
+```
+
+Tsx components can skip component update by returning constant `b.skipRender`.
+
+```tsx
+function SkipHello(data: { input: string }) {
+    if (data.input == "skip") return b.skipRender;
+    return <Hello input={data.input}></Hello>;
+}
 ```
 
 Key down up events have `key` property (same meaning as `KeyboardEvent.key`) and is normalized on IE11 and Firefox.

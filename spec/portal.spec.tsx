@@ -80,11 +80,9 @@ describe("Portal", () => {
         function Counter(this: b.IBobrilCtx) {
             state = b.useState(1);
             b.useLayoutEffect(() => {
-                var p = b.vdomPath(
-                    ((this.me.children![0] as b.IBobrilCacheNode).children![0] as b.IBobrilCacheNode).element as Node
-                );
-                // root, div, Portal, tag="@", div, Counter, Fragment, text
-                expect(p.length).toBe(8);
+                var p = b.vdomPath(this.me.element as Node);
+                // root, div, Portal, tag="@", div, Counter + text
+                expect(p.length).toBe(6);
             });
             return <>{state()}</>;
         }

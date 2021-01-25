@@ -109,6 +109,8 @@ export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = 
     /// if id of old node is different from new node it is considered completely different so init will be called before render directly
     /// it does prevent calling render method twice on same node
     id?: string;
+    /// original function or component
+    src?: any;
     ctxClass?: ICtxClass<TData>;
     /// called before new node in virtual dom should be created, me members (tag, attrs, children, ...) could be modified, ctx is initialized to { data: me.data||{}, me: me, cfg: fromParent }
     init?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode): void;
@@ -3569,6 +3571,8 @@ export function createElement(name: any, props: any): IBobrilNode {
     }
 }
 
+export const skipRender = { tag: "-" } as IBobrilNode;
+
 export interface IFragmentData extends IBobrilEvents {
     children: IBobrilChildren;
     key?: string;
@@ -3653,7 +3657,16 @@ export interface IComponentFunction<TData extends Object = {}> extends Function 
 
 function forwardRender(m: Function) {
     return (ctx: IBobrilCtx, me: IBobrilNode, _oldMe?: IBobrilCacheNode) => {
-        me.children = m.call(ctx, ctx.data);
+        var res = m.call(ctx, ctx.data);
+        if (res === skipRender) {
+            me.tag = "-";
+            return;
+        }
+        var resComponent = res?.component?.src;
+        if (resComponent === Fragment) {
+            res = res.data?.children;
+        }
+        me.children = res;
     };
 }
 
@@ -3734,6 +3747,7 @@ export function component<TData extends object>(
         bobrilComponent.id = getId(name, component);
         bobrilComponent.render = forwardRender(component);
     }
+    bobrilComponent.src = component;
     return (data?: TData): IBobrilNode => {
         return { data, component: bobrilComponent };
     };
