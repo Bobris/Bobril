@@ -33,9 +33,9 @@ describe("useStore", () => {
     it("store is disposed", () => {
         const spiedDispose = jasmine.createSpy("dispose");
         const store = {
-            dispose: spiedDispose
-        }
-        const id = b.addRoot(() => <TestComponent factory={() => store} />)
+            dispose: spiedDispose,
+        };
+        const id = b.addRoot(() => <TestComponent factory={() => store} />);
         b.syncUpdate();
         b.removeRoot(id);
         expect(spiedDispose).toHaveBeenCalled();

@@ -71,7 +71,7 @@ describe("createContext", () => {
             ctxClass: NestedCtx,
             render(ctx: NestedCtx) {
                 expect(ctx.contextValue).toBe(ctx.data.value);
-            }
+            },
         });
 
         interface IOuterData {
@@ -89,7 +89,7 @@ describe("createContext", () => {
             render(ctx: OuterCtx, me: b.IBobrilNode) {
                 if (ctx.data.value != undefined) ctx.contextValue = ctx.data.value;
                 me.children = <Nested value={ctx.data.test} />;
-            }
+            },
         });
 
         b.init(() => <Outer test={42} />);
@@ -104,7 +104,7 @@ describe("createContext", () => {
         const Nested = b.createComponent<{ value: number }>({
             render(ctx: b.IBobrilCtx<{ value: number }>) {
                 expect(b.useContext(myContext)).toBe(ctx.data.value);
-            }
+            },
         });
 
         interface IOuterData {
@@ -116,7 +116,7 @@ describe("createContext", () => {
             render(ctx: b.IBobrilCtx<IOuterData>, me: b.IBobrilNode) {
                 if (ctx.data.value != undefined) b.useProvideContext(myContext, ctx.data.value);
                 me.children = <Nested value={ctx.data.test} />;
-            }
+            },
         });
 
         b.init(() => Outer({ test: 42 }));
