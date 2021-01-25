@@ -3607,7 +3607,7 @@ export enum EventResult {
 
 export type GenericEventResult = EventResult | boolean | void;
 
-export class Component<TData = IDataWithChildren> implements IBobrilEvents {
+export class Component<TData = IDataWithChildren> implements IBobrilEvents, IBobrilCtx<TData> {
     constructor(data?: TData, me?: IBobrilCacheNode) {
         this.data = data!;
         this.me = me!;
@@ -3636,9 +3636,10 @@ export class Component<TData = IDataWithChildren> implements IBobrilEvents {
     //canDeactivate?(transition: IRouteTransition): IRouteCanResult;
 
     data: TData;
-    me: IBobrilCacheNode;
-    cfg?: any;
-    refs?: { [name: string]: IBobrilCacheNode | undefined };
+    me: IBobrilCacheNode<TData>;
+    cfg: any | undefined;
+    refs: { [name: string]: IBobrilCacheNode | undefined } | undefined;
+    disposables: IDisposableLike[] | undefined;
 }
 
 export interface IComponentClass<TData extends Object = {}> {

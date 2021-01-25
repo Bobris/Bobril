@@ -78,6 +78,24 @@ describe("tsx", () => {
         expect(document.body.innerText).toContain("BaseBase in Derived");
     });
 
+    it("supports addDisposable this", () => {
+        var called = false;
+        class Comp extends b.Component {
+            init() {
+                b.addDisposable(this, () => (called = true));
+            }
+            render() {
+                return <>Comp</>;
+            }
+        }
+
+        b.init(() => <Comp />);
+        b.syncUpdate();
+        b.init(() => <div>done</div>);
+        b.syncUpdate();
+        expect(called).toBe(true);
+    });
+
     it("supports passing children in properties", () => {
         function Comp({ children }: { children: string }) {
             return <>{children}</>;

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 15.0.1
+
+Fix type incompatibility of b.Component and b.IBobrilCtx.
+
 ## 15.0.0
 
 Breaking change - string styles are not anymore supported `{ tag: 'div', style: 'color: red' }` use objects instead.
