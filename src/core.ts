@@ -3607,12 +3607,9 @@ export enum EventResult {
 
 export type GenericEventResult = EventResult | boolean | void;
 
-export class Component<TData = IDataWithChildren> implements IBobrilEvents, IBobrilCtx<TData> {
+export class Component<TData = IDataWithChildren> extends BobrilCtx<TData> implements IBobrilEvents {
     constructor(data?: TData, me?: IBobrilCacheNode) {
-        this.data = data!;
-        this.me = me!;
-        this.cfg = undefined;
-        this.refs = undefined;
+        super(data, me);
     }
 
     init?(data: TData): void;
@@ -3634,12 +3631,6 @@ export class Component<TData = IDataWithChildren> implements IBobrilEvents, IBob
 
     //static canActivate?(transition: IRouteTransition): IRouteCanResult;
     //canDeactivate?(transition: IRouteTransition): IRouteCanResult;
-
-    data: TData;
-    me: IBobrilCacheNode<TData>;
-    cfg: any | undefined;
-    refs: { [name: string]: IBobrilCacheNode | undefined } | undefined;
-    disposables: IDisposableLike[] | undefined;
 }
 
 export interface IComponentClass<TData extends Object = {}> {
