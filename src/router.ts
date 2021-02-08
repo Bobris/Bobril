@@ -144,7 +144,7 @@ export function encodeUrlPath(path: string | undefined): string {
 }
 
 const paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
-const paramInjectMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|[*]/g;
+const paramInjectMatcher = /\/:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|\/[*]/g;
 
 let compiledPatterns: {
     [pattern: string]: { matcher: RegExp; paramNames: string[] };
@@ -223,7 +223,7 @@ export function injectParams(pattern: string, params?: Params) {
             segment = params![paramName];
         }
 
-        return encodeUrlPath(segment);
+        return "/" + encodeUrlPath(segment);
     });
 }
 
