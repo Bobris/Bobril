@@ -143,8 +143,8 @@ export function encodeUrlPath(path: string | undefined): string {
     return String(path).split("/").map(encodeUrl).join("/");
 }
 
-const paramCompileMatcher = /:([a-zA-Z_$][a-zA-Z0-9_$]*)|[*.()\[\]\\+|{}^$]/g;
-const paramInjectMatcher = /\/:([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|\/[*]/g;
+const paramCompileMatcher = /(\/?):([a-zA-Z_$][a-zA-Z0-9_$]*)([?]?)|[*.()\[\]\\+|{}^$]/g;
+const paramInjectMatcher = /(\/?)(?::([a-zA-Z_$][a-zA-Z0-9_$?]*[?]?)|[*])/g;
 
 let compiledPatterns: {
     [pattern: string]: { matcher: RegExp; paramNames: string[] };
@@ -153,10 +153,10 @@ let compiledPatterns: {
 function compilePattern(pattern: string) {
     if (!(pattern in <any>compiledPatterns)) {
         var paramNames: Array<string> = [];
-        var source = pattern.replace(paramCompileMatcher, (match: string, paramName: string) => {
+        var source = pattern.replace(paramCompileMatcher, (match: string, leadingSlash: string | undefined, paramName: string, optionalParamChar: string = "") => {
             if (paramName) {
                 paramNames.push(paramName);
-                return "([^/]+)";
+                return (leadingSlash ? "(?:\/([^/?#]+))" : "([^/?#]+)") + optionalParamChar;
             } else if (match === "*") {
                 paramNames.push("splat");
                 return "(.*?)";
@@ -200,7 +200,7 @@ export function injectParams(pattern: string, params?: Params) {
 
     var splatIndex = 0;
 
-    return pattern.replace(paramInjectMatcher, (_match: string, paramName: string) => {
+    return pattern.replace(paramInjectMatcher, (_match: string, leadingSlash: string = "", paramName: string) => {
         paramName = paramName || "splat";
 
         // If param is optional don't check for existence
@@ -223,8 +223,8 @@ export function injectParams(pattern: string, params?: Params) {
             segment = params![paramName];
         }
 
-        return "/" + encodeUrlPath(segment);
-    });
+        return leadingSlash + encodeUrlPath(segment);
+    }) || "/";
 }
 
 function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IRoute[] | undefined {
