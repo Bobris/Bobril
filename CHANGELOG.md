@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 15.1.0
+
+Router urls now does not have last slash when optional parameter is not defined.
+
+Component now inherit from BobrilCtx which save some bytes from bundle.
+
 ## 15.0.1
 
 Fix type incompatibility of b.Component and b.IBobrilCtx.

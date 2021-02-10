@@ -153,17 +153,20 @@ let compiledPatterns: {
 function compilePattern(pattern: string) {
     if (!(pattern in <any>compiledPatterns)) {
         var paramNames: Array<string> = [];
-        var source = pattern.replace(paramCompileMatcher, (match: string, leadingSlash: string | undefined, paramName: string, optionalParamChar: string = "") => {
-            if (paramName) {
-                paramNames.push(paramName);
-                return (leadingSlash ? "(?:\/([^/?#]+))" : "([^/?#]+)") + optionalParamChar;
-            } else if (match === "*") {
-                paramNames.push("splat");
-                return "(.*?)";
-            } else {
-                return "\\" + match;
+        var source = pattern.replace(
+            paramCompileMatcher,
+            (match: string, leadingSlash: string | undefined, paramName: string, optionalParamChar: string = "") => {
+                if (paramName) {
+                    paramNames.push(paramName);
+                    return (leadingSlash ? "(?:/([^/?#]+))" : "([^/?#]+)") + optionalParamChar;
+                } else if (match === "*") {
+                    paramNames.push("splat");
+                    return "(.*?)";
+                } else {
+                    return "\\" + match;
+                }
             }
-        });
+        );
 
         compiledPatterns[pattern] = {
             matcher: new RegExp("^" + source + "$", "i"),
@@ -200,31 +203,34 @@ export function injectParams(pattern: string, params?: Params) {
 
     var splatIndex = 0;
 
-    return pattern.replace(paramInjectMatcher, (_match: string, leadingSlash: string = "", paramName: string) => {
-        paramName = paramName || "splat";
+    return (
+        pattern.replace(paramInjectMatcher, (_match: string, leadingSlash: string = "", paramName: string) => {
+            paramName = paramName || "splat";
 
-        // If param is optional don't check for existence
-        if (paramName.slice(-1) !== "?") {
-            if (params![paramName] == undefined)
-                throw new Error('Missing "' + paramName + '" parameter for path "' + pattern + '"');
-        } else {
-            paramName = paramName.slice(0, -1);
-            if (params![paramName] == undefined) {
-                return "";
+            // If param is optional don't check for existence
+            if (paramName.slice(-1) !== "?") {
+                if (params![paramName] == undefined)
+                    throw new Error('Missing "' + paramName + '" parameter for path "' + pattern + '"');
+            } else {
+                paramName = paramName.slice(0, -1);
+                if (params![paramName] == undefined) {
+                    return "";
+                }
             }
-        }
 
-        var segment: string | undefined;
-        if (paramName === "splat" && Array.isArray(params![paramName])) {
-            segment = params![paramName]![splatIndex++];
+            var segment: string | undefined;
+            if (paramName === "splat" && Array.isArray(params![paramName])) {
+                segment = params![paramName]![splatIndex++];
 
-            if (segment == undefined) throw new Error("Missing splat # " + splatIndex + ' for path "' + pattern + '"');
-        } else {
-            segment = params![paramName];
-        }
+                if (segment == undefined)
+                    throw new Error("Missing splat # " + splatIndex + ' for path "' + pattern + '"');
+            } else {
+                segment = params![paramName];
+            }
 
-        return leadingSlash + encodeUrlPath(segment);
-    }) || "/";
+            return leadingSlash + encodeUrlPath(segment);
+        }) || "/"
+    );
 }
 
 function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IRoute[] | undefined {
