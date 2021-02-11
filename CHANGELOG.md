@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 16.0.0
+
+Nominal types `Nominal<string,"Bobril">`.
+
+`IBobrilStyleDef` is now not plain string but nominal type.
+
+`sprite` without color creates another nominal type `ColorlessSprite`. `spriteWithColor` now takes only `ColorlessSprite` type making it compile time type safe.
+
 ## 15.1.0
 
 Router urls now does not have last slash when optional parameter is not defined.

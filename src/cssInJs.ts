@@ -1,6 +1,7 @@
 import { CSSStyles, CSSPseudoStyles, CSSStylesItem, CSSInlineStyles } from "./cssTypes";
 import {
     applyDynamicStyle,
+    ColorlessSprite,
     destroyDynamicStyle,
     IBobrilCacheNode,
     IBobrilCacheNodeUnsafe,
@@ -216,7 +217,7 @@ interface IResponsiveDynamicSprite extends IResponsiveSprite {
 interface IInternalStyle {
     name: string | null;
     realName: string | null;
-    parent?: IBobrilStyleDef | IBobrilStyleDef[];
+    parent?: string | IBobrilStyleDef | IBobrilStyleDef[];
     style: CSSStyles | (() => [CSSStyles, CSSPseudoStyles]);
     pseudo?: CSSPseudoStyles;
 }
@@ -530,7 +531,7 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
         } else if (isString(s)) {
             var sd = allStyles[s];
             if (sd != undefined) {
-                s = sd.realName!;
+                s = sd.realName! as IBobrilStyleDef;
             }
             if (className == undefined) className = s;
             else className += " " + s;
@@ -691,7 +692,7 @@ export function styleDefEx(
     if (isString(style) && pseudo == undefined) {
         allStyles[nameHint]!.realName = style;
     } else invalidateStyles();
-    return nameHint;
+    return nameHint as IBobrilStyleDef;
 }
 
 export function selectorStyleDef(selector: string, style: CSSStyles, pseudo?: CSSPseudoStyles) {
@@ -815,9 +816,27 @@ export function setImagesWithCredentials(value: boolean) {
     imagesWithCredentials = value;
 }
 
+export function sprite(url: string): ColorlessSprite;
 export function sprite(
     url: string,
-    color?: string | (() => string),
+    color: null | undefined,
+    width?: number,
+    height?: number,
+    left?: number,
+    top?: number
+): ColorlessSprite;
+export function sprite(
+    url: string,
+    color: string | (() => string),
+    width?: number,
+    height?: number,
+    left?: number,
+    top?: number
+): IBobrilStyleDef;
+
+export function sprite(
+    url: string,
+    color?: string | (() => string) | null | undefined,
     width?: number,
     height?: number,
     left?: number,
@@ -950,13 +969,13 @@ export function spritebc(
     return styleId;
 }
 
-export function spriteWithColor(colorLessSprite: IBobrilStyleDef, color: string): IBobrilStyleDef {
+export function spriteWithColor(colorLessSprite: ColorlessSprite, color: string | (() => string)): IBobrilStyleDef {
     const original = colorLessSpriteMap.get(colorLessSprite);
-    if (original == undefined) throw new Error(colorLessSprite + " is not colorless sprite");
-    if ("url" in original) {
+    if (DEBUG && original == undefined) throw new Error(colorLessSprite + " is not colorless sprite");
+    if ("url" in original!) {
         return sprite(original.url, color, original.width, original.height, original.left, original.top);
     } else {
-        return spritebc(color, original.width, original.height, original.left, original.top);
+        return spritebc(color, original!.width, original!.height, original!.left, original!.top);
     }
 }
 

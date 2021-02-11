@@ -3197,10 +3197,16 @@ export function convertPointFromClientToNode(node: IBobrilCacheNode, pageX: numb
     return getTransformationMatrix(element).inverse().transformPoint(pageX, pageY);
 }
 
+export declare class Tagged<N extends string> {
+    protected _nominal_: N;
+}
+export type Nominal<T, N extends string> = T & Tagged<N>;
+
 /// definition for Bobril defined class
-export type IBobrilStyleDef = string;
+export type IBobrilStyleDef = Nominal<string, "IBobrilStyleDef"> | ColorlessSprite;
+export type ColorlessSprite = Nominal<string, "ColorlessSprite">;
 /// object case if for inline style declaration, undefined, null, true and false values are ignored
-export type IBobrilStyle = Readonly<CSSInlineStyles> | IBobrilStyleDef | 0 | boolean | undefined | null;
+export type IBobrilStyle = Readonly<CSSInlineStyles> | IBobrilStyleDef | "" | 0 | boolean | undefined | null;
 /// place inline styles at end for optimal speed
 export type IBobrilStyles = IBobrilStyle | IBobrilStyleArray;
 export interface IBobrilStyleArray extends ReadonlyArray<IBobrilStyles> {
