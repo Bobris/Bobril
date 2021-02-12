@@ -169,7 +169,7 @@ function compilePattern(pattern: string) {
         );
 
         compiledPatterns[pattern] = {
-            matcher: new RegExp("^" + source + "$", "i"),
+            matcher: new RegExp("^" + source + (pattern.endsWith("/") ? "?" : "\\/?") + "$", "i"),
             paramNames: paramNames,
         };
     }
