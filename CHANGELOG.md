@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 15.2.0
+
+Fix of small problem in router.
+
+ctxClass now have to inherit from BobrilCtx and call its super constructor. But adding disposables in such constructor works again.
+
+components without ctxClass have their ctx instance of BobrilCtx instead of plain object.
+
 ## 15.1.0
 
 Router urls now does not have last slash when optional parameter is not defined.

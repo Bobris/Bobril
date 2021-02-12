@@ -681,23 +681,8 @@ export function createNode(
             ctx = new component.ctxClass(c.data || {}, c) as any;
             if (ctx.data === undefined) ctx.data = c.data || {};
             if (ctx.me === undefined) ctx.me = c;
-            ctx.cfg = undefined;
-            ctx.disposables = undefined;
-            ctx.refs = undefined;
-            ctx.$hookFlags = 0;
-            ctx.$hooks = undefined;
-            ctx.$bobxCtx = undefined;
         } else {
-            ctx = {
-                data: c.data || {},
-                me: c,
-                cfg: undefined,
-                disposables: undefined,
-                refs: undefined,
-                $hookFlags: 0,
-                $hooks: undefined,
-                $bobxCtx: undefined,
-            };
+            ctx = new BobrilCtx(c.data || {}, c);
         }
         ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg;
         c.ctx = ctx;
