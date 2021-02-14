@@ -194,6 +194,11 @@ interface ISprite {
     top: number;
 }
 
+interface ISvgSprite {
+    styleId: IBobrilStyleDef;
+    svg: string;
+}
+
 interface IDynamicSprite extends ISprite {
     color: () => string;
     lastColor: string;
@@ -239,6 +244,7 @@ var allSprites: { [key: string]: ISprite } = newHashObj();
 var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
 var dynamicSprites: IDynamicSprite[] = [];
+var svgSprites = new Map<string, ColorlessSprite>();
 var bundledDynamicSprites: IResponsiveDynamicSprite[] = [];
 var imageCache: { [url: string]: HTMLImageElement | null } = newHashObj();
 var injectedCss = "";
@@ -803,7 +809,7 @@ function recolorAndClip(
 let lastFuncId = 0;
 const funcIdName = "b@funcId";
 let imagesWithCredentials = false;
-const colorLessSpriteMap = new Map<string, ISprite | IResponsiveSprite>();
+const colorLessSpriteMap = new Map<string, ISprite | IResponsiveSprite | ISvgSprite>();
 
 function loadImage(url: string, onload: (image: HTMLImageElement) => void) {
     var image = new Image();
@@ -894,6 +900,75 @@ export function sprite(
     return styleId;
 }
 
+export function svg(content: string): ColorlessSprite {
+    var key = content + ":1";
+    var styleId = svgSprites.get(key);
+    if (styleId !== undefined) return styleId;
+    styleId = buildSvgStyle(content, 1);
+    var svgSprite: ISvgSprite = {
+        styleId,
+        svg: content,
+    };
+    svgSprites.set(key, styleId);
+    colorLessSpriteMap.set(styleId, svgSprite);
+    return styleId;
+}
+
+export function svgWithColor(
+    id: ColorlessSprite,
+    colors: Record<string, string | (() => string)>,
+    size: number = 1
+): IBobrilStyleDef {
+    var original = colorLessSpriteMap.get(id);
+    if (DEBUG && (original == undefined || !("svg" in original))) throw new Error(id + " is not colorless svg");
+    var key = (original! as ISvgSprite).svg + ":" + size;
+    for (let ckey in colors) {
+        if (hOP.call(colors, ckey)) {
+            let val = colors[ckey];
+            if (isFunction(val)) val = val();
+            key += ":" + ckey + ":" + val;
+        }
+    }
+    var styleId = svgSprites.get(key);
+    if (styleId !== undefined) return styleId;
+    var colorsMap = new Map<string, string>();
+    for (let ckey in colors) {
+        if (hOP.call(colors, ckey)) {
+            let val = colors[ckey];
+            if (isFunction(val)) val = val();
+            colorsMap.set(ckey, val as string);
+        }
+    }
+
+    styleId = buildSvgStyle(
+        (original! as ISvgSprite).svg.replace(/[\":][A-Z-]+[\";]/gi, (m) => {
+            var c = colorsMap.get(m.substr(1, m.length - 2));
+            return c !== undefined ? m[0] + c + m[m.length - 1] : m;
+        }),
+        size
+    );
+    svgSprites.set(key, styleId);
+    return styleId;
+}
+
+function buildSvgStyle(content: string, size: number): ColorlessSprite {
+    var sizeStr = content.split('"', 1)[0];
+    var [width, height] = sizeStr!.split(" ").map((s) => parseFloat(s) * size);
+    var backgroundImage =
+        'url("data:image/svg+xml,' +
+        encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="' +
+                width +
+                '" height="' +
+                height +
+                '" viewBox="0 0 ' +
+                content +
+                "</svg>"
+        ) +
+        '")';
+    return styleDef({ width, height, backgroundImage }) as ColorlessSprite;
+}
+
 var bundlePath = (<any>window)["bobrilBPath"] || "bundle.png";
 var bundlePath2: [string, number][] = (<any>window)["bobrilBPath2"] || [];
 
@@ -972,7 +1047,9 @@ export function spritebc(
 export function spriteWithColor(colorLessSprite: ColorlessSprite, color: string | (() => string)): IBobrilStyleDef {
     const original = colorLessSpriteMap.get(colorLessSprite);
     if (DEBUG && original == undefined) throw new Error(colorLessSprite + " is not colorless sprite");
-    if ("url" in original!) {
+    if ("svg" in original!) {
+        return svgWithColor(colorLessSprite, { gray: color }, 1);
+    } else if ("url" in original!) {
         return sprite(original.url, color, original.width, original.height, original.left, original.top);
     } else {
         return spritebc(color, original!.width, original!.height, original!.left, original!.top);

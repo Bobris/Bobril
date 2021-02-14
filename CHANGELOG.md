@@ -6,7 +6,11 @@ Nominal types `Nominal<string,"Bobril">`.
 
 `IBobrilStyleDef` is now not plain string but nominal type.
 
-`sprite` without color creates another nominal type `ColorlessSprite`. `spriteWithColor` now takes only `ColorlessSprite` type making it compile time type safe.
+`sprite` without color creates another nominal type `ColorlessSprite`. `spriteWithColor` now takes only `ColorlessSprite` type making it compile time type safe, function for evaluation could be also passed.
+
+New method `svg` allows to embed svg in JS source and then use it as `ColorlessSprite`. It is not expected to directly use `svg` method but instead `sprite` and bobril-build will load svg from disk and change that call to this method.
+
+New method `svgWithColor` allows to resize previously defined svg or recolor multiple colors not just `gray` for which you can still use `spriteWithColor`.
 
 ## 15.2.0
 

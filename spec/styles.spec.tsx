@@ -1,4 +1,5 @@
 import * as b from "../index";
+import { spriteWithColor } from "../src/cssInJs";
 
 describe("styles", () => {
     it("can declare merged style", () => {
@@ -159,6 +160,45 @@ describe("styles", () => {
             });
             b.syncUpdate();
             expect(document.body.innerHTML).toContain("border: 1px");
+        });
+    });
+
+    describe("svg", () => {
+        it("works without changing color", () => {
+            var sampleSvg = b.svg(
+                '20 20"><defs><style>.a{fill:url(#a);}.b{fill:gray;}</style><linearGradient id="a" x1="3" y1="10" x2="17" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="gray" stop-opacity="0.8"/><stop offset="1" stop-color="gray" stop-opacity="0.2"/></linearGradient></defs><rect class="a" x="3" y="4" width="14" height="12"/><path class="b" d="M16.75,4a.245.245,0,0,1,.25.25v11.5a.245.245,0,0,1-.25.25H3.25A.245.245,0,0,1,3,15.75V4.25A.245.245,0,0,1,3.25,4ZM17,3H3A1.075,1.075,0,0,0,2,4V16a1.075,1.075,0,0,0,1,1H17a1.075,1.075,0,0,0,1-1V4A1.075,1.075,0,0,0,17,3Z"/>'
+            );
+            b.init(() => <div style={sampleSvg}></div>);
+            b.syncUpdate();
+            expect(document.head.innerHTML).toContain(encodeURIComponent(".b{fill:gray;}"));
+            expect(document.head.innerHTML).toContain(
+                encodeURIComponent('width="20" height="20" viewBox="0 0 20 20"><defs>')
+            );
+        });
+
+        it("works with spriteWithColor", () => {
+            var sampleSvg = b.svg(
+                '20 20"><defs><style>.a{fill:url(#a);}.b{fill:gray;}</style><linearGradient id="a" x1="3" y1="10" x2="17" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="gray" stop-opacity="0.8"/><stop offset="1" stop-color="gray" stop-opacity="0.2"/></linearGradient></defs><rect class="a" x="3" y="4" width="14" height="12"/><path class="b" d="M16.75,4a.245.245,0,0,1,.25.25v11.5a.245.245,0,0,1-.25.25H3.25A.245.245,0,0,1,3,15.75V4.25A.245.245,0,0,1,3.25,4ZM17,3H3A1.075,1.075,0,0,0,2,4V16a1.075,1.075,0,0,0,1,1H17a1.075,1.075,0,0,0,1-1V4A1.075,1.075,0,0,0,17,3Z"/>'
+            );
+            b.init(() => <div style={spriteWithColor(sampleSvg, "blue")}></div>);
+            b.syncUpdate();
+            // second render is for update styles
+            b.syncUpdate();
+            expect(document.head.innerHTML).toContain(encodeURIComponent(".b{fill:blue;}"));
+        });
+
+        fit("works with svgWithColor and allows resize", () => {
+            var sampleSvg = b.svg(
+                '20 20"><defs><style>.a{fill:url(#a);}.b{fill:gray;}</style><linearGradient id="a" x1="3" y1="10" x2="17" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="gray" stop-opacity="0.8"/><stop offset="1" stop-color="gray" stop-opacity="0.2"/></linearGradient></defs><rect class="a" x="3" y="4" width="14" height="12"/><path class="b" d="M16.75,4a.245.245,0,0,1,.25.25v11.5a.245.245,0,0,1-.25.25H3.25A.245.245,0,0,1,3,15.75V4.25A.245.245,0,0,1,3.25,4ZM17,3H3A1.075,1.075,0,0,0,2,4V16a1.075,1.075,0,0,0,1,1H17a1.075,1.075,0,0,0,1-1V4A1.075,1.075,0,0,0,17,3Z"/>'
+            );
+            b.init(() => <div style={b.svgWithColor(sampleSvg, { gray: "red" }, 2)}></div>);
+            b.syncUpdate();
+            // second render is for update styles
+            b.syncUpdate();
+            expect(document.head.innerHTML).toContain(encodeURIComponent(".b{fill:red;}"));
+            expect(document.head.innerHTML).toContain(
+                encodeURIComponent('width="40" height="40" viewBox="0 0 20 20"><defs>')
+            );
         });
     });
 
