@@ -162,7 +162,7 @@ Just republished correctly.
 
 New exported method
 
-```ts
+```tsx
 export function swallowPromise<T>(promise: Promise<T>): void {
     promise.catch((reason) => {
         console.error("Uncaught exception from swallowPromise", reason);
@@ -266,7 +266,7 @@ New component lifecycle method `postRenderDom` which combines `postInitDom` and 
 
 Allow to define keyframes animations:
 
-```ts
+```tsx
 let red2green = b.keyframesDef({ from: { color: "red" }, to: { color: "green" } });
 b.init(() => <div style={{ animation: red2green("2s") }}>Hello</div>);
 ```
@@ -358,9 +358,11 @@ Another fix for children in TSX.
 
 New handy exported interface:
 
+```tsx
     export interface IDataWithChildren {
         children?: IBobrilChildren;
     }
+```
 
 Class `Component<TData = IDataWithChildren>` using this as generic default.
 
