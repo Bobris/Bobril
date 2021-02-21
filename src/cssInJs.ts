@@ -914,31 +914,41 @@ export function svg(content: string): ColorlessSprite {
     return styleId;
 }
 
+/// Function can take colors as functions but they are evaluated immediately => use only in render like function
 export function svgWithColor(
     id: ColorlessSprite,
-    colors: Record<string, string | (() => string)>,
+    colors: string | (() => string) | Record<string, string | (() => string)>,
     size: number = 1
 ): IBobrilStyleDef {
     var original = colorLessSpriteMap.get(id);
     if (DEBUG && (original == undefined || !("svg" in original))) throw new Error(id + " is not colorless svg");
     var key = (original! as ISvgSprite).svg + ":" + size;
-    for (let ckey in colors) {
-        if (hOP.call(colors, ckey)) {
-            let val = colors[ckey];
-            if (isFunction(val)) val = val();
-            key += ":" + ckey + ":" + val;
+    if (isFunction(colors)) {
+        colors = colors();
+        key += ":gray:" + colors;
+    } else if (isString(colors)) {
+        key += ":gray:" + colors;
+    } else
+        for (let ckey in colors) {
+            if (hOP.call(colors, ckey)) {
+                let val = colors[ckey];
+                if (isFunction(val)) val = val();
+                key += ":" + ckey + ":" + val;
+            }
         }
-    }
     var styleId = svgSprites.get(key);
     if (styleId !== undefined) return styleId;
     var colorsMap = new Map<string, string>();
-    for (let ckey in colors) {
-        if (hOP.call(colors, ckey)) {
-            let val = colors[ckey];
-            if (isFunction(val)) val = val();
-            colorsMap.set(ckey, val as string);
+    if (isString(colors)) {
+        colorsMap.set("gray", colors);
+    } else
+        for (let ckey in colors) {
+            if (hOP.call(colors, ckey)) {
+                let val = colors[ckey];
+                if (isFunction(val)) val = val();
+                colorsMap.set(ckey, val as string);
+            }
         }
-    }
 
     styleId = buildSvgStyle(
         (original! as ISvgSprite).svg.replace(/[\":][A-Z-]+[\";]/gi, (m) => {
@@ -1044,6 +1054,7 @@ export function spritebc(
     return styleId;
 }
 
+/// Function can take colors as functions but they are evaluated immediately => use only in render like function
 export function spriteWithColor(colorLessSprite: ColorlessSprite, color: string | (() => string)): IBobrilStyleDef {
     const original = colorLessSpriteMap.get(colorLessSprite);
     if (DEBUG && original == undefined) throw new Error(colorLessSprite + " is not colorless sprite");

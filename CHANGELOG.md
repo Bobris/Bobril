@@ -43,7 +43,7 @@ New dynamic styles feature allowing very efficient update of element inline styl
 ```tsx
 <div
     style={() => {
-        let s = b.useStore(0);
+        let s = b.useState(0);
         s((s() + 1) % 101);
         return { opacity: s() * 0.01 };
     }}
