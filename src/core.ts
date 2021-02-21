@@ -826,7 +826,7 @@ export function createNode(
     if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
     if (inSvgForeignObject) inSvg = true;
     if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
-    createNodeStyle(el as HTMLElement, c.style, c.className, c, inSvg);
+    createNodeStyle(el as HTMLElement, c.style, enrichClassName(c, c.className), c, inSvg);
     inSvg = backupInSvg;
     inNotFocusable = backupInNotFocusable;
     pushInitCallback(c);
@@ -869,6 +869,24 @@ export function destroyDynamicStyle(c: IBobrilCacheNode) {
         }
         currentCtx = undefined;
     }
+}
+
+var keysInClassNames = false;
+
+export function setKeysInClassNames(value: boolean) {
+    keysInClassNames = value;
+}
+
+function enrichClassName(c: IBobrilCacheNode, n: string | undefined): string | undefined {
+    if (!keysInClassNames) return n;
+    var add = "";
+    do {
+        var k = c.key;
+        if (k) add = " " + k + add;
+        c = c.parent!;
+    } while (c != undefined && c.element == undefined);
+    if (n) return n + add;
+    return add.substr(1);
 }
 
 function normalizeNode(n: any): IBobrilNode | undefined {
@@ -1211,7 +1229,7 @@ export function updateNode(
                     c.attrs || emptyObject,
                     inNotFocusable
                 );
-            updateNodeStyle(el as HTMLElement, n.style, n.className, c, inSvg);
+            updateNodeStyle(el as HTMLElement, n.style, enrichClassName(c, n.className), c, inSvg);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
             if (DEBUG && component && measureFullComponentDuration)
@@ -3571,7 +3589,7 @@ export interface IFragmentData extends IBobrilEvents {
 }
 
 export function Fragment(data: IFragmentData): IBobrilNode {
-    return data;
+    return { children: data.children };
 }
 
 export interface IPortalData {

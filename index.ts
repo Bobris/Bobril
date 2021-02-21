@@ -14,7 +14,7 @@ export * from "./src/svgExtensions";
 export * from "./src/cssInJs";
 
 import { setAfterFrame, setBeforeFrame } from "./src/frameCallbacks";
-import { deref, getRoots, setInvalidate, ignoreShouldChange, setBeforeInit } from "./src/core";
+import { deref, getRoots, setInvalidate, ignoreShouldChange, setBeforeInit, setKeysInClassNames } from "./src/core";
 import { getDnds } from "./src/dnd";
 import { invalidateStyles } from "./src/cssInJs";
 
@@ -31,4 +31,5 @@ if (!(<any>window).b)
         setBeforeFrame,
         getDnds,
         setBeforeInit,
+        setKeysInClassNames,
     };

@@ -276,4 +276,23 @@ describe("styles", () => {
             expect(result && result.length).toBe(1);
         });
     });
+
+    describe("setKeysInClassNames", () => {
+        it("works", () => {
+            b.setKeysInClassNames(true);
+            b.init(() => (
+                <div>
+                    <b.Fragment key="key1">
+                        <b.Fragment key="key2">
+                            <p>Text</p>
+                        </b.Fragment>
+                    </b.Fragment>
+                </div>
+            ));
+            b.syncUpdate();
+            expect(document.getElementsByTagName("p").item(0)!.className).toBe("key1 key2");
+            b.init(() => undefined);
+            b.setKeysInClassNames(false);
+        });
+    });
 });
