@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.1.0
+
+Temporary revert of Bobril 16.0.0
+
 ## 15.2.0
 
 Fix of small problem in router.
