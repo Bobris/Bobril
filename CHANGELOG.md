@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.1.1
+
+Fix of regression from 15.0.0 of failure to removing inline style with dash.
+
 ## 16.1.0
 
 Temporary revert of Bobril 16.0.0

@@ -94,7 +94,7 @@ function shimStyle(newValue: any) {
 }
 
 function removeStyleProperty(s: CSSStyleDeclaration, name: string) {
-    s.removeProperty(name);
+    s.removeProperty(hyphenateStyle(name));
 }
 
 function setStyleProperty(s: CSSStyleDeclaration, name: string, value: string) {

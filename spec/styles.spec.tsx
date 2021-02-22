@@ -43,6 +43,23 @@ describe("styles", () => {
         expect(document.body.innerHTML).toContain(s2);
     });
 
+    it("can remove inline style with dash", () => {
+        let a = true;
+        b.init(() => (
+            <>
+                <div style={a && { backgroundColor: "blue" }}></div>
+                <div></div>
+            </>
+        ));
+        b.syncUpdate();
+        a = false;
+        b.invalidate();
+        b.syncUpdate();
+        expect(getComputedStyle(document.getElementsByTagName("div").item(0)!).backgroundColor).toBe(
+            getComputedStyle(document.getElementsByTagName("div").item(1)!).backgroundColor
+        );
+    });
+
     describe("keyframes", () => {
         it("can be used as function and string", () => {
             const name = b.keyframesDef({}, "keyframesHint");
