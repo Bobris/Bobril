@@ -6,6 +6,7 @@
     "declaration": false,
     "downlevelIteration": true,
     "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": [
       "es5",
@@ -23,9 +24,9 @@
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "preserveConstEnums": false,
     "reactNamespace": "b",
     "removeComments": false,
     "skipLibCheck": false,
@@ -37,7 +38,7 @@
     "resolveJsonModule": true
   },
   "files": [
-    "C:/Users/b.letocha/.bbcore/tools/jasmine330.d.ts"
+    "C:/Users/b.letocha/.bbcore/dev/jasmine330.d.ts"
   ],
   "include": [
     "**/*"

@@ -954,7 +954,7 @@ export function addDisposable(ctx: IBobrilCtx, disposable: IDisposableLike) {
 }
 
 export function isDisposable(val: any): val is IDisposable {
-    return isObject(val) && val.dispose;
+    return isObject(val) && val["dispose"];
 }
 
 function removeNodeRecursive(c: IBobrilCacheNode) {
@@ -2931,13 +2931,13 @@ export function focused(): IBobrilCacheNode | undefined {
 export function focus(node: IBobrilCacheNode, backwards?: boolean): boolean {
     if (node == undefined) return false;
     if (isString(node)) return false;
-    var style = node.style;
-    if (style != null) {
+    var style = (node.style as unknown) as CSSStyleDeclaration | undefined;
+    if (style != undefined) {
         if (style.visibility === "hidden") return false;
         if (style.display === "none") return false;
     }
     var attrs = node.attrs;
-    if (attrs != null) {
+    if (attrs != undefined) {
         var ti = attrs.tabindex;
         if (ti !== undefined || isNaturallyFocusable(node.tag, attrs)) {
             var el = node.element;

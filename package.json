@@ -26,6 +26,7 @@
             "noUncheckedIndexedAccess": true,
             "strictNullChecks": true,
             "strict": true,
+            "noPropertyAccessFromIndexSignature": true,
             "reactNamespace": "b"
         }
     },
