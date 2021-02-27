@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 16.0.0
+## 17.0.0
 
 Nominal types `Nominal<string,"Bobril">`.
 
@@ -13,6 +13,14 @@ New method `svg` allows to embed svg in JS source and then use it as `ColorlessS
 New method `svgWithColor` allows to resize previously defined svg or recolor multiple colors not just `gray` for which you can still use `spriteWithColor`.
 
 When you need to use jQuery selectors with Bobril and you already have nice `key` in VDom to use with `bbseeker`, you can now enable automatic publishing of keys to classNames by `b.setKeysInClassNames(true); b.ignoreShouldChange();` without need to change your application.
+
+## 16.1.1
+
+Fix of regression from 15.0.0 of failure to removing inline style with dash.
+
+## 16.1.0
+
+Temporary revert of Bobril 16.0.0
 
 ## 15.2.0
 
