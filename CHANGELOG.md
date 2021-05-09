@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.0.3
+
+Fix router back transition inApp calculation.
+
 ## 17.0.0
 
 Nominal types `Nominal<string,"Bobril">`.
@@ -32,7 +36,7 @@ components without ctxClass have their ctx instance of BobrilCtx instead of plai
 
 ## 15.1.0
 
-Router urls now does not have last slash when optional parameter is not defined.
+Router URLs now does not have last slash when optional parameter is not defined.
 
 Component now inherit from BobrilCtx which save some bytes from bundle.
 
@@ -369,9 +373,9 @@ Another fix for children in TSX.
 New handy exported interface:
 
 ```tsx
-    export interface IDataWithChildren {
-        children?: IBobrilChildren;
-    }
+export interface IDataWithChildren {
+    children?: IBobrilChildren;
+}
 ```
 
 Class `Component<TData = IDataWithChildren>` using this as generic default.

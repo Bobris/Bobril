@@ -2931,7 +2931,7 @@ export function focused(): IBobrilCacheNode | undefined {
 export function focus(node: IBobrilCacheNode, backwards?: boolean): boolean {
     if (node == undefined) return false;
     if (isString(node)) return false;
-    var style = (node.style as unknown) as CSSStyleDeclaration | undefined;
+    var style = node.style as unknown as CSSStyleDeclaration | undefined;
     if (style != undefined) {
         if (style.visibility === "hidden") return false;
         if (style.display === "none") return false;
@@ -3742,7 +3742,7 @@ export function component<TData extends object>(
                 (bobrilComponent as any)[key] = set;
             }
         });
-        bobrilComponent.ctxClass = (component as unknown) as ICtxClass;
+        bobrilComponent.ctxClass = component as unknown as ICtxClass;
         (bobrilComponent as any).canActivate = protoStatic.canActivate; // for router
     } else {
         bobrilComponent.id = getId(name, component);

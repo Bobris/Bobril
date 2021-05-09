@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "17.0.0",
+    "version": "17.0.3",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -12,7 +12,7 @@
         "printWidth": 120
     },
     "scripts": {
-        "prepublishOnly": "prettier --write index.ts src/ spec/ && bb test",
+        "prepublishOnly": "prettier --write index.ts && prettier --write -c src && prettier --write -c spec && bb test",
         "test": "bb test"
     },
     "bobril": {

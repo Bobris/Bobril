@@ -129,7 +129,7 @@ var dnds: IDndCtx[] = [];
 var systemDnd: (IDndStartCtx & IDndOverCtx) | null = null;
 var rootId: string | null = null;
 
-var DndCtx = (function (this: IDndCtx, pointerId: number) {
+var DndCtx = function (this: IDndCtx, pointerId: number) {
     this.id = ++lastDndId;
     this.pointerid = pointerId;
     this.enabledOperations = DndEnabledOps.MoveCopyLink;
@@ -161,7 +161,7 @@ var DndCtx = (function (this: IDndCtx, pointerId: number) {
     this.data = newHashObj();
     if (pointerId >= 0) pointer2Dnd[pointerId] = this;
     dnds.push(this);
-} as unknown) as { new (pointerId: number): IDndStartCtx & IDndOverCtx };
+} as unknown as { new (pointerId: number): IDndStartCtx & IDndOverCtx };
 
 const draggingStyle = "b-dragging";
 

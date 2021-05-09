@@ -98,7 +98,7 @@ function emitOnHashChange() {
 
 addEvent("hashchange", 10, emitOnHashChange);
 
-let myAppHistoryDeepness = 0;
+let myAppStartHistory = history.length;
 let programPath = "";
 
 function push(path: string, inApp: boolean): void {
@@ -106,7 +106,6 @@ function push(path: string, inApp: boolean): void {
     if (inApp) {
         programPath = path;
         l.hash = path.substring(1);
-        myAppHistoryDeepness++;
     } else {
         l.href = path;
     }
@@ -123,8 +122,8 @@ function replace(path: string, inApp: boolean) {
 }
 
 function pop(distance: number) {
-    myAppHistoryDeepness -= distance;
-    waitingForPopHashChange = (setTimeout(emitOnHashChange, 50) as unknown) as number;
+    window.history.length;
+    waitingForPopHashChange = setTimeout(emitOnHashChange, 50) as unknown as number;
     window.history.go(-distance);
 }
 
@@ -564,7 +563,7 @@ export function createRedirectReplace(name: string, params?: Params): IRouteTran
 export function createBackTransition(distance?: number): IRouteTransition {
     distance = distance || 1;
     return {
-        inApp: myAppHistoryDeepness >= distance,
+        inApp: history.length - distance >= myAppStartHistory,
         type: RouteTransitionType.Pop,
         name: undefined,
         params: {},
