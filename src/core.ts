@@ -180,7 +180,7 @@ export interface IBobrilCacheNode<T = any> {
     readonly children: IBobrilCacheChildren;
     readonly ref: RefType | undefined;
     readonly cfg: any;
-    readonly component: IBobrilComponent<T>;
+    readonly component: IBobrilComponent<T> | undefined;
     readonly data: T;
     readonly element: Node | Node[] | undefined;
     readonly parent: IBobrilCacheNode | undefined;
@@ -643,33 +643,282 @@ export function setMeasureConfiguration(conf: {
     measureComponentMethods = conf.measureComponentMethods;
 }
 
-export function createNode(
+interface RenderContext {}
+
+interface RenderHandler<T extends RenderContext> {
+    create(c: IBobrilCacheNodeUnsafe, n: IBobrilNode, renderContext: T): void;
+    selectedUpdate(cache: IBobrilCacheNodeUnsafe[], renderContext: T): void;
+    recreate(n: IBobrilNode, c: IBobrilCacheNodeUnsafe, renderContext: T): IBobrilCacheNodeUnsafe;
+    finishWithoutUpdate(node: IBobrilCacheNodeUnsafe, renderContext: T): void;
+}
+
+interface DomRenderContext extends RenderContext {
+    createInto: Element | undefined;
+    createBefore: Node | null;
+    inNotFocusable: boolean;
+    inSvg: boolean;
+}
+
+function domRenderChildren(
+    c: IBobrilCacheNodeUnsafe,
+    children: IBobrilChildren,
+    renderContext: DomRenderContext,
+    renderHandler: RenderHandler<DomRenderContext>
+) {
+    if (isString(children)) {
+        let el = createTextNode(children);
+        c.element = el;
+        domNode2node.set(el, c);
+        renderContext.createInto!.insertBefore(el, renderContext.createBefore);
+    } else {
+        renderCreateChildren(c, renderContext, renderHandler);
+    }
+    renderCallPostRender(c);
+}
+class DomRenderHandler implements RenderHandler<DomRenderContext> {
+    create(c: IBobrilCacheNodeUnsafe, renderContext: DomRenderContext): void {
+        var tag = c.tag;
+        var children = c.children;
+        if (isNumber(children)) {
+            children = "" + children;
+            c.children = children;
+        }
+        if (tag === undefined) {
+            domRenderChildren(c, children, renderContext, this);
+            return;
+        }
+        if (tag === "@") {
+            const createInto = renderContext.createInto;
+            const createBefore = renderContext.createBefore;
+            renderContext.createInto = c.data;
+            renderContext.createBefore = null;
+            try {
+                domRenderChildren(c, children, renderContext, this);
+            } finally {
+                renderContext.createInto = createInto;
+                renderContext.createBefore = createBefore;
+            }
+            return;
+        }
+        var el: Node;
+        const createInto = renderContext.createInto;
+        const createBefore = renderContext.createBefore;
+        if (tag === "/") {
+            var htmlText = children as string;
+            if (htmlText === "") {
+                // nothing needs to be created
+            } else if (createBefore == undefined) {
+                var before = createInto!.lastChild as Node | null;
+                (<HTMLElement>createInto).insertAdjacentHTML("beforeend", htmlText);
+                c.element = <Node[]>[];
+                if (before) {
+                    before = before.nextSibling;
+                } else {
+                    before = createInto!.firstChild;
+                }
+                while (before) {
+                    domNode2node.set(before, c);
+                    (<Node[]>c.element).push(before);
+                    before = before.nextSibling;
+                }
+            } else {
+                el = createBefore;
+                var elPrev = createBefore.previousSibling;
+                var removeEl = false;
+                if (!(<HTMLElement>el).insertAdjacentHTML) {
+                    el = createInto!.insertBefore(createEl("i"), el);
+                    removeEl = true;
+                }
+                (<HTMLElement>el).insertAdjacentHTML("beforebegin", htmlText);
+                if (elPrev) {
+                    elPrev = elPrev.nextSibling;
+                } else {
+                    elPrev = createInto!.firstChild;
+                }
+                var newElements: Array<Node> = [];
+                while (elPrev !== el) {
+                    domNode2node.set(elPrev!, c);
+                    newElements.push(elPrev!);
+                    elPrev = elPrev!.nextSibling;
+                }
+                c.element = newElements;
+                if (removeEl) {
+                    createInto!.removeChild(el);
+                }
+            }
+            renderCallPostRender(c);
+            return;
+        }
+
+        var inSvg = renderContext.inSvg;
+        var backupInSvg = inSvg;
+        var inSvgForeignObject = false;
+        if (inSvg || tag === "svg") {
+            el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+            inSvgForeignObject = true;
+            inSvg = tag !== "foreignObject";
+        } else {
+            el = createEl(tag);
+        }
+        createInto!.insertBefore(el, createBefore);
+        domNode2node.set(el, c);
+        c.element = el;
+
+        renderContext.createInto = el as Element;
+        renderContext.createBefore = null;
+        renderContext.inSvg = inSvg;
+
+        try {
+            renderCreateChildren(c, renderContext, this);
+            renderCallPostRender(c);
+            var inNotFocusable = renderContext.inNotFocusable;
+            if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
+            createNodeStyle(el as HTMLElement, c.style, enrichClassName(c, c.className), c, inSvgForeignObject);
+        } finally {
+            renderContext.createInto = createInto;
+            renderContext.createBefore = createBefore;
+            renderContext.inSvg = backupInSvg;
+        }
+    }
+    selectedUpdate(cache: IBobrilCacheNodeUnsafe[], renderContext: DomRenderContext) {
+        var len = cache.length;
+        for (var i = 0; i < len; i++) {
+            var node = cache[i]!;
+            var ctx = node.ctx;
+            if (ctx != null && (<any>ctx)[ctxInvalidated] >= frameCounter) {
+                var createBefore = renderContext.createBefore;
+                renderContext.createBefore = findNextNode(cache, i, len, createBefore);
+                cache[i] = renderUpdateNode(node.orig, node, renderContext, this, (<any>ctx)[ctxDeepness]);
+                renderContext.createBefore = createBefore;
+            } else {
+                ctx = node.ctxStyle;
+                if (ctx != null && (<any>ctx)[ctxInvalidated] >= frameCounter) {
+                    updateNodeStyle(node.element as HTMLElement, ctx.data, undefined, node, renderContext.inSvg);
+                }
+                if (isArray(node.children)) {
+                    var inSvg = renderContext.inSvg;
+                    var inNotFocusable = renderContext.inNotFocusable;
+                    var createInto = renderContext.createInto;
+                    var createBefore = renderContext.createBefore;
+                    if (inNotFocusable && focusRootTop === node) renderContext.inNotFocusable = false;
+                    if (node.tag === "svg") renderContext.inSvg = true;
+                    else if (inSvg && node.tag === "foreignObject") renderContext.inSvg = false;
+                    var thisElement = node.element;
+                    if (thisElement != undefined) {
+                        renderContext.createInto = thisElement as Element;
+                        renderContext.createBefore = null;
+                    } else {
+                        renderContext.createBefore = findNextNode(cache, i, len, createBefore);
+                    }
+                    try {
+                        this.selectedUpdate(node.children, renderContext);
+                    } finally {
+                        renderContext.createBefore = createBefore;
+                        renderContext.createInto = createInto;
+                        renderContext.inNotFocusable = inNotFocusable;
+                        renderContext.inSvg = inSvg;
+                    }
+                }
+                pushUpdateEverytimeCallback(node);
+            }
+        }
+    }
+    finishWithoutUpdate(node: IBobrilCacheNodeUnsafe, renderContext: DomRenderContext) {
+        if (isArray(node.children)) {
+            var inSvg = renderContext.inSvg;
+            var inNotFocusable = renderContext.inNotFocusable;
+            var createInto = renderContext.createInto;
+            var createBefore = renderContext.createBefore;
+            if (inNotFocusable && focusRootTop === node) renderContext.inNotFocusable = false;
+            if (node.tag === "svg") renderContext.inSvg = true;
+            else if (inSvg && node.tag === "foreignObject") renderContext.inSvg = false;
+            var thisElement = node.element;
+            if (thisElement != undefined) {
+                renderContext.createInto = thisElement as Element;
+                renderContext.createBefore = null;
+            }
+            try {
+                this.selectedUpdate(node.children, renderContext);
+            } finally {
+                renderContext.createBefore = createBefore;
+                renderContext.createInto = createInto;
+                renderContext.inNotFocusable = inNotFocusable;
+                renderContext.inSvg = inSvg;
+            }
+        }
+    }
+    recreate(n: IBobrilNode, c: IBobrilCacheNodeUnsafe, renderContext: DomRenderContext): IBobrilCacheNodeUnsafe {
+        var parEl = c.element;
+        if (isArray(parEl)) parEl = parEl[0];
+        if (parEl == undefined) parEl = renderContext.createInto as Element;
+        else parEl = parEl.parentNode as Element;
+        var createInto = renderContext.createInto;
+        var createBefore = renderContext.createBefore;
+        renderContext.createInto = parEl as Element;
+        renderContext.createBefore = getDomNode(c);
+        try {
+            var r = renderCreateNode(n, c.parent, renderContext, this);
+            removeNode(c);
+        } finally {
+            renderContext.createBefore = createBefore;
+            renderContext.createInto = createInto;
+        }
+        return r;
+    }
+}
+
+function renderCallPostRender(c: IBobrilCacheNodeUnsafe) {
+    var component = c.component;
+    if (component) {
+        if (component.postRender) {
+            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
+            component.postRender(c.ctx!, c);
+            if (DEBUG && measureComponentMethods)
+                window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
+        }
+        pushInitCallback(c);
+    }
+}
+
+function renderCreateChildren(
+    c: IBobrilCacheNodeUnsafe,
+    renderContext: RenderContext,
+    renderHandler: RenderHandler<RenderContext>
+) {
+    var ch = c.children;
+    let res = <IBobrilCacheNode[]>[];
+    flattenVdomChildren(res, ch);
+    for (let i = 0; i < res.length; i++) {
+        res[i] = renderCreateNode(res[i]!, c, renderContext, renderHandler);
+    }
+    c.children = res;
+}
+
+function renderCreateNode(
     n: IBobrilNode,
     parentNode: IBobrilCacheNode | undefined,
-    createInto: Element,
-    createBefore: Node | null
+    renderContext: RenderContext,
+    renderHandler: RenderHandler<RenderContext>
 ): IBobrilCacheNode {
-    var c = <IBobrilCacheNodeUnsafe>{
+    var c: IBobrilCacheNodeUnsafe = {
         // This makes CacheNode just one object class = fast
         tag: n.tag,
         key: n.key,
         ref: n.ref,
         className: n.className,
-        style: n.style,
+        style: n.style as any,
         attrs: n.attrs,
-        children: n.children,
+        children: n.children as any,
         component: n.component,
         data: n.data,
         cfg: undefined,
         parent: parentNode,
         element: undefined,
         ctx: undefined,
+        ctxStyle: undefined,
         orig: n,
     };
-    var backupInSvg = inSvg;
-    var backupInNotFocusable = inNotFocusable;
     var component = c.component;
-    var el: Node | undefined;
     if (DEBUG && component && measureFullComponentDuration) {
         var componentStartMark = `create ${frameCounter} ${++visitedComponentCounter}`;
         window.performance.mark(componentStartMark);
@@ -677,13 +926,8 @@ export function createNode(
     setRef(c.ref, c);
     if (component) {
         var ctx: IBobrilCtxInternal;
-        if (component.ctxClass) {
-            ctx = new component.ctxClass(c.data || {}, c) as any;
-            if (ctx.data === undefined) ctx.data = c.data || {};
-            if (ctx.me === undefined) ctx.me = c;
-        } else {
-            ctx = new BobrilCtx(c.data || {}, c);
-        }
+        ctx = new (component.ctxClass || BobrilCtx)(c.data || {}, c) as any;
+        assert(ctx.$hookFlags === 0, "ctxClass should inherit from BobrilCtx and call super constructor");
         ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg;
         c.ctx = ctx;
         currentCtx = ctx;
@@ -693,7 +937,7 @@ export function createNode(
             if (DEBUG && measureComponentMethods)
                 window.performance.measure(`${component.id} [init]`, `${component.id} init-start`);
         }
-        if (beforeRenderCallback !== noop) beforeRenderCallback(n, RenderPhase.Create);
+        beforeRenderCallback(n, RenderPhase.Create);
         if (component.render) {
             hookId = 0;
             if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} render-start`);
@@ -706,133 +950,226 @@ export function createNode(
     } else {
         if (DEBUG) Object.freeze(n);
     }
-    var tag = c.tag;
-    if (tag === "-") {
-        // Skip update
+    if (c.tag === "-") {
+        // Skip create
         c.tag = undefined;
         c.children = undefined;
-        if (DEBUG && component && measureFullComponentDuration)
-            window.performance.measure(`${component.id} create`, componentStartMark!);
-        return c;
-    } else if (tag === "@") {
-        createInto = c.data;
-        createBefore = null;
-        tag = undefined;
-    }
-    var children = c.children;
-    var inSvgForeignObject = false;
-    if (isNumber(children)) {
-        children = "" + children;
-        c.children = children;
-    }
-    if (tag === undefined) {
-        if (isString(children)) {
-            el = createTextNode(<string>children);
-            c.element = el;
-            domNode2node.set(el, c);
-            createInto.insertBefore(el, createBefore);
-        } else {
-            createChildren(c, createInto, createBefore);
-        }
-        if (component) {
-            if (component.postRender) {
-                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
-                component.postRender(c.ctx!, c);
-                if (DEBUG && measureComponentMethods)
-                    window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
-            }
-            pushInitCallback(c);
-        }
-        if (DEBUG && component && measureFullComponentDuration)
-            window.performance.measure(`${component.id} create`, componentStartMark!);
-        return c;
-    }
-    if (tag === "/") {
-        var htmlText = <string>children;
-        if (htmlText === "") {
-            // nothing needs to be created
-        } else if (createBefore == undefined) {
-            var before = createInto.lastChild as Node | null;
-            (<HTMLElement>createInto).insertAdjacentHTML("beforeend", htmlText);
-            c.element = <Node[]>[];
-            if (before) {
-                before = before.nextSibling;
-            } else {
-                before = createInto.firstChild;
-            }
-            while (before) {
-                domNode2node.set(before, c);
-                (<Node[]>c.element).push(before);
-                before = before.nextSibling;
-            }
-        } else {
-            el = createBefore;
-            var elPrev = createBefore.previousSibling;
-            var removeEl = false;
-            var parent = createInto;
-            if (!(<HTMLElement>el).insertAdjacentHTML) {
-                el = parent.insertBefore(createEl("i"), el);
-                removeEl = true;
-            }
-            (<HTMLElement>el).insertAdjacentHTML("beforebegin", htmlText);
-            if (elPrev) {
-                elPrev = elPrev.nextSibling;
-            } else {
-                elPrev = parent.firstChild;
-            }
-            var newElements: Array<Node> = [];
-            while (elPrev !== el) {
-                domNode2node.set(elPrev!, c);
-                newElements.push(elPrev!);
-                elPrev = elPrev!.nextSibling;
-            }
-            c.element = newElements;
-            if (removeEl) {
-                parent.removeChild(el);
-            }
-        }
-        if (component) {
-            if (component.postRender) {
-                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
-                component.postRender(c.ctx!, c);
-                if (DEBUG && measureComponentMethods)
-                    window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
-            }
-            pushInitCallback(c);
-        }
-        if (DEBUG && component && measureFullComponentDuration)
-            window.performance.measure(`${component.id} create`, componentStartMark!);
-        return c;
-    }
-    if (inSvg || tag === "svg") {
-        el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-        inSvgForeignObject = tag === "foreignObject";
-        inSvg = !inSvgForeignObject;
+        c.className = undefined;
+        c.style = undefined;
+        c.attrs = undefined;
     } else {
-        el = createEl(tag);
+        renderHandler.create(c, n, renderContext);
     }
-    createInto.insertBefore(el, createBefore);
-    domNode2node.set(el, c);
-    c.element = el;
-    createChildren(c, <Element>el, null);
-    if (component) {
-        if (component.postRender) {
-            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
-            component.postRender(c.ctx!, c);
-            if (DEBUG && measureComponentMethods)
-                window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
-        }
-    }
-    if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
-    if (inSvgForeignObject) inSvg = true;
-    if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
-    createNodeStyle(el as HTMLElement, c.style, enrichClassName(c, c.className), c, inSvg);
-    inSvg = backupInSvg;
-    inNotFocusable = backupInNotFocusable;
-    pushInitCallback(c);
     if (DEBUG && component && measureFullComponentDuration)
         window.performance.measure(`${component.id} create`, componentStartMark!);
     return c;
+}
+
+export function renderUpdateNode(
+    n: IBobrilNode,
+    c: IBobrilCacheNode,
+    renderContext: RenderContext,
+    renderHandler: RenderHandler<RenderContext>,
+    deepness: number
+): IBobrilCacheNode {
+    var component = n.component;
+    var bigChange = false;
+    var ctx = c.ctx;
+    if (DEBUG && component && measureFullComponentDuration) {
+        var componentStartMark = `update ${frameCounter} ${++visitedComponentCounter}`;
+        window.performance.mark(componentStartMark);
+    }
+    var noChange = true;
+    main: do {
+        if (component != null && ctx != null) {
+            let locallyInvalidated = false;
+            if ((<any>ctx)[ctxInvalidated] >= frameCounter) {
+                deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
+                locallyInvalidated = true;
+            }
+            if (component.id !== c.component!.id) {
+                bigChange = true;
+            } else {
+                currentCtx = ctx;
+                if (n.cfg !== undefined) ctx.cfg = n.cfg;
+                else ctx.cfg = findCfg(c.parent);
+                if (component.shouldChange)
+                    if (!ignoringShouldChange && !locallyInvalidated) {
+                        if (DEBUG && measureComponentMethods)
+                            window.performance.mark(`${component.id} shouldChange-start`);
+                        const shouldChange = component.shouldChange(ctx, n, c);
+                        if (DEBUG && measureComponentMethods)
+                            window.performance.measure(
+                                `${component.id} [shouldChange]`,
+                                `${component.id} shouldChange-start`
+                            );
+                        if (!shouldChange) {
+                            break main;
+                        }
+                    }
+                (<any>ctx).data = n.data || {};
+                (c as IBobrilCacheNodeUnsafe).component = component;
+                beforeRenderCallback(n, RenderPhase.Update);
+                if (component.render) {
+                    (c as IBobrilCacheNodeUnsafe).orig = n;
+                    n = assign({}, n); // need to clone me because it should not be modified for next updates
+                    (c as IBobrilCacheNodeUnsafe).cfg = undefined;
+                    if (n.cfg !== undefined) n.cfg = undefined;
+                    hookId = 0;
+                    if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} render-start`);
+                    component.render(ctx, n, c);
+                    if (DEBUG && measureComponentMethods)
+                        window.performance.measure(`${component.id} [render]`, `${component.id} render-start`);
+                    hookId = -1;
+                    if (n.cfg !== undefined) {
+                        if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
+                        else assign(c.cfg, n.cfg);
+                    }
+                }
+                currentCtx = undefined;
+            }
+        } else {
+            // In case there is no component and source is same reference it is considered not changed
+            if (c.orig === n && !ignoringShouldChange) {
+                break main;
+            }
+            (c as IBobrilCacheNodeUnsafe).orig = n;
+            if (DEBUG) Object.freeze(n);
+        }
+        var newChildren = n.children;
+        var cachedChildren = c.children;
+        var tag = n.tag;
+        if (tag === "-") {
+            break main;
+        }
+        const backupInSvg = inSvg;
+        const backupInNotFocusable = inNotFocusable;
+        if (isNumber(newChildren)) {
+            newChildren = "" + newChildren;
+        }
+        if (
+            bigChange ||
+            (component != undefined && ctx == undefined) ||
+            (component == undefined && ctx != undefined && ctx.me.component !== emptyObject)
+        ) {
+            // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
+        } else if (tag === "/") {
+            if (c.tag === "/" && cachedChildren === newChildren) {
+                finishUpdateNode(n, c, component);
+                noChange = false;
+                break main;
+            }
+        } else if (tag === c.tag) {
+            if (tag === "@") {
+                if (n.data !== c.data) {
+                    // TODO: Portal recreate
+                    var r: IBobrilCacheNode = createNode(n, c.parent, n.data, null);
+                    removeNode(c);
+                    c = r;
+                    noChange = false;
+                    break main;
+                }
+
+                createInto = n.data;
+                createBefore = getLastDomNode(c);
+                if (createBefore != null) createBefore = createBefore.nextSibling;
+                tag = undefined;
+            }
+            if (tag === undefined) {
+                if (isString(newChildren) && isString(cachedChildren)) {
+                    if (newChildren !== cachedChildren) {
+                        var el = <Element>c.element;
+                        el.textContent = newChildren;
+                        (c as IBobrilCacheNodeUnsafe).children = newChildren;
+                    }
+                } else {
+                    if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(<IBobrilCacheNode[]>c.children, createInto, createBefore);
+                    } else {
+                        (c as IBobrilCacheNodeUnsafe).children = updateChildren(
+                            createInto,
+                            newChildren,
+                            cachedChildren,
+                            c,
+                            createBefore,
+                            deepness - 1
+                        );
+                    }
+                    inSvg = backupInSvg;
+                    inNotFocusable = backupInNotFocusable;
+                }
+                finishUpdateNode(n, c, component);
+                break main;
+            } else {
+                var inSvgForeignObject = false;
+                if (tag === "svg") {
+                    inSvg = true;
+                } else if (inSvg && tag === "foreignObject") {
+                    inSvgForeignObject = true;
+                    inSvg = false;
+                }
+                if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
+                var el = <Element>c.element;
+                if (isString(newChildren) && !isArray(cachedChildren)) {
+                    if (newChildren !== cachedChildren) {
+                        el.textContent = newChildren;
+                        cachedChildren = newChildren;
+                    }
+                } else {
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren)) selectedUpdate(<IBobrilCacheNode[]>c.children, el, null);
+                    } else {
+                        cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
+                    }
+                }
+                (c as IBobrilCacheNodeUnsafe).children = cachedChildren;
+                if (inSvgForeignObject) inSvg = true;
+                finishUpdateNode(n, c, component);
+                if (c.attrs || n.attrs || inNotFocusable)
+                    (c as IBobrilCacheNodeUnsafe).attrs = updateElement(
+                        c,
+                        el,
+                        n.attrs,
+                        c.attrs || emptyObject,
+                        inNotFocusable
+                    );
+                updateNodeStyle(el as HTMLElement, n.style, enrichClassName(c, n.className), c, inSvg);
+                inSvg = backupInSvg;
+                inNotFocusable = backupInNotFocusable;
+                noChange = false;
+                break main;
+            }
+        }
+
+        c = renderHandler.recreate(n, c, renderContext);
+        noChange = false;
+    } while (0);
+    if (noChange) {
+        currentCtx = undefined;
+        renderHandler.finishWithoutUpdate(c, renderContext);
+        pushUpdateEverytimeCallback(c);
+    }
+    if (DEBUG && component && measureFullComponentDuration)
+        window.performance.measure(`${component.id} update`, componentStartMark!);
+    return c;
+}
+
+export function createNode(
+    n: IBobrilNode,
+    parentNode: IBobrilCacheNode | undefined,
+    createInto: Element,
+    createBefore: Node | null
+): IBobrilCacheNode {
+    var handler = new DomRenderHandler();
+    var context = {
+        inNotFocusable: false,
+        inSvg: false,
+        createInto: createInto,
+        createBefore: createBefore,
+    } as DomRenderContext;
+    return renderCreateNode(n, parentNode, context, handler);
 }
 
 export function applyDynamicStyle(factory: () => IBobrilStyles, c: IBobrilCacheNode): IBobrilNode {
@@ -891,27 +1228,10 @@ function enrichClassName(c: IBobrilCacheNode, n: string | undefined): string | u
 
 function normalizeNode(n: any): IBobrilNode | undefined {
     if (n === false || n === true || n === null) return undefined;
-    if (isString(n)) {
+    if (isString(n) || isNumber(n)) {
         return { children: n };
     }
-    if (isNumber(n)) {
-        return { children: "" + n };
-    }
     return <IBobrilNode | undefined>n;
-}
-
-function createChildren(c: IBobrilCacheNodeUnsafe, createInto: Element, createBefore: Node | null): void {
-    var ch = c.children;
-    if (isString(ch)) {
-        createInto.textContent = ch;
-        return;
-    }
-    let res = <IBobrilCacheNode[]>[];
-    flattenVdomChildren(res, ch);
-    for (let i = 0; i < res.length; i++) {
-        res[i] = createNode(res[i]!, c, createInto, createBefore);
-    }
-    c.children = res;
 }
 
 function destroyNode(c: IBobrilCacheNode) {
@@ -926,7 +1246,7 @@ function destroyNode(c: IBobrilCacheNode) {
     if (component) {
         let ctx = c.ctx!;
         currentCtx = ctx;
-        if (beforeRenderCallback !== noop) beforeRenderCallback(c, RenderPhase.Destroy);
+        beforeRenderCallback(c, RenderPhase.Destroy);
         if (component.destroy) component.destroy(ctx, c, <HTMLElement>c.element);
         let disposables = ctx.disposables;
         if (isArray(disposables)) {
@@ -1054,8 +1374,7 @@ export function updateNode(
     c: IBobrilCacheNode,
     createInto: Element,
     createBefore: Node | null,
-    deepness: number,
-    inSelectedUpdate?: boolean
+    deepness: number
 ): IBobrilCacheNode {
     var component = n.component;
     var bigChange = false;
@@ -1071,7 +1390,7 @@ export function updateNode(
             deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
             locallyInvalidated = true;
         }
-        if (component.id !== c.component.id) {
+        if (component.id !== c.component!.id) {
             bigChange = true;
         } else {
             currentCtx = ctx;
@@ -1095,8 +1414,7 @@ export function updateNode(
                 }
             (<any>ctx).data = n.data || {};
             (c as IBobrilCacheNodeUnsafe).component = component;
-            if (beforeRenderCallback !== noop)
-                beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
+            beforeRenderCallback(n, RenderPhase.Update);
             if (component.render) {
                 (c as IBobrilCacheNodeUnsafe).orig = n;
                 n = assign({}, n); // need to clone me because it should not be modified for next updates
@@ -1285,7 +1603,7 @@ function findNextNode(a: IBobrilCacheNode[], i: number, len: number, def: Node |
         var ai = a[i];
         if (ai == undefined) continue;
         var n = getDomNode(ai);
-        if (n != null) return n;
+        if (n != undefined) return n;
     }
     return def;
 }
@@ -1295,10 +1613,10 @@ export function callPostCallbacks() {
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i]!;
         currentCtx = n.ctx;
-        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} post-start`);
+        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component!.id} post-start`);
         updateCall[i]!.call(n.component, currentCtx, n, n.element);
         if (DEBUG && measureComponentMethods)
-            window.performance.measure(`${n.component.id} [post*]`, `${n.component.id} post-start`);
+            window.performance.measure(`${n.component!.id} [post*]`, `${n.component!.id} post-start`);
     }
     currentCtx = undefined;
     updateCall = [];
@@ -1310,7 +1628,7 @@ export function callEffects() {
     for (var i = 0; i < count; i++) {
         var n = effectInstance[i]!;
         currentCtx = n.ctx;
-        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} effect-start`);
+        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component!.id} effect-start`);
         const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
         const len = hooks.length;
         for (let i = 0; i < len; i++) {
@@ -1321,7 +1639,7 @@ export function callEffects() {
             }
         }
         if (DEBUG && measureComponentMethods)
-            window.performance.measure(`${n.component.id} [effect*]`, `${n.component.id} effect-start`);
+            window.performance.measure(`${n.component!.id} [effect*]`, `${n.component!.id} effect-start`);
     }
     currentCtx = undefined;
     effectInstance = [];
@@ -1960,8 +2278,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
                 node,
                 element,
                 findNextNode(cache, i, len, createBefore),
-                (<any>ctx)[ctxDeepness],
-                true
+                (<any>ctx)[ctxDeepness]
             );
         } else {
             ctx = node.ctxStyle;
@@ -2886,7 +3203,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
             common++;
         var i = nodeStack.length - 1;
         var n: IBobrilCacheNode | null;
-        var c: IBobrilComponent;
+        var c: IBobrilComponent | undefined;
         if (i >= common) {
             n = nodeStack[i]!;
             bubble(n, "onBlur");
