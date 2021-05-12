@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.1.0
+
+Fixed a lot of behaviors and inApp calculation in router. Now uses history.state to remember deepness of history.
+
 ## 17.0.3
 
 Fix router back transition inApp calculation.

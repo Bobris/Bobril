@@ -98,14 +98,20 @@ function emitOnHashChange() {
 
 addEvent("hashchange", 10, emitOnHashChange);
 
-let myAppStartHistory = history.length;
+let historyDeepness = 0;
 let programPath = "";
+
+function history() {
+    return window.history;
+}
 
 function push(path: string, inApp: boolean): void {
     var l = window.location;
     if (inApp) {
         programPath = path;
-        l.hash = path.substring(1);
+        historyDeepness++;
+        history().pushState({ historyDeepness }, "", path);
+        invalidate();
     } else {
         l.href = path;
     }
@@ -115,16 +121,16 @@ function replace(path: string, inApp: boolean) {
     var l = window.location;
     if (inApp) {
         programPath = path;
-        l.replace(l.pathname + l.search + path);
+        history().replaceState({ historyDeepness }, "", path);
+        invalidate();
     } else {
         l.replace(path);
     }
 }
 
 function pop(distance: number) {
-    window.history.length;
     waitingForPopHashChange = setTimeout(emitOnHashChange, 50) as unknown as number;
-    window.history.go(-distance);
+    history().go(-distance);
 }
 
 let rootRoutes: IRoute[];
@@ -317,9 +323,21 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode | undefined
     return setterOfNodesArray[idx]!;
 }
 
+addEvent("popstate", 5, (ev: PopStateEvent) => {
+    let newHistoryDeepness = ev.state?.historyDeepness;
+    if (newHistoryDeepness != undefined) {
+        if (newHistoryDeepness != historyDeepness) invalidate();
+        historyDeepness = newHistoryDeepness;
+    }
+    return false;
+});
+
 var firstRouting = true;
 function rootNodeFactory(): IBobrilNode | undefined {
     if (waitingForPopHashChange >= 0) return undefined;
+    if (history().state == undefined && historyDeepness != undefined) {
+        history().replaceState({ historyDeepness: historyDeepness }, "");
+    }
     let browserPath = window.location.hash;
     let path = browserPath.substr(1);
     if (!isAbsolute(path)) path = "/" + path;
@@ -337,7 +355,8 @@ function rootNodeFactory(): IBobrilNode | undefined {
         programPath = browserPath;
     } else {
         if (!currentTransition && matches.length > 0 && browserPath != programPath) {
-            runTransition(createRedirectPush(matches[0]!.name!, out.p));
+            programPath = browserPath;
+            runTransition(createRedirectReplace(matches[0]!.name!, out.p));
         }
     }
     if (currentTransition && currentTransition.type === RouteTransitionType.Pop && transitionState < 0) {
@@ -563,7 +582,7 @@ export function createRedirectReplace(name: string, params?: Params): IRouteTran
 export function createBackTransition(distance?: number): IRouteTransition {
     distance = distance || 1;
     return {
-        inApp: history.length - distance >= myAppStartHistory,
+        inApp: historyDeepness - distance >= 0,
         type: RouteTransitionType.Pop,
         name: undefined,
         params: {},
@@ -587,7 +606,6 @@ function doAction(transition: IRouteTransition) {
             pop(transition.distance!);
             break;
     }
-    invalidate();
 }
 
 function nextIteration(): void {
@@ -622,7 +640,7 @@ function nextIteration(): void {
                     nextIteration();
                 })
                 .catch((err: any) => {
-                    if (typeof console !== "undefined" && console.log) console.log(err);
+                    console.log(err);
                 });
             return;
         } else if (transitionState == activeRoutes.length) {
@@ -662,8 +680,6 @@ function nextIteration(): void {
                 let tr = currentTransition;
                 currentTransition = null;
                 doAction(tr!);
-            } else {
-                invalidate();
             }
             currentTransition = null;
             return;
@@ -701,7 +717,7 @@ function nextIteration(): void {
                     nextIteration();
                 })
                 .catch((err: any) => {
-                    if (typeof console !== "undefined" && console.log) console.log(err);
+                    console.log(err);
                 });
             return;
         }
