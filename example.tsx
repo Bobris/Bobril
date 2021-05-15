@@ -34,9 +34,10 @@ b.routes([
     }),
     b.route({
         name: "page2",
-        handler: () => (
+        url: "page2/:id",
+        handler: (data: b.IRouteHandlerData) => (
             <div>
-                <h1>Page 2</h1>
+                <h1>Page 2 - {data.routeParams["id"]}</h1>
                 <RoutePage />
             </div>
         ),
@@ -47,12 +48,13 @@ function RoutePage() {
     return (
         <>
             <p>Back will be inApp {b.createBackTransition().inApp ? "True" : "False"}</p>
+            <p>Active State {JSON.stringify(b.getActiveState())}</p>
             <ul>
                 <li>
                     <a
                         href="#"
                         onClick={() => {
-                            b.runTransition(b.createRedirectPush("page1"));
+                            b.runTransition(b.createRedirectPush("page1", {}, { rnd: Math.random() }));
                             return true;
                         }}
                     >
@@ -63,7 +65,7 @@ function RoutePage() {
                     <a
                         href="#"
                         onClick={() => {
-                            b.runTransition(b.createRedirectPush("page2"));
+                            b.runTransition(b.createRedirectPush("page2", { id: "" + Math.random() }));
                             return true;
                         }}
                     >
@@ -74,7 +76,7 @@ function RoutePage() {
                     <a
                         href="#"
                         onClick={() => {
-                            b.runTransition(b.createRedirectReplace("page1"));
+                            b.runTransition(b.createRedirectReplace("page1", {}, { rnd: Math.random() }));
                             return true;
                         }}
                     >

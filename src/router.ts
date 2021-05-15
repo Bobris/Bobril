@@ -60,6 +60,7 @@ export interface IRouteTransition {
     type: RouteTransitionType;
     name: string | undefined;
     params: Params | undefined;
+    state: any;
     distance?: number;
 }
 
@@ -105,23 +106,25 @@ function history() {
     return window.history;
 }
 
-function push(path: string, inApp: boolean): void {
+function push(path: string, inApp: boolean, state?: any): void {
     var l = window.location;
     if (inApp) {
         programPath = path;
+        activeState = state;
         historyDeepness++;
-        history().pushState({ historyDeepness }, "", path);
+        history().pushState({ historyDeepness, state }, "", path);
         invalidate();
     } else {
         l.href = path;
     }
 }
 
-function replace(path: string, inApp: boolean) {
+function replace(path: string, inApp: boolean, state?: any) {
     var l = window.location;
     if (inApp) {
         programPath = path;
-        history().replaceState({ historyDeepness }, "", path);
+        activeState = state;
+        history().replaceState({ historyDeepness, state }, "", path);
         invalidate();
     } else {
         l.replace(path);
@@ -288,6 +291,7 @@ function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IR
 let activeRoutes: IRoute[] = [];
 let futureRoutes: IRoute[];
 let activeParams: Params = newHashObj();
+let activeState: any = undefined;
 let nodesArray: (IBobrilCacheNode | undefined)[] = [];
 let setterOfNodesArray: ((node: IBobrilCacheNode | undefined) => void)[] = [];
 const urlRegex = /.*(?:\:|\/).*/;
@@ -326,6 +330,7 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode | undefined
 addEvent("popstate", 5, (ev: PopStateEvent) => {
     let newHistoryDeepness = ev.state?.historyDeepness;
     if (newHistoryDeepness != undefined) {
+        activeState = ev.state.state;
         if (newHistoryDeepness != historyDeepness) invalidate();
         historyDeepness = newHistoryDeepness;
     }
@@ -336,7 +341,7 @@ var firstRouting = true;
 function rootNodeFactory(): IBobrilNode | undefined {
     if (waitingForPopHashChange >= 0) return undefined;
     if (history().state == undefined && historyDeepness != undefined) {
-        history().replaceState({ historyDeepness: historyDeepness }, "");
+        history().replaceState({ historyDeepness: historyDeepness, state: activeState }, "");
     }
     let browserPath = window.location.hash;
     let path = browserPath.substr(1);
@@ -350,6 +355,7 @@ function rootNodeFactory(): IBobrilNode | undefined {
             type: RouteTransitionType.Pop,
             name: undefined,
             params: undefined,
+            state: undefined,
         };
         transitionState = -1;
         programPath = browserPath;
@@ -505,11 +511,12 @@ export function urlOfRoute(name: string, params?: Params): string {
     return name;
 }
 
-const activeStyleDef = styleDef("active");
+export const activeStyleDef = styleDef("active");
 
 export function Link(data: {
     name: string;
     params?: Params;
+    state?: any;
     replace?: boolean;
     style?: IBobrilStyles;
     activeStyle?: IBobrilStyles;
@@ -521,7 +528,9 @@ export function Link(data: {
             component: {
                 id: "link",
                 onClick() {
-                    runTransition((data.replace ? createRedirectReplace : createRedirectPush)(data.name, data.params));
+                    runTransition(
+                        (data.replace ? createRedirectReplace : createRedirectPush)(data.name, data.params, data.state)
+                    );
                     return true;
                 },
             },
@@ -536,10 +545,11 @@ export function Link(data: {
     );
 }
 
-export function link(node: IBobrilNode, name: string, params?: Params): IBobrilNode {
+export function link(node: IBobrilNode, name: string, params?: Params, state?: any): IBobrilNode {
     node.data = node.data || {};
     node.data.routeName = name;
     node.data.routeParams = params;
+    node.data.routeState = state;
     postEnhance(node, {
         render(ctx: any, me: IBobrilNode) {
             let data = ctx.data;
@@ -554,28 +564,30 @@ export function link(node: IBobrilNode, name: string, params?: Params): IBobrilN
         },
         onClick(ctx: any) {
             let data = ctx.data;
-            runTransition(createRedirectPush(data.routeName, data.routeParams));
+            runTransition(createRedirectPush(data.routeName, data.routeParams, data.routeState));
             return true;
         },
     });
     return node;
 }
 
-export function createRedirectPush(name: string, params?: Params): IRouteTransition {
+export function createRedirectPush(name: string, params?: Params, state?: any): IRouteTransition {
     return {
         inApp: isInApp(name),
         type: RouteTransitionType.Push,
         name: name,
         params: params || {},
+        state: state ?? activeState,
     };
 }
 
-export function createRedirectReplace(name: string, params?: Params): IRouteTransition {
+export function createRedirectReplace(name: string, params?: Params, state?: any): IRouteTransition {
     return {
         inApp: isInApp(name),
         type: RouteTransitionType.Replace,
         name: name,
         params: params || {},
+        state: state ?? activeState,
     };
 }
 
@@ -586,6 +598,7 @@ export function createBackTransition(distance?: number): IRouteTransition {
         type: RouteTransitionType.Pop,
         name: undefined,
         params: {},
+        state: undefined,
         distance,
     };
 }
@@ -597,10 +610,10 @@ var transitionState: number = 0;
 function doAction(transition: IRouteTransition) {
     switch (transition.type) {
         case RouteTransitionType.Push:
-            push(urlOfRoute(transition.name!, transition.params), transition.inApp);
+            push(urlOfRoute(transition.name!, transition.params), transition.inApp, transition.state);
             break;
         case RouteTransitionType.Replace:
-            replace(urlOfRoute(transition.name!, transition.params), transition.inApp);
+            replace(urlOfRoute(transition.name!, transition.params), transition.inApp, transition.state);
             break;
         case RouteTransitionType.Pop:
             pop(transition.distance!);
@@ -810,4 +823,8 @@ export function getActiveRoutes() {
 
 export function getActiveParams() {
     return activeParams;
+}
+
+export function getActiveState() {
+    return activeState;
 }

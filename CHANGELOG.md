@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 17.2.0
+
+Router now allows to store additional state in browser history not visible in URL.
+Use this new method to get state `getActiveState()`. `createRedirectPush` and `createRedirectReplace` have new 3rd parameter to set state with transition, if new state is not provided current state is preserved.
+
 ## 17.1.0
 
 Fixed a lot of behaviors and inApp calculation in router. Now uses history.state to remember deepness of history.
