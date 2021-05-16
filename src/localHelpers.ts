@@ -21,3 +21,7 @@ export function assert(shouldBeTrue: boolean, messageIfFalse?: string) {
 export function newMap<K, V>(): Map<K, V> {
     return new Map();
 }
+
+export function createTextNode(content: string): Text {
+    return document.createTextNode(content);
+}

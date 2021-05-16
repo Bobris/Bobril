@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.3.0
+
+Allow to use attribute selectors in pseudo css definitions. Example: `b.styleDef({},{ "[aria-disabled=\"true\"]": { opacity: 0.5 } })`
+
 ## 17.2.0
 
 Router now allows to store additional state in browser history not visible in URL.

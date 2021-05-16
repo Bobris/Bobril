@@ -4,7 +4,10 @@ import { spriteWithColor } from "../src/cssInJs";
 describe("styles", () => {
     it("can declare merged style", () => {
         const userSelectNone = { userSelect: "none" };
-        b.styleDef([userSelectNone, { fill: "red" }]);
+        var name = b.styleDef([userSelectNone, { fill: "red" }], { '[aria-disabled="true"]': { opacity: 0.5 } });
+        b.init(() => <div />);
+        b.syncUpdate();
+        expect(document.head.innerHTML).toContain("." + name + "[aria");
     });
 
     it("can declare keyframes", () => {

@@ -7,7 +7,7 @@ import {
     RenderPhase,
 } from "./frameCallbacks";
 import { isString, isNumber, isObject, isFunction, isArray } from "./isFunc";
-import { assert, hOP, is, newHashObj, noop } from "./localHelpers";
+import { assert, createTextNode, hOP, is, newHashObj, noop } from "./localHelpers";
 
 // Bobril.Core
 
@@ -260,10 +260,6 @@ export function setIsArrayVdom(
 }
 
 const emptyObject = {};
-
-function createTextNode(content: string): Text {
-    return document.createTextNode(content);
-}
 
 function createEl(name: string): HTMLElement {
     return document.createElement(name);

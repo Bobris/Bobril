@@ -12,7 +12,7 @@ import {
     internalSetCssInJsCallbacks,
     invalidate,
 } from "./core";
-import { assert, hOP, newHashObj, noop } from "./localHelpers";
+import { assert, createTextNode, hOP, newHashObj, noop } from "./localHelpers";
 import { isArray, isFunction, isNumber, isObject, isString } from "./isFunc";
 import { setBeforeFrame } from "./frameCallbacks";
 import { getMedia } from "./media";
@@ -478,7 +478,9 @@ function beforeFrame() {
                 let item = flattenPseudo[key2];
                 shimStyle(item);
                 styleStr +=
-                    (name == undefined ? parent + ":" + key2 : buildCssRule(parent, name + ":" + key2)) +
+                    (name == undefined
+                        ? parent + addDoubleDot(key2)
+                        : buildCssRule(parent, name + addDoubleDot(key2))) +
                     " {" +
                     inlineStyleToCssDeclaration(item) +
                     "}\n";
@@ -499,12 +501,7 @@ function beforeFrame() {
             styleStr += "}\n";
         }
         var styleElement = document.createElement("style");
-        styleElement.type = "text/css";
-        if ((<any>styleElement).styleSheet) {
-            (<any>styleElement).styleSheet.cssText = styleStr;
-        } else {
-            styleElement.appendChild(document.createTextNode(styleStr));
-        }
+        styleElement.appendChild(createTextNode(styleStr));
 
         var head = document.head || document.getElementsByTagName("head")[0];
         if (htmlStyle != null) {
@@ -516,6 +513,14 @@ function beforeFrame() {
         rebuildStyles = false;
     }
     chainedBeforeFrame();
+}
+
+function addDoubleDot(pseudoOrElse: string) {
+    var c = pseudoOrElse.charCodeAt(0);
+    if (c == 32 || c == 0x5b || c == 0x2e)
+        // " ", "[", "."
+        return pseudoOrElse;
+    return ":" + pseudoOrElse;
 }
 
 export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNode {
@@ -594,8 +599,8 @@ function inlineStyleToCssDeclaration(style: any): string {
 
 // PureFuncs: styleDef, styleDefEx, sprite, spriteb, spritebc
 
-export function styleDef(style: CSSStyles, pseudo?: CSSPseudoStyles, nameHint?: string): IBobrilStyleDef {
-    return styleDefEx(undefined, style, pseudo, nameHint);
+export function styleDef(style: CSSStyles, pseudoOrAttr?: CSSPseudoStyles, nameHint?: string): IBobrilStyleDef {
+    return styleDefEx(undefined, style, pseudoOrAttr, nameHint);
 }
 
 function makeName(nameHint?: string): string {
@@ -670,21 +675,21 @@ export function namedStyleDefEx(
     name: string,
     parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
     style: CSSStyles,
-    pseudo?: CSSPseudoStyles
+    pseudoOrAttr?: CSSPseudoStyles
 ): IBobrilStyleDef {
-    var res = styleDefEx(parent, style, pseudo, name);
+    var res = styleDefEx(parent, style, pseudoOrAttr, name);
     if (res != name) throw new Error("named style " + name + " is not unique");
     return res;
 }
 
-export function namedStyleDef(name: string, style: CSSStyles, pseudo?: CSSPseudoStyles): IBobrilStyleDef {
-    return namedStyleDefEx(name, undefined, style, pseudo);
+export function namedStyleDef(name: string, style: CSSStyles, pseudoOrAttr?: CSSPseudoStyles): IBobrilStyleDef {
+    return namedStyleDefEx(name, undefined, style, pseudoOrAttr);
 }
 
 export function styleDefEx(
     parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
     style: CSSStyles,
-    pseudo?: CSSPseudoStyles,
+    pseudoOrAttr?: CSSPseudoStyles,
     nameHint?: string
 ): IBobrilStyleDef {
     nameHint = makeName(nameHint);
@@ -693,21 +698,21 @@ export function styleDefEx(
         realName: nameHint,
         parent,
         style,
-        pseudo,
+        pseudo: pseudoOrAttr,
     };
-    if (isString(style) && pseudo == undefined) {
+    if (isString(style) && pseudoOrAttr == undefined) {
         allStyles[nameHint]!.realName = style;
     } else invalidateStyles();
     return nameHint as IBobrilStyleDef;
 }
 
-export function selectorStyleDef(selector: string, style: CSSStyles, pseudo?: CSSPseudoStyles) {
+export function selectorStyleDef(selector: string, style: CSSStyles, pseudoOrAttr?: CSSPseudoStyles) {
     allStyles["b-" + globalCounter++] = {
         name: null,
         realName: null,
         parent: selector,
         style,
-        pseudo,
+        pseudo: pseudoOrAttr,
     };
     invalidateStyles();
 }
