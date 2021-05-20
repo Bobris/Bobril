@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 17.4.0
+
+Added new function `isSvgSprite`.
+
+Fixed update of element attributes when updated from undefined to object.
+
 ## 17.3.0
 
 Allow to use attribute selectors in pseudo css definitions. Example: `b.styleDef({},{ "[aria-disabled=\"true\"]": { opacity: 0.5 } })`

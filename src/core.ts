@@ -260,6 +260,7 @@ export function setIsArrayVdom(
 }
 
 const emptyObject = {};
+if (DEBUG) Object.freeze(emptyObject);
 
 function createEl(name: string): HTMLElement {
     return document.createElement(name);
@@ -1218,13 +1219,7 @@ export function updateNode(
             if (inSvgForeignObject) inSvg = true;
             finishUpdateNode(n, c, component);
             if (c.attrs || n.attrs || inNotFocusable)
-                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(
-                    c,
-                    el,
-                    n.attrs,
-                    c.attrs || {},
-                    inNotFocusable
-                );
+                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
             updateNodeStyle(el as HTMLElement, n.style, enrichClassName(c, n.className), c, inSvg);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;

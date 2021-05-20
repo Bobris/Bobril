@@ -919,6 +919,12 @@ export function svg(content: string): ColorlessSprite {
     return styleId;
 }
 
+export function isSvgSprite(id: ColorlessSprite) {
+    let orig = colorLessSpriteMap.get(id);
+    if (orig == undefined) throw new Error(id + " is not colorless sprite");
+    return "svg" in orig;
+}
+
 /// Function can take colors as functions but they are evaluated immediately => use only in render like function
 export function svgWithColor(
     id: ColorlessSprite,
