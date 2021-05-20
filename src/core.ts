@@ -1222,7 +1222,7 @@ export function updateNode(
                     c,
                     el,
                     n.attrs,
-                    c.attrs || emptyObject,
+                    c.attrs || {},
                     inNotFocusable
                 );
             updateNodeStyle(el as HTMLElement, n.style, enrichClassName(c, n.className), c, inSvg);
