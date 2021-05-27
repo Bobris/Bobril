@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.5.0
+
+Export `extractParams` router url parsing function.
+
 ## 17.4.0
 
 Added new function `isSvgSprite`.

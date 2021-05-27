@@ -33,9 +33,7 @@ declare module "./core" {
     }
 }
 
-export interface Params {
-    [name: string]: string | undefined;
-}
+export interface Params extends Record<string, string | undefined> {}
 
 // Just marker interface
 export interface IRoute {
@@ -185,13 +183,13 @@ function compilePattern(pattern: string) {
     return compiledPatterns[pattern]!;
 }
 
-// Extracts the portions of the given URL path that match the given pattern.
-// Returns null if the pattern does not match the given path.
-function extractParams(pattern: string, path: string): Params | null {
+/// Extracts the portions of the given URL path that match the given pattern.
+/// Returns undefined if the pattern does not match the given path.
+export function extractParams(pattern: string, path: string): Params | undefined {
     var object = compilePattern(pattern);
     var match = decodeUrl(path).match(object.matcher);
 
-    if (!match) return null;
+    if (!match) return undefined;
 
     var params: { [name: string]: string } = {};
 
@@ -204,9 +202,9 @@ function extractParams(pattern: string, path: string): Params | null {
     return params;
 }
 
-// Returns a version of the given route path with params interpolated.
-// Throws if there is a dynamic segment of the route path for which there is no param.
-export function injectParams(pattern: string, params?: Params) {
+/// Returns a version of the given route path with params interpolated.
+/// Throws if there is a dynamic segment of the route path for which there is no param.
+export function injectParams(pattern: string, params?: Params): string {
     params = params || {};
 
     var splatIndex = 0;
@@ -245,7 +243,7 @@ function findMatch(path: string, rs: Array<IRoute>, outParams: OutFindMatch): IR
     var l = rs.length;
     var notFoundRoute: IRoute | undefined;
     var defaultRoute: IRoute | undefined;
-    var params: Params | null;
+    var params: Params | undefined;
     for (var i = 0; i < l; i++) {
         var r = rs[i]!;
         if (r.isNotFound) {
