@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.6.0
+
+New `FragmentWithEvents` component. Courtesy of _martind-gmc_.
+
 ## 17.5.0
 
 Export `extractParams` router url parsing function.

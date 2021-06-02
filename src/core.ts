@@ -3573,13 +3573,13 @@ export function createElement(name: any, props: any): IBobrilNode {
 
 export const skipRender = { tag: "-" } as IBobrilNode;
 
-export interface IFragmentData extends IDataWithChildren { }
+export interface IFragmentData extends IDataWithChildren {}
 
 export function Fragment(data: IFragmentData): IBobrilNode {
     return { children: data.children };
 }
 
-export interface IFragmentWithEventsData extends IFragmentData, IBobrilEvents { }
+export interface IFragmentWithEventsData extends IFragmentData, IBobrilEvents {}
 
 export function FragmentWithEvents(data: IFragmentWithEventsData): IBobrilNode {
     var res: IBobrilNode = { children: data.children };
