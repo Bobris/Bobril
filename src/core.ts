@@ -3573,25 +3573,36 @@ export function createElement(name: any, props: any): IBobrilNode {
 
 export const skipRender = { tag: "-" } as IBobrilNode;
 
-export interface IFragmentData extends IBobrilEvents {
-    children: IBobrilChildren;
-    key?: string;
-    ref?: RefType;
-}
+export interface IFragmentData extends IDataWithChildren { }
 
 export function Fragment(data: IFragmentData): IBobrilNode {
     return { children: data.children };
 }
 
-export interface IPortalData {
+export interface IFragmentWithEventsData extends IFragmentData, IBobrilEvents { }
+
+export function FragmentWithEvents(data: IFragmentWithEventsData): IBobrilNode {
+    var res: IBobrilNode = { children: data.children };
+    var component: IBobrilComponent;
+    for (var n in data) {
+        if (!hOP.call(data, n)) continue;
+        var propValue = (data as any)[n];
+        if (n.startsWith("on") && isFunction(propValue)) {
+            component ??= newHashObj();
+            res.component = component;
+            (component as any)[n] = propValue.call.bind(propValue);
+        }
+    }
+
+    return res;
+}
+
+export interface IPortalData extends IDataWithChildren {
     element?: Element;
-    children: IBobrilChildren;
-    key?: string;
-    ref?: RefType;
 }
 
 export function Portal(data: IPortalData): IBobrilNode {
-    return { tag: "@", data: data.element ?? document.body, children: data.children, key: data.key, ref: data.ref };
+    return { tag: "@", data: data.element ?? document.body, children: data.children };
 }
 
 export enum EventResult {
