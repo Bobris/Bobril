@@ -691,6 +691,8 @@ function nextIteration(): void {
                 let tr = currentTransition;
                 currentTransition = null;
                 doAction(tr!);
+            } else {
+                invalidate();
             }
             currentTransition = null;
             return;

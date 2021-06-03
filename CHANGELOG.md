@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.6.1
+
+Fixed regression in router from 17.1.0 (blank screen after reload of some routes).
+
 ## 17.6.0
 
 New `FragmentWithEvents` component. Courtesy of _martind-gmc_.
