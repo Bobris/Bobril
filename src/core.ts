@@ -476,7 +476,7 @@ function pushInitCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        const flags = (c.ctx! as IBobrilCtxInternal).$hookFlags | 0;
+        let flags = getHookFlags(c);
         if (flags & hasPostInitDom) {
             updateCall.push(hookPostInitDom);
             updateInstance.push(c);
@@ -484,7 +484,25 @@ function pushInitCallback(c: IBobrilCacheNode) {
         if (flags & hasUseEffect) {
             effectInstance.push(c);
         }
+    } else {
+        var sctx = c.ctxStyle;
+        if (sctx) {
+            const flags = (sctx as IBobrilCtxInternal).$hookFlags | 0;
+            if (flags & hasPostInitDom) {
+                updateCall.push(hookPostInitDom);
+                updateInstance.push(c);
+            }
+            if (flags & hasUseEffect) {
+                effectInstance.push(c);
+            }
+        }
     }
+}
+
+function getHookFlags(c: IBobrilCacheNode<any>) {
+    let flags = (c.ctx! as IBobrilCtxInternal).$hookFlags | 0;
+    if (c.ctxStyle != undefined) flags = (c.ctxStyle as IBobrilCtxInternal).$hookFlags | flags;
+    return flags;
 }
 
 function pushUpdateCallback(c: IBobrilCacheNode) {
@@ -495,7 +513,7 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        const flags = (c.ctx! as IBobrilCtxInternal).$hookFlags | 0;
+        let flags = getHookFlags(c);
         if (flags & hasPostUpdateDom) {
             updateCall.push(hookPostUpdateDom);
             updateInstance.push(c);
@@ -512,6 +530,22 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
         if (flags & hasUseEffect) {
             effectInstance.push(c);
         }
+    } else {
+        var sctx = c.ctxStyle;
+        if (sctx) {
+            const flags = (sctx as IBobrilCtxInternal).$hookFlags | 0;
+            if (flags & hasPostUpdateDom) {
+                updateCall.push(hookPostUpdateDom);
+                updateInstance.push(c);
+            }
+            if (flags & hasPostUpdateDomEverytime) {
+                updateCall.push(hookPostUpdateDomEverytime);
+                updateInstance.push(c);
+            }
+            if (flags & hasUseEffect) {
+                effectInstance.push(c);
+            }
+        }
     }
 }
 
@@ -523,9 +557,18 @@ function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
             updateCall.push(fn);
             updateInstance.push(c);
         }
-        if (((c.ctx! as IBobrilCtxInternal).$hookFlags | 0) & hasPostUpdateDomEverytime) {
+        if (getHookFlags(c) & hasPostUpdateDomEverytime) {
             updateCall.push(hookPostUpdateDomEverytime);
             updateInstance.push(c);
+        }
+    } else {
+        var sctx = c.ctxStyle;
+        if (sctx) {
+            const flags = (sctx as IBobrilCtxInternal).$hookFlags | 0;
+            if (flags & hasPostUpdateDomEverytime) {
+                updateCall.push(hookPostUpdateDomEverytime);
+                updateInstance.push(c);
+            }
         }
     }
 }
@@ -1286,10 +1329,18 @@ export function callPostCallbacks() {
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i]!;
         currentCtx = n.ctx;
-        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} post-start`);
-        updateCall[i]!.call(n.component, currentCtx, n, n.element);
-        if (DEBUG && measureComponentMethods)
-            window.performance.measure(`${n.component.id} [post*]`, `${n.component.id} post-start`);
+        if (currentCtx) {
+            if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} post-start`);
+            updateCall[i]!.call(n.component, currentCtx, n, n.element);
+            if (DEBUG && measureComponentMethods)
+                window.performance.measure(`${n.component.id} [post*]`, `${n.component.id} post-start`);
+        }
+        currentCtx = n.ctxStyle;
+        if (currentCtx) {
+            if (DEBUG && measureComponentMethods) window.performance.mark(`style post-start`);
+            updateCall[i]!.call(n.component, currentCtx, n, n.element);
+            if (DEBUG && measureComponentMethods) window.performance.measure(`style [post*]`, `style post-start`);
+        }
     }
     currentCtx = undefined;
     updateCall = [];
@@ -1301,18 +1352,34 @@ export function callEffects() {
     for (var i = 0; i < count; i++) {
         var n = effectInstance[i]!;
         currentCtx = n.ctx;
-        if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} effect-start`);
-        const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
-        const len = hooks.length;
-        for (let i = 0; i < len; i++) {
-            const hook = hooks[i];
-            const fn = hook.useEffect;
-            if (fn !== undefined) {
-                fn.call(hook, currentCtx);
+        if (currentCtx) {
+            if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} effect-start`);
+            const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
+            const len = hooks.length;
+            for (let i = 0; i < len; i++) {
+                const hook = hooks[i];
+                const fn = hook.useEffect;
+                if (fn !== undefined) {
+                    fn.call(hook, currentCtx);
+                }
             }
+            if (DEBUG && measureComponentMethods)
+                window.performance.measure(`${n.component.id} [effect*]`, `${n.component.id} effect-start`);
         }
-        if (DEBUG && measureComponentMethods)
-            window.performance.measure(`${n.component.id} [effect*]`, `${n.component.id} effect-start`);
+        currentCtx = n.ctxStyle;
+        if (currentCtx) {
+            if (DEBUG && measureComponentMethods) window.performance.mark(`style effect-start`);
+            const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
+            const len = hooks.length;
+            for (let i = 0; i < len; i++) {
+                const hook = hooks[i];
+                const fn = hook.useEffect;
+                if (fn !== undefined) {
+                    fn.call(hook, currentCtx);
+                }
+            }
+            if (DEBUG && measureComponentMethods) window.performance.measure(`style [effect*]`, `style effect-start`);
+        }
     }
     currentCtx = undefined;
     effectInstance = [];

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.7.0
+
+Effect hooks now working in dynamic style contexts.
+
 ## 17.6.1
 
 Fixed regression in router from 17.1.0 (blank screen after reload of some routes).
