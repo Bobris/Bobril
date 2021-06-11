@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 17.8.0
+
+New hooks `useIsFocused()` and `useIsMouseOver()`. They return true if any child of current component has such state.
+New function `shouldBeFocusVisible()` which returns true if last user interaction was by keyboard.
+
 ## 17.7.0
 
 Effect hooks now working in dynamic style contexts.

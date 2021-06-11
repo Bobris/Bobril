@@ -2931,6 +2931,10 @@ let currentFocusedNode: IBobrilCacheNode | undefined = undefined;
 let nodeStack: IBobrilCacheNode[] = [];
 let focusChangeRunning = false;
 
+const focusedHookSet = new Set<CommonUseIsHook>();
+
+export let useIsFocused = buildUseIsHook(focusedHookSet);
+
 function emitOnFocusChange(inFocus: boolean): boolean {
     if (focusChangeRunning) return false;
     focusChangeRunning = true;
@@ -2969,6 +2973,7 @@ function emitOnFocusChange(inFocus: boolean): boolean {
         }
         nodeStack = newStack;
         currentFocusedNode = nodeStack.length == 0 ? undefined : nodeStack[nodeStack.length - 1];
+        focusedHookSet.forEach((v) => v.update(newStack));
     }
     focusChangeRunning = false;
     return false;
@@ -3535,7 +3540,7 @@ export function shallowEqual(a: any, b: any): boolean {
 }
 
 // TSX reactNamespace emulation
-// PureFuncs: createElement, getAllPropertyNames, component
+// PureFuncs: createElement, getAllPropertyNames, component, buildUseIsHook
 
 const jsxFactoryCache = new Map<IComponentClass<any> | IComponentFunction<any>, Function>();
 
@@ -4263,6 +4268,44 @@ export function useCaptureEvents(events: ICapturableEvents) {
         assert(hook instanceof CaptureEventsHook);
     }
     hook.events = events;
+}
+
+export class CommonUseIsHook implements IDisposable {
+    Value: boolean;
+    private _owner: Set<CommonUseIsHook>;
+    private _ctx: IBobrilCtx;
+
+    constructor(owner: Set<CommonUseIsHook>, ctx: IBobrilCtx) {
+        this.Value = false;
+        this._owner = owner;
+        this._ctx = ctx;
+        owner.add(this);
+        addDisposable(ctx, this);
+    }
+
+    update(path: IBobrilCacheNode[]) {
+        let newValue = path.indexOf(this._ctx.me) >= 0;
+        if (this.Value == newValue) return;
+        this.Value = newValue;
+        invalidate(this._ctx);
+    }
+
+    dispose() {
+        this._owner.delete(this);
+    }
+}
+
+export function buildUseIsHook(owner: Set<CommonUseIsHook>): () => boolean {
+    return () => {
+        const myHookId = hookId++;
+        const hooks = _getHooks();
+        let hook = hooks[myHookId];
+        if (hook === undefined) {
+            hook = new CommonUseIsHook(owner, currentCtx!);
+            hooks[myHookId] = hook;
+        }
+        return hook.Value;
+    };
 }
 
 export interface IDataWithChildren {

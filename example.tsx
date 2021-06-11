@@ -27,7 +27,7 @@ b.routes([
         name: "page1",
         handler: () => (
             <div>
-                <h1>Page 1</h1>
+                <h1 style={() => b.useIsMouseOver() && { background: "teal" }}>Page 1</h1>
                 <RoutePage />
             </div>
         ),

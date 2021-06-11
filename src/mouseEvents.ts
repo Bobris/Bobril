@@ -11,7 +11,10 @@ import {
     ieVersion,
     now,
     preventDefault,
+    CommonUseIsHook,
+    buildUseIsHook,
 } from "./core";
+
 import { isBoolean } from "./isFunc";
 import { newHashObj } from "./localHelpers";
 
@@ -309,10 +312,16 @@ function vdomPathFromCacheNode(n: IBobrilCacheNode | undefined): IBobrilCacheNod
     return res.reverse();
 }
 
+const mouseOverHookSet = new Set<CommonUseIsHook>();
+
+export let useIsMouseOver = buildUseIsHook(mouseOverHookSet);
+
 function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     lastMouseEv = ev;
     var node = ev.target;
     var toPath = vdomPathFromCacheNode(node);
+
+    mouseOverHookSet.forEach((v) => v.update(toPath));
 
     bubble(node, "onMouseOver", ev);
 
@@ -480,7 +489,7 @@ function bustingClick(ev: MouseEvent, _target: Node | undefined, _node: IBobrilC
     return false;
 }
 
-var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "^click"];
+var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "^click"] as const;
 var bustingEventHandlers = [
     bustingPointerDown,
     bustingPointerMove,
@@ -603,3 +612,19 @@ export const ignoreClick = (x: number, y: number) => {
     var delay = ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
     toBust.push([x, y, now() + delay, 1]);
 };
+
+let lastInteractionWasKeyboard = false;
+
+addEvent(bustingEventNames[0], 2, () => {
+    lastInteractionWasKeyboard = false;
+    return false;
+});
+
+addEvent("keydown", 2, () => {
+    lastInteractionWasKeyboard = true;
+    return false;
+});
+
+export function shouldBeFocusVisible() {
+    return lastInteractionWasKeyboard;
+}
