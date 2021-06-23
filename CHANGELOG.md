@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.9.0
+
+Fixed compatibility with TypeScript 4.3.4
+
 ## 17.8.0
 
 New hooks `useIsFocused()` and `useIsMouseOver()`. They return true if any child of current component has such state.

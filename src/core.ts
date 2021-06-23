@@ -1955,8 +1955,8 @@ try {
             isPassiveEventHandlerSupported = true;
         },
     });
-    window.addEventListener("test", options, options);
-    window.removeEventListener("test", options, options);
+    window.addEventListener("blur", options as any, options);
+    window.removeEventListener("blur", options as any, options);
 } catch (err) {
     isPassiveEventHandlerSupported = false;
 }
