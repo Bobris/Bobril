@@ -614,17 +614,41 @@ export const ignoreClick = (x: number, y: number) => {
 };
 
 let lastInteractionWasKeyboard = false;
+const inputTypesWithPermanentFocusVisible =
+    /te(l|xt)|search|url|email|password|number|month|week|(date)?(time)?(-local)?/i;
+
+function hasAlwaysFocusVisible(element: typeof document.activeElement): boolean {
+    if (element == null) {
+        return false;
+    }
+
+    if (
+        element.tagName == "INPUT" &&
+        inputTypesWithPermanentFocusVisible.test((element as HTMLInputElement).type) &&
+        !(element as HTMLInputElement).readOnly
+    ) {
+        return true;
+    }
+
+    if (element.tagName == "TEXTAREA" && !(element as HTMLTextAreaElement).readOnly) {
+        return true;
+    }
+
+    return (element as HTMLElement).isContentEditable;
+}
 
 addEvent(bustingEventNames[0], 2, () => {
     lastInteractionWasKeyboard = false;
     return false;
 });
 
-addEvent("keydown", 2, () => {
-    lastInteractionWasKeyboard = true;
+addEvent("keydown", 2, (ev) => {
+    if (!ev.metaKey && !ev.altKey && !ev.ctrlKey) {
+        lastInteractionWasKeyboard = true;
+    }
     return false;
 });
 
 export function shouldBeFocusVisible() {
-    return lastInteractionWasKeyboard;
+    return lastInteractionWasKeyboard || hasAlwaysFocusVisible(document.activeElement);
 }
