@@ -85,5 +85,7 @@ describe("useEvents", () => {
             y: 20,
         });
         expect(called).toBe("COne1COne2CTwo1CTwo2CTwo1CTwo2Two1Two2One1One2");
+        b.init(() => undefined);
+        b.syncUpdate();
     });
 });

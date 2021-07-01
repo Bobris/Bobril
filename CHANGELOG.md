@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.0
+
+Improved `shouldBeFocusVisible()`.
+
 ## 17.9.0
 
 Fixed compatibility with TypeScript 4.3.4
