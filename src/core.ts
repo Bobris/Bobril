@@ -3636,8 +3636,9 @@ export function createElement(name: any, props: any): IBobrilNode {
             }
         }
         if (props != undefined) {
-            if (props.key != undefined) res.key = props.key;
             if (props.ref != undefined) res.ref = props.ref;
+            if (props.key != undefined) res.key = props.key;
+            delete props.key;
         }
         return res;
     }
