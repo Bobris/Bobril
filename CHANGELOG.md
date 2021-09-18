@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.11.0
+
+`key` and `ref` are deleted from props in TSX. 
+
 ## 17.10.0
 
 Improved `shouldBeFocusVisible()`.
