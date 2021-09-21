@@ -1,4 +1,5 @@
 import {
+    Component,
     IBobrilCtx,
     IBobrilComponent,
     IBobrilChildren,
@@ -11,7 +12,8 @@ import {
     IBobrilStyles,
     postEnhance,
     IDataWithChildren,
-    getDomNode,
+    getCurrentCtx,
+    getDomNode,    
 } from "./core";
 import { style, styleDef } from "./cssInJs";
 import { isArray, isFunction, isObject } from "./isFunc";
@@ -827,4 +829,14 @@ export function getActiveParams() {
 
 export function getActiveState() {
     return activeState;
+}
+
+export function useCanDeactivate(handler: NonNullable<Component["canDeactivate"]>): void {
+    const ctx = getCurrentCtx();
+
+    if (ctx) {
+        ctx.me.component.canDeactivate = function (ctx: IBobrilCtx, transition: IRouteTransition): IRouteCanResult {
+            return handler.call(ctx, transition);
+        };
+    }
 }
