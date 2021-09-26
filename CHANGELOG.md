@@ -1,8 +1,12 @@
 # CHANGELOG
 
+## 17.12.0
+
+`useCanDeactivate` new hook with limitation only one per component.
+
 ## 17.11.0
 
-`key` and `ref` are deleted from props in TSX. 
+`key` and `ref` are deleted from props in TSX.
 
 ## 17.10.0
 

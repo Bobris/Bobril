@@ -13,7 +13,7 @@ import {
     postEnhance,
     IDataWithChildren,
     getCurrentCtx,
-    getDomNode,    
+    getDomNode,
 } from "./core";
 import { style, styleDef } from "./cssInJs";
 import { isArray, isFunction, isObject } from "./isFunc";
