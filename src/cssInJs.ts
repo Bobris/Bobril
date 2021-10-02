@@ -3,6 +3,7 @@ import {
     applyDynamicStyle,
     ColorlessSprite,
     destroyDynamicStyle,
+    IBobrilCacheChildren,
     IBobrilCacheNode,
     IBobrilCacheNodeUnsafe,
     IBobrilChildren,
@@ -14,7 +15,7 @@ import {
 } from "./core";
 import { assert, createTextNode, hOP, newHashObj, noop } from "./localHelpers";
 import { isArray, isFunction, isNumber, isObject, isString } from "./isFunc";
-import { setBeforeFrame } from "./frameCallbacks";
+import { setAfterFrame } from "./frameCallbacks";
 import { getMedia } from "./media";
 
 declare var DEBUG: boolean;
@@ -252,7 +253,7 @@ var rebuildStyles = false;
 var htmlStyle: HTMLStyleElement | null = null;
 var globalCounter: number = 0;
 
-var chainedBeforeFrame = setBeforeFrame(beforeFrame);
+var chainedAfterFrame = setAfterFrame(afterFrame);
 
 const cssSubRuleDelimiter = /\:|\ |\>/;
 
@@ -323,7 +324,7 @@ let lastSpriteDppx = 1;
 let hasBundledSprites = false;
 let wasSpriteUrlChanged = true;
 
-function beforeFrame() {
+function afterFrame(root: IBobrilCacheChildren | null) {
     var currentDppx = getMedia().dppx;
     if (hasBundledSprites && lastDppx != currentDppx) {
         lastDppx = currentDppx;
@@ -512,7 +513,7 @@ function beforeFrame() {
         htmlStyle = styleElement;
         rebuildStyles = false;
     }
-    chainedBeforeFrame();
+    chainedAfterFrame(root);
 }
 
 function addDoubleDot(pseudoOrElse: string) {
@@ -623,7 +624,7 @@ export type AnimationNameFactory = ((params?: string) => string) & ((styles: CSS
 export function keyframesDef(def: Keyframes, nameHint?: string): AnimationNameFactory {
     nameHint = makeName(nameHint);
     allAnimations[nameHint] = { name: nameHint, def };
-    invalidateStyles();
+    rebuildStyles = true;
     const res = (params?: string) => {
         if (isString(params)) return params + " " + nameHint;
         return nameHint!;
@@ -668,7 +669,7 @@ export function mediaQueryDef(def: string, mediaQueryDefinition: MediaQueryDefin
         allMediaQueries[def] = mediaQuery;
     }
     mediaQuery.push(mediaQueryDefinition);
-    invalidateStyles();
+    rebuildStyles = true;
 }
 
 export function namedStyleDefEx(
@@ -702,7 +703,7 @@ export function styleDefEx(
     };
     if (isString(style) && pseudoOrAttr == undefined) {
         allStyles[nameHint]!.realName = style;
-    } else invalidateStyles();
+    } else rebuildStyles = true;
     return nameHint as IBobrilStyleDef;
 }
 
@@ -714,7 +715,7 @@ export function selectorStyleDef(selector: string, style: CSSStyles, pseudoOrAtt
         style,
         pseudo: pseudoOrAttr,
     };
-    invalidateStyles();
+    rebuildStyles = true;
 }
 
 export function invalidateStyles(): void {

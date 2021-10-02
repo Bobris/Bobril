@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.13.0
+
+Css update was moved from before frame to after frame to prevent unstyled icons.
+
 ## 17.12.0
 
 `useCanDeactivate` new hook with limitation only one per component.
