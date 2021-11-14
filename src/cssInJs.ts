@@ -598,7 +598,7 @@ function inlineStyleToCssDeclaration(style: any): string {
     return res;
 }
 
-// PureFuncs: styleDef, styleDefEx, sprite, spriteb, spritebc
+// PureFuncs: styleDef, styleDefEx, sprite, spriteb, spritebc, svg
 
 export function styleDef(style: CSSStyles, pseudoOrAttr?: CSSPseudoStyles, nameHint?: string): IBobrilStyleDef {
     return styleDefEx(undefined, style, pseudoOrAttr, nameHint);
