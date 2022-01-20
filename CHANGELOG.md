@@ -1,5 +1,7 @@
 # CHANGELOG
 
+Fixed refs when switched instances during one render.
+
 ## 18.1.0
 
 Added basic support for wrapping Web Components (custom events will be added in next version).

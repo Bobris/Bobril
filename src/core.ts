@@ -142,7 +142,7 @@ export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = 
 
 export type RefType =
     | [IBobrilCtx, string]
-    | ((node: IBobrilCacheNode | undefined) => void)
+    | ((node: IBobrilCacheNode | undefined, oldNode?: IBobrilCacheNode) => void)
     | { current: IBobrilCacheNode | undefined };
 
 // new node should at least have tag or component or children member
@@ -589,7 +589,7 @@ function findCfg(parent: IBobrilCacheNode | undefined): any {
     return cfg;
 }
 
-function setRef(ref: RefType | undefined, value: IBobrilCacheNode | undefined) {
+function setRef(ref: RefType | undefined, value: IBobrilCacheNode) {
     if (ref === undefined) return;
     if ("current" in ref) {
         ref.current = value;
@@ -603,6 +603,23 @@ function setRef(ref: RefType | undefined, value: IBobrilCacheNode | undefined) {
             ctx.refs = refs;
         }
         refs[ref[1]] = value;
+    }
+}
+
+function unsetRef(ref: RefType | undefined, value: IBobrilCacheNode) {
+    if (ref === undefined) return;
+    if ("current" in ref) {
+        if (ref.current == value) ref.current = undefined;
+    } else if (isFunction(ref)) {
+        ref(undefined, value);
+    } else if (isArray(ref)) {
+        const ctx = ref[0];
+        let refs = ctx.refs;
+        if (refs === undefined) {
+            refs = newHashObj();
+            ctx.refs = refs;
+        }
+        if (refs[ref[1]] == value) refs[ref[1]] = undefined;
     }
 }
 
@@ -957,7 +974,7 @@ function createChildren(c: IBobrilCacheNodeUnsafe, createInto: Element, createBe
 }
 
 function destroyNode(c: IBobrilCacheNode) {
-    setRef(c.ref, undefined);
+    unsetRef(c.ref, c);
     let ch = c.children;
     if (isArray(ch)) {
         for (let i = 0, l = ch.length; i < l; i++) {
