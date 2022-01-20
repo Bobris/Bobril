@@ -37,7 +37,7 @@ Features:
 -   Components does not need to be HTML Elements - where is component(0-1) to HTMLNode(0-n) mapping
 -   Support for partial invalidates for even faster redraws
 -   Normalization of Events
--   support for IE11 and evergreen browsers
+-   support for evergreen browsers
 -   batching of redrawing
 -   any html element could be root
 -   automatic passing of global configuration/context to children
@@ -52,9 +52,9 @@ Features:
 -   Media detection
 -   Focus, Blur, FocusIn, FocusOut events
 -   Transparently add vendor prefixes for inline styles
--   Asap (setImmediate) and Promise A+ polyfill - simplified https://github.com/taylorhakes/setAsap and https://github.com/taylorhakes/promise-polyfill
+-   Asap (setImmediate)
 -   Scroll notification
--   Drag and Drop - uses browser one except on IE11, multi touch, allows animating drag, state of the art as usual
+-   Drag and Drop - multi touch, allows animating drag, state of the art as usual
 -   Style - create css dynamically for even faster speed, allow recomputing styles for theming
 -   PNG Sprites with dynamic change of color
 

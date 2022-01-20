@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 18.1.0
+
+Added basic support for wrapping Web Components (custom events will be added in next version).
+
+## 18.0.0
+
+Removed compatibility with IE11 and old Edge.
+Removed definition of `Thenable<T>` replace by `PromiseLike<T>` if you used it.
+
 ## 17.13.1
 
 `svg` method was not marked as pure.

@@ -20,7 +20,7 @@ import { getMedia } from "./media";
 
 declare var DEBUG: boolean;
 
-const vendors = ["Webkit", "Moz", "ms", "O"];
+const vendors = ["Webkit", "Moz", "O"];
 const testingDivStyle: any = document.createElement("div").style;
 function testPropExistence(name: string) {
     return isString(testingDivStyle[name]);
@@ -574,14 +574,12 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
 }
 
 const uppercasePattern = /([A-Z])/g;
-const msPattern = /^ms-/;
-
 const hyphenateCache = new Map([["cssFloat", "float"]]);
 
 function hyphenateStyle(s: string): string {
     var res = hyphenateCache.get(s);
     if (res === undefined) {
-        res = s.replace(uppercasePattern, "-$1").toLowerCase().replace(msPattern, "-ms-");
+        res = s.replace(uppercasePattern, "-$1").toLowerCase();
         hyphenateCache.set(s, res);
     }
     return res;

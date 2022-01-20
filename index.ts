@@ -1,4 +1,3 @@
-import "./src/ie11";
 export * from "./src/isFunc";
 export * from "./src/asap";
 export * from "./src/cssTypes";
@@ -12,6 +11,7 @@ export * from "./src/dnd";
 export * from "./src/mediaQueryBuilder";
 export * from "./src/svgExtensions";
 export * from "./src/cssInJs";
+export * from "./src/wc";
 
 import { setAfterFrame, setBeforeFrame } from "./src/frameCallbacks";
 import { deref, getRoots, setInvalidate, ignoreShouldChange, setBeforeInit, setKeysInClassNames } from "./src/core";

@@ -130,6 +130,8 @@ export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = 
     postUpdateDomEverytime?(ctx: IBobrilCtx<TData>, me: IBobrilCacheNode, element: HTMLElement): void;
     /// called just before removing node from dom
     destroy?(ctx: IBobrilCtx<TData>, me: IBobrilNode, element: HTMLElement): void;
+    /// called after onX and before shouldStopBubble to handle any event
+    handleGenericEvent?(ctx: IBobrilCtx<TData>, name: string, param: Object): GenericEventResult;
     /// called when bubbling event to parent so you could stop bubbling without preventing default handling
     shouldStopBubble?(ctx: IBobrilCtx<TData>, name: string, param: Object): boolean;
     /// called when broadcast wants to dive in this node so you could silence broadcast for you and your children
@@ -2364,6 +2366,21 @@ export function bubble<T extends EventNames>(
             var m = (<any>c)[name];
             if (m) {
                 const eventResult = +m.call(c, ctx, param) as EventResult;
+                if (eventResult == EventResult.HandledPreventDefault) {
+                    currentCtxWithEvents = prevCtx;
+                    return ctx;
+                }
+                if (eventResult == EventResult.HandledButRunDefault) {
+                    currentCtxWithEvents = prevCtx;
+                    return undefined;
+                }
+                if (eventResult == EventResult.NotHandledPreventDefault) {
+                    res = ctx;
+                }
+            }
+            m = (<any>c).handleGenericEvent;
+            if (m) {
+                const eventResult = +m.call(c, ctx, name, param) as EventResult;
                 if (eventResult == EventResult.HandledPreventDefault) {
                     currentCtxWithEvents = prevCtx;
                     return ctx;
