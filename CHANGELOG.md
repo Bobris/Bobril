@@ -1,6 +1,10 @@
 # CHANGELOG
 
+## 18.2.0
+
 Fixed refs when switched instances during one render.
+
+Custom events in WebComponent wrapper making it complete.
 
 ## 18.1.0
 
