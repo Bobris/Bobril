@@ -251,16 +251,6 @@ export interface ISelectionChangeEvent extends IEventParam {
 
 declare var DEBUG: boolean;
 
-var isArrayVdom = isArray;
-
-export function setIsArrayVdom(
-    isArrayFnc: <T>(
-        arg: T | {}
-    ) => arg is T extends readonly any[] ? (unknown extends T ? never : readonly any[]) : any[]
-) {
-    isArrayVdom = isArrayFnc;
-}
-
 const emptyObject = {};
 if (DEBUG) Object.freeze(emptyObject);
 
@@ -276,7 +266,7 @@ export let assign = Object.assign;
 
 // PureFuncs: flatten
 export function flatten(a: any | any[]): any[] {
-    if (!isArrayVdom(a)) {
+    if (!isArray(a)) {
         if (a == undefined || a === false || a === true) return [];
         return [a];
     }
@@ -284,7 +274,7 @@ export function flatten(a: any | any[]): any[] {
     let aLen = a.length;
     for (let i = 0; i < aLen; ) {
         let item = a[i];
-        if (isArrayVdom(item)) {
+        if (isArray(item)) {
             a.splice.apply(a, [i, 1].concat(item));
             aLen = a.length;
             continue;
@@ -1474,7 +1464,7 @@ function reorderAndUpdateNodeInUpdateChildren(
 
 function recursiveFlattenVdomChildren(res: IBobrilNode[], children: IBobrilChildren) {
     if (children == undefined) return;
-    if (isArrayVdom(children)) {
+    if (isArray(children)) {
         for (let i = 0; i < children.length; i++) {
             recursiveFlattenVdomChildren(res, children[i]);
         }
@@ -3901,6 +3891,29 @@ export function _allocHook() {
     return hookId++;
 }
 
+function setStateHookFunction<T>(this: [T, any, IBobrilCtx], value: T | ((value: T) => T)) {
+    if (isFunction(value)) {
+        value = value(this[0]);
+    }
+    if (!is(value, this[0])) {
+        this[0] = value;
+        invalidate(this[2]);
+    }
+}
+
+function useStateIterator(this: Array<any>) {
+    var i = 0;
+    var self = this;
+    return {
+        next: function () {
+            return {
+                value: self[i++],
+                done: false,
+            };
+        },
+    };
+}
+
 export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T | ((value: T) => T)) => void] {
     const myHookId = hookId++;
     const hooks = _getHooks();
@@ -3910,23 +3923,17 @@ export function useState<T>(initValue: T | (() => T)): IProp<T> & [T, (value: T 
         if (isFunction(initValue)) {
             initValue = initValue();
         }
-        hook = (value?: T) => {
-            if (value !== undefined && !is(value, hook[0])) {
-                hook[0] = value;
-                invalidate(ctx);
+        hook = (...value: [T?]) => {
+            if (value.length == 1 && !is(value[0], hook[0])) {
+                hook[0] = value[0];
+                invalidate(hook[2]);
             }
             return hook[0];
         };
         hook[0] = initValue;
-        hook[1] = (value: T | ((value: T) => T)) => {
-            if (isFunction(value)) {
-                value = value(hook[0]);
-            }
-            if (!is(value, hook[0])) {
-                hook[0] = value;
-                invalidate(ctx);
-            }
-        };
+        hook[1] = setStateHookFunction.bind(hook);
+        hook[2] = ctx;
+        hook[Symbol.iterator] = useStateIterator;
         hooks[myHookId] = hook;
     }
     return hook;

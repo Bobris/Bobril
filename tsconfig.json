@@ -9,13 +9,8 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": [
-      "es5",
-      "dom",
-      "es2015.core",
-      "es2015.promise",
-      "es2015.iterable",
-      "es2015.generator",
-      "es2015.collection"
+      "ES2018",
+      "dom"
     ],
     "module": "commonjs",
     "noEmitHelpers": true,
@@ -34,7 +29,7 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "es5",
+    "target": "es2018",
     "resolveJsonModule": true
   },
   "files": [

@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "18.2.0",
+    "version": "19.0.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -17,6 +17,11 @@
     },
     "bobril": {
         "compilerOptions": {
+            "target": "ES2018",
+            "lib": [
+                "ES2018",
+                "dom"
+            ],
             "noImplicitAny": true,
             "noImplicitThis": true,
             "noUnusedLocals": true,
@@ -39,6 +44,6 @@
     "license": "MIT",
     "devDependencies": {
         "prettier": "*",
-        "typescript": "^4.5.4"
+        "typescript": "^4.5.5"
     }
 }

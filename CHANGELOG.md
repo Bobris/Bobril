@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 19.0.0
+
+Removed now unused feature of isArray customization, Bobx now uses Proxies which makes them Array.isArray compatible.
+
+Made useState compatible with ES2015 spread.
+
 ## 18.2.0
 
 Fixed refs when switched instances during one render.
