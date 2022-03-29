@@ -489,7 +489,7 @@ function bustingClick(ev: MouseEvent, _target: Node | undefined, _node: IBobrilC
     return false;
 }
 
-var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "^click"] as const;
+var bustingEventNames = ["!PointerDown", "!PointerMove", "!PointerUp", "!PointerCancel", "click"] as const;
 var bustingEventHandlers = [
     bustingPointerDown,
     bustingPointerMove,
@@ -560,8 +560,8 @@ export function nodeOnPoint(x: number, y: number): IBobrilCacheNode | undefined 
 }
 
 // click must have higher priority over onchange detection
-addEvent5("^click", createHandler(onClickText));
-addEvent5("^dblclick", createHandler(onDoubleClickText));
+addEvent5("click", createHandler(onClickText));
+addEvent5("dblclick", createHandler(onDoubleClickText));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 
 function handleMouseWheel(ev: any, _target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {

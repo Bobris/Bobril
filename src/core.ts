@@ -1972,19 +1972,20 @@ try {
 
 var listeningEventDeepness = 0;
 
-function addListener(el: EventTarget, name: string) {
+function addListener(el: EventTarget, name: string, nonbody: boolean) {
     if (name[0] == "!") return;
     var capture = name[0] == "^";
     var eventName = name;
     if (name[0] == "@") {
+        if (nonbody) return;
         eventName = name.slice(1);
         el = document;
     }
     if (capture) {
+        if (nonbody) return;
         eventName = name.slice(1);
     }
     function enhanceEvent(ev: Event) {
-        ev = ev || window.event;
         var t = ev.target || el;
         var n = deref(<any>t);
         listeningEventDeepness++;
@@ -1992,7 +1993,9 @@ function addListener(el: EventTarget, name: string) {
         listeningEventDeepness--;
         if (listeningEventDeepness == 0 && deferSyncUpdateRequested) syncUpdate();
     }
-    if ("on" + eventName in window) el = window;
+    if (!nonbody) {
+        if ("on" + eventName in window) el = window;
+    }
     el.addEventListener(
         eventName,
         enhanceEvent,
@@ -2012,7 +2015,15 @@ function initEvents() {
     registryEvents = undefined;
     var body = document.body;
     for (var i = 0; i < eventNames.length; i++) {
-        addListener(body, eventNames[i]!);
+        addListener(body, eventNames[i]!, false);
+    }
+}
+
+/// Use this function when combining 3rd party library which listen events like click and stop bubbling, but you want to use Bobril in its children
+export function addEventListeners(el: Node) {
+    var eventNames = Object.keys(regEvents);
+    for (var i = 0; i < eventNames.length; i++) {
+        addListener(el, eventNames[i]!, true);
     }
 }
 
@@ -2723,6 +2734,7 @@ export function postEnhance(node: IBobrilNode, methods: IBobrilComponent): IBobr
 
 export function preventDefault(event: Event) {
     event.preventDefault();
+    event.stopPropagation();
 }
 
 function cloneNodeArray(a: IBobrilChildArray): IBobrilChildArray {

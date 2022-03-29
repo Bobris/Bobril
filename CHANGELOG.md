@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 20.0.0
+
+Click and DblClick events are not listened in Capture phase which increase compatibility with web components.
+New method `addEventListeners` needs to be called when using Bobril nodes in 3rd party library which prevents bubbling of various browser events. You will want to usually call together with `addRoot`.
+
 ## 19.0.0
 
 Removed now unused feature of isArray customization, Bobx now uses Proxies which makes them Array.isArray compatible.
