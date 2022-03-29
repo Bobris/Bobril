@@ -564,7 +564,6 @@ addEvent5("^click", createHandler(onClickText));
 addEvent5("^dblclick", createHandler(onDoubleClickText));
 addEvent5("contextmenu", createHandler("onContextMenu", true));
 
-let wheelSupport = ("onwheel" in document.createElement("div") ? "" : "mouse") + "wheel";
 function handleMouseWheel(ev: any, _target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
     let button = ev.button + 1;
     let buttons = ev.buttons;
@@ -575,15 +574,8 @@ function handleMouseWheel(ev: any, _target: Node | undefined, node: IBobrilCache
             button++;
         }
     }
-    let dx = 0,
-        dy: number;
-    if (wheelSupport == "mousewheel") {
-        dy = (-1 / 40) * ev.wheelDelta;
-        ev.wheelDeltaX && (dx = (-1 / 40) * ev.wheelDeltaX);
-    } else {
-        dx = ev.deltaX;
-        dy = ev.deltaY;
-    }
+    let dx = ev.deltaX;
+    let dy = ev.deltaY;
     var param: IBobrilMouseWheelEvent = {
         target: node!,
         dx,
@@ -604,7 +596,7 @@ function handleMouseWheel(ev: any, _target: Node | undefined, node: IBobrilCache
     }
     return false;
 }
-addEvent5(wheelSupport, handleMouseWheel);
+addEvent5("wheel", handleMouseWheel);
 
 export const pointersDownCount = () => Object.keys(pointersDown).length;
 export const firstPointerDownId = () => firstPointerDown;
