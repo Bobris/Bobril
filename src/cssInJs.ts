@@ -218,6 +218,7 @@ interface IResponsiveDynamicSprite extends IResponsiveSprite {
     color: string | (() => string);
     lastColor: string;
     lastUrl: string;
+    used: boolean;
 }
 
 interface IInternalStyle {
@@ -246,6 +247,7 @@ var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
 var dynamicSprites: IDynamicSprite[] = [];
 var svgSprites = new Map<string, ColorlessSprite>();
+var unusedBundled = new Map<string, IResponsiveDynamicSprite>();
 var bundledDynamicSprites: IResponsiveDynamicSprite[] = [];
 var imageCache: { [url: string]: HTMLImageElement | null } = newHashObj();
 var injectedCss = "";
@@ -359,6 +361,7 @@ function afterFrame(root: IBobrilCacheChildren | null) {
             if (imageSprite != null) {
                 for (let i = 0; i < bundledDynamicSprites.length; i++) {
                     let dynSprite = bundledDynamicSprites[i]!;
+                    if (!dynSprite.used) continue;
                     let colorStr = dynSprite.color;
                     if (!isString(colorStr)) colorStr = colorStr();
                     if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
@@ -541,6 +544,11 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
         if (s == undefined || s === true || s === false || s === "" || s === 0) {
             // skip
         } else if (isString(s)) {
+            if (unusedBundled.has(s)) {
+                unusedBundled.get(s)!.used = true;
+                unusedBundled.delete(s);
+                rebuildStyles = true;
+            }
             var sd = allStyles[s];
             if (sd != undefined) {
                 s = sd.realName! as IBobrilStyleDef;
@@ -748,6 +756,7 @@ function recolorAndClip(
     left: number,
     top: number
 ): string {
+    console.time("recolorAndClip");
     var canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
@@ -807,7 +816,9 @@ function recolorAndClip(
         }
     }
     ctx.putImageData(imgData, 0, 0);
-    return canvas.toDataURL();
+    var res = canvas.toDataURL();
+    console.timeEnd("recolorAndClip");
+    return res;
 }
 
 let lastFuncId = 0;
@@ -1045,7 +1056,7 @@ export function spritebc(
         }
     }
     var key = colorId + ":" + width + ":" + height + ":" + left + ":" + top;
-    var spDef = bundledSprites[key];
+    var spDef = bundledSprites[key] as IResponsiveDynamicSprite;
     if (spDef) return spDef.styleId;
     hasBundledSprites = true;
     var styleId = styleDef({ width, height });
@@ -1055,12 +1066,14 @@ export function spritebc(
         height,
         left,
         top,
+        used: false,
+        color,
+        lastColor: "",
+        lastUrl: "",
     };
-    (<IResponsiveDynamicSprite>spDef).color = color;
-    (<IResponsiveDynamicSprite>spDef).lastColor = "";
-    (<IResponsiveDynamicSprite>spDef).lastUrl = "";
-    bundledDynamicSprites.push(<IResponsiveDynamicSprite>spDef);
+    bundledDynamicSprites.push(spDef);
     bundledSprites[key] = spDef;
+    unusedBundled.set(styleId, spDef);
     return styleId;
 }
 

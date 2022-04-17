@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.1.0
+
+Create dynamically colored sprites lazily only when used by `b.style`. Should make first start of big applications much faster.
+
 ## 20.0.0
 
 Click and DblClick events are not listened in Capture phase which increase compatibility with web components.
