@@ -3,6 +3,7 @@
 ## 20.1.0
 
 Create dynamically colored sprites lazily only when used by `b.style`. Should make first start of big applications much faster.
+Maybe sprite speed up by remembering ImageData instead of Image.
 
 ## 20.0.0
 
