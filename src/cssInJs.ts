@@ -20,7 +20,7 @@ import { getMedia } from "./media";
 
 declare var DEBUG: boolean;
 
-const vendors = ["Webkit", "Moz", "ms", "O"];
+const vendors = ["Webkit", "Moz", "O"];
 const testingDivStyle: any = document.createElement("div").style;
 function testPropExistence(name: string) {
     return isString(testingDivStyle[name]);
@@ -218,6 +218,7 @@ interface IResponsiveDynamicSprite extends IResponsiveSprite {
     color: string | (() => string);
     lastColor: string;
     lastUrl: string;
+    used: boolean;
 }
 
 interface IInternalStyle {
@@ -246,8 +247,9 @@ var bundledSprites: { [key: string]: IResponsiveSprite } = newHashObj();
 var allNameHints: { [name: string]: boolean } = newHashObj();
 var dynamicSprites: IDynamicSprite[] = [];
 var svgSprites = new Map<string, ColorlessSprite>();
+var unusedBundled = new Map<string, IResponsiveDynamicSprite>();
 var bundledDynamicSprites: IResponsiveDynamicSprite[] = [];
-var imageCache: { [url: string]: HTMLImageElement | null } = newHashObj();
+var imageCache: { [url: string]: ImageData | null } = newHashObj();
 var injectedCss = "";
 var rebuildStyles = false;
 var htmlStyle: HTMLStyleElement | null = null;
@@ -352,13 +354,14 @@ function afterFrame(root: IBobrilCacheChildren | null) {
                 imageSprite = null;
                 imageCache[lastSpriteUrl] = imageSprite;
                 loadImage(lastSpriteUrl, (image) => {
-                    imageCache[lastSpriteUrl] = image;
+                    imageCache[lastSpriteUrl] = getImageData(image);
                     invalidateStyles();
                 });
             }
             if (imageSprite != null) {
                 for (let i = 0; i < bundledDynamicSprites.length; i++) {
                     let dynSprite = bundledDynamicSprites[i]!;
+                    if (!dynSprite.used) continue;
                     let colorStr = dynSprite.color;
                     if (!isString(colorStr)) colorStr = colorStr();
                     if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
@@ -541,6 +544,11 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
         if (s == undefined || s === true || s === false || s === "" || s === 0) {
             // skip
         } else if (isString(s)) {
+            if (unusedBundled.has(s)) {
+                unusedBundled.get(s)!.used = true;
+                unusedBundled.delete(s);
+                rebuildStyles = true;
+            }
             var sd = allStyles[s];
             if (sd != undefined) {
                 s = sd.realName! as IBobrilStyleDef;
@@ -574,14 +582,12 @@ export function style(node: IBobrilNode, ...styles: IBobrilStyles[]): IBobrilNod
 }
 
 const uppercasePattern = /([A-Z])/g;
-const msPattern = /^ms-/;
-
 const hyphenateCache = new Map([["cssFloat", "float"]]);
 
 function hyphenateStyle(s: string): string {
     var res = hyphenateCache.get(s);
     if (res === undefined) {
-        res = s.replace(uppercasePattern, "-$1").toLowerCase().replace(msPattern, "-ms-");
+        res = s.replace(uppercasePattern, "-$1").toLowerCase();
         hyphenateCache.set(s, res);
     }
     return res;
@@ -742,21 +748,32 @@ function emptyStyleDef(url: string): IBobrilStyleDef {
 
 const rgbaRegex = /\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*/;
 
+function createCanvas(width: number, height: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    return [canvas, <CanvasRenderingContext2D>canvas.getContext("2d")];
+}
+
+function getImageData(image: HTMLImageElement): ImageData {
+    let width = image.naturalWidth;
+    let height = image.naturalHeight;
+    let ctx = createCanvas(width, height)[1];
+    ctx.drawImage(image, 0, 0);
+    return ctx.getImageData(0, 0, width, height);
+}
+
 function recolorAndClip(
-    image: HTMLImageElement,
+    imageData: ImageData,
     colorStr: string,
     width: number,
     height: number,
     left: number,
     top: number
 ): string {
-    var canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    var ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
-    ctx.drawImage(image, -left, -top);
-    var imgData = ctx.getImageData(0, 0, width, height);
-    var imgDataData = imgData.data;
+    let [canvas, ctx] = createCanvas(width, height);
+    let imgData = ctx.createImageData(width, height);
+    let imgDataData = imgData.data;
     let rgba = rgbaRegex.exec(colorStr);
     let cRed: number, cGreen: number, cBlue: number, cAlpha: number;
     if (rgba) {
@@ -765,13 +782,26 @@ function recolorAndClip(
         cBlue = parseInt(rgba[3]!, 10);
         cAlpha = Math.round(parseFloat(rgba[4]!) * 255);
     } else {
-        cRed = parseInt(colorStr.substr(1, 2), 16);
-        cGreen = parseInt(colorStr.substr(3, 2), 16);
-        cBlue = parseInt(colorStr.substr(5, 2), 16);
-        cAlpha = parseInt(colorStr.substr(7, 2), 16) || 0xff;
+        cRed = parseInt(colorStr.slice(1, 3), 16);
+        cGreen = parseInt(colorStr.slice(3, 5), 16);
+        cBlue = parseInt(colorStr.slice(5, 7), 16);
+        cAlpha = parseInt(colorStr.slice(7, 9), 16) || 0xff;
+    }
+    let targetOffset = 0;
+    let targetStride = 4 * width;
+    let sourceData = imageData.data;
+    let sourceStride = 4 * imageData.width;
+    let sourceOffset = left * 4 + top * sourceStride;
+
+    for (let y = 0; y < height; y++) {
+        imgDataData
+            .subarray(targetOffset, targetOffset + targetStride)
+            .set(sourceData.subarray(sourceOffset, sourceOffset + targetStride));
+        targetOffset += targetStride;
+        sourceOffset += sourceStride;
     }
     if (cAlpha === 0xff) {
-        for (var i = 0; i < imgDataData.length; i += 4) {
+        for (let i = 0; i < imgDataData.length; i += 4) {
             // Horrible workaround for imprecisions due to browsers using premultiplied alpha internally for canvas
             let red = imgDataData[i]!;
             if (
@@ -785,7 +815,7 @@ function recolorAndClip(
             }
         }
     } else {
-        for (var i = 0; i < imgDataData.length; i += 4) {
+        for (let i = 0; i < imgDataData.length; i += 4) {
             let red = imgDataData[i]!;
             let alpha = imgDataData[i + 3]!;
             if (
@@ -880,7 +910,7 @@ export function sprite(
         if (imageCache[url] === undefined) {
             imageCache[url] = null;
             loadImage(url, (image) => {
-                imageCache[url] = image;
+                imageCache[url] = getImageData(image);
                 invalidateStyles();
             });
         }
@@ -890,7 +920,14 @@ export function sprite(
             if (spDef.width == undefined) spDef.width = image.width;
             if (spDef.height == undefined) spDef.height = image.height;
             if (color != undefined) {
-                spDef.url = recolorAndClip(image, <string>color, spDef.width, spDef.height, spDef.left, spDef.top);
+                spDef.url = recolorAndClip(
+                    getImageData(image),
+                    color as string,
+                    spDef.width,
+                    spDef.height,
+                    spDef.left,
+                    spDef.top
+                );
                 spDef.left = 0;
                 spDef.top = 0;
             }
@@ -1047,7 +1084,7 @@ export function spritebc(
         }
     }
     var key = colorId + ":" + width + ":" + height + ":" + left + ":" + top;
-    var spDef = bundledSprites[key];
+    var spDef = bundledSprites[key] as IResponsiveDynamicSprite;
     if (spDef) return spDef.styleId;
     hasBundledSprites = true;
     var styleId = styleDef({ width, height });
@@ -1057,12 +1094,14 @@ export function spritebc(
         height,
         left,
         top,
+        used: false,
+        color,
+        lastColor: "",
+        lastUrl: "",
     };
-    (<IResponsiveDynamicSprite>spDef).color = color;
-    (<IResponsiveDynamicSprite>spDef).lastColor = "";
-    (<IResponsiveDynamicSprite>spDef).lastUrl = "";
-    bundledDynamicSprites.push(<IResponsiveDynamicSprite>spDef);
+    bundledDynamicSprites.push(spDef);
     bundledSprites[key] = spDef;
+    unusedBundled.set(styleId, spDef);
     return styleId;
 }
 

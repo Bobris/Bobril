@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.14.0
+
+Sprite speed up and laziness backported from 20.1.0.
+
 ## 17.13.1
 
 `svg` method was not marked as pure.
