@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.1.1
+
+Fixed regression in 20.1.0 when sprite was directly used in styleDef.
+
 ## 20.1.0
 
 Create dynamically colored sprites lazily only when used by `b.style`. Should make first start of big applications much faster.

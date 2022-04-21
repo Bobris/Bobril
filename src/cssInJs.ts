@@ -287,6 +287,11 @@ function buildCssRule(parent: string | string[] | undefined, name: string): stri
 
 function flattenStyle(cur: any, curPseudo: any, style: any, stylePseudo: any): void {
     if (isString(style)) {
+        if (unusedBundled.has(style)) {
+            unusedBundled.get(style)!.used = true;
+            unusedBundled.delete(style);
+            invalidateStyles();
+        }
         let externalStyle = allStyles[style];
         if (externalStyle === undefined) {
             throw new Error("Unknown style " + style);
