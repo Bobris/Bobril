@@ -12,6 +12,7 @@ import { style } from "./cssInJs";
 
 export interface IWebComponentData extends IBubblingAndBroadcastEvents {
     id?: string;
+    slot?: string;
     style?: IBobrilStyles;
     children?: IBobrilChildren;
 }
@@ -25,7 +26,7 @@ export function wrapWebComponent<TData extends IWebComponentData>(
     props: string[] = [],
     events?: { [name: string]: string }
 ): (data?: TData) => IBobrilNode {
-    props = ["id", ...props];
+    props = ["id", "slot", ...props];
     const component = {
         id: name,
         render(ctx: IBobrilCtx<TData>, me: IBobrilNode) {

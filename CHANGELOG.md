@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.2.0
+
+Added optional `slot` property into `wrapWebComponents` function to be able use named slots in wrapped web components.
+
 ## 20.1.0
 
 Create dynamically colored sprites lazily only when used by `b.style`. Should make first start of big applications much faster.
