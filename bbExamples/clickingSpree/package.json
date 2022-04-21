@@ -1,6 +1,0 @@
-{
-  "main": "app.js",
-  "dependencies": {
-    "bobril": "^7.1.2"
-  }
-}
