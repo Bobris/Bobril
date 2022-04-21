@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.2.0
+
+Added optional `slot` property into `wrapWebComponents` function to be able use named slots in wrapped web components.
+
 ## 20.1.1
 
 Fixed regression in 20.1.0 when sprite was directly used in styleDef.
