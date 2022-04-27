@@ -729,7 +729,14 @@ export function selectorStyleDef(selector: string, style: CSSStyles, pseudoOrAtt
     rebuildStyles = true;
 }
 
+let allowInvalidateStyles = true;
+
+export function setAllowInvalidateStyles(value: boolean) {
+    allowInvalidateStyles = value;
+}
+
 export function invalidateStyles(): void {
+    if (!allowInvalidateStyles) return;
     rebuildStyles = true;
     invalidate();
 }

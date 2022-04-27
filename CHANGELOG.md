@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.3.0
+
+New function `setAllowInvalidateStyles` which allows to speed up app startup by lowering number of rebuilding styles.
+
 ## 20.2.0
 
 Added optional `slot` property into `wrapWebComponents` function to be able use named slots in wrapped web components.
