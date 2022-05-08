@@ -339,10 +339,8 @@ function afterFrame(root: IBobrilCacheChildren | null) {
         let newSpriteDppx = 1;
         if (lastDppx > 1) {
             for (let i = 0; i < bundlePath2.length; i++) {
-                if (i == bundlePath2.length - 1 || bundlePath2[i]![1] >= lastDppx) {
-                    newSpriteUrl = bundlePath2[i]![0];
-                    newSpriteDppx = bundlePath2[i]![1];
-                } else break;
+                [newSpriteUrl, newSpriteDppx] = bundlePath2[i]!;
+                if (newSpriteDppx >= lastDppx) break;
             }
         }
         if (lastSpriteUrl != newSpriteUrl) {

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.3.1
+
+Fixed sprite resolution selection.
+
 ## 20.3.0
 
 New function `setAllowInvalidateStyles` which allows to speed up app startup by lowering number of rebuilding styles.
