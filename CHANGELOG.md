@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.3.2
+
+Attempt to fix missing sprite in styleDef.
+
 ## 20.3.1
 
 Fixed sprite resolution selection.

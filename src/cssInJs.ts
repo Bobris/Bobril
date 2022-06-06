@@ -351,6 +351,7 @@ function afterFrame(root: IBobrilCacheChildren | null) {
         }
     }
     if (rebuildStyles) {
+        rebuildStyles = false;
         if (hasBundledSprites) {
             let imageSprite = imageCache[lastSpriteUrl];
             if (imageSprite === undefined) {
@@ -517,7 +518,6 @@ function afterFrame(root: IBobrilCacheChildren | null) {
             head.appendChild(styleElement);
         }
         htmlStyle = styleElement;
-        rebuildStyles = false;
     }
     chainedAfterFrame(root);
 }
