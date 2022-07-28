@@ -795,7 +795,7 @@ function recolorAndClip(
         cRed = parseInt(colorStr.slice(1, 3), 16);
         cGreen = parseInt(colorStr.slice(3, 5), 16);
         cBlue = parseInt(colorStr.slice(5, 7), 16);
-        cAlpha = parseInt(colorStr.slice(7, 9), 16) || 0xff;
+        cAlpha = colorStr.length == 9 ? parseInt(colorStr.slice(7, 9), 16) : 0xff;
     }
     let targetOffset = 0;
     let targetStride = 4 * width;
