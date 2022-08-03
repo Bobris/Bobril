@@ -310,6 +310,7 @@ const tabindexStr = "tabindex";
 
 function isNaturallyFocusable(tag: string | undefined, attrs: IBobrilAttributes | undefined): boolean {
     if (tag == undefined) return false;
+    if (tag === "input" && attrs && attrs["disabled"]) return false;
     if (focusableTag.test(tag)) return true;
     if (tag === "a" && attrs != null && attrs.href != null) return true;
     return false;
