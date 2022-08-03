@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.3.4
+
+Disabled inputs are not considered focusable.
+
 ## 20.3.3
 
 Sprite with recolor to #rrggbb00 was wrongly opaque instead of fully transparent.
