@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.3.5
+
+Do not move "B" in "AB" => "BC" reconciliation.
+
 ## 20.3.4
 
 Disabled inputs are not considered focusable.

@@ -1561,7 +1561,10 @@ function updateChildrenCore(
             break;
         }
         if (newIndex < newEnd && cachedIndex < cachedEnd) {
-            if (newChildren[newIndex]!.key === cachedChildren[cachedEnd - 1]!.key) {
+            if (
+                newChildren[newIndex]!.key === cachedChildren[cachedEnd - 1]!.key &&
+                newChildren[newEnd - 1]!.key === cachedChildren[cachedIndex]!.key
+            ) {
                 cachedChildren.splice(cachedIndex, 0, cachedChildren[cachedEnd - 1]!);
                 cachedChildren.splice(cachedEnd, 1);
                 reorderAndUpdateNodeInUpdateChildren(
@@ -1575,22 +1578,6 @@ function updateChildrenCore(
                 );
                 newIndex++;
                 cachedIndex++;
-                continue;
-            }
-            if (newChildren[newEnd - 1]!.key === cachedChildren[cachedIndex]!.key) {
-                cachedChildren.splice(cachedEnd, 0, cachedChildren[cachedIndex]!);
-                cachedChildren.splice(cachedIndex, 1);
-                cachedEnd--;
-                newEnd--;
-                reorderAndUpdateNodeInUpdateChildren(
-                    newChildren[newEnd]!,
-                    cachedChildren,
-                    cachedEnd,
-                    cachedLength,
-                    createBefore,
-                    element,
-                    deepness
-                );
                 continue;
             }
         }
