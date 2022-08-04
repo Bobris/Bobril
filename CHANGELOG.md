@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.14.2
+
+Disabled inputs are not focusable.
+
 ## 17.14.1
 
 Fixed regression in 20.1.0 when sprite was directly used in styleDef.
