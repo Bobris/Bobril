@@ -3389,7 +3389,10 @@ export function createVirtualComponent<TData extends object | never, TCtx extend
     };
 }
 
-export function createOverridingComponent<TData extends object | never, TDataOriginal = any>(
+export function createOverridingComponent<
+    TData extends object | never,
+    TDataOriginal extends { [name: string]: any } = any
+>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
     after: IBobrilComponent
 ): IComponentFactory<TData> {
@@ -3582,7 +3585,7 @@ function getStringPropertyDescriptors(obj: any): Map<string, PropertyDescriptor>
 
 const jsxSimpleProps = new Set("key className component data children".split(" "));
 
-export function createElement<T>(
+export function createElement<T extends object>(
     name: string | ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T>,
     data?: T,
     ...children: IBobrilChildren[]

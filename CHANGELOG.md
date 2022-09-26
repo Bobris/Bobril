@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.4.0
+
+Make it compatible with TypeScript 4.8.3
+
 ## 20.3.5
 
 Do not move "B" in "AB" => "BC" reconciliation.

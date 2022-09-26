@@ -1,6 +1,6 @@
 {
     "name": "bobril",
-    "version": "20.3.5",
+    "version": "20.4.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
     "main": "index.js",
     "types": "index.d.ts",
@@ -44,6 +44,6 @@
     "license": "MIT",
     "devDependencies": {
         "prettier": "*",
-        "typescript": "^4.5.5"
+        "typescript": "*"
     }
 }
