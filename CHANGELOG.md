@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.4.1
+
+Fixed performance regression in reconciliation.
+
 ## 20.4.0
 
 Make it compatible with TypeScript 4.8.3
