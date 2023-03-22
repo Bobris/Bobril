@@ -721,8 +721,7 @@ export function createNode(
     var component = c.component;
     var el: Node | undefined;
     if (DEBUG && component && measureFullComponentDuration) {
-        var componentStartMark = `create ${frameCounter} ${++visitedComponentCounter}`;
-        window.performance.mark(componentStartMark);
+        var componentStartMark = window.performance.mark(`create ${frameCounter} ${++visitedComponentCounter}`);
     }
     setRef(c.ref, c);
     if (component) {
@@ -738,18 +737,20 @@ export function createNode(
         c.ctx = ctx;
         currentCtx = ctx;
         if (component.init) {
-            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} init-start`);
+            if (DEBUG && measureComponentMethods) {
+                var startMark = window.performance.mark(`${component.id} [init]`);
+            }
             component.init(ctx, c);
-            if (DEBUG && measureComponentMethods)
-                window.performance.measure(`${component.id} [init]`, `${component.id} init-start`);
+            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
         if (beforeRenderCallback !== noop) beforeRenderCallback(n, RenderPhase.Create);
         if (component.render) {
             hookId = 0;
-            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} render-start`);
+            if (DEBUG && measureComponentMethods) {
+                var startMark = window.performance.mark(`${component.id} [render]`);
+            }
             component.render(ctx, c);
-            if (DEBUG && measureComponentMethods)
-                window.performance.measure(`${component.id} [render]`, `${component.id} render-start`);
+            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
             hookId = -1;
         }
         currentCtx = undefined;
@@ -762,7 +763,7 @@ export function createNode(
         c.tag = undefined;
         c.children = undefined;
         if (DEBUG && component && measureFullComponentDuration)
-            window.performance.measure(`${component.id} create`, componentStartMark!);
+            endMeasure(componentStartMark!, `${component.id} create`);
         return c;
     } else if (tag === "@") {
         createInto = c.data;
@@ -786,15 +787,16 @@ export function createNode(
         }
         if (component) {
             if (component.postRender) {
-                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
+                if (DEBUG && measureComponentMethods) {
+                    var startMark = window.performance.mark(`${component.id} [postRender]`);
+                }
                 component.postRender(c.ctx!, c);
-                if (DEBUG && measureComponentMethods)
-                    window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
             }
             pushInitCallback(c);
         }
         if (DEBUG && component && measureFullComponentDuration)
-            window.performance.measure(`${component.id} create`, componentStartMark!);
+            endMeasure(componentStartMark!, `${component.id} create`);
         return c;
     }
     if (tag === "/") {
@@ -843,15 +845,16 @@ export function createNode(
         }
         if (component) {
             if (component.postRender) {
-                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
+                if (DEBUG && measureComponentMethods) {
+                    var startMark = window.performance.mark(`${component.id} [postRender]`);
+                }
                 component.postRender(c.ctx!, c);
-                if (DEBUG && measureComponentMethods)
-                    window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
             }
             pushInitCallback(c);
         }
         if (DEBUG && component && measureFullComponentDuration)
-            window.performance.measure(`${component.id} create`, componentStartMark!);
+            endMeasure(componentStartMark!, `${component.id} create`);
         return c;
     }
     if (inSvg || tag === "svg") {
@@ -867,10 +870,11 @@ export function createNode(
     createChildren(c, <Element>el, null);
     if (component) {
         if (component.postRender) {
-            if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} postRender-start`);
+            if (DEBUG && measureComponentMethods) {
+                var startMark = window.performance.mark(`${component.id} [postRender]`);
+            }
             component.postRender(c.ctx!, c);
-            if (DEBUG && measureComponentMethods)
-                window.performance.measure(`${component.id} [postRender]`, `${component.id} postRender-start`);
+            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
     }
     if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
@@ -880,8 +884,7 @@ export function createNode(
     inSvg = backupInSvg;
     inNotFocusable = backupInNotFocusable;
     pushInitCallback(c);
-    if (DEBUG && component && measureFullComponentDuration)
-        window.performance.measure(`${component.id} create`, componentStartMark!);
+    if (DEBUG && component && measureFullComponentDuration) endMeasure(componentStartMark!, `${component.id} create`);
     return c;
 }
 
@@ -1111,8 +1114,7 @@ export function updateNode(
     var bigChange = false;
     var ctx = c.ctx;
     if (DEBUG && component && measureFullComponentDuration) {
-        var componentStartMark = `update ${frameCounter} ${++visitedComponentCounter}`;
-        window.performance.mark(componentStartMark);
+        var componentStartMark = window.performance.mark(`update ${frameCounter} ${++visitedComponentCounter}`);
     }
 
     if (component != null && ctx != null) {
@@ -1129,17 +1131,15 @@ export function updateNode(
             else ctx.cfg = findCfg(c.parent);
             if (component.shouldChange)
                 if (!ignoringShouldChange && !locallyInvalidated) {
-                    if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} shouldChange-start`);
+                    if (DEBUG && measureComponentMethods) {
+                        var startMark = window.performance.mark(`${component.id} [shouldChange]`);
+                    }
                     const shouldChange = component.shouldChange(ctx, n, c);
-                    if (DEBUG && measureComponentMethods)
-                        window.performance.measure(
-                            `${component.id} [shouldChange]`,
-                            `${component.id} shouldChange-start`
-                        );
+                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
                     if (!shouldChange) {
                         finishUpdateNodeWithoutChange(c, createInto, createBefore);
                         if (DEBUG && measureFullComponentDuration)
-                            window.performance.measure(`${component.id} update`, componentStartMark!);
+                            endMeasure(componentStartMark!, `${component.id} update`);
                         return c;
                     }
                 }
@@ -1153,10 +1153,11 @@ export function updateNode(
                 (c as IBobrilCacheNodeUnsafe).cfg = undefined;
                 if (n.cfg !== undefined) n.cfg = undefined;
                 hookId = 0;
-                if (DEBUG && measureComponentMethods) window.performance.mark(`${component.id} render-start`);
+                if (DEBUG && measureComponentMethods) {
+                    var startMark = window.performance.mark(`${component.id} [render]`);
+                }
                 component.render(ctx, n, c);
-                if (DEBUG && measureComponentMethods)
-                    window.performance.measure(`${component.id} [render]`, `${component.id} render-start`);
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
                 hookId = -1;
                 if (n.cfg !== undefined) {
                     if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
@@ -1170,7 +1171,8 @@ export function updateNode(
         if (c.orig === n && !ignoringShouldChange) {
             finishUpdateNodeWithoutChange(c, createInto, createBefore);
             if (DEBUG && component && measureFullComponentDuration)
-                window.performance.measure(`${component.id} update`, componentStartMark!);
+                endMeasure(componentStartMark!, `${component.id} update`);
+
             return c;
         }
         (c as IBobrilCacheNodeUnsafe).orig = n;
@@ -1182,7 +1184,8 @@ export function updateNode(
     if (tag === "-") {
         finishUpdateNodeWithoutChange(c, createInto, createBefore);
         if (DEBUG && component && measureFullComponentDuration)
-            window.performance.measure(`${component.id} update`, componentStartMark!);
+            endMeasure(componentStartMark!, `${component.id} update`);
+
         return c;
     }
     const backupInSvg = inSvg;
@@ -1200,7 +1203,8 @@ export function updateNode(
         if (c.tag === "/" && cachedChildren === newChildren) {
             finishUpdateNode(n, c, component);
             if (DEBUG && component && measureFullComponentDuration)
-                window.performance.measure(`${component.id} update`, componentStartMark!);
+                endMeasure(componentStartMark!, `${component.id} update`);
+
             return c;
         }
     } else if (tag === c.tag) {
@@ -1209,7 +1213,7 @@ export function updateNode(
                 var r: IBobrilCacheNode = createNode(n, c.parent, n.data, null);
                 removeNode(c);
                 if (DEBUG && component && measureFullComponentDuration)
-                    window.performance.measure(`${component.id} update`, componentStartMark!);
+                    endMeasure(componentStartMark!, `${component.id} update`);
                 return r;
             }
             createInto = n.data;
@@ -1244,7 +1248,8 @@ export function updateNode(
             }
             finishUpdateNode(n, c, component);
             if (DEBUG && component && measureFullComponentDuration)
-                window.performance.measure(`${component.id} update`, componentStartMark!);
+                endMeasure(componentStartMark!, `${component.id} update`);
+
             return c;
         } else {
             var inSvgForeignObject = false;
@@ -1277,7 +1282,8 @@ export function updateNode(
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
             if (DEBUG && component && measureFullComponentDuration)
-                window.performance.measure(`${component.id} update`, componentStartMark!);
+                endMeasure(componentStartMark!, `${component.id} update`);
+
             return c;
         }
     }
@@ -1287,8 +1293,7 @@ export function updateNode(
     else parEl = <Element>parEl.parentNode;
     var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c));
     removeNode(c);
-    if (DEBUG && component && measureFullComponentDuration)
-        window.performance.measure(`${component.id} update`, componentStartMark!);
+    if (DEBUG && component && measureFullComponentDuration) endMeasure(componentStartMark!, `${component.id} update`);
     return r;
 }
 
@@ -1340,16 +1345,19 @@ export function callPostCallbacks() {
         var n = updateInstance[i]!;
         currentCtx = n.ctx;
         if (currentCtx) {
-            if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} post-start`);
+            if (DEBUG && measureComponentMethods) {
+                var startMark = window.performance.mark(`${n.component.id} [post*]`);
+            }
             updateCall[i]!.call(n.component, currentCtx, n, n.element);
-            if (DEBUG && measureComponentMethods)
-                window.performance.measure(`${n.component.id} [post*]`, `${n.component.id} post-start`);
+            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
         currentCtx = n.ctxStyle;
         if (currentCtx) {
-            if (DEBUG && measureComponentMethods) window.performance.mark(`style post-start`);
+            if (DEBUG && measureComponentMethods) {
+                var startMark = window.performance.mark(`${n.component.id} style [post*]`);
+            }
             updateCall[i]!.call(n.component, currentCtx, n, n.element);
-            if (DEBUG && measureComponentMethods) window.performance.measure(`style [post*]`, `style post-start`);
+            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
     }
     currentCtx = undefined;
@@ -1363,7 +1371,9 @@ export function callEffects() {
         var n = effectInstance[i]!;
         currentCtx = n.ctx;
         if (currentCtx) {
-            if (DEBUG && measureComponentMethods) window.performance.mark(`${n.component.id} effect-start`);
+            if (DEBUG && measureComponentMethods) {
+                var startMark = window.performance.mark(`${n.component.id} [effect*]`);
+            }
             const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
             const len = hooks.length;
             for (let i = 0; i < len; i++) {
@@ -1373,12 +1383,13 @@ export function callEffects() {
                     fn.call(hook, currentCtx);
                 }
             }
-            if (DEBUG && measureComponentMethods)
-                window.performance.measure(`${n.component.id} [effect*]`, `${n.component.id} effect-start`);
+            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
         currentCtx = n.ctxStyle;
         if (currentCtx) {
-            if (DEBUG && measureComponentMethods) window.performance.mark(`style effect-start`);
+            if (DEBUG && measureComponentMethods) {
+                var startMark = window.performance.mark(`${n.component.id} style [effect*]`);
+            }
             const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
             const len = hooks.length;
             for (let i = 0; i < len; i++) {
@@ -1388,7 +1399,7 @@ export function callEffects() {
                     fn.call(hook, currentCtx);
                 }
             }
-            if (DEBUG && measureComponentMethods) window.performance.measure(`style [effect*]`, `style effect-start`);
+            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
     }
     currentCtx = undefined;
@@ -2143,8 +2154,7 @@ function internalUpdate(time: number) {
     }
     listeningEventDeepness++;
     if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) {
-        var renderStartMark = `render ${frameCounter}`;
-        window.performance.mark(renderStartMark);
+        var renderStartMark = window.performance.mark(`render ${frameCounter}`);
     }
     for (let repeat = 0; repeat < 2; repeat++) {
         focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1]!;
@@ -2186,9 +2196,15 @@ function internalUpdate(time: number) {
     listeningEventDeepness--;
     let r0 = roots["0"];
     afterFrameCallback(r0 ? r0.c : null);
-    if (DEBUG && (measureComponentMethods || measureFullComponentDuration))
-        window.performance.measure("render", renderStartMark!);
+    if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) endMeasure(renderStartMark!, "render");
     lastFrameDurationMs = now() - renderFrameBegin;
+}
+
+function endMeasure(startMark: PerformanceMark, measureName?: string) {
+    window.performance.measure(measureName ?? startMark.name, {
+        start: startMark.name,
+        end: window.performance.mark(startMark!.name + "-end").name,
+    });
 }
 
 var nextIgnoreShouldChange = false;
