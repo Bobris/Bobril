@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.5.0
+
+Added function to get SVG icon data URI `extractSvgDataUri`.
+
 ## 20.4.1
 
 Fixed performance regression in reconciliation.

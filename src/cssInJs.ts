@@ -1020,6 +1020,14 @@ export function svgWithColor(
     return styleId;
 }
 
+export function extractSvgDataUri(styleId: IBobrilStyleDef): string {
+    let sd = allStyles[styleId];
+    if (sd == undefined) throw new Error("Unknown styleId " + styleId);
+    let backgroundImage = (sd.style as CSSInlineStyles)?.backgroundImage;
+    if (backgroundImage == undefined) throw new Error("Not svg styleId " + styleId);
+    return (backgroundImage as string).slice(5, -2);
+}
+
 function buildSvgStyle(content: string, size: number): ColorlessSprite {
     var sizeStr = content.split('"', 1)[0];
     var [width, height] = sizeStr!.split(" ").map((s) => parseFloat(s) * size);

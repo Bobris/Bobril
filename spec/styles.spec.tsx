@@ -1,5 +1,5 @@
 import * as b from "../index";
-import { spriteWithColor } from "../src/cssInJs";
+import { spriteWithColor, extractSvgDataUri } from "../src/cssInJs";
 
 describe("styles", () => {
     it("can declare merged style", () => {
@@ -219,6 +219,17 @@ describe("styles", () => {
             expect(document.head.innerHTML).toContain(encodeURIComponent(".b{fill:red;}"));
             expect(document.head.innerHTML).toContain(
                 encodeURIComponent('width="40" height="40" viewBox="0 0 20 20"><defs>')
+            );
+        });
+
+        it("allows extract svg from sprite", () => {
+            var sampleSvg = b.svg(
+                '20 20"><defs><style>.b{fill:gray;}</style><rect class="b" x="3" y="4" width="14" height="12"/>'
+            );
+            var sprite = spriteWithColor(sampleSvg, "blue");
+            var extracted = extractSvgDataUri(sprite);
+            expect(extracted).toEqual(
+                "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cdefs%3E%3Cstyle%3E.b%7Bfill%3Ablue%3B%7D%3C%2Fstyle%3E%3Crect%20class%3D%22b%22%20x%3D%223%22%20y%3D%224%22%20width%3D%2214%22%20height%3D%2212%22%2F%3E%3C%2Fsvg%3E"
             );
         });
     });
