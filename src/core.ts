@@ -938,8 +938,9 @@ function enrichClassName(c: IBobrilCacheNode, n: string | undefined): string | u
         if (k) add = " " + k + add;
         c = c.parent!;
     } while (c != undefined && c.element == undefined);
+    if (!add.length) return n;
     if (n) return n + add;
-    return add.substr(1);
+    return add.slice(1);
 }
 
 function normalizeNode(n: any): IBobrilNode | undefined {

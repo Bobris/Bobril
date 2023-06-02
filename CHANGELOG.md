@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.5.1
+
+Fix behaviour with keysInClassNames.
+
 ## 20.5.0
 
 Added function to get SVG icon data URI `extractSvgDataUri`.
