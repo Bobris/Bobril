@@ -306,7 +306,7 @@ var pointer2Dnd = newHashObj();
 function handlePointerDown(
     ev: IBobrilPointerEvent,
     _target: Node | undefined,
-    node: IBobrilCacheNode | undefined
+    node: IBobrilCacheNode | undefined,
 ): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (dnd) {
@@ -367,7 +367,7 @@ function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent) {
 function handlePointerMove(
     ev: IBobrilPointerEvent,
     _target: Node | undefined,
-    node: IBobrilCacheNode | undefined
+    node: IBobrilCacheNode | undefined,
 ): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (!dnd) return false;
@@ -391,7 +391,7 @@ function handlePointerMove(
 function handlePointerUp(
     ev: IBobrilPointerEvent,
     _target: Node | undefined,
-    node: IBobrilCacheNode | undefined
+    node: IBobrilCacheNode | undefined,
 ): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (!dnd) return false;
@@ -414,7 +414,7 @@ function handlePointerUp(
 function handlePointerCancel(
     ev: IBobrilPointerEvent,
     _target: Node | undefined,
-    _node: IBobrilCacheNode | undefined
+    _node: IBobrilCacheNode | undefined,
 ): boolean {
     var dnd = pointer2Dnd[ev.id];
     if (!dnd) return false;

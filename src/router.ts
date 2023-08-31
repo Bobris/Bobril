@@ -173,7 +173,7 @@ function compilePattern(pattern: string) {
                 } else {
                     return "\\" + match;
                 }
-            }
+            },
         );
 
         compiledPatterns[pattern] = {
@@ -321,7 +321,7 @@ function getSetterOfNodesArray(idx: number): (node: IBobrilCacheNode | undefined
                         a[i] = undefined;
                     }
                 }
-            })(nodesArray, setterOfNodesArray.length)
+            })(nodesArray, setterOfNodesArray.length),
         );
     }
     return setterOfNodesArray[idx]!;
@@ -529,7 +529,7 @@ export function Link(data: {
                 id: "link",
                 onClick() {
                     runTransition(
-                        (data.replace ? createRedirectReplace : createRedirectPush)(data.name, data.params, data.state)
+                        (data.replace ? createRedirectReplace : createRedirectPush)(data.name, data.params, data.state),
                     );
                     return true;
                 },
@@ -541,7 +541,7 @@ export function Link(data: {
             ? data.activeStyle != undefined
                 ? data.activeStyle
                 : [data.style, activeStyleDef]
-            : data.style
+            : data.style,
     );
 }
 
@@ -678,7 +678,7 @@ function nextIteration(): void {
                     findMatch(
                         urlOfRoute(currentTransition!.name!, currentTransition!.params).substring(1),
                         rootRoutes,
-                        out
+                        out,
                     ) || [];
             } else {
                 futureRoutes = [];
@@ -772,7 +772,7 @@ export function anchor(
     children: IBobrilChildren,
     name?: string,
     params?: Params,
-    onAnchor?: (el: HTMLElement) => boolean
+    onAnchor?: (el: HTMLElement) => boolean,
 ): IBobrilNode {
     return {
         children,
@@ -793,7 +793,7 @@ function handleAnchorRoute(
     me: IBobrilCacheNode,
     name?: string,
     params?: Params,
-    onAnchor?: (el: HTMLElement) => boolean
+    onAnchor?: (el: HTMLElement) => boolean,
 ) {
     let routeName: string | undefined;
     if (name) {

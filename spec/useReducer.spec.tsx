@@ -27,7 +27,7 @@ describe("useReducer", () => {
                     return s * a;
                 },
                 "6",
-                (s) => Number.parseInt(s)
+                (s) => Number.parseInt(s),
             );
             testDispatch = dispatch;
             return <span>{state}</span>;

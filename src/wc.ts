@@ -24,7 +24,7 @@ interface WebComponentCtx<TData extends IWebComponentData> extends IBobrilCtx<TD
 export function wrapWebComponent<TData extends IWebComponentData>(
     name: string,
     props: string[] = [],
-    events?: { [name: string]: string }
+    events?: { [name: string]: string },
 ): (data?: TData) => IBobrilNode {
     props = ["id", "slot", ...props];
     const component = {

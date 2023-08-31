@@ -97,7 +97,7 @@ export type IBobrilEventsWithCtx<TCtx> = {
             ? (ctx: TCtx) => ReturnType<NonNullable<IBobrilEvents[N]>>
             : (
                   ctx: TCtx,
-                  event: Parameters<NonNullable<IBobrilEvents[N]>>[0]
+                  event: Parameters<NonNullable<IBobrilEvents[N]>>[0],
               ) => ReturnType<NonNullable<IBobrilEvents[N]>>
         : never;
 };
@@ -321,7 +321,7 @@ function updateElement(
     el: Element,
     newAttrs: IBobrilAttributes | undefined,
     oldAttrs: IBobrilAttributes,
-    notFocusable: boolean
+    notFocusable: boolean,
 ): IBobrilAttributes {
     var attrName: string, newAttr: any, oldAttr: any, valueOldAttr: any, valueNewAttr: any;
     let wasTabindex = false;
@@ -636,7 +636,7 @@ let createNodeStyle: (
     newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
     newClass: string | undefined,
     c: IBobrilCacheNode,
-    inSvg: boolean
+    inSvg: boolean,
 ) => void;
 
 let updateNodeStyle: (
@@ -644,7 +644,7 @@ let updateNodeStyle: (
     newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
     newClass: string | undefined,
     c: IBobrilCacheNode,
-    inSvg: boolean
+    inSvg: boolean,
 ) => void;
 
 let style: (node: IBobrilNode, ...styles: IBobrilStyles[]) => IBobrilNode;
@@ -655,16 +655,16 @@ export function internalSetCssInJsCallbacks(
         newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
         newClass: string | undefined,
         c: IBobrilCacheNode,
-        inSvg: boolean
+        inSvg: boolean,
     ) => void,
     update: (
         el: HTMLElement,
         newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
         newClass: string | undefined,
         c: IBobrilCacheNode,
-        inSvg: boolean
+        inSvg: boolean,
     ) => void,
-    s: (node: IBobrilNode, ...styles: IBobrilStyles[]) => IBobrilNode
+    s: (node: IBobrilNode, ...styles: IBobrilStyles[]) => IBobrilNode,
 ) {
     createNodeStyle = create;
     updateNodeStyle = update;
@@ -697,7 +697,7 @@ export function createNode(
     n: IBobrilNode,
     parentNode: IBobrilCacheNode | undefined,
     createInto: Element,
-    createBefore: Node | null
+    createBefore: Node | null,
 ): IBobrilCacheNode {
     var c = <IBobrilCacheNodeUnsafe>{
         // This makes CacheNode just one object class = fast
@@ -1095,7 +1095,7 @@ function finishUpdateNodeWithoutChange(c: IBobrilCacheNode, createInto: Element,
         selectedUpdate(
             <IBobrilCacheNode[]>c.children,
             <Element>c.element || createInto,
-            c.element != null ? null : createBefore
+            c.element != null ? null : createBefore,
         );
         inSvg = backupInSvg;
         inNotFocusable = backupInNotFocusable;
@@ -1109,7 +1109,7 @@ export function updateNode(
     createInto: Element,
     createBefore: Node | null,
     deepness: number,
-    inSelectedUpdate?: boolean
+    inSelectedUpdate?: boolean,
 ): IBobrilCacheNode {
     var component = n.component;
     var bigChange = false;
@@ -1241,7 +1241,7 @@ export function updateNode(
                         cachedChildren,
                         c,
                         createBefore,
-                        deepness - 1
+                        deepness - 1,
                     );
                 }
                 inSvg = backupInSvg;
@@ -1414,14 +1414,14 @@ function updateNodeInUpdateChildren(
     cachedLength: number,
     createBefore: Node | null,
     element: Element,
-    deepness: number
+    deepness: number,
 ) {
     cachedChildren[cachedIndex] = updateNode(
         newNode,
         cachedChildren[cachedIndex]!,
         element,
         findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore),
-        deepness
+        deepness,
     );
 }
 
@@ -1447,7 +1447,7 @@ function reorderInUpdateChildren(
     cachedIndex: number,
     cachedLength: number,
     createBefore: Node | null,
-    element: Element
+    element: Element,
 ) {
     var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
     var cur = cachedChildren[cachedIndex]!;
@@ -1464,7 +1464,7 @@ function reorderAndUpdateNodeInUpdateChildren(
     cachedLength: number,
     createBefore: Node | null,
     element: Element,
-    deepness: number
+    deepness: number,
 ) {
     var before = findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore);
     var cur = cachedChildren[cachedIndex]!;
@@ -1508,7 +1508,7 @@ export function updateChildren(
     cachedChildren: IBobrilCacheChildren,
     parentNode: IBobrilCacheNode | undefined,
     createBefore: Node | null,
-    deepness: number
+    deepness: number,
 ): IBobrilCacheNode[] {
     if (cachedChildren == undefined) cachedChildren = [];
     if (!isArray(cachedChildren)) {
@@ -1523,7 +1523,7 @@ export function updateChildren(
         <IBobrilCacheNode[]>cachedChildren,
         parentNode,
         createBefore,
-        deepness
+        deepness,
     );
 }
 
@@ -1533,7 +1533,7 @@ function updateChildrenCore(
     cachedChildren: IBobrilCacheNode[],
     parentNode: IBobrilCacheNode | undefined,
     createBefore: Node | null,
-    deepness: number
+    deepness: number,
 ): IBobrilCacheNode[] {
     let newEnd = newChildren.length;
     var cachedLength = cachedChildren.length;
@@ -1549,7 +1549,7 @@ function updateChildrenCore(
                 cachedLength,
                 createBefore,
                 element,
-                deepness
+                deepness,
             );
             newIndex++;
             cachedIndex++;
@@ -1566,7 +1566,7 @@ function updateChildrenCore(
                     cachedLength,
                     createBefore,
                     element,
-                    deepness
+                    deepness,
                 );
                 if (newIndex < newEnd && cachedIndex < cachedEnd) continue;
             }
@@ -1587,7 +1587,7 @@ function updateChildrenCore(
                     cachedLength,
                     createBefore,
                     element,
-                    deepness
+                    deepness,
                 );
                 newIndex++;
                 cachedIndex++;
@@ -1600,7 +1600,7 @@ function updateChildrenCore(
                     cachedLength,
                     createBefore,
                     element,
-                    deepness
+                    deepness,
                 );
                 continue;
             }
@@ -1620,8 +1620,8 @@ function updateChildrenCore(
                     newChildren[newIndex]!,
                     parentNode,
                     element,
-                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)
-                )
+                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore),
+                ),
             );
             cachedIndex++;
             cachedEnd++;
@@ -1703,8 +1703,8 @@ function updateChildrenCore(
                     newChildren[newIndex]!,
                     parentNode,
                     element,
-                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)
-                )
+                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore),
+                ),
             );
             delta++;
             newIndex++;
@@ -1731,7 +1731,7 @@ function updateChildrenCore(
                 cachedLength,
                 createBefore,
                 element,
-                deepness
+                deepness,
             );
             newIndex++;
             cachedIndex++;
@@ -1747,7 +1747,7 @@ function updateChildrenCore(
                 cachedLength,
                 createBefore,
                 element,
-                deepness
+                deepness,
             );
             cachedIndex++;
             cachedEnd++;
@@ -1785,8 +1785,8 @@ function updateChildrenCore(
                     newChildren[newIndex]!,
                     parentNode,
                     element,
-                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore)
-                )
+                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore),
+                ),
             );
             cachedEnd++;
             cachedLength++;
@@ -1823,7 +1823,7 @@ function updateChildrenCore(
                 cachedLength,
                 createBefore,
                 element,
-                deepness
+                deepness,
             );
             keyLess--;
             newIndex++;
@@ -1864,7 +1864,7 @@ function updateChildrenCore(
                 cachedLength,
                 createBefore,
                 element,
-                deepness
+                deepness,
             );
             keyLess--;
             newIndex++;
@@ -1877,8 +1877,8 @@ function updateChildrenCore(
                     newChildren[newIndex]!,
                     parentNode,
                     element,
-                    findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore)
-                )
+                    findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore),
+                ),
             );
             cachedEnd++;
             cachedLength++;
@@ -1947,7 +1947,7 @@ var registryEvents:
 export function addEvent(
     name: string,
     priority: number,
-    callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean
+    callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean,
 ): void {
     if (registryEvents == undefined) registryEvents = newHashObj();
     var list = registryEvents[name] || [];
@@ -1959,7 +1959,7 @@ export function emitEvent(
     name: string,
     ev: any,
     target: Node | undefined,
-    node: IBobrilCacheNode | undefined
+    node: IBobrilCacheNode | undefined,
 ): boolean {
     var events = regEvents[name];
     if (events)
@@ -2011,7 +2011,7 @@ function addListener(el: EventTarget, name: string, nonbody: boolean) {
     el.addEventListener(
         eventName,
         enhanceEvent,
-        isPassiveEventHandlerSupported ? { capture: capture, passive: false } : capture
+        isPassiveEventHandlerSupported ? { capture: capture, passive: false } : capture,
     );
 }
 
@@ -2051,7 +2051,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
                 element,
                 findNextNode(cache, i, len, createBefore),
                 (<any>ctx)[ctxDeepness],
-                true
+                true,
             );
         } else {
             ctx = node.ctxStyle;
@@ -2081,7 +2081,7 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
 function isLogicalParent(
     parent: IBobrilCacheNode,
     child: IBobrilCacheNode | null | undefined,
-    rootIds: string[]
+    rootIds: string[],
 ): boolean {
     while (child != null) {
         if (parent === child) return true;
@@ -2217,7 +2217,7 @@ export function ignoreShouldChange() {
 }
 
 export function setInvalidate(
-    inv: (ctx?: Object, deepness?: number) => void
+    inv: (ctx?: Object, deepness?: number) => void,
 ): (ctx?: Object, deepness?: number) => void {
     let prev = invalidate;
     invalidate = inv;
@@ -2247,7 +2247,7 @@ var lastRootId = 0;
 export function addRoot(
     factory: (root: IBobrilRoot) => IBobrilChildren,
     element?: HTMLElement,
-    parent?: IBobrilCacheNode
+    parent?: IBobrilCacheNode,
 ): string {
     lastRootId++;
     var rootId = "" + lastRootId;
@@ -2299,6 +2299,7 @@ function firstInvalidate() {
 export function init(factory: () => IBobrilChildren, element?: HTMLElement) {
     assert(rootIds == undefined, "init should not be called from render");
     removeRoot("0");
+    isInvalidated = true;
     roots["0"] = { f: factory, e: element, c: [], p: undefined, n: undefined };
     firstInvalidate();
 }
@@ -2333,7 +2334,7 @@ export type EventParam<T extends EventNames> = T extends keyof ICapturableEvents
 export function bubble<T extends EventNames>(
     node: IBobrilCacheNode | null | undefined,
     name: T,
-    param?: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+    param?: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode },
 ): IBobrilCtx | undefined {
     if (param == undefined) {
         param = { target: node! };
@@ -2442,7 +2443,7 @@ export function bubble<T extends EventNames>(
 function broadcastEventToNode(
     node: IBobrilCacheNode | null | undefined,
     name: string,
-    param: any
+    param: any,
 ): IBobrilCtx | undefined {
     if (!node) return undefined;
     let res: IBobrilCtx | undefined;
@@ -2511,7 +2512,7 @@ function broadcastEventToNode(
 function broadcastCapturedEventToNode(
     node: IBobrilCacheNode | null | undefined,
     name: string,
-    param: any
+    param: any,
 ): IBobrilCtx | undefined {
     if (!node) return undefined;
     let res: IBobrilCtx | undefined;
@@ -2586,7 +2587,7 @@ function broadcastCapturedEventToNode(
 
 export function captureBroadcast<T extends EventNames>(
     name: T,
-    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode },
 ): IBobrilCtx | undefined {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
@@ -2601,7 +2602,7 @@ export function captureBroadcast<T extends EventNames>(
 
 export function broadcast<T extends EventNames>(
     name: T,
-    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode }
+    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode },
 ): IBobrilCtx | undefined {
     var res = captureBroadcast(name, param);
     if (res != null) return res;
@@ -2632,7 +2633,7 @@ export function runMethodFrom(ctx: IBobrilCtx | undefined, methodId: MethodId, p
             if (
                 callWithCurrentCtxWithEvents(
                     () => comp.runMethod(currentCtxWithEvents, methodId, param),
-                    currentRoot.ctx!
+                    currentRoot.ctx!,
                 )
             )
                 return true;
@@ -2654,7 +2655,7 @@ export function runMethodFrom(ctx: IBobrilCtx | undefined, methodId: MethodId, p
                 if (
                     callWithCurrentCtxWithEvents(
                         () => comp.runMethod(currentCtxWithEvents, methodId, param),
-                        child.ctx!
+                        child.ctx!,
                     )
                 ) {
                     done = true;
@@ -2955,7 +2956,7 @@ export function select(node: IBobrilCacheNode, start: number, end = start): void
     (node.element as HTMLInputElement).setSelectionRange(
         Math.min(start, end),
         Math.max(start, end),
-        start > end ? "backward" : "forward"
+        start > end ? "backward" : "forward",
     );
     emitOnSelectionChange(node, start, end);
 }
@@ -2963,7 +2964,7 @@ export function select(node: IBobrilCacheNode, start: number, end = start): void
 function emitOnMouseChange(
     ev: Event | undefined,
     _target: Node | undefined,
-    _node: IBobrilCacheNode | undefined
+    _node: IBobrilCacheNode | undefined,
 ): boolean {
     let f = focused();
     if (f) emitOnChange(ev, <Node>f.element, f);
@@ -3150,7 +3151,7 @@ type Number16 = [
     number,
     number,
     number,
-    number
+    number,
 ];
 
 class CSSMatrix {
@@ -3278,7 +3279,7 @@ function getTransformationMatrix(element: Node) {
                 computedStyle.msTransform ||
                 computedStyle.MozTransform ||
                 "none"
-            ).replace(/^none$/, "matrix(1,0,0,1,0,0)")
+            ).replace(/^none$/, "matrix(1,0,0,1,0,0)"),
         );
         transformationMatrix = c.multiply(transformationMatrix);
         x = x.parentNode;
@@ -3407,7 +3408,7 @@ export interface IComponentFactory<TData extends object | never> {
 }
 
 export function createVirtualComponent<TData extends object | never, TCtx extends IBobrilCtx<TData> = any>(
-    component: IBobrilComponent<TData, TCtx>
+    component: IBobrilComponent<TData, TCtx>,
 ): IComponentFactory<TData> {
     return (data?: TData, children?: ChildrenType<TData>): IBobrilNode => {
         if (children !== undefined) {
@@ -3420,10 +3421,10 @@ export function createVirtualComponent<TData extends object | never, TCtx extend
 
 export function createOverridingComponent<
     TData extends object | never,
-    TDataOriginal extends { [name: string]: any } = any
+    TDataOriginal extends { [name: string]: any } = any,
 >(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode,
-    after: IBobrilComponent
+    after: IBobrilComponent,
 ): IComponentFactory<TData> {
     const originalComponent = original().component!;
     const overriding = overrideComponents(originalComponent, after);
@@ -3431,7 +3432,7 @@ export function createOverridingComponent<
 }
 
 export function createComponent<TData extends object | never, TCtx extends IBobrilCtx<TData> = any>(
-    component: IBobrilComponent<TData, TCtx>
+    component: IBobrilComponent<TData, TCtx>,
 ): IComponentFactory<TData> {
     const originalRender = component.render;
     if (originalRender) {
@@ -3449,7 +3450,7 @@ export function createComponent<TData extends object | never, TCtx extends IBobr
 
 export function createDerivedComponent<TData extends object | never, TDataOriginal extends object | never>(
     original: (data?: TDataOriginal, children?: ChildrenType<TDataOriginal>) => IBobrilNode<TDataOriginal>,
-    after: IBobrilComponent<TData>
+    after: IBobrilComponent<TData>,
 ): IComponentFactory<TData & TDataOriginal> {
     const originalComponent = original().component!;
     const merged = mergeComponents(originalComponent, after);
@@ -3494,7 +3495,7 @@ export function propa<T>(prop: IProp<T>): IPropAsync<T> {
                     },
                     (err) => {
                         if (window["console"] && console.error) console.error(err);
-                    }
+                    },
                 );
             } else {
                 return prop(<T>val);
@@ -3828,7 +3829,7 @@ type PostLikeMethod = (ctx: IBobrilCtx, me: IBobrilCacheNode) => void;
 function combineWithForwardMe(
     component: IBobrilComponent,
     name: keyof IBobrilComponent,
-    func: (me: IBobrilCacheNode) => void
+    func: (me: IBobrilCacheNode) => void,
 ) {
     const existing = component[name] as PostLikeMethod;
     if (existing != undefined) {
@@ -3848,7 +3849,7 @@ const methodsWithMeParam = ["destroy", postInitDom, postUpdateDom, postUpdateDom
 
 export function component<TData extends object>(
     component: IComponentClass<TData> | IComponentFunction<TData>,
-    name?: string
+    name?: string,
 ): IComponentFactory<TData> {
     const bobrilComponent = {} as IBobrilComponent;
     if (component.prototype instanceof Component) {
@@ -3979,25 +3980,25 @@ export type ReducerAction<R extends Reducer<any, any>> = R extends Reducer<any, 
 export function useReducer<R extends Reducer<any, any>, I>(
     reducer: R,
     initializerArg: I & ReducerState<R>,
-    initializer: (arg: I & ReducerState<R>) => ReducerState<R>
+    initializer: (arg: I & ReducerState<R>) => ReducerState<R>,
 ): [ReducerState<R>, Dispatch<ReducerAction<R>>];
 
 export function useReducer<R extends Reducer<any, any>, I>(
     reducer: R,
     initializerArg: I,
-    initializer: (arg: I) => ReducerState<R>
+    initializer: (arg: I) => ReducerState<R>,
 ): [ReducerState<R>, Dispatch<ReducerAction<R>>];
 
 export function useReducer<R extends Reducer<any, any>>(
     reducer: R,
     initialState: ReducerState<R>,
-    initializer?: undefined
+    initializer?: undefined,
 ): [ReducerState<R>, Dispatch<ReducerAction<R>>];
 
 export function useReducer<R extends Reducer<any, any>, I>(
     reducer: R,
     initializerArg: I,
-    initializer?: (arg: I) => ReducerState<R>
+    initializer?: (arg: I) => ReducerState<R>,
 ): [ReducerState<R>, Dispatch<ReducerAction<R>>] {
     const myHookId = hookId++;
     const hooks = _getHooks();

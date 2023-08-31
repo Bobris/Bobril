@@ -58,7 +58,7 @@ class MediaRuleBuilder {
 
     pushOptionalTokens<T extends RuleBehaviourType>(
         behaviour?: T,
-        mediaType?: T extends undefined ? undefined : MediaType
+        mediaType?: T extends undefined ? undefined : MediaType,
     ) {
         !!behaviour && this.tokens.push({ type: behaviour });
         !!mediaType && this.tokens.push({ type: mediaType });

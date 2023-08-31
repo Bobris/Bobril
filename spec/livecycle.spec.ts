@@ -66,7 +66,7 @@ describe("livecycle", () => {
             },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         b.callPostCallbacks();
         expect(c.actions).toBe("i:1;ri:1;i:2;ri:2;I:2;I:1;pi:2;pi:1;");
@@ -120,7 +120,7 @@ describe("livecycle", () => {
             },
             undefined,
             scope,
-            null
+            null,
         );
         b.callPostCallbacks();
         c.actions = "";
@@ -138,7 +138,7 @@ describe("livecycle", () => {
             r,
             scope,
             null,
-            1e6
+            1e6,
         );
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:1;ru:1;sc:2;ru:2;U:2;U:1;pu:2;pu:1;");
@@ -160,7 +160,7 @@ describe("livecycle", () => {
             },
             undefined,
             scope,
-            null
+            null,
         );
         b.callPostCallbacks();
         c.actions = "";
@@ -178,7 +178,7 @@ describe("livecycle", () => {
             r,
             scope,
             null,
-            1e6
+            1e6,
         );
         b.callPostCallbacks();
         expect(c.actions).toBe("sc:3;ru:3;i:3;ri:3;i:4;ri:4;I:4;I:3;d:2;d:1;pi:4;pi:3;");

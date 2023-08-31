@@ -14,7 +14,7 @@ export var reallyBeforeFrameCallback: () => void = noop;
 export var afterFrameCallback: (root: IBobrilCacheChildren | null) => void = noop;
 
 export function setBeforeRender(
-    callback: (node: IBobrilNode, phase: RenderPhase) => void
+    callback: (node: IBobrilNode, phase: RenderPhase) => void,
 ): (node: IBobrilNode, phase: RenderPhase) => void {
     var res = beforeRenderCallback;
     beforeRenderCallback = callback;
@@ -34,7 +34,7 @@ export function setReallyBeforeFrame(callback: () => void): () => void {
 }
 
 export function setAfterFrame(
-    callback: (root: IBobrilCacheChildren | null) => void
+    callback: (root: IBobrilCacheChildren | null) => void,
 ): (root: IBobrilCacheChildren | null) => void {
     var res = afterFrameCallback;
     afterFrameCallback = callback;

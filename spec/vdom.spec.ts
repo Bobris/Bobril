@@ -17,7 +17,7 @@ describe("updateElement", () => {
             { tag: "div", style: { fontSize: "10px" } },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, '<divstyle="font-size:10px"></div>');
     });
@@ -44,7 +44,7 @@ describe("createNode", () => {
             { tag: "div", children: { tag: "span", children: "ok" } },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div><span>ok</span></div>");
     });
@@ -59,7 +59,7 @@ describe("createNode", () => {
             },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div><h1>header</h1><div>ok</div></div>");
     });
@@ -68,7 +68,7 @@ describe("createNode", () => {
             { tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>a<span>b</span>c</div>");
     });
@@ -83,7 +83,7 @@ describe("createNode", () => {
             },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>a<span>b</span>cd<i>e</i></div>");
     });
@@ -104,7 +104,7 @@ describe("createNode", () => {
             { tag: "div", children: { children: { tag: "span", children: "ok" } } },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div><span>ok</span></div>");
     });
@@ -117,7 +117,7 @@ describe("createNode", () => {
             { tag: "div", children: [{ children: [] }, "ok", <any>{}] },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>ok</div>");
     });
@@ -160,7 +160,7 @@ describe("updateNode", () => {
             { tag: "div", children: [{ tag: "/", children: "a<span>b</span>c" }] },
             undefined,
             scope,
-            null
+            null,
         );
         r = b.updateNode({ tag: "div", children: [{ tag: "/", children: "d<i>e</i>f" }] }, r, scope, null, 1e6);
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>d<i>e</i>f</div>");
@@ -173,7 +173,7 @@ describe("updateNode", () => {
             r,
             scope,
             null,
-            1e6
+            1e6,
         );
         expectInsensitive((<HTMLElement>r.element).outerHTML, "<div>ok<span>!</span></div>");
     });
@@ -208,7 +208,7 @@ describe("updateNode", () => {
             a.push(
                 (ch.key ? ch.key + ":" : "") +
                     (<HTMLElement>ch.element).innerHTML +
-                    ((<HTMLElement>ch.element).id ? ":" + (<HTMLElement>ch.element).id : "")
+                    ((<HTMLElement>ch.element).id ? ":" + (<HTMLElement>ch.element).id : ""),
             );
         }
         expect((<Node>r.element).childNodes.length).toBe((r.children as b.IBobrilCacheNode[]).length);
@@ -318,7 +318,7 @@ describe("updateNode", () => {
         advancedTest(
             "x:x,y:y,a:A,b:B,D,c:C,v:v,w:w",
             "y:Y,x:X,a:E,D2,b:F,c:G,w:W,v:V",
-            "y:Y:1,x:X:0,a:E:2,D2:4,b:F:3,c:G:5,w:W:7,v:V:6"
+            "y:Y:1,x:X:0,a:E:2,D2:4,b:F:3,c:G:5,w:W:7,v:V:6",
         );
     });
     it("moveNonKeyBack", () => {
@@ -360,7 +360,7 @@ describe("stopBubbling", () => {
             },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expect(b.bubble((n.children as b.IBobrilCacheNode[])[0], "onClick")).toBeTruthy();
         expect(inner).toBeTruthy();
@@ -396,7 +396,7 @@ describe("stopBubbling", () => {
             },
             undefined,
             document.createElement("div"),
-            null
+            null,
         );
         expect(b.bubble((n.children as b.IBobrilCacheNode[])[0], "onClick")).toBeFalsy();
         expect(inner).toBeTruthy();

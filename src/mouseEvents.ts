@@ -125,7 +125,7 @@ function invokeMouseOwner(handlerName: string, param: any): boolean {
 
 function addEvent5(
     name: string,
-    callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean
+    callback: (ev: any, target: Node | undefined, node: IBobrilCacheNode | undefined) => boolean,
 ) {
     addEvent(name, 5, callback);
 }
@@ -143,7 +143,7 @@ function buildHandlerPointer(name: string) {
     return function handlePointerDown(
         ev: PointerEvent,
         target: Node | undefined,
-        node: IBobrilCacheNode | undefined
+        node: IBobrilCacheNode | undefined,
     ): boolean {
         target = ev.target as Node;
         node = deref(target);
@@ -183,7 +183,7 @@ function buildHandlerTouch(name: string) {
     return function handlePointerDown(
         ev: TouchEvent,
         target: Node | undefined,
-        node: IBobrilCacheNode | undefined
+        node: IBobrilCacheNode | undefined,
     ): boolean {
         var preventDef = false;
         for (var i = 0; i < ev.changedTouches.length; i++) {
@@ -218,7 +218,7 @@ function buildHandlerMouse(name: string) {
     return function handlePointer(
         ev: MouseEvent,
         target: Node | undefined,
-        node: IBobrilCacheNode | undefined
+        node: IBobrilCacheNode | undefined,
     ): boolean {
         target = ev.target as Node;
         node = deref(target);
@@ -273,7 +273,7 @@ for (var j = 0; j < 4 /*pointersEventNames.length*/; j++) {
             50,
             (ev: IBobrilPointerEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined) => {
                 return invokeMouseOwner(onName, ev) || bubble(node, onName as EventNames, ev) != undefined;
-            }
+            },
         );
     })(pointersEventNames[j]!);
 }
@@ -373,7 +373,7 @@ function noPointersDown(): boolean {
 function bustingPointerDown(
     ev: IBobrilPointerEvent,
     _target: Node | undefined,
-    _node: IBobrilCacheNode | undefined
+    _node: IBobrilCacheNode | undefined,
 ): boolean {
     if (firstPointerDown === -1 && noPointersDown()) {
         firstPointerDown = ev.id;
@@ -393,7 +393,7 @@ function bustingPointerDown(
 function bustingPointerMove(
     ev: IBobrilPointerEvent,
     target: Node | undefined,
-    node: IBobrilCacheNode | undefined
+    node: IBobrilCacheNode | undefined,
 ): boolean {
     // Browser forgot to send mouse up? Let's fix it
     if (ev.type === BobrilPointerType.Mouse && ev.button === 0 && pointersDown[ev.id] != null) {
@@ -437,7 +437,7 @@ export function preventClickingSpree() {
 function bustingPointerUp(
     ev: IBobrilPointerEvent,
     target: Node | undefined,
-    node: IBobrilCacheNode | undefined
+    node: IBobrilCacheNode | undefined,
 ): boolean {
     delete pointersDown[ev.id];
     if (firstPointerDown == ev.id) {
@@ -462,7 +462,7 @@ function bustingPointerUp(
 function bustingPointerCancel(
     ev: IBobrilPointerEvent,
     _target: Node | undefined,
-    _node: IBobrilCacheNode | undefined
+    _node: IBobrilCacheNode | undefined,
 ): boolean {
     delete pointersDown[ev.id];
     if (firstPointerDown == ev.id) {

@@ -32,8 +32,8 @@ var mapping: IBobrilShimStyleMapping = new Map();
 
 var isUnitlessNumber: ReadonlySet<string> = new Set(
     "boxFlex boxFlexGroup columnCount flex flexGrow flexNegative flexPositive flexShrink fontWeight lineClamp lineHeight opacity order orphans strokeDashoffset widows zIndex zoom".split(
-        " "
-    )
+        " ",
+    ),
 );
 
 function renamer(newName: string) {
@@ -116,7 +116,7 @@ function setClassName(el: Element, className: string, inSvg: boolean) {
 export function updateElementStyle(
     el: HTMLElement,
     newStyle: Record<string, string | number | undefined> | undefined,
-    oldStyle: Record<string, string | undefined> | undefined
+    oldStyle: Record<string, string | undefined> | undefined,
 ) {
     var s = el.style;
     if (newStyle !== undefined) {
@@ -151,7 +151,7 @@ function createNodeStyle(
     newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
     newClass: string | undefined,
     c: IBobrilCacheNode,
-    inSvg: boolean
+    inSvg: boolean,
 ) {
     if (isFunction(newStyle)) {
         assert(newClass === undefined);
@@ -168,7 +168,7 @@ function updateNodeStyle(
     newStyle: Record<string, string | number | undefined> | (() => IBobrilStyles) | undefined,
     newClass: string | undefined,
     c: IBobrilCacheNode,
-    inSvg: boolean
+    inSvg: boolean,
 ) {
     if (isFunction(newStyle)) {
         assert(newClass === undefined);
@@ -378,7 +378,7 @@ function afterFrame(root: IBobrilCacheChildren | null) {
                             mulWidth,
                             mulHeight,
                             (dynSprite.left * lastSpriteDppx) | 0,
-                            (dynSprite.top * lastSpriteDppx) | 0
+                            (dynSprite.top * lastSpriteDppx) | 0,
                         );
                         var stDef = allStyles[dynSprite.styleId]!;
                         stDef.style = {
@@ -430,7 +430,7 @@ function afterFrame(root: IBobrilCacheChildren | null) {
                     dynSprite.width,
                     dynSprite.height,
                     dynSprite.left,
-                    dynSprite.top
+                    dynSprite.top,
                 );
                 var stDef = allStyles[dynSprite.styleId]!;
                 stDef.style = {
@@ -685,7 +685,7 @@ export function namedStyleDefEx(
     name: string,
     parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
     style: CSSStyles,
-    pseudoOrAttr?: CSSPseudoStyles
+    pseudoOrAttr?: CSSPseudoStyles,
 ): IBobrilStyleDef {
     var res = styleDefEx(parent, style, pseudoOrAttr, name);
     if (res != name) throw new Error("named style " + name + " is not unique");
@@ -700,7 +700,7 @@ export function styleDefEx(
     parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
     style: CSSStyles,
     pseudoOrAttr?: CSSPseudoStyles,
-    nameHint?: string
+    nameHint?: string,
 ): IBobrilStyleDef {
     nameHint = makeName(nameHint);
     allStyles[nameHint] = {
@@ -779,7 +779,7 @@ function recolorAndClip(
     width: number,
     height: number,
     left: number,
-    top: number
+    top: number,
 ): string {
     let [canvas, ctx] = createCanvas(width, height);
     let imgData = ctx.createImageData(width, height);
@@ -875,7 +875,7 @@ export function sprite(
     width?: number,
     height?: number,
     left?: number,
-    top?: number
+    top?: number,
 ): ColorlessSprite;
 export function sprite(
     url: string,
@@ -883,7 +883,7 @@ export function sprite(
     width?: number,
     height?: number,
     left?: number,
-    top?: number
+    top?: number,
 ): IBobrilStyleDef;
 
 export function sprite(
@@ -892,7 +892,7 @@ export function sprite(
     width?: number,
     height?: number,
     left?: number,
-    top?: number
+    top?: number,
 ): IBobrilStyleDef {
     assert(allStyles[url] === undefined, "Wrong sprite url");
     left = left || 0;
@@ -936,7 +936,7 @@ export function sprite(
                     spDef.width,
                     spDef.height,
                     spDef.left,
-                    spDef.top
+                    spDef.top,
                 );
                 spDef.left = 0;
                 spDef.top = 0;
@@ -977,7 +977,7 @@ export function isSvgSprite(id: ColorlessSprite) {
 export function svgWithColor(
     id: ColorlessSprite,
     colors: string | (() => string) | Record<string, string | (() => string)>,
-    size: number = 1
+    size: number = 1,
 ): IBobrilStyleDef {
     var original = colorLessSpriteMap.get(id);
     if (DEBUG && (original == undefined || !("svg" in original))) throw new Error(id + " is not colorless svg");
@@ -1014,7 +1014,7 @@ export function svgWithColor(
             var c = colorsMap.get(m.substr(1, m.length - 2));
             return c !== undefined ? m[0] + c + m[m.length - 1] : m;
         }),
-        size
+        size,
     );
     svgSprites.set(key, styleId);
     return styleId;
@@ -1040,7 +1040,7 @@ function buildSvgStyle(content: string, size: number): ColorlessSprite {
                 height +
                 '" viewBox="0 0 ' +
                 content +
-                "</svg>"
+                "</svg>",
         ) +
         '")';
     return styleDef({ width, height, backgroundImage }) as ColorlessSprite;
@@ -1086,7 +1086,7 @@ export function spritebc(
     width: number,
     height: number,
     left: number,
-    top: number
+    top: number,
 ): IBobrilStyleDef {
     if (color == undefined) {
         return spriteb(width, height, left, top);

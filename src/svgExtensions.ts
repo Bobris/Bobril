@@ -2,7 +2,7 @@ function polarToCartesian(
     centerX: number,
     centerY: number,
     radius: number,
-    angleInDegrees: number
+    angleInDegrees: number,
 ): { x: number; y: number } {
     var angleInRadians = (angleInDegrees * Math.PI) / 180.0;
     return {
@@ -17,7 +17,7 @@ function svgDescribeArc(
     radius: number,
     startAngle: number,
     endAngle: number,
-    startWithLine: boolean
+    startWithLine: boolean,
 ) {
     var absDeltaAngle = Math.abs(endAngle - startAngle);
     var close = false;
@@ -58,7 +58,7 @@ export function svgPie(
     radiusBig: number,
     radiusSmall: number,
     startAngle: number,
-    endAngle: number
+    endAngle: number,
 ): string {
     var p = svgDescribeArc(x, y, radiusBig, startAngle, endAngle, false);
     var nextWithLine = true;
