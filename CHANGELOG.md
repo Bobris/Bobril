@@ -1,12 +1,16 @@
 # CHANGELOG
 
+## 20.6.0
+
+New `b.setActiveState` method for router to set state without changing URL or preventing clicking spree. It also does not invalidate anything.
+
 ## 20.5.2
 
 Fixed racecondition when after calling first b.init b.invalidated() could return false when bobril-g11n was asynchronously initializing.
 
 ## 20.5.1
 
-Fix behaviour with keysInClassNames.
+Fix behavior with keysInClassNames.
 
 ## 20.5.0
 

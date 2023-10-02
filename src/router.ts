@@ -831,6 +831,11 @@ export function getActiveState() {
     return activeState;
 }
 
+export function setActiveState(state: any) {
+    history().replaceState({ historyDeepness, state }, "");
+    activeState = state;
+}
+
 export function useCanDeactivate(handler: NonNullable<Component["canDeactivate"]>): void {
     const ctx = getCurrentCtx();
 
