@@ -1,4 +1,7 @@
 {
     "typescript.tsdk": "node_modules\\typescript\\lib",
-    "cSpell.enabled": true
+    "cSpell.enabled": true,
+    "search.exclude": {
+        "**/node_modules": false
+    }
 }
