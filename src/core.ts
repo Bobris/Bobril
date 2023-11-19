@@ -1292,14 +1292,14 @@ export function updateNode(
     if (isArray(parEl)) parEl = parEl[0];
     if (parEl == undefined) parEl = createInto;
     else parEl = <Element>parEl.parentNode;
-    var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c));
+    var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c) ?? createBefore);
     removeNode(c);
     if (DEBUG && component && measureFullComponentDuration) endMeasure(componentStartMark!, `${component.id} update`);
     return r;
 }
 
 export function getDomNode(c: IBobrilCacheNode | undefined): Node | null {
-    if (c === undefined) return null;
+    if (c === undefined || c.tag == "@") return null;
     var el: Node | Node[] | null | undefined = c.element;
     if (el != null) {
         if (isArray(el)) return el[0]!;

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "checkJs": false,
@@ -12,7 +13,9 @@
       "ES2018",
       "dom"
     ],
-    "module": "commonjs",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "noEmit": true,
     "noEmitHelpers": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
@@ -33,7 +36,7 @@
     "resolveJsonModule": true
   },
   "files": [
-    "C:/Users/b.letocha/.bbcore/tools/jasmine330.d.ts"
+    "/Users/borisletocha/.bbcore/tools/jasmine330.d.ts"
   ],
   "include": [
     "**/*"

@@ -108,4 +108,20 @@ describe("Portal", () => {
         b.init(() => undefined);
         b.syncUpdate();
     });
+
+    it("returns null in getDomNode", () => {
+        b.init(() => {
+            return (
+                <b.Portal>
+                    <div>portal</div>
+                </b.Portal>
+            );
+        });
+        b.syncUpdate();
+        let portalNode = (b.getRoots()[0]?.c as b.IBobrilCacheNode[])[0]?.children![0] as b.IBobrilCacheNode;
+        expect(portalNode?.tag).toEqual("@");
+        expect(b.getDomNode(portalNode)).toBeNull();
+        b.init(() => undefined);
+        b.syncUpdate();
+    });
 });

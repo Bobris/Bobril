@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.6.1
+
+Fixed getDomNode on Portals to return null. Also subtle fix in updateNode when changing nothing into something it will be inserted in proper place.
+
 ## 20.6.0
 
 New `b.setActiveState` method for router to set state without changing URL or preventing clicking spree. It also does not invalidate anything.
