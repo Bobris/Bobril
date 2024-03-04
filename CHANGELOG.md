@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.6.2
+
+Allow `#` character in route params.
+
 ## 20.6.1
 
 Fixed getDomNode on Portals to return null. Also subtle fix in updateNode when changing nothing into something it will be inserted in proper place.

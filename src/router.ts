@@ -166,7 +166,7 @@ function compilePattern(pattern: string) {
             (match: string, leadingSlash: string | undefined, paramName: string, optionalParamChar: string = "") => {
                 if (paramName) {
                     paramNames.push(paramName);
-                    return (leadingSlash ? "(?:/([^/?#]+))" : "([^/?#]+)") + optionalParamChar;
+                    return (leadingSlash ? "(?:/([^/?]+))" : "([^/?]+)") + optionalParamChar;
                 } else if (match === "*") {
                     paramNames.push("splat");
                     return "(.*?)";
