@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.6.3
+
+Do not create empty style tag when no styles are defined.
+
 ## 20.6.2
 
 Allow `#` character in route params.
@@ -280,9 +284,9 @@ b.style on b.styleDef(string) could be called outside of render now.
 
 use User Timing API to measure component performance (#109)
 
-- report component lifecycle method durations into User Timing API
-- results are available in the performance tab of devtools (e.g. 'timings' timelane in Chrome)
-- have to be manually switched on in the code `b.setMeasureConfiguration()`, since the performance impact is not known
+-   report component lifecycle method durations into User Timing API
+-   results are available in the performance tab of devtools (e.g. 'timings' timelane in Chrome)
+-   have to be manually switched on in the code `b.setMeasureConfiguration()`, since the performance impact is not known
 
 ## 14.10.0
 
@@ -387,8 +391,8 @@ Fixed some regressions from 13.0.0
 
 BREAKING CHANGE
 
-- `IBobrilCacheNode` has now just read only fields as it was always intended. Events `onFocus`, `onBlur`, `onSelectionChange` bubble now.
-- `bubble`, `broadcast`, `captureBroadcast` now type check `EventNames` and `EventParam<TName>`
+-   `IBobrilCacheNode` has now just read only fields as it was always intended. Events `onFocus`, `onBlur`, `onSelectionChange` bubble now.
+-   `bubble`, `broadcast`, `captureBroadcast` now type check `EventNames` and `EventParam<TName>`
 
 Most event parameters now inherit from `IEventParam` which contains `target` of `IBobrilCacheNode` type.
 New hooks `useEvents` and `useCaptureEvents` (this is completely new capability `bubble` and `broadcast` now first broadcast to all useCaptureEvents). New types `IHookableEvents` and `ICapturableEvents`. New event `onInput` which is similar to `onChange` but parameter is object with `target` and `value` fields and bubbles.

@@ -508,16 +508,19 @@ function afterFrame(root: IBobrilCacheChildren | null) {
             }
             styleStr += "}\n";
         }
-        var styleElement = document.createElement("style");
-        styleElement.appendChild(createTextNode(styleStr));
 
-        var head = document.head || document.getElementsByTagName("head")[0];
-        if (htmlStyle != null) {
-            head.replaceChild(styleElement, htmlStyle);
-        } else {
-            head.appendChild(styleElement);
+        if (styleStr.length > 0) {
+            var styleElement = document.createElement("style");
+            styleElement.appendChild(createTextNode(styleStr));
+
+            var head = document.head || document.getElementsByTagName("head")[0];
+            if (htmlStyle != null) {
+                head.replaceChild(styleElement, htmlStyle);
+            } else {
+                head.appendChild(styleElement);
+            }
+            htmlStyle = styleElement;
         }
-        htmlStyle = styleElement;
     }
     chainedAfterFrame(root);
 }
