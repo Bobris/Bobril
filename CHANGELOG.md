@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.6.4
+
+Lazily create style for DnD.
+
 ## 20.6.3
 
 Do not create empty style tag when no styles are defined.

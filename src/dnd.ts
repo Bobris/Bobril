@@ -164,9 +164,18 @@ var DndCtx = function (this: IDndCtx, pointerId: number) {
 } as unknown as { new (pointerId: number): IDndStartCtx & IDndOverCtx };
 
 const draggingStyle = "b-dragging";
+let lazyDefineStyle = true;
 
 function lazyCreateRoot() {
     if (rootId == undefined) {
+        if (lazyDefineStyle) {
+            selectorStyleDef("html." + draggingStyle + " *", {
+                cursor: "inherit !important",
+                userSelect: "none !important",
+            });
+            lazyDefineStyle = false;
+        }
+
         var dd = document.documentElement;
         dd.classList.add(draggingStyle);
         rootId = addRoot(dndRootFactory);
@@ -658,5 +667,3 @@ addEvent("drop", 5, handleDrop);
 addEvent("dragenter", 5, justPreventDefault);
 addEvent("dragleave", 5, justPreventDefault);
 export const getDnds = () => dnds;
-
-selectorStyleDef("html." + draggingStyle + " *", { cursor: "inherit !important", userSelect: "none !important" });
