@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.7.0
+
+Allow to provide custom function to setKeysInClassNames, it can change className, style, attrs.
+
 ## 20.6.4
 
 Lazily create style for DnD.
@@ -22,7 +26,7 @@ New `b.setActiveState` method for router to set state without changing URL or pr
 
 ## 20.5.2
 
-Fixed racecondition when after calling first b.init b.invalidated() could return false when bobril-g11n was asynchronously initializing.
+Fixed race-condition when after calling first b.init b.invalidated() could return false when bobril-g11n was asynchronously initializing.
 
 ## 20.5.1
 
