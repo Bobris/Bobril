@@ -15,21 +15,51 @@ describe("setKeysInClassNames", () => {
         expect(document.querySelector(".hello")).toBeTruthy();
     });
 
+    it("canBeUpdatedWhenEnabled", () => {
+        b.setKeysInClassNames(true);
+        let content = "bye";
+        b.init(() => (
+            <div key="hello" data-example={content}>
+                {content}
+            </div>
+        ));
+        b.syncUpdate();
+
+        b.invalidate();
+        content = "hi";
+        b.syncUpdate();
+        expect(document.querySelector(".hello")).toBeTruthy();
+    });
+
     it("canBeCustomized", () => {
         b.setKeysInClassNames((c, n) => {
-            var add = "";
+            var add: string | undefined = "";
             do {
                 var k = c.key;
                 if (k) add = " " + k + add;
                 c = c.parent!;
             } while (c != undefined && c.element == undefined);
-            if (!add.length) return;
-            if (n.className) n.className += add;
-            else n.className = add.slice(1);
-            n.attrs ??= {};
-            n.attrs["data-guide-id"] = add.slice(1);
+            if (!add.length) return [n.className, n.style, n.attrs];
+            else {
+                let newClassName: string | undefined;
+                if (n.className) newClassName = n.className + add;
+                else newClassName = add.slice(1);
+                return [newClassName, n.style, { ...(n.attrs ?? {}), "data-guide-id": add.slice(1) }];
+            }
         });
-        b.init(() => <div key="hello">bye</div>);
+        let content = "bye";
+        b.init(() => (
+            <div key="hello" data-example={content}>
+                {content}
+            </div>
+        ));
+        b.syncUpdate();
+
+        expect(document.querySelector(".hello")).toBeTruthy();
+        expect(document.querySelector("[data-guide-id=hello]")).toBeTruthy();
+
+        b.invalidate();
+        content = "hi";
         b.syncUpdate();
 
         expect(document.querySelector(".hello")).toBeTruthy();

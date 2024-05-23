@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.7.1
+
+Fix regression in 20.7.0.
+
 ## 20.7.0
 
 Allow to provide custom function to setKeysInClassNames, it can change className, style, attrs.

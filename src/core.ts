@@ -879,9 +879,9 @@ export function createNode(
     }
     if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
     if (inSvgForeignObject) inSvg = true;
-    enrichNode?.(c, c);
-    if (c.attrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, c.attrs, {}, inNotFocusable);
-    createNodeStyle(el as HTMLElement, c.style, c.className, c, inSvg);
+    let [newClassName, newStyle, newAttrs] = enrichNode(c, c);
+    if (newAttrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, newAttrs, {}, inNotFocusable);
+    createNodeStyle(el as HTMLElement, newStyle, newClassName, c, inSvg);
     inSvg = backupInSvg;
     inNotFocusable = backupInNotFocusable;
     pushInitCallback(c);
@@ -926,28 +926,43 @@ export function destroyDynamicStyle(c: IBobrilCacheNode) {
 }
 
 export function setKeysInClassNames(
-    value: boolean | undefined | ((c: IBobrilCacheNode, n: IBobrilNodeCommon) => void),
+    value?:
+        | boolean
+        | ((
+              c: IBobrilCacheNode,
+              n: IBobrilNodeCommon,
+          ) => [IBobrilNodeCommon<any>["className"], IBobrilNodeCommon<any>["style"], IBobrilNodeCommon<any>["attrs"]]),
 ) {
     if (isFunction(value)) {
         enrichNode = value;
     } else if (value) {
         enrichNode = (c: IBobrilCacheNode, n: IBobrilNodeCommon) => {
-            var add = "";
+            var add: string | undefined = "";
             do {
                 var k = c.key;
                 if (k) add = " " + k + add;
                 c = c.parent!;
             } while (c != undefined && c.element == undefined);
-            if (!add.length) return;
-            if (n.className) n.className += add;
-            else n.className = add.slice(1);
+            if (!add.length) add = n.className;
+            else {
+                if (n.className) add = n.className + add;
+                else add = add.slice(1);
+            }
+            return [add, n.style, n.attrs];
         };
     } else {
-        enrichNode = undefined;
+        enrichNode = (_: IBobrilCacheNode, n: IBobrilNodeCommon) => {
+            return [n.className, n.style, n.attrs];
+        };
     }
 }
 
-let enrichNode: undefined | ((c: IBobrilCacheNode, n: IBobrilNodeCommon) => void);
+let enrichNode!: (
+    c: IBobrilCacheNode,
+    n: IBobrilNodeCommon,
+) => [IBobrilNodeCommon<any>["className"], IBobrilNodeCommon<any>["style"], IBobrilNodeCommon<any>["attrs"]];
+
+setKeysInClassNames();
 
 function normalizeNode(n: any): IBobrilNode | undefined {
     if (n === false || n === true || n === null) return undefined;
@@ -1283,10 +1298,10 @@ export function updateNode(
             (c as IBobrilCacheNodeUnsafe).children = cachedChildren;
             if (inSvgForeignObject) inSvg = true;
             finishUpdateNode(n, c, component);
-            enrichNode?.(c, n);
-            if (c.attrs || n.attrs || inNotFocusable)
-                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable);
-            updateNodeStyle(el as HTMLElement, n.style, n.className, c, inSvg);
+            let [newClassName, newStyle, newAttrs] = enrichNode(c, n);
+            if (c.attrs || newAttrs || inNotFocusable)
+                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, newAttrs, c.attrs || {}, inNotFocusable);
+            updateNodeStyle(el as HTMLElement, newStyle, newClassName, c, inSvg);
             inSvg = backupInSvg;
             inNotFocusable = backupInNotFocusable;
             if (DEBUG && component && measureFullComponentDuration)
