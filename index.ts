@@ -12,6 +12,7 @@ export * from "./src/mediaQueryBuilder";
 export * from "./src/svgExtensions";
 export * from "./src/cssInJs";
 export * from "./src/wc";
+export * as Children from "./src/children";
 
 import { setAfterFrame, setBeforeFrame } from "./src/frameCallbacks";
 import { deref, getRoots, setInvalidate, ignoreShouldChange, setBeforeInit, setKeysInClassNames } from "./src/core";

@@ -599,7 +599,7 @@ function hyphenateStyle(s: string): string {
     return res;
 }
 
-function inlineStyleToCssDeclaration(style: any): string {
+export function inlineStyleToCssDeclaration(style: Readonly<Record<string, string | number>>): string {
     var res = "";
     for (var key in style) {
         var v = style[key];

@@ -3619,7 +3619,7 @@ export function shallowEqual(a: any, b: any): boolean {
 }
 
 // TSX reactNamespace emulation
-// PureFuncs: createElement, getAllPropertyNames, component, buildUseIsHook
+// PureFuncs: createElement, cloneElement, getChildrenOfElement, getPropsOfElement, component, buildUseIsHook
 
 const jsxFactoryCache = new Map<IComponentClass<any> | IComponentFunction<any>, Function>();
 
@@ -3633,6 +3633,47 @@ function getStringPropertyDescriptors(obj: any): Map<string, PropertyDescriptor>
     } while ((obj = Object.getPrototypeOf(obj)));
 
     return props;
+}
+
+export function getChildrenOfElement(node: IBobrilNode): IBobrilChildren {
+    if (node.children != undefined) return node.children;
+    return node.data?.children;
+}
+
+export function getPropsOfElement(node: IBobrilNode): Record<string, any> {
+    if (node.tag != undefined) {
+        let res = Object.assign({} as Record<string, any>, node.attrs);
+        if (node.style != undefined) res["style"] = node.style;
+        if (node.className != undefined) res["className"] = node.className;
+        if (node.key != undefined) res["key"] = node.key;
+        if (node.ref != undefined) res["ref"] = node.ref;
+        if (node.children != undefined) res["children"] = node.children;
+        Object.assign(res, node.component);
+        return res;
+    }
+    if (node.component != undefined) {
+        let res = Object.assign({}, node.data);
+        if (node.key != undefined) res["key"] = node.key;
+        if (node.ref != undefined) res["ref"] = node.ref;
+        return res;
+    }
+    return {};
+}
+
+export function isValidElement(value: any): value is IBobrilNode {
+    if (!isObject(value)) return false;
+    return isString(value["tag"]) || isObject(value["component"]);
+}
+
+export function isComponent(
+    what: IBobrilChild,
+    component: string | ((data?: any, children?: any) => IBobrilNode) | IComponentClass<any> | IComponentFunction<any>,
+): boolean {
+    if (!isObject(what)) return false;
+    if (isString(component)) {
+        return what.tag === component;
+    }
+    return what.component?.src === component;
 }
 
 const jsxSimpleProps = new Set("key className component data children".split(" "));
@@ -3726,6 +3767,66 @@ export function createElement(name: any, props: any): IBobrilNode {
         }
         return res;
     }
+}
+export function cloneElement<T extends object>(element: IBobrilNode<T>, props?: T): IBobrilNode<T> {
+    let res = Object.assign({}, element);
+    if (element.tag != undefined) {
+        var attrs: IBobrilAttributes | undefined = element.attrs;
+        if (attrs != undefined) {
+            attrs = Object.assign({}, attrs);
+        }
+        var component: IBobrilComponent | undefined = element.component;
+        if (component != undefined) {
+            component = Object.assign({}, component);
+        }
+        for (var n in props) {
+            if (!hOP.call(props, n)) continue;
+            var propValue = props[n];
+            if (jsxSimpleProps.has(n)) {
+                (res as any)[n] = propValue;
+            } else if (n === "style") {
+                if (isFunction(propValue)) {
+                    (res as any)[n] = propValue;
+                } else {
+                    if (isObject(res.style)) {
+                        res.style = Object.assign({}, res.style);
+                    }
+                    style(res, propValue as IBobrilStyles);
+                }
+            } else if (n === "ref") {
+                if (isString(propValue)) {
+                    assert(getCurrentCtx() != undefined);
+                    res.ref = [getCurrentCtx()!, propValue];
+                } else res.ref = propValue as IBobrilNode["ref"];
+            } else if (n.startsWith("on") && isFunction(propValue)) {
+                if (component == undefined) {
+                    component = newHashObj();
+                    res.component = component;
+                }
+                (component as any)[n] = propValue.call.bind(propValue);
+                continue;
+            } else {
+                if (attrs == undefined) {
+                    attrs = newHashObj();
+                    res.attrs = attrs;
+                }
+                attrs[n] = propValue;
+            }
+        }
+    } else {
+        if (props != undefined) {
+            if ((props as any).ref !== undefined) {
+                res.ref = (props as any).ref;
+                delete (props as any).ref;
+            }
+            if ((props as any).key !== undefined) {
+                res.key = (props as any).key;
+                delete (props as any).key;
+            }
+        }
+        res.data = Object.assign({}, element.data, props);
+    }
+    return res;
 }
 
 export const skipRender = { tag: "-" } as IBobrilNode;

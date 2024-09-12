@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.8.0
+
+Implemented `Children` api like is in React. Also there is now `cloneElement` function.
+
 ## 20.7.1
 
 Fix regression in 20.7.0.
