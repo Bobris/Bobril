@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.8.1
+
+Do not crash on spied component with key or ref and without callThough.
+
 ## 20.8.0
 
 Implemented `Children` api like is in React. Also there is now `cloneElement` function.

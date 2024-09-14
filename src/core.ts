@@ -3755,6 +3755,7 @@ export function createElement(name: any, props: any): IBobrilNode {
                 res = factory(props, children);
             }
         }
+        if (res == undefined) return res;
         if (props != undefined) {
             if (props.ref !== undefined) {
                 res.ref = props.ref;
@@ -3769,6 +3770,7 @@ export function createElement(name: any, props: any): IBobrilNode {
     }
 }
 export function cloneElement<T extends object>(element: IBobrilNode<T>, props?: T): IBobrilNode<T> {
+    if (element == undefined) return element;
     let res = Object.assign({}, element);
     if (element.tag != undefined) {
         var attrs: IBobrilAttributes | undefined = element.attrs;
