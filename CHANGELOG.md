@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.8.2
+
+Fix bug `cloneElement`.
+
 ## 20.8.1
 
 Do not crash on spied component with key or ref and without callThough.

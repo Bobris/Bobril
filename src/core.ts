@@ -3776,10 +3776,12 @@ export function cloneElement<T extends object>(element: IBobrilNode<T>, props?: 
         var attrs: IBobrilAttributes | undefined = element.attrs;
         if (attrs != undefined) {
             attrs = Object.assign({}, attrs);
+            res.attrs = attrs;
         }
         var component: IBobrilComponent | undefined = element.component;
         if (component != undefined) {
             component = Object.assign({}, component);
+            res.component = component;
         }
         for (var n in props) {
             if (!hOP.call(props, n)) continue;
