@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.9.0
+
+New function `cva` which is adaptation of class-variance-authority for Bobril. Instead of just classNames it works with `style` of type `IBobrilStyles`.
+
 ## 20.8.2
 
 Fix bug `cloneElement`.

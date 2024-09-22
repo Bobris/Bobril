@@ -3348,7 +3348,7 @@ export type Nominal<T, N extends string> = T & Tagged<N>;
 export type IBobrilStyleDef = Nominal<string, "IBobrilStyleDef"> | ColorlessSprite;
 export type ColorlessSprite = Nominal<string, "ColorlessSprite">;
 /// object case if for inline style declaration, undefined, null, true and false values are ignored
-export type IBobrilStyle = Readonly<CSSInlineStyles> | IBobrilStyleDef | "" | 0 | boolean | undefined | null;
+export type IBobrilStyle = Readonly<CSSInlineStyles> | IBobrilStyleDef | string | "" | 0 | boolean | undefined | null;
 /// place inline styles at end for optimal speed
 export type IBobrilStyles = IBobrilStyle | IBobrilStyleArray;
 export interface IBobrilStyleArray extends ReadonlyArray<IBobrilStyles> {
