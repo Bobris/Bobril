@@ -742,10 +742,15 @@ export function invalidateStyles(): void {
     invalidate();
 }
 
+function getSafeCssUrl(url: string) {
+    const escapedUrl = url.replace(/[\(\)]/g, "\\$&");
+    return `url(${escapedUrl})`;
+}
+
 function updateSprite(spDef: ISprite): void {
     var stDef = allStyles[spDef.styleId]!;
     var style: any = {
-        backgroundImage: `url(${spDef.url})`,
+        backgroundImage: getSafeCssUrl(spDef.url),
         width: spDef.width,
         height: spDef.height,
         backgroundPosition: `${-spDef.left}px ${-spDef.top}px`,
