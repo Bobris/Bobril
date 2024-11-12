@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 20.10.0
+
+Fixed JSX definition so now works `let El = "div"; <El>Text</El>`.
+Fixed crash when some plugin removed DOM element and then Bobril want to change it.
+
 ## 20.9.1
 
 Allow to have "(" and ")" characters in spite url.

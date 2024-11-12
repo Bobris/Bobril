@@ -1310,11 +1310,16 @@ export function updateNode(
             return c;
         }
     }
+    var insertBefore = getDomNode(c);
     var parEl = c.element;
     if (isArray(parEl)) parEl = parEl[0];
-    if (parEl == undefined) parEl = createInto;
-    else parEl = <Element>parEl.parentNode;
-    var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, getDomNode(c) ?? createBefore);
+    if (parEl != undefined) parEl = <Element>parEl.parentNode;
+    if (parEl == undefined) {
+        parEl = createInto;
+        insertBefore = createBefore;
+    }
+    if (insertBefore == undefined) insertBefore = createBefore;
+    var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, insertBefore);
     removeNode(c);
     if (DEBUG && component && measureFullComponentDuration) endMeasure(componentStartMark!, `${component.id} update`);
     return r;
@@ -3680,7 +3685,7 @@ const jsxSimpleProps = new Set("key className component data children".split(" "
 
 export function createElement<T extends object>(
     name: string | ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T>,
-    data?: T,
+    data?: T | null,
     ...children: IBobrilChildren[]
 ): IBobrilNode<T>;
 
@@ -4539,11 +4544,13 @@ declare global {
         interface IntrinsicAttributes {
             key?: string;
             ref?: RefType;
+            children?: IBobrilChildren;
         }
 
         interface IntrinsicClassAttributes<T> {
             key?: string;
             ref?: RefType;
+            children?: IBobrilChildren;
         }
 
         interface IntrinsicElements {
