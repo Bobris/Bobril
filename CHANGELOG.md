@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.10.1
+
+Fix regression from 20.10.0.
+
 ## 20.10.0
 
 Fixed JSX definition so now works `let El = "div"; <El>Text</El>`.

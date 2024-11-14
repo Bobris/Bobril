@@ -1316,7 +1316,7 @@ export function updateNode(
     if (parEl != undefined) parEl = <Element>parEl.parentNode;
     if (parEl == undefined) {
         parEl = createInto;
-        insertBefore = createBefore;
+        if (insertBefore != undefined && insertBefore.parentNode != parEl) insertBefore = createBefore;
     }
     if (insertBefore == undefined) insertBefore = createBefore;
     var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, insertBefore);
