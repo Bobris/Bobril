@@ -2200,7 +2200,7 @@ function internalUpdate(time: number) {
                 if (insertBefore != null) break;
             }
             if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-            if (r.e === undefined) r.e = document.body;
+            if (r.e === undefined) r.e = defaultElementRoot ?? document.body;
             if (rc) {
                 if (fullRefresh || (rc.ctx as any)[ctxInvalidated] >= frameCounter) {
                     let node = RootComponent(r);
@@ -2268,6 +2268,12 @@ export var invalidate = (ctx?: Object, deepness?: number) => {
     scheduled = true;
     requestAnimationFrame(update);
 };
+
+var defaultElementRoot: HTMLElement | undefined;
+
+export function setDefaultElementRoot(element: HTMLElement | undefined): void {
+    defaultElementRoot = element;
+}
 
 var lastRootId = 0;
 
@@ -3869,7 +3875,7 @@ export interface IPortalData extends IDataWithChildren {
 }
 
 export function Portal(data: IPortalData): IBobrilNode {
-    return { tag: "@", data: data.element ?? document.body, children: data.children };
+    return { tag: "@", data: data.element ?? defaultElementRoot ?? document.body, children: data.children };
 }
 
 export enum EventResult {

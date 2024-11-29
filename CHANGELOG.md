@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.11.0
+
+Add way to define default element root for addRoot and Portal. `b.setDefaultElementRoot(...)`
+
 ## 20.10.1
 
 Fix regression from 20.10.0.
