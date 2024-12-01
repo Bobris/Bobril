@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.11.1
+
+Default element root is resolved inside `addRoot` and not lazily during frame update.
+
 ## 20.11.0
 
 Add way to define default element root for addRoot and Portal. `b.setDefaultElementRoot(...)`

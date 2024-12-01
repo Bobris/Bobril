@@ -2200,7 +2200,7 @@ function internalUpdate(time: number) {
                 if (insertBefore != null) break;
             }
             if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-            if (r.e === undefined) r.e = defaultElementRoot ?? document.body;
+            if (r.e === undefined) r.e = document.body;
             if (rc) {
                 if (fullRefresh || (rc.ctx as any)[ctxInvalidated] >= frameCounter) {
                     let node = RootComponent(r);
@@ -2284,7 +2284,7 @@ export function addRoot(
 ): string {
     lastRootId++;
     var rootId = "" + lastRootId;
-    roots[rootId] = { f: factory, e: element, c: [], p: parent, n: undefined };
+    roots[rootId] = { f: factory, e: element ?? defaultElementRoot, c: [], p: parent, n: undefined };
     if (rootIds != null) {
         rootIds.push(rootId);
     } else {
