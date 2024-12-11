@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.11.2
+
+Improve URL decoding error handling.
+
 ## 20.11.1
 
 Default element root is resolved inside `addRoot` and not lazily during frame update.

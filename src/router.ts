@@ -144,7 +144,11 @@ export function encodeUrl(url: string): string {
 }
 
 export function decodeUrl(url: string): string {
-    return decodeURIComponent(url.replace(/\+/g, " "));
+    try {
+        return decodeURIComponent(url.replace(/\+/g, " "));
+    } catch {
+        return "";
+    }
 }
 
 export function encodeUrlPath(path: string | undefined): string {
