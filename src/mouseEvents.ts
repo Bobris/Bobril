@@ -13,6 +13,8 @@ import {
     preventDefault,
     CommonUseIsHook,
     buildUseIsHook,
+    OmitAutoAddedEventParams,
+    prepareEventParams,
 } from "./core";
 
 import { isBoolean } from "./isFunc";
@@ -106,7 +108,8 @@ export function releaseMouseOwner(): void {
     ownerCtx = null;
 }
 
-function invokeMouseOwner(handlerName: string, param: any): boolean {
+function invokeMouseOwner(handlerName: string, param: IEventParam): boolean {
+    prepareEventParams(param);
     if (ownerCtx == undefined) {
         return false;
     }
@@ -157,11 +160,11 @@ function buildHandlerPointer(name: string) {
                 button++;
             }
         }
-        var param: IBobrilPointerEvent = {
+        var param: OmitAutoAddedEventParams<IBobrilPointerEvent> = {
             target: node!,
             id: ev.pointerId,
             cancelable: normalizeCancelable(ev),
-            type: type,
+            type,
             x: ev.clientX,
             y: ev.clientY,
             button: button,
@@ -190,7 +193,7 @@ function buildHandlerTouch(name: string) {
             var t = ev.changedTouches[i]!;
             target = t.target as Node;
             node = deref(target);
-            var param: IBobrilPointerEvent = {
+            var param: OmitAutoAddedEventParams<IBobrilPointerEvent> = {
                 target: node!,
                 id: t.identifier + 2,
                 cancelable: normalizeCancelable(ev),
@@ -203,6 +206,7 @@ function buildHandlerTouch(name: string) {
                 alt: ev.altKey,
                 meta: ev.metaKey || false,
                 count: ev.detail,
+                originalEvent: ev,
             };
             if (emitEvent("!" + name, param, target, node)) preventDef = true;
         }
@@ -222,7 +226,7 @@ function buildHandlerMouse(name: string) {
     ): boolean {
         target = ev.target as Node;
         node = deref(target);
-        var param: IBobrilPointerEvent = {
+        var param: OmitAutoAddedEventParams<IBobrilPointerEvent> = {
             target: node!,
             id: 1,
             type: BobrilPointerType.Mouse,
@@ -235,6 +239,7 @@ function buildHandlerMouse(name: string) {
             alt: ev.altKey,
             meta: ev.metaKey || false,
             count: ev.detail,
+            originalEvent: ev,
         };
         if (emitEvent("!" + name, param, target, node)) {
             preventDefault(ev);
@@ -530,7 +535,7 @@ function createHandler(handlerName: string, allButtons?: boolean) {
         let button = decodeButton(ev) || 1;
         // Ignore non left mouse click/dblclick event, but not for contextmenu event
         if (!allButtons && button !== 1) return false;
-        let param: IBobrilMouseEvent = {
+        let param: OmitAutoAddedEventParams<IBobrilMouseEvent> = {
             target: node!,
             x: ev.clientX,
             y: ev.clientY,
@@ -541,11 +546,12 @@ function createHandler(handlerName: string, allButtons?: boolean) {
             alt: ev.altKey,
             meta: ev.metaKey || false,
             count: ev.detail || 1,
+            originalEvent: ev,
         };
         if (handlerName == onDoubleClickText) param.count = 2;
         if (
             shouldPreventClickingSpree(param.count) ||
-            invokeMouseOwner(handlerName, param) ||
+            invokeMouseOwner(handlerName, param as unknown as IEventParam) ||
             bubble(node, handlerName as EventNames, param)
         ) {
             preventDefault(ev);
@@ -576,7 +582,7 @@ function handleMouseWheel(ev: any, _target: Node | undefined, node: IBobrilCache
     }
     let dx = ev.deltaX;
     let dy = ev.deltaY;
-    var param: IBobrilMouseWheelEvent = {
+    var param: OmitAutoAddedEventParams<IBobrilMouseWheelEvent> = {
         target: node!,
         dx,
         dy,
@@ -589,8 +595,9 @@ function handleMouseWheel(ev: any, _target: Node | undefined, node: IBobrilCache
         alt: ev.altKey,
         meta: ev.metaKey || false,
         count: ev.detail,
+        originalEvent: ev,
     };
-    if (invokeMouseOwner("onMouseWheel", param) || bubble(node, "onMouseWheel", param)) {
+    if (invokeMouseOwner("onMouseWheel", param as unknown as IEventParam) || bubble(node, "onMouseWheel", param)) {
         preventDefault(ev);
         return true;
     }

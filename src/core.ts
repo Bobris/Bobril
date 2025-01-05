@@ -55,7 +55,28 @@ export interface IBobrilAttributes {
 
 export interface IEventParam {
     target: IBobrilCacheNode;
+    originalEvent?: Event;
+    readonly defaultPrevented?: boolean;
+    preventDefault(): void;
+    stopPropagation(): void;
+    stopImmediatePropagation(): void;
+    readonly propagationStopped: boolean;
+    readonly immediatePropagationStopped: boolean;
+    /// stores ctx which called preventDefault
+    readonly _ctx: IBobrilCtx | undefined;
 }
+
+export type OmitAutoAddedEventParams<T> = Omit<
+    T,
+    | "target"
+    | "propagationStopped"
+    | "stopPropagation"
+    | "defaultPrevented"
+    | "preventDefault"
+    | "stopImmediatePropagation"
+    | "immediatePropagationStopped"
+    | "_ctx"
+> & { target?: IBobrilCacheNode };
 
 export interface IBubblingAndBroadcastEvents {
     onInput?(event: IInputEvent): GenericEventResult;
@@ -79,7 +100,7 @@ export interface IBobrilEvents extends IBubblingAndBroadcastEvents {
     /// called on input element after any change with new value (string|boolean|string[]) - it does NOT bubble, use onInput if need bubbling
     onChange?(value: any): void;
     /// called on string input element when selection or caret position changes (void result is just for backward compatibility, bubbling)
-    onSelectionChange?(event: ISelectionChangeEvent): void | GenericEventResult;
+    onSelectionChange?(event: ISelectionChangeEvent): GenericEventResult;
 
     // focus moved from outside of this element to some child of this element
     onFocusIn?(): void;
@@ -239,7 +260,7 @@ export class BobrilCtx<TData> implements IBobrilCtxInternal {
     $bobxCtx: object | undefined;
 }
 
-export interface IBobrilScroll {
+export interface IBobrilScroll extends IEventParam {
     node: IBobrilCacheNode | undefined;
 }
 
@@ -1996,19 +2017,6 @@ export function emitEvent(
     return false;
 }
 
-var isPassiveEventHandlerSupported = false;
-try {
-    var options = Object.defineProperty({}, "passive", {
-        get: function () {
-            isPassiveEventHandlerSupported = true;
-        },
-    });
-    window.addEventListener("blur", options as any, options);
-    window.removeEventListener("blur", options as any, options);
-} catch (err) {
-    isPassiveEventHandlerSupported = false;
-}
-
 var listeningEventDeepness = 0;
 
 function addListener(el: EventTarget, name: string, nonbody: boolean) {
@@ -2035,11 +2043,7 @@ function addListener(el: EventTarget, name: string, nonbody: boolean) {
     if (!nonbody) {
         if ("on" + eventName in window) el = window;
     }
-    el.addEventListener(
-        eventName,
-        enhanceEvent,
-        isPassiveEventHandlerSupported ? { capture: capture, passive: false } : capture,
-    );
+    el.addEventListener(eventName, enhanceEvent, { capture: capture, passive: false });
 }
 
 function initEvents() {
@@ -2367,15 +2371,16 @@ export type EventParam<T extends EventNames> = T extends keyof ICapturableEvents
 export function bubble<T extends EventNames>(
     node: IBobrilCacheNode | null | undefined,
     name: T,
-    param?: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode },
+    param?: OmitAutoAddedEventParams<EventParam<T>> | { target?: IBobrilCacheNode },
 ): IBobrilCtx | undefined {
     if (param == undefined) {
         param = { target: node! };
     } else if (isObject(param) && (param as any).target == undefined) {
         (param as any).target = node;
     }
-    let res: IBobrilCtx | undefined = captureBroadcast(name, param!);
-    if (res != undefined) return res;
+    prepareEventParams(param as IEventParam);
+    captureBroadcast(name, param);
+    if ((param as IEventParam).propagationStopped) return (param as IEventParam)._ctx;
     const prevCtx = currentCtxWithEvents;
     while (node) {
         var c = node.component;
@@ -2389,17 +2394,10 @@ export function bubble<T extends EventNames>(
                     if (h instanceof EventsHook) {
                         var m = (h.events as any)[name];
                         if (m !== undefined) {
-                            const eventResult = +m.call(ctx, param) as EventResult;
-                            if (eventResult == EventResult.HandledPreventDefault) {
+                            processEventResult(param as IEventParam, m.call(ctx, param));
+                            if ((param as IEventParam).immediatePropagationStopped) {
                                 currentCtxWithEvents = prevCtx;
-                                return ctx;
-                            }
-                            if (eventResult == EventResult.HandledButRunDefault) {
-                                currentCtxWithEvents = prevCtx;
-                                return undefined;
-                            }
-                            if (eventResult == EventResult.NotHandledPreventDefault) {
-                                res = ctx;
+                                return (param as IEventParam)._ctx;
                             }
                         }
                     }
@@ -2416,17 +2414,10 @@ export function bubble<T extends EventNames>(
                     if (h instanceof EventsHook) {
                         var m = (h.events as any)[name];
                         if (m !== undefined) {
-                            const eventResult = +m.call(ctx, param) as EventResult;
-                            if (eventResult == EventResult.HandledPreventDefault) {
+                            processEventResult(param as IEventParam, m.call(ctx, param));
+                            if ((param as IEventParam).immediatePropagationStopped) {
                                 currentCtxWithEvents = prevCtx;
-                                return ctx;
-                            }
-                            if (eventResult == EventResult.HandledButRunDefault) {
-                                currentCtxWithEvents = prevCtx;
-                                return undefined;
-                            }
-                            if (eventResult == EventResult.NotHandledPreventDefault) {
-                                res = ctx;
+                                return (param as IEventParam)._ctx;
                             }
                         }
                     }
@@ -2434,52 +2425,53 @@ export function bubble<T extends EventNames>(
             }
             var m = (<any>c)[name];
             if (m) {
-                const eventResult = +m.call(c, ctx, param) as EventResult;
-                if (eventResult == EventResult.HandledPreventDefault) {
+                processEventResult(param as IEventParam, m.call(c, ctx, param));
+                if ((param as IEventParam).immediatePropagationStopped) {
                     currentCtxWithEvents = prevCtx;
-                    return ctx;
-                }
-                if (eventResult == EventResult.HandledButRunDefault) {
-                    currentCtxWithEvents = prevCtx;
-                    return undefined;
-                }
-                if (eventResult == EventResult.NotHandledPreventDefault) {
-                    res = ctx;
+                    return (param as IEventParam)._ctx;
                 }
             }
             m = (<any>c).handleGenericEvent;
             if (m) {
-                const eventResult = +m.call(c, ctx, name, param) as EventResult;
-                if (eventResult == EventResult.HandledPreventDefault) {
+                processEventResult(param as IEventParam, m.call(c, ctx, name, param));
+                if ((param as IEventParam).immediatePropagationStopped) {
                     currentCtxWithEvents = prevCtx;
-                    return ctx;
-                }
-                if (eventResult == EventResult.HandledButRunDefault) {
-                    currentCtxWithEvents = prevCtx;
-                    return undefined;
-                }
-                if (eventResult == EventResult.NotHandledPreventDefault) {
-                    res = ctx;
+                    return (param as IEventParam)._ctx;
                 }
             }
             m = (<any>c).shouldStopBubble;
             if (m) {
-                if (m.call(c, ctx, name, param)) break;
+                if (m.call(c, ctx, name, param)) {
+                    (param as IEventParam).stopPropagation();
+                    break;
+                }
             }
         }
         node = node.parent;
+        if ((param as IEventParam).propagationStopped) break;
     }
     currentCtxWithEvents = prevCtx;
-    return res;
+    return (param as IEventParam)._ctx;
+}
+
+function processEventResult(param: IEventParam, eventResult: GenericEventResult) {
+    eventResult = +eventResult as EventResult;
+    if (eventResult == EventResult.HandledPreventDefault) {
+        param.preventDefault();
+        param.stopImmediatePropagation();
+    } else if (eventResult == EventResult.HandledButRunDefault) {
+        param.stopImmediatePropagation();
+    } else if (eventResult == EventResult.NotHandledPreventDefault) {
+        param.preventDefault();
+    }
 }
 
 function broadcastEventToNode(
     node: IBobrilCacheNode | null | undefined,
     name: string,
-    param: any,
+    param: IEventParam,
 ): IBobrilCtx | undefined {
     if (!node) return undefined;
-    let res: IBobrilCtx | undefined;
     var c = node.component;
     if (c) {
         var ctx = node.ctx!;
@@ -2492,17 +2484,10 @@ function broadcastEventToNode(
                 if (h instanceof EventsHook) {
                     var m = (h.events as any)[name];
                     if (m !== undefined) {
-                        const eventResult = +m.call(ctx, param) as EventResult;
-                        if (eventResult == EventResult.HandledPreventDefault) {
+                        processEventResult(param, m.call(ctx, param));
+                        if (param.immediatePropagationStopped) {
                             currentCtxWithEvents = prevCtx;
-                            return ctx;
-                        }
-                        if (eventResult == EventResult.HandledButRunDefault) {
-                            currentCtxWithEvents = prevCtx;
-                            return undefined;
-                        }
-                        if (eventResult == EventResult.NotHandledPreventDefault) {
-                            res = ctx;
+                            return (param as IEventParam)._ctx;
                         }
                     }
                 }
@@ -2510,45 +2495,38 @@ function broadcastEventToNode(
         }
         var m = (<any>c)[name];
         if (m) {
-            const eventResult = +m.call(c, ctx, param) as EventResult;
-            if (eventResult == EventResult.HandledPreventDefault) {
+            processEventResult(param, m.call(c, ctx, param));
+            if (param.immediatePropagationStopped) {
                 currentCtxWithEvents = prevCtx;
-                return ctx;
-            }
-            if (eventResult == EventResult.HandledButRunDefault) {
-                currentCtxWithEvents = prevCtx;
-                return undefined;
-            }
-            if (eventResult == EventResult.NotHandledPreventDefault) {
-                res = ctx;
+                return (param as IEventParam)._ctx;
             }
         }
         m = c.shouldStopBroadcast;
         if (m) {
             if (m.call(c, ctx, name, param)) {
                 currentCtxWithEvents = prevCtx;
-                return res;
+                return (param as IEventParam)._ctx;
             }
         }
         currentCtxWithEvents = prevCtx;
+        if (param.propagationStopped) return (param as IEventParam)._ctx;
     }
     var ch = node.children;
     if (isArray(ch)) {
         for (var i = 0; i < (<IBobrilCacheNode[]>ch).length; i++) {
-            var res2 = broadcastEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
-            if (res2 != undefined) return res2;
+            broadcastEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
+            if (param.propagationStopped) return (param as IEventParam)._ctx;
         }
     }
-    return res;
+    return (param as IEventParam)._ctx;
 }
 
 function broadcastCapturedEventToNode(
     node: IBobrilCacheNode | null | undefined,
     name: string,
-    param: any,
+    param: IEventParam,
 ): IBobrilCtx | undefined {
     if (!node) return undefined;
-    let res: IBobrilCtx | undefined;
     var c = node.component;
     var ctx = node.ctxStyle;
     if (ctx) {
@@ -2561,17 +2539,10 @@ function broadcastCapturedEventToNode(
                 if (h instanceof CaptureEventsHook) {
                     var m = (h.events as any)[name];
                     if (m !== undefined) {
-                        const eventResult = +m.call(ctx, param) as EventResult;
-                        if (eventResult == EventResult.HandledPreventDefault) {
+                        processEventResult(param, m.call(ctx, param));
+                        if (param.immediatePropagationStopped) {
                             currentCtxWithEvents = prevCtx;
-                            return ctx;
-                        }
-                        if (eventResult == EventResult.HandledButRunDefault) {
-                            currentCtxWithEvents = prevCtx;
-                            return undefined;
-                        }
-                        if (eventResult == EventResult.NotHandledPreventDefault) {
-                            res = ctx;
+                            return (param as IEventParam)._ctx;
                         }
                     }
                 }
@@ -2590,17 +2561,10 @@ function broadcastCapturedEventToNode(
                 if (h instanceof CaptureEventsHook) {
                     var m = (h.events as any)[name];
                     if (m !== undefined) {
-                        const eventResult = +m.call(ctx, param) as EventResult;
-                        if (eventResult == EventResult.HandledPreventDefault) {
+                        processEventResult(param, m.call(ctx, param));
+                        if (param.immediatePropagationStopped) {
                             currentCtxWithEvents = prevCtx;
-                            return ctx;
-                        }
-                        if (eventResult == EventResult.HandledButRunDefault) {
-                            currentCtxWithEvents = prevCtx;
-                            return undefined;
-                        }
-                        if (eventResult == EventResult.NotHandledPreventDefault) {
-                            res = ctx;
+                            return (param as IEventParam)._ctx;
                         }
                     }
                 }
@@ -2608,46 +2572,48 @@ function broadcastCapturedEventToNode(
             currentCtxWithEvents = prevCtx;
         }
     }
+    if (param.propagationStopped) return (param as IEventParam)._ctx;
     var ch = node.children;
     if (isArray(ch)) {
         for (var i = 0, l = (<IBobrilCacheNode[]>ch).length; i < l; i++) {
-            var res2 = broadcastCapturedEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
-            if (res2 != undefined) return res2;
+            broadcastCapturedEventToNode((<IBobrilCacheNode[]>ch)[i], name, param);
+            if (param.propagationStopped) return (param as IEventParam)._ctx;
         }
     }
-    return res;
+    return (param as IEventParam)._ctx;
 }
 
 export function captureBroadcast<T extends EventNames>(
     name: T,
-    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode },
+    param: OmitAutoAddedEventParams<EventParam<T>> | { target?: IBobrilCacheNode },
 ): IBobrilCtx | undefined {
+    prepareEventParams(param as any);
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
         var ch = roots[k[i]!]!.n;
         if (ch != null) {
-            var res = broadcastCapturedEventToNode(ch, name, param);
-            if (res != null) return res;
+            broadcastCapturedEventToNode(ch, name, param as IEventParam);
+            if ((param as IEventParam).propagationStopped) return (param as IEventParam)._ctx;
         }
     }
-    return undefined;
+    return (param as IEventParam)._ctx;
 }
 
 export function broadcast<T extends EventNames>(
     name: T,
-    param: Omit<EventParam<T>, "target"> | { target?: IBobrilCacheNode },
+    param: OmitAutoAddedEventParams<EventParam<T>> | { target?: IBobrilCacheNode },
 ): IBobrilCtx | undefined {
-    var res = captureBroadcast(name, param);
-    if (res != null) return res;
+    captureBroadcast(name, param);
+    if ((param as IEventParam).propagationStopped) return (param as IEventParam)._ctx;
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
         var ch = roots[k[i]!]!.n;
         if (ch != null) {
-            res = broadcastEventToNode(ch, name, param);
-            if (res != null) return res;
+            broadcastEventToNode(ch, name, param as IEventParam);
+            if ((param as IEventParam).propagationStopped) return (param as IEventParam)._ctx;
         }
     }
-    return undefined;
+    return (param as IEventParam)._ctx;
 }
 
 export function runMethodFrom(ctx: IBobrilCtx | undefined, methodId: MethodId, param?: Object): boolean {
@@ -2902,7 +2868,7 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
         var vs = selectedArray((<HTMLSelectElement>target).options);
         if (!stringArrayEqual((<any>ctx)[bValue], vs)) {
             (<any>ctx)[bValue] = vs;
-            emitOnInput(node, vs);
+            emitOnInput(node, vs, ev);
         }
     } else if (isCheckboxLike(<HTMLInputElement>target)) {
         // Postpone change event so onClick will be processed before it
@@ -2922,21 +2888,21 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
                 var vrb = (<HTMLInputElement>radio).checked;
                 if ((<any>radioCtx)[bValue] !== vrb) {
                     (<any>radioCtx)[bValue] = vrb;
-                    emitOnInput(radioNode, vrb);
+                    emitOnInput(radioNode, vrb, ev);
                 }
             }
         } else {
             var vb = (<HTMLInputElement>target).checked;
             if ((<any>ctx)[bValue] !== vb) {
                 (<any>ctx)[bValue] = vb;
-                emitOnInput(node, vb);
+                emitOnInput(node, vb, ev);
             }
         }
     } else {
         var v = (<HTMLInputElement>target).value;
         if ((<any>ctx)[bValue] !== v) {
             (<any>ctx)[bValue] = v;
-            emitOnInput(node, v);
+            emitOnInput(node, v, ev);
         }
         let sStart = (<HTMLInputElement>target).selectionStart!;
         let sEnd = (<HTMLInputElement>target).selectionEnd!;
@@ -2953,12 +2919,12 @@ function emitOnChange(ev: Event | undefined, target: Node | undefined, node: IBo
             sStart = sEnd;
             sEnd = s;
         }
-        emitOnSelectionChange(node, sStart, sEnd);
+        emitOnSelectionChange(node, sStart, sEnd, ev);
     }
     return false;
 }
 
-function emitOnInput(node: IBobrilCacheNode, value: any) {
+function emitOnInput(node: IBobrilCacheNode, value: any, originalEvent: Event | undefined) {
     var prevCtx = currentCtxWithEvents;
     var ctx = node.ctx;
     var component = node.component;
@@ -2968,10 +2934,10 @@ function emitOnInput(node: IBobrilCacheNode, value: any) {
     const hasOnChange = component && component.onChange;
     if (isFunction(hasOnChange)) hasOnChange(ctx, value);
     currentCtxWithEvents = prevCtx;
-    bubble(node, "onInput", { target: node, value });
+    bubble(node, "onInput", { target: node, value, originalEvent });
 }
 
-function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: number) {
+function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: number, originalEvent?: Event | undefined) {
     let c = node.component;
     let ctx = node.ctx;
     if (c && ((<any>ctx)[bSelectionStart] !== start || (<any>ctx)[bSelectionEnd] !== end)) {
@@ -2979,6 +2945,7 @@ function emitOnSelectionChange(node: IBobrilCacheNode, start: number, end: numbe
         (<any>ctx)[bSelectionEnd] = end;
         bubble(node, "onSelectionChange", {
             target: node,
+            originalEvent,
             startPosition: start,
             endPosition: end,
         });
@@ -3106,13 +3073,55 @@ export function focus(node: IBobrilCacheNode, backwards?: boolean): boolean {
     return false;
 }
 
+type Writable<T> = {
+    -readonly [P in keyof T]: T[P];
+};
+
+export function prepareEventParams<T extends IEventParam>(
+    params: Omit<
+        T,
+        | "defaultPrevented"
+        | "preventDefault"
+        | "propagationStopped"
+        | "immediatePropagationStopped"
+        | "stopPropagation"
+        | "stopImmediatePropagation"
+    >,
+) {
+    if ((params as unknown as IEventParam).propagationStopped != undefined) return;
+    (params as unknown as Writable<IEventParam>).defaultPrevented = false;
+    (params as unknown as Writable<IEventParam>).preventDefault = () => {
+        (params as unknown as Writable<IEventParam>).defaultPrevented = true;
+        (params as unknown as Writable<IEventParam>)._ctx = currentCtxWithEvents;
+    };
+    (params as unknown as Writable<IEventParam>).propagationStopped = false;
+    (params as unknown as Writable<IEventParam>).immediatePropagationStopped = false;
+    (params as unknown as Writable<IEventParam>).stopPropagation = () => {
+        (params as unknown as Writable<IEventParam>).propagationStopped = true;
+    };
+    (params as unknown as Writable<IEventParam>).stopImmediatePropagation = () => {
+        (params as unknown as Writable<IEventParam>).immediatePropagationStopped = true;
+        (params as unknown as Writable<IEventParam>).stopPropagation();
+    };
+}
+
+export function resetEventParams(params: IEventParam) {
+    (params as Writable<IEventParam>).defaultPrevented = false;
+    (params as Writable<IEventParam>).propagationStopped = false;
+    (params as Writable<IEventParam>).immediatePropagationStopped = false;
+    (params as Writable<IEventParam>)._ctx = undefined;
+}
+
 // Bobril.Scroll
 var callbacks: Array<(info: IBobrilScroll) => void> = [];
 
-function emitOnScroll(_ev: Event, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
-    let info: IBobrilScroll = {
+function emitOnScroll(ev: Event, _target: Node | undefined, node: IBobrilCacheNode | undefined) {
+    let info = {
         node,
-    };
+        target: node!,
+        originalEvent: ev,
+    } as IBobrilScroll;
+    prepareEventParams(info);
     for (var i = 0; i < callbacks.length; i++) {
         callbacks[i]!(info);
     }

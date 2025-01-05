@@ -9,9 +9,11 @@ import {
     IBobrilComponent,
     IBobrilCtx,
     IBobrilNode,
+    IEventParam,
     invalidate,
     preventDefault,
     removeRoot,
+    resetEventParams,
 } from "./core";
 import { selectorStyleDef } from "./cssInJs";
 import { isString } from "./isFunc";
@@ -68,7 +70,7 @@ type TEffectAllowed =
     | "uninitialized";
 var effectAllowedTable: TEffectAllowed[] = ["none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all"];
 
-export interface IDndCtx {
+export interface IDndCtx extends IEventParam {
     id: number;
     listData(): string[];
     hasData(type: string): boolean;
@@ -291,6 +293,7 @@ dndProto.cancelDnd = function (this: IDndOverCtx): void {
 dndProto.destroy = function (this: IDndCtx): void {
     this.ended = true;
     if (this.started) broadcast("onDragEnd", this);
+    resetEventParams(this);
     delete pointer2Dnd[this.pointerid];
     for (var i = 0; i < dnds.length; i++) {
         if (dnds[i] === this) {
@@ -330,6 +333,7 @@ function handlePointerDown(
         dnd.overNode = node;
         updateDndFromPointerEvent(dnd, ev);
         var sourceCtx = bubble(node, "onDragStart", dnd);
+        resetEventParams(dnd);
         if (sourceCtx) {
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == undefined) {
@@ -361,7 +365,9 @@ function dndMoved(node: IBobrilCacheNode | undefined, dnd: IDndOverCtx) {
     if (dnd.targetCtx == undefined) {
         dnd.operation = DndOp.None;
     }
+    resetEventParams(dnd);
     broadcast("onDrag", dnd);
+    resetEventParams(dnd);
 }
 
 function updateDndFromPointerEvent(dnd: IDndCtx, ev: IBobrilPointerEvent) {
@@ -413,6 +419,7 @@ function handlePointerUp(
         } else {
             dnd.cancelDnd();
         }
+        resetEventParams(dnd);
         ignoreClick(ev.x, ev.y);
         return true;
     }
@@ -449,6 +456,7 @@ function updateFromNative(dnd: IDndOverCtx, ev: DragEvent) {
     dndMoved(node, dnd);
     dnd.lastX = dnd.x;
     dnd.lastY = dnd.y;
+    dnd.originalEvent = ev;
 }
 
 function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobrilCacheNode | undefined): boolean {
@@ -474,6 +482,7 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
         dnd.startX = startX;
         dnd.startY = startY;
         var sourceCtx = bubble(node, "onDragStart", dnd);
+        resetEventParams(dnd);
         if (sourceCtx) {
             var htmlNode = getDomNode(sourceCtx.me);
             if (htmlNode == undefined) {
@@ -590,6 +599,7 @@ function handleDrag(ev: DragEvent, _target: Node | undefined, _node: IBobrilCach
         systemDnd.y = 0;
         systemDnd.operation = DndOp.None;
         broadcast("onDrag", systemDnd);
+        resetEventParams(systemDnd);
     }
     return true;
 }
@@ -623,10 +633,12 @@ function handleDrop(ev: DragEvent, _target: Node | undefined, _node: IBobrilCach
     updateFromNative(dnd, ev);
     var t: IBobrilCtx = dnd.targetCtx;
     if (t && bubble(t.me, "onDrop", dnd)) {
+        resetEventParams(dnd);
         setDropEffect(ev, dnd.operation);
         dnd.destroy();
         preventDefault(ev);
     } else {
+        resetEventParams(dnd);
         (<any>dnd).cancelDnd();
     }
     return true;

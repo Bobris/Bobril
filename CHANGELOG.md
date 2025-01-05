@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 21.0.0
+
+Events are more compatible with React. `IEventParam` contain methods like `stopPropagation()`, `preventDefault()`.
+
+This allows to use `event.stopPropagation()` and `event.preventDefault()` in event handlers like this:
+
+```TSX
+    b.init(() => <div onClick={(event) => event.stopPropagation()}>Click me</div>);
+```
+
 ## 20.11.2
 
 Improve URL decoding error handling.

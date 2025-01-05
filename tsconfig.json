@@ -36,7 +36,7 @@
     "resolveJsonModule": true
   },
   "files": [
-    "/Users/borisletocha/Research/bobril/index.ts",
+    "index.ts",
     "/Users/borisletocha/Research/bobril/example.tsx",
     "/Users/borisletocha/.bbcore/tools/jasmine330.d.ts"
   ],

@@ -7,10 +7,12 @@ export interface IKeyDownUpEvent extends IEventParam {
     meta: boolean;
     which: number;
     key: string;
+    repeat?: boolean;
 }
 
 export interface IKeyPressEvent extends IEventParam {
     charCode: number;
+    key: string;
 }
 
 declare module "./core" {
@@ -63,6 +65,8 @@ function buildParam(ev: KeyboardEvent): IKeyDownUpEvent {
         meta: ev.metaKey || false,
         which: ev.which || ev.keyCode,
         key: NormalizerKeyMap[ev.key] || ev.key,
+        repeat: ev.repeat,
+        originalEvent: ev,
     } as any;
 }
 
@@ -92,7 +96,11 @@ function emitOnKeyPress(ev: KeyboardEvent, _target: Node | undefined, node: IBob
         ev.altKey // Ignore Alt+num in Firefox
     )
         return false;
-    var param: IKeyPressEvent = { charCode: ev.which || ev.keyCode } as any;
+    var param: IKeyPressEvent = {
+        charCode: ev.which || ev.keyCode,
+        key: NormalizerKeyMap[ev.key] || ev.key,
+        originalEvent: ev,
+    } as any;
     if (bubble(node, "onKeyPress", param)) {
         preventDefault(ev);
         return true;
