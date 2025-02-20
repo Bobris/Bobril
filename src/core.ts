@@ -11,7 +11,14 @@ import { assert, createTextNode, hOP, is, newHashObj, noop } from "./localHelper
 
 // Bobril.Core
 
-export type IBobrilChild<T = any> = boolean | number | string | IBobrilNode<T> | null | undefined;
+export type IBobrilChild<T = any> =
+    | boolean
+    | number
+    | string
+    | IBobrilNode<T>
+    | (() => IBobrilChild | IBobrilChildArray)
+    | null
+    | undefined;
 export type IBobrilChildren = IBobrilChild | IBobrilChildArray;
 export interface IBobrilChildArray extends Array<IBobrilChildren> {}
 export type IBobrilCacheChildren = string | IBobrilCacheNode[] | undefined;
@@ -321,10 +328,6 @@ var inNotFocusable: boolean = false;
 var updateCall: Array<Function> = [];
 var updateInstance: Array<IBobrilCacheNode> = [];
 var effectInstance: Array<IBobrilCacheNode> = [];
-
-export function ieVersion() {
-    return (<any>document).documentMode;
-}
 
 const focusableTag = /^input$|^select$|^textarea$|^button$/;
 const tabindexStr = "tabindex";
@@ -757,24 +760,40 @@ export function createNode(
         ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg;
         c.ctx = ctx;
         currentCtx = ctx;
-        if (component.init) {
-            if (DEBUG && measureComponentMethods) {
-                var startMark = window.performance.mark(`${component.id} [init]`);
+        try {
+            if (component.init) {
+                if (DEBUG && measureComponentMethods) {
+                    var startMark = window.performance.mark(`${component.id} [init]`);
+                }
+                try {
+                    component.init(ctx, c);
+                } catch (e) {
+                    handleCatchInternal(e, ctx, true);
+                } finally {
+                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                }
             }
-            component.init(ctx, c);
-            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-        }
-        if (beforeRenderCallback !== noop) beforeRenderCallback(n, RenderPhase.Create);
-        if (component.render) {
-            hookId = 0;
-            if (DEBUG && measureComponentMethods) {
-                var startMark = window.performance.mark(`${component.id} [render]`);
+            if (beforeRenderCallback !== noop) beforeRenderCallback(n, RenderPhase.Create);
+            if (component.render) {
+                hookId = 0;
+                if (DEBUG && measureComponentMethods) {
+                    var startMark = window.performance.mark(`${component.id} [render]`);
+                }
+                try {
+                    component.render(ctx, c);
+                } catch (e) {
+                    handleCatchInternal(e, ctx, true);
+                } finally {
+                    hookId = -1;
+                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                }
             }
-            component.render(ctx, c);
-            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+        } catch (e) {
             hookId = -1;
+            handleCatchInternal(e, ctx, true);
+        } finally {
+            currentCtx = undefined;
         }
-        currentCtx = undefined;
     } else {
         if (DEBUG) Object.freeze(n);
     }
@@ -804,7 +823,11 @@ export function createNode(
             domNode2node.set(el, c);
             createInto.insertBefore(el, createBefore);
         } else {
-            createChildren(c, createInto, createBefore);
+            try {
+                createChildren(c, createInto, createBefore);
+            } catch (e) {
+                handleCatchInternal(e, c.ctx!, true);
+            }
         }
         if (component) {
             if (component.postRender) {
@@ -888,7 +911,11 @@ export function createNode(
     createInto.insertBefore(el, createBefore);
     domNode2node.set(el, c);
     c.element = el;
-    createChildren(c, <Element>el, null);
+    try {
+        createChildren(c, <Element>el, null);
+    } catch (e) {
+        handleCatchInternal(e, c.ctx!, true);
+    }
     if (component) {
         if (component.postRender) {
             if (DEBUG && measureComponentMethods) {
@@ -910,6 +937,19 @@ export function createNode(
     return c;
 }
 
+export function handleCatch(e: unknown, bubble: boolean) {
+    handleCatchInternal(e, currentCtx, bubble);
+}
+
+export function handleCatchInternal(e: unknown, c: IBobrilCtx | undefined, bubble: boolean) {
+    if (
+        _exceptionContext == undefined ||
+        c == undefined ||
+        !getContextValue(_exceptionContext, c)!.handle(e, c, bubble)
+    )
+        throw e;
+}
+
 export function applyDynamicStyle(factory: () => IBobrilStyles, c: IBobrilCacheNode): IBobrilNode {
     var ctxStyle = c.ctxStyle;
     var backupCtx = currentCtx;
@@ -923,10 +963,21 @@ export function applyDynamicStyle(factory: () => IBobrilStyles, c: IBobrilCacheN
         if (beforeRenderCallback !== noop) beforeRenderCallback(ctxStyle, RenderPhase.Update);
     }
     hookId = 0;
-    var s = factory();
+    try {
+        var s = factory();
+    } catch (e) {
+        hookId = -1;
+        currentCtx = backupCtx;
+        handleCatchInternal(e, ctxStyle, true);
+    }
     hookId = -1;
     currentCtx = backupCtx;
-    return style({}, s);
+    try {
+        return style({}, s);
+    } catch (e) {
+        handleCatchInternal(e, ctxStyle, true);
+    }
+    return {};
 }
 
 export function destroyDynamicStyle(c: IBobrilCacheNode) {
@@ -985,6 +1036,12 @@ let enrichNode!: (
 
 setKeysInClassNames();
 
+const renderData: IBobrilComponent = {
+    render(ctx: IBobrilCtx<() => IBobrilChildren>, me: IBobrilNode) {
+        me.children = ctx.data();
+    },
+};
+
 function normalizeNode(n: any): IBobrilNode | undefined {
     if (n === false || n === true || n === null) return undefined;
     if (isString(n)) {
@@ -992,6 +1049,9 @@ function normalizeNode(n: any): IBobrilNode | undefined {
     }
     if (isNumber(n)) {
         return { children: "" + n };
+    }
+    if (isFunction(n)) {
+        return { component: renderData, data: n };
     }
     return <IBobrilNode | undefined>n;
 }
@@ -1005,7 +1065,11 @@ function createChildren(c: IBobrilCacheNodeUnsafe, createInto: Element, createBe
     let res = <IBobrilCacheNode[]>[];
     flattenVdomChildren(res, ch);
     for (let i = 0; i < res.length; i++) {
-        res[i] = createNode(res[i]!, c, createInto, createBefore);
+        try {
+            res[i] = createNode(res[i]!, c, createInto, createBefore);
+        } catch (e) {
+            handleCatchInternal(e, c.ctx!, true);
+        }
     }
     c.children = res;
 }
@@ -1199,9 +1263,14 @@ export function updateNode(
                 if (DEBUG && measureComponentMethods) {
                     var startMark = window.performance.mark(`${component.id} [render]`);
                 }
-                component.render(ctx, n, c);
-                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-                hookId = -1;
+                try {
+                    component.render(ctx, n, c);
+                } catch (e) {
+                    handleCatchInternal(e, ctx, true);
+                } finally {
+                    hookId = -1;
+                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                }
                 if (n.cfg !== undefined) {
                     if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
                     else assign(c.cfg, n.cfg);
@@ -1397,16 +1466,26 @@ export function callPostCallbacks() {
             if (DEBUG && measureComponentMethods) {
                 var startMark = window.performance.mark(`${n.component.id} [post*]`);
             }
-            updateCall[i]!.call(n.component, currentCtx, n, n.element);
-            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+            try {
+                updateCall[i]!.call(n.component, currentCtx, n, n.element);
+            } catch (e) {
+                handleCatchInternal(e, currentCtx, false);
+            } finally {
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+            }
         }
         currentCtx = n.ctxStyle;
         if (currentCtx) {
             if (DEBUG && measureComponentMethods) {
                 var startMark = window.performance.mark(`${n.component.id} style [post*]`);
             }
-            updateCall[i]!.call(n.component, currentCtx, n, n.element);
-            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+            try {
+                updateCall[i]!.call(n.component, currentCtx, n, n.element);
+            } catch (e) {
+                handleCatchInternal(e, currentCtx, false);
+            } finally {
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+            }
         }
     }
     currentCtx = undefined;
@@ -1423,35 +1502,46 @@ export function callEffects() {
             if (DEBUG && measureComponentMethods) {
                 var startMark = window.performance.mark(`${n.component.id} [effect*]`);
             }
-            const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
-            const len = hooks.length;
-            for (let i = 0; i < len; i++) {
-                const hook = hooks[i];
-                const fn = hook.useEffect;
-                if (fn !== undefined) {
-                    fn.call(hook, currentCtx);
+            try {
+                const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
+                const len = hooks.length;
+                for (let i = 0; i < len; i++) {
+                    const hook = hooks[i];
+                    const fn = hook.useEffect;
+                    if (fn !== undefined) {
+                        fn.call(hook, currentCtx);
+                    }
                 }
+            } catch (e) {
+                handleCatchInternal(e, currentCtx, false);
+            } finally {
+                currentCtx = undefined;
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
             }
-            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
         currentCtx = n.ctxStyle;
         if (currentCtx) {
             if (DEBUG && measureComponentMethods) {
                 var startMark = window.performance.mark(`${n.component.id} style [effect*]`);
             }
-            const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
-            const len = hooks.length;
-            for (let i = 0; i < len; i++) {
-                const hook = hooks[i];
-                const fn = hook.useEffect;
-                if (fn !== undefined) {
-                    fn.call(hook, currentCtx);
+            try {
+                const hooks = (currentCtx as IBobrilCtxInternal).$hooks!;
+                const len = hooks.length;
+                for (let i = 0; i < len; i++) {
+                    const hook = hooks[i];
+                    const fn = hook.useEffect;
+                    if (fn !== undefined) {
+                        fn.call(hook, currentCtx);
+                    }
                 }
+            } catch (e) {
+                handleCatchInternal(e, currentCtx, false);
+            } finally {
+                currentCtx = undefined;
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
             }
-            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
         }
     }
-    currentCtx = undefined;
     effectInstance = [];
 }
 
@@ -2179,16 +2269,17 @@ function internalUpdate(time: number) {
     nextIgnoreShouldChange = false;
     uptimeMs = time;
     beforeFrameCallback();
-    var fullRefresh = false;
-    if (fullRecreateRequested) {
-        fullRecreateRequested = false;
-        fullRefresh = true;
-    }
     listeningEventDeepness++;
     if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) {
         var renderStartMark = window.performance.mark(`render ${frameCounter}`);
     }
-    for (let repeat = 0; repeat < 2; repeat++) {
+    for (let repeat = 0; repeat < 100; repeat++) {
+        let fullRefresh = false;
+        if (fullRecreateRequested) {
+            fullRecreateRequested = false;
+            fullRefresh = true;
+        }
+        deferSyncUpdateRequested = false;
         focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1]!;
         inNotFocusable = false;
         rootIds = Object.keys(roots);
@@ -2219,12 +2310,12 @@ function internalUpdate(time: number) {
             }
             r.c = rc.children;
         }
-        rootIds = undefined;
         callPostCallbacks();
+        if (!deferSyncUpdateRequested) {
+            callEffects();
+        }
         if (!deferSyncUpdateRequested) break;
     }
-    callEffects();
-    deferSyncUpdateRequested = false;
     listeningEventDeepness--;
     let r0 = roots["0"];
     afterFrameCallback(r0 ? r0.c : null);
@@ -2255,7 +2346,7 @@ export function setInvalidate(
     return prev;
 }
 
-export var invalidate = (ctx?: Object, deepness?: number) => {
+export var invalidate = (ctx?: Object, deepness?: number | undefined, updateInCurrentFrame?: boolean) => {
     if (ctx != null) {
         if (deepness == undefined) deepness = 1e6;
         if ((<any>ctx)[ctxInvalidated] !== frameCounter + 1) {
@@ -2265,7 +2356,13 @@ export var invalidate = (ctx?: Object, deepness?: number) => {
             if (deepness > (<any>ctx)[ctxDeepness]) (<any>ctx)[ctxDeepness] = deepness;
         }
     } else {
+        if (DEBUG && updateInCurrentFrame)
+            throw new Error("invalidate with updateInCurrentFrame cannot have ctx undefined");
         fullRecreateRequested = true;
+    }
+    if (updateInCurrentFrame) {
+        deferSyncUpdateRequested = true;
+        return;
     }
     isInvalidated = true;
     if (scheduled || initializing) return;
@@ -2334,7 +2431,7 @@ function firstInvalidate() {
 }
 
 export function init(factory: () => IBobrilChildren, element?: HTMLElement) {
-    assert(rootIds == undefined, "init should not be called from render");
+    assert(listeningEventDeepness == 0, "init should not be called from render");
     removeRoot("0");
     isInvalidated = true;
     roots["0"] = { f: factory, e: element, c: [], p: undefined, n: undefined };
@@ -2760,6 +2857,8 @@ function cloneNodeArray(a: IBobrilChildArray): IBobrilChildArray {
         var n = a[i];
         if (isArray(n)) {
             a[i] = cloneNodeArray(n);
+        } else if (isFunction(n)) {
+            a[i] = n;
         } else if (isObject(n)) {
             a[i] = cloneNode(n);
         }
@@ -2768,9 +2867,9 @@ function cloneNodeArray(a: IBobrilChildArray): IBobrilChildArray {
 }
 
 export function cloneNode(node: IBobrilNode): IBobrilNode {
-    var r = <IBobrilNode>assign({}, node);
+    var r = assign({} as IBobrilNode, node);
     if (r.attrs) {
-        r.attrs = <IBobrilAttributes>assign({}, r.attrs);
+        r.attrs = assign({} as IBobrilAttributes, r.attrs);
     }
     var style = r.style;
     if (isObject(style) && !isFunction(style)) {
@@ -2780,6 +2879,8 @@ export function cloneNode(node: IBobrilNode): IBobrilNode {
     if (ch) {
         if (isArray(ch)) {
             r.children = cloneNodeArray(ch);
+        } else if (isFunction(ch)) {
+            r.children = ch;
         } else if (isObject(ch)) {
             r.children = cloneNode(ch);
         }
@@ -2803,6 +2904,193 @@ export function frame() {
 
 export function invalidated() {
     return isInvalidated;
+}
+
+export function throwNotReady(): never {
+    throw new NotReadyError();
+}
+
+class NotReadyError extends Error {
+    constructor() {
+        super("NotReady");
+    }
+}
+
+const promiseResults: WeakMap<
+    PromiseLike<any>,
+    [boolean | undefined, any, Map<IBobrilCtx | undefined, () => void>]
+> = new WeakMap();
+
+var _exceptionContext: IContext<
+    | {
+          handle(exception: unknown, ctx: IBobrilCtx, bubble: boolean): boolean;
+          ctx: IBobrilCtx | undefined;
+          resume: () => void;
+      }
+    | undefined
+>;
+
+export function exceptionContext() {
+    if (_exceptionContext === undefined) {
+        _exceptionContext = createContext<
+            | {
+                  handle(exception: unknown, ctx: IBobrilCtx, bubble: boolean): boolean;
+                  ctx: IBobrilCtx | undefined;
+                  resume: () => void;
+              }
+            | undefined
+        >(
+            {
+                handle: (exception: unknown, _ctx: IBobrilCtx, _bubble: boolean) => {
+                    if (exception instanceof NotReadyError) {
+                        return true;
+                    }
+                    return false;
+                },
+                ctx: undefined,
+                resume: () => {
+                    invalidate();
+                },
+            },
+            "__b#e",
+        );
+    }
+    return _exceptionContext;
+}
+
+export interface SuspenseData extends IDataWithChildren {
+    fallback: IBobrilChildren;
+    expectedLoadTimeMs?: number;
+}
+
+enum SuspendState {
+    First,
+    Fallback,
+    RealContent,
+    Destroyed,
+}
+
+export function Suspense(data: SuspenseData): IBobrilNode | null {
+    const state = useState(SuspendState.RealContent);
+    const firstShown = useState(uptimeMs);
+    useDispose(() => {
+        state(SuspendState.Destroyed);
+    });
+    let ec = exceptionContext();
+    let parentEc = useContext(ec)!;
+    switch (state()) {
+        default:
+            return null;
+        case SuspendState.Fallback:
+            return withKey(Fragment({ children: data.fallback }), "f");
+        case SuspendState.RealContent:
+            useProvideContext(ec, {
+                handle: (exception, ctx, bubble) => {
+                    if (exception instanceof NotReadyError) {
+                        if (state() == SuspendState.RealContent) {
+                            let firstTime = uptimeMs - firstShown() - (data.expectedLoadTimeMs ?? 200);
+                            if (firstTime < 0) {
+                                state(SuspendState.First);
+                                setTimeout(() => {
+                                    if (state() == SuspendState.First) state(SuspendState.Fallback);
+                                }, -firstTime);
+                            } else {
+                                state(SuspendState.Fallback);
+                            }
+                            deferSyncUpdate();
+                        }
+                        return true;
+                    }
+                    return parentEc.handle(exception, ctx, bubble);
+                },
+                ctx: currentCtx,
+                resume: () => {
+                    if (state() != SuspendState.RealContent) {
+                        state(SuspendState.RealContent);
+                    }
+                },
+            });
+            return withKey(Fragment({ children: data.children }), "r");
+    }
+}
+
+export function use<T extends PromiseLike<any>>(value: T): T extends PromiseLike<infer U> ? U : never {
+    var ec = useContext(exceptionContext())!;
+    let stored = promiseResults.get(value);
+    if (stored) {
+        if (stored[0] == undefined) {
+            if (!stored[2].has(ec.ctx!)) stored[2].set(ec.ctx!, () => ec.resume());
+            throwNotReady();
+        }
+        if (stored[0]) return stored[1];
+        throw stored[1];
+    }
+
+    promiseResults.set(value, [undefined, new NotReadyError(), new Map([[ec.ctx!, () => ec.resume()]])]);
+
+    value.then(
+        (val) => {
+            var stored = promiseResults.get(value);
+            stored![0] = true;
+            stored![1] = val;
+            for (let [_ctx, resume] of stored![2]) {
+                resume();
+            }
+        },
+        (err) => {
+            var stored = promiseResults.get(value);
+            stored![0] = false;
+            stored![1] = err;
+            for (let [_ctx, resume] of stored![2]) {
+                resume();
+            }
+        },
+    );
+    throwNotReady();
+}
+
+class UnwindError extends Error {
+    constructor() {
+        super("Unwind");
+    }
+}
+
+export function ErrorBoundary(props: {
+    fallback: IBobrilChildren | ((err: any, reset: () => void) => IBobrilChildren);
+    children: IBobrilChildren;
+}): IBobrilNode {
+    const error = useState<unknown>(undefined);
+    let ec = exceptionContext();
+    let parentEc = useContext(ec)!;
+    let cCtx = currentCtx;
+    useProvideContext(ec, {
+        handle: (exception, ctx, bubble) => {
+            if (exception instanceof NotReadyError) {
+                return parentEc.handle(exception, ctx, bubble);
+            }
+            if (exception instanceof UnwindError) {
+                if (cCtx != ctx) throw exception;
+                return true;
+            }
+            error(exception);
+            deferSyncUpdate();
+            if (bubble && cCtx != ctx) throw new UnwindError();
+            return true;
+        },
+        ctx: parentEc.ctx,
+        resume: parentEc.resume,
+    });
+    if (error() != undefined) {
+        return withKey(
+            Fragment(
+                isFunction(props.fallback) && props.fallback.length >= 1
+                    ? { children: props.fallback(error, () => error(undefined)) }
+                    : { children: props.fallback as IBobrilChildren },
+            ),
+            "f",
+        );
+    }
+    return withKey(Fragment({ children: props.children }), "r");
 }
 
 // Bobril.OnChange
@@ -3414,7 +3702,7 @@ export function setAsset(fn: (path: string) => string) {
 // Bobril.helpers
 
 export function withKey(content: IBobrilChildren, key: string): IBobrilNodeWithKey {
-    if (isObject(content) && !isArray(content)) {
+    if (isObject(content) && !isFunction(content) && !isArray(content)) {
         content.key = key;
         return content as IBobrilNodeWithKey;
     }
@@ -3686,10 +3974,12 @@ export function isValidElement(value: any): value is IBobrilNode {
 }
 
 export function isComponent(
-    what: IBobrilChild,
+    what: IBobrilChildren,
     component: string | ((data?: any, children?: any) => IBobrilNode) | IComponentClass<any> | IComponentFunction<any>,
 ): boolean {
+    if (isArray(what)) return false;
     if (!isObject(what)) return false;
+    if (isFunction(what)) return isComponent(what(), component);
     if (isString(component)) {
         return what.tag === component;
     }
@@ -3948,7 +4238,7 @@ function forwardRender(m: Function) {
             return;
         }
         var resComponent = res?.component?.src;
-        if (resComponent === Fragment) {
+        if (resComponent === Fragment && res.key === undefined) {
             res = res.data?.children;
         }
         me.children = res;
@@ -4211,6 +4501,12 @@ export function useContext<T>(key: string | IContext<T>): T | undefined {
     }
 }
 
+function getContextValue<T>(key: IContext<T>, ctx: IBobrilCtx): T {
+    const cfg = ctx!.me.cfg || ctx!.cfg;
+    if (!(key.id in cfg)) return key.dv;
+    return cfg[key.id];
+}
+
 export function useProvideContext(key: string, value: any): void;
 export function useProvideContext<T>(key: IContext<T>, value: T): void;
 export function useProvideContext<T = any>(key: string | IContext<T>, value: T): void {
@@ -4247,6 +4543,24 @@ export function useStore<T>(factory: () => T): T {
         hooks[myHookId] = hook;
     }
     return hook;
+}
+
+export function useDispose(disposer: IDisposableLike): void {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = {
+            dispose() {
+                isFunction(disposer) ? disposer(currentCtx) : disposer.dispose();
+            },
+            disposer,
+        };
+        hooks[myHookId] = hook;
+        addDisposable(currentCtx!, hook);
+    } else {
+        hook.disposer = disposer;
+    }
 }
 
 function hookPostInitDom(ctx: IBobrilCtxInternal) {

@@ -8,7 +8,6 @@ import {
     IBobrilCacheNode,
     IBobrilComponent,
     IEventParam,
-    ieVersion,
     now,
     preventDefault,
     CommonUseIsHook,
@@ -82,7 +81,6 @@ export interface IBobrilMouseWheelEvent extends IBobrilMouseEvent {
 const MoveOverIsNotTap = 13;
 const TapShouldBeShorterThanMs = 750;
 const MaxBustDelay = 500;
-const MaxBustDelayForIE = 800;
 const BustDistance = 50;
 
 let ownerCtx: any = null;
@@ -453,8 +451,7 @@ function bustingPointerUp(
                 emitEvent("!PointerCancel", ev, target, node);
                 shouldPreventClickingSpree(1);
                 var handled = invokeMouseOwner(onClickText, ev) || bubble(node, onClickText, ev) != null;
-                var delay = ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
-                toBust.push([ev.x, ev.y, now() + delay, handled ? 1 : 0]);
+                toBust.push([ev.x, ev.y, now() + MaxBustDelay, handled ? 1 : 0]);
                 return handled;
             }
         } else if (tapCanceled) {
@@ -608,8 +605,7 @@ addEvent5("wheel", handleMouseWheel);
 export const pointersDownCount = () => Object.keys(pointersDown).length;
 export const firstPointerDownId = () => firstPointerDown;
 export const ignoreClick = (x: number, y: number) => {
-    var delay = ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
-    toBust.push([x, y, now() + delay, 1]);
+    toBust.push([x, y, now() + MaxBustDelay, 1]);
 };
 
 let lastInteractionWasKeyboard = false;

@@ -342,6 +342,8 @@ addEvent("popstate", 5, (ev: PopStateEvent) => {
 });
 
 var firstRouting = true;
+var skipInvalidate = false;
+
 function rootNodeFactory(): IBobrilNode | undefined {
     if (waitingForPopHashChange >= 0) return undefined;
     if (history().state == undefined && historyDeepness != undefined) {
@@ -375,7 +377,9 @@ function rootNodeFactory(): IBobrilNode | undefined {
         if (currentTransition.name == undefined && matches.length > 0) {
             currentTransition.name = matches[0]!.name;
             currentTransition.params = out.p;
+            skipInvalidate = true;
             nextIteration();
+            skipInvalidate = false;
             if (currentTransition != null) return undefined;
         } else return undefined;
     }
@@ -698,7 +702,7 @@ function nextIteration(): void {
                 currentTransition = null;
                 doAction(tr!);
             } else {
-                invalidate();
+                if (!skipInvalidate) invalidate();
             }
             currentTransition = null;
             return;
@@ -713,7 +717,7 @@ function nextIteration(): void {
             let comp: IBobrilComponent | undefined = undefined;
             if (isFunction(handler)) {
                 let node = handler({ activeRouteHandler: () => undefined, routeParams: currentTransition!.params! });
-                if (!node || !isObject(node) || isArray(node)) continue;
+                if (!node || !isObject(node) || isArray(node) || isFunction(node)) continue;
                 comp = node.component;
             } else {
                 comp = handler;

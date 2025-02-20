@@ -18,11 +18,50 @@ const Counter = b.component(
             b.invalidate(this);
             return b.EventResult.HandledPreventDefault;
         }
-    }
+    },
 );
+
+const fetchData = async () => {
+    return new Promise<string>((resolve, reject) =>
+        setTimeout(
+            () => (Math.random() < 0.5 ? resolve("Data loaded!") : reject(new Error("Failed to load data"))),
+            2000,
+        ),
+    );
+};
+
+function MyComponent({ lazyData }: { lazyData: Promise<string> }) {
+    const data = b.use(lazyData);
+
+    return <div>Data: {data}</div>; // Will suspend until the promise resolves
+}
+
+function SuspenseExample() {
+    const lazyData = fetchData();
+    return (
+        <b.Suspense fallback={<div>Loading...</div>}>
+            <MyComponent lazyData={lazyData} />
+            <div>Inline: {() => b.use(lazyData)}</div>
+        </b.Suspense>
+    );
+}
 
 b.routes([
     b.route({ name: "counter", handler: () => Counter({ name: "Bobril" }) }),
+    b.route({
+        name: "suspense",
+        handler: () => (
+            <b.ErrorBoundary
+                fallback={(err, reset) => (
+                    <div>
+                        Caught an error: {err.message} <button onClick={reset}>Try again</button>
+                    </div>
+                )}
+            >
+                <SuspenseExample />
+            </b.ErrorBoundary>
+        ),
+    }),
     b.routeDefault({
         name: "page1",
         handler: () => (
@@ -114,6 +153,17 @@ function RoutePage() {
                         }}
                     >
                         To Counter
+                    </a>
+                </li>
+                <li>
+                    <a
+                        href="#"
+                        onClick={() => {
+                            b.runTransition(b.createRedirectPush("suspense"));
+                            return true;
+                        }}
+                    >
+                        To Suspense
                     </a>
                 </li>
             </ul>

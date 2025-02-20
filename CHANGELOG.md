@@ -2,6 +2,8 @@
 
 ## 21.0.0
 
+Added `Suspense` component, `use` hook and `ErrorBoundary` component.
+
 Events are more compatible with React. `IEventParam` contain methods like `stopPropagation()`, `preventDefault()`.
 
 This allows to use `event.stopPropagation()` and `event.preventDefault()` in event handlers like this:
