@@ -723,6 +723,19 @@ export function createNode(
     createInto: Element,
     createBefore: Node | null,
 ): IBobrilCacheNode {
+    var res = [undefined!] as IBobrilCacheNode[];
+    createNodeInto(n, res, 0, parentNode, createInto, createBefore);
+    return res[0]!;
+}
+
+export function createNodeInto(
+    n: IBobrilNode,
+    chArray: IBobrilCacheNode[],
+    chIndex: number,
+    parentNode: IBobrilCacheNode | undefined,
+    createInto: Element,
+    createBefore: Node | null,
+): void {
     var c = <IBobrilCacheNodeUnsafe>{
         // This makes CacheNode just one object class = fast
         tag: n.tag,
@@ -740,6 +753,7 @@ export function createNode(
         ctx: undefined,
         orig: n,
     };
+    chArray[chIndex] = c;
     var backupInSvg = inSvg;
     var backupInNotFocusable = inNotFocusable;
     var component = c.component;
@@ -747,194 +761,196 @@ export function createNode(
     if (DEBUG && component && measureFullComponentDuration) {
         var componentStartMark = window.performance.mark(`create ${frameCounter} ${++visitedComponentCounter}`);
     }
-    setRef(c.ref, c);
-    if (component) {
-        var ctx: IBobrilCtxInternal;
-        if (component.ctxClass) {
-            ctx = new component.ctxClass(c.data || {}, c) as any;
-            if (ctx.data === undefined) ctx.data = c.data || {};
-            if (ctx.me === undefined) ctx.me = c;
-        } else {
-            ctx = new BobrilCtx(c.data || {}, c);
-        }
-        ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg;
-        c.ctx = ctx;
-        currentCtx = ctx;
-        try {
-            if (component.init) {
-                if (DEBUG && measureComponentMethods) {
-                    var startMark = window.performance.mark(`${component.id} [init]`);
-                }
-                try {
-                    component.init(ctx, c);
-                } catch (e) {
-                    handleCatchInternal(e, ctx, true);
-                } finally {
-                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-                }
-            }
-            if (beforeRenderCallback !== noop) beforeRenderCallback(n, RenderPhase.Create);
-            if (component.render) {
-                hookId = 0;
-                if (DEBUG && measureComponentMethods) {
-                    var startMark = window.performance.mark(`${component.id} [render]`);
-                }
-                try {
-                    component.render(ctx, c);
-                } catch (e) {
-                    handleCatchInternal(e, ctx, true);
-                } finally {
-                    hookId = -1;
-                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-                }
-            }
-        } catch (e) {
-            hookId = -1;
-            handleCatchInternal(e, ctx, true);
-        } finally {
-            currentCtx = undefined;
-        }
-    } else {
-        if (DEBUG) Object.freeze(n);
-    }
-    var tag = c.tag;
-    if (tag === "-") {
-        // Skip update
-        c.tag = undefined;
-        c.children = undefined;
-        if (DEBUG && component && measureFullComponentDuration)
-            endMeasure(componentStartMark!, `${component.id} create`);
-        return c;
-    } else if (tag === "@") {
-        createInto = c.data;
-        createBefore = null;
-        tag = undefined;
-    }
-    var children = c.children;
-    var inSvgForeignObject = false;
-    if (isNumber(children)) {
-        children = "" + children;
-        c.children = children;
-    }
-    if (tag === undefined) {
-        if (isString(children)) {
-            el = createTextNode(<string>children);
-            c.element = el;
-            domNode2node.set(el, c);
-            createInto.insertBefore(el, createBefore);
-        } else {
-            try {
-                createChildren(c, createInto, createBefore);
-            } catch (e) {
-                handleCatchInternal(e, c.ctx!, true);
-            }
-        }
-        if (component) {
-            if (component.postRender) {
-                if (DEBUG && measureComponentMethods) {
-                    var startMark = window.performance.mark(`${component.id} [postRender]`);
-                }
-                component.postRender(c.ctx!, c);
-                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-            }
-            pushInitCallback(c);
-        }
-        if (DEBUG && component && measureFullComponentDuration)
-            endMeasure(componentStartMark!, `${component.id} create`);
-        return c;
-    }
-    if (tag === "/") {
-        var htmlText = <string>children;
-        if (htmlText === "") {
-            // nothing needs to be created
-        } else if (createBefore == undefined) {
-            var before = createInto.lastChild as Node | null;
-            (<HTMLElement>createInto).insertAdjacentHTML("beforeend", htmlText);
-            c.element = <Node[]>[];
-            if (before) {
-                before = before.nextSibling;
-            } else {
-                before = createInto.firstChild;
-            }
-            while (before) {
-                domNode2node.set(before, c);
-                (<Node[]>c.element).push(before);
-                before = before.nextSibling;
-            }
-        } else {
-            el = createBefore;
-            var elPrev = createBefore.previousSibling;
-            var removeEl = false;
-            var parent = createInto;
-            if (!(<HTMLElement>el).insertAdjacentHTML) {
-                el = parent.insertBefore(createEl("i"), el);
-                removeEl = true;
-            }
-            (<HTMLElement>el).insertAdjacentHTML("beforebegin", htmlText);
-            if (elPrev) {
-                elPrev = elPrev.nextSibling;
-            } else {
-                elPrev = parent.firstChild;
-            }
-            var newElements: Array<Node> = [];
-            while (elPrev !== el) {
-                domNode2node.set(elPrev!, c);
-                newElements.push(elPrev!);
-                elPrev = elPrev!.nextSibling;
-            }
-            c.element = newElements;
-            if (removeEl) {
-                parent.removeChild(el);
-            }
-        }
-        if (component) {
-            if (component.postRender) {
-                if (DEBUG && measureComponentMethods) {
-                    var startMark = window.performance.mark(`${component.id} [postRender]`);
-                }
-                component.postRender(c.ctx!, c);
-                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-            }
-            pushInitCallback(c);
-        }
-        if (DEBUG && component && measureFullComponentDuration)
-            endMeasure(componentStartMark!, `${component.id} create`);
-        return c;
-    }
-    if (inSvg || tag === "svg") {
-        el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-        inSvgForeignObject = tag === "foreignObject";
-        inSvg = !inSvgForeignObject;
-    } else {
-        el = createEl(tag);
-    }
-    createInto.insertBefore(el, createBefore);
-    domNode2node.set(el, c);
-    c.element = el;
     try {
-        createChildren(c, <Element>el, null);
-    } catch (e) {
-        handleCatchInternal(e, c.ctx!, true);
-    }
-    if (component) {
-        if (component.postRender) {
-            if (DEBUG && measureComponentMethods) {
-                var startMark = window.performance.mark(`${component.id} [postRender]`);
+        setRef(c.ref, c);
+        if (component) {
+            var ctx: IBobrilCtxInternal;
+            if (component.ctxClass) {
+                ctx = new component.ctxClass(c.data || {}, c) as any;
+                if (ctx.data === undefined) ctx.data = c.data || {};
+                if (ctx.me === undefined) ctx.me = c;
+            } else {
+                ctx = new BobrilCtx(c.data || {}, c);
             }
-            component.postRender(c.ctx!, c);
-            if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+            ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg;
+            c.ctx = ctx;
+            currentCtx = ctx;
+            try {
+                if (component.init) {
+                    if (DEBUG && measureComponentMethods) {
+                        var startMark = window.performance.mark(`${component.id} [init]`);
+                    }
+                    try {
+                        component.init(ctx, c);
+                    } catch (e) {
+                        handleCatchInternal(e, ctx, true);
+                    } finally {
+                        if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                    }
+                }
+                if (beforeRenderCallback !== noop) beforeRenderCallback(n, RenderPhase.Create);
+                if (component.render) {
+                    hookId = 0;
+                    if (DEBUG && measureComponentMethods) {
+                        var startMark = window.performance.mark(`${component.id} [render]`);
+                    }
+                    try {
+                        component.render(ctx, c);
+                    } catch (e) {
+                        handleCatchInternal(e, ctx, true);
+                    } finally {
+                        hookId = -1;
+                        if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                    }
+                }
+            } catch (e) {
+                hookId = -1;
+                handleCatchInternal(e, ctx, true);
+            } finally {
+                currentCtx = undefined;
+            }
+        } else {
+            if (DEBUG) Object.freeze(n);
         }
+        var tag = c.tag;
+        if (tag === "-") {
+            // Skip update
+            c.tag = undefined;
+            c.children = undefined;
+            return;
+        } else if (tag === "@") {
+            createInto = c.data;
+            createBefore = null;
+            tag = undefined;
+        }
+        var children = c.children;
+        var inSvgForeignObject = false;
+        if (isNumber(children)) {
+            children = "" + children;
+            c.children = children;
+        }
+        if (tag === undefined) {
+            if (isString(children)) {
+                el = createTextNode(<string>children);
+                c.element = el;
+                domNode2node.set(el, c);
+                createInto.insertBefore(el, createBefore);
+            } else {
+                try {
+                    createChildren(c, createInto, createBefore);
+                } catch (e) {
+                    handleCatchInternal(e, c.ctx!, true);
+                }
+            }
+            if (component) {
+                if (component.postRender) {
+                    if (DEBUG && measureComponentMethods) {
+                        var startMark = window.performance.mark(`${component.id} [postRender]`);
+                    }
+                    try {
+                        component.postRender(c.ctx!, c);
+                    } catch (e) {
+                        handleCatchInternal(e, c.ctx!, true);
+                    } finally {
+                        if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                    }
+                }
+                pushInitCallback(c);
+            }
+            return;
+        }
+        if (tag === "/") {
+            var htmlText = <string>children;
+            if (htmlText === "") {
+                // nothing needs to be created
+            } else if (createBefore == undefined) {
+                var before = createInto.lastChild as Node | null;
+                (<HTMLElement>createInto).insertAdjacentHTML("beforeend", htmlText);
+                c.element = <Node[]>[];
+                if (before) {
+                    before = before.nextSibling;
+                } else {
+                    before = createInto.firstChild;
+                }
+                while (before) {
+                    domNode2node.set(before, c);
+                    (<Node[]>c.element).push(before);
+                    before = before.nextSibling;
+                }
+            } else {
+                el = createBefore;
+                var elPrev = createBefore.previousSibling;
+                var removeEl = false;
+                var parent = createInto;
+                if (!(<HTMLElement>el).insertAdjacentHTML) {
+                    el = parent.insertBefore(createEl("i"), el);
+                    removeEl = true;
+                }
+                (<HTMLElement>el).insertAdjacentHTML("beforebegin", htmlText);
+                if (elPrev) {
+                    elPrev = elPrev.nextSibling;
+                } else {
+                    elPrev = parent.firstChild;
+                }
+                var newElements: Array<Node> = [];
+                while (elPrev !== el) {
+                    domNode2node.set(elPrev!, c);
+                    newElements.push(elPrev!);
+                    elPrev = elPrev!.nextSibling;
+                }
+                c.element = newElements;
+                if (removeEl) {
+                    parent.removeChild(el);
+                }
+            }
+            if (component) {
+                if (component.postRender) {
+                    if (DEBUG && measureComponentMethods) {
+                        var startMark = window.performance.mark(`${component.id} [postRender]`);
+                    }
+                    component.postRender(c.ctx!, c);
+                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                }
+                pushInitCallback(c);
+            }
+            return;
+        }
+        if (inSvg || tag === "svg") {
+            el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+            inSvgForeignObject = tag === "foreignObject";
+            inSvg = !inSvgForeignObject;
+        } else {
+            el = createEl(tag);
+        }
+        createInto.insertBefore(el, createBefore);
+        domNode2node.set(el, c);
+        c.element = el;
+        try {
+            createChildren(c, <Element>el, null);
+        } catch (e) {
+            handleCatchInternal(e, c.ctx!, true);
+        }
+        if (component) {
+            if (component.postRender) {
+                if (DEBUG && measureComponentMethods) {
+                    var startMark = window.performance.mark(`${component.id} [postRender]`);
+                }
+                component.postRender(c.ctx!, c);
+                if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+            }
+        }
+        if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
+        if (inSvgForeignObject) inSvg = true;
+        let [newClassName, newStyle, newAttrs] = enrichNode(c, c);
+        if (newAttrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, newAttrs, {}, inNotFocusable);
+        createNodeStyle(el as HTMLElement, newStyle, newClassName, c, inSvg);
+        inSvg = backupInSvg;
+        inNotFocusable = backupInNotFocusable;
+        pushInitCallback(c);
+    } finally {
+        if (DEBUG && component && measureFullComponentDuration)
+            endMeasure(componentStartMark!, `${component.id} create`);
     }
-    if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
-    if (inSvgForeignObject) inSvg = true;
-    let [newClassName, newStyle, newAttrs] = enrichNode(c, c);
-    if (newAttrs || inNotFocusable) c.attrs = updateElement(c, <HTMLElement>el, newAttrs, {}, inNotFocusable);
-    createNodeStyle(el as HTMLElement, newStyle, newClassName, c, inSvg);
-    inSvg = backupInSvg;
-    inNotFocusable = backupInNotFocusable;
-    pushInitCallback(c);
-    if (DEBUG && component && measureFullComponentDuration) endMeasure(componentStartMark!, `${component.id} create`);
-    return c;
 }
 
 export function handleCatch(e: unknown, bubble: boolean) {
@@ -1217,6 +1233,25 @@ export function updateNode(
     deepness: number,
     inSelectedUpdate?: boolean,
 ): IBobrilCacheNode {
+    let res = [c];
+    updateNodeInto(n, res, 0, createInto, createBefore, deepness, inSelectedUpdate);
+    return res[0]!;
+}
+
+export function updateNodeInto(
+    n: IBobrilNode,
+    cArray: IBobrilCacheNode[],
+    cIndex: number,
+    createInto: Element,
+    createBefore: Node | null,
+    deepness: number,
+    inSelectedUpdate?: boolean,
+): void {
+    var c = cArray[cIndex];
+    if (c == undefined) {
+        //cannot be implemented as because parent node is not passed: createNodeInto(n, cArray, cIndex, ?, createInto, createBefore, deepness);
+        throw Error("updateNode for non created node");
+    }
     var component = n.component;
     var bigChange = false;
     var ctx = c.ctx;
@@ -1224,195 +1259,172 @@ export function updateNode(
         var componentStartMark = window.performance.mark(`update ${frameCounter} ${++visitedComponentCounter}`);
     }
 
-    if (component != null && ctx != null) {
-        let locallyInvalidated = false;
-        if ((<any>ctx)[ctxInvalidated] >= frameCounter) {
-            deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
-            locallyInvalidated = true;
-        }
-        if (component.id !== c.component.id) {
-            bigChange = true;
-        } else {
-            currentCtx = ctx;
-            if (n.cfg !== undefined) ctx.cfg = n.cfg;
-            else ctx.cfg = findCfg(c.parent);
-            if (component.shouldChange)
-                if (!ignoringShouldChange && !locallyInvalidated) {
-                    if (DEBUG && measureComponentMethods) {
-                        var startMark = window.performance.mark(`${component.id} [shouldChange]`);
-                    }
-                    const shouldChange = component.shouldChange(ctx, n, c);
-                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-                    if (!shouldChange) {
-                        finishUpdateNodeWithoutChange(c, createInto, createBefore);
-                        if (DEBUG && measureFullComponentDuration)
-                            endMeasure(componentStartMark!, `${component.id} update`);
-                        return c;
-                    }
-                }
-            (<any>ctx).data = n.data || {};
-            (c as IBobrilCacheNodeUnsafe).component = component;
-            if (beforeRenderCallback !== noop)
-                beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
-            if (component.render) {
-                (c as IBobrilCacheNodeUnsafe).orig = n;
-                n = assign({}, n); // need to clone me because it should not be modified for next updates
-                (c as IBobrilCacheNodeUnsafe).cfg = undefined;
-                if (n.cfg !== undefined) n.cfg = undefined;
-                hookId = 0;
-                if (DEBUG && measureComponentMethods) {
-                    var startMark = window.performance.mark(`${component.id} [render]`);
-                }
-                try {
-                    component.render(ctx, n, c);
-                } catch (e) {
-                    handleCatchInternal(e, ctx, true);
-                } finally {
-                    hookId = -1;
-                    if (DEBUG && measureComponentMethods) endMeasure(startMark!);
-                }
-                if (n.cfg !== undefined) {
-                    if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
-                    else assign(c.cfg, n.cfg);
-                }
+    try {
+        if (component != null && ctx != null) {
+            let locallyInvalidated = false;
+            if ((<any>ctx)[ctxInvalidated] >= frameCounter) {
+                deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
+                locallyInvalidated = true;
             }
-            currentCtx = undefined;
-        }
-    } else {
-        // In case there is no component and source is same reference it is considered not changed
-        if (c.orig === n && !ignoringShouldChange) {
-            finishUpdateNodeWithoutChange(c, createInto, createBefore);
-            if (DEBUG && component && measureFullComponentDuration)
-                endMeasure(componentStartMark!, `${component.id} update`);
-
-            return c;
-        }
-        (c as IBobrilCacheNodeUnsafe).orig = n;
-        if (DEBUG) Object.freeze(n);
-    }
-    var newChildren = n.children;
-    var cachedChildren = c.children;
-    var tag = n.tag;
-    if (tag === "-") {
-        finishUpdateNodeWithoutChange(c, createInto, createBefore);
-        if (DEBUG && component && measureFullComponentDuration)
-            endMeasure(componentStartMark!, `${component.id} update`);
-
-        return c;
-    }
-    const backupInSvg = inSvg;
-    const backupInNotFocusable = inNotFocusable;
-    if (isNumber(newChildren)) {
-        newChildren = "" + newChildren;
-    }
-    if (
-        bigChange ||
-        (component != undefined && ctx == undefined) ||
-        (component == undefined && ctx != undefined && ctx.me.component !== emptyObject)
-    ) {
-        // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
-    } else if (tag === "/") {
-        if (c.tag === "/" && cachedChildren === newChildren) {
-            finishUpdateNode(n, c, component);
-            if (DEBUG && component && measureFullComponentDuration)
-                endMeasure(componentStartMark!, `${component.id} update`);
-
-            return c;
-        }
-    } else if (tag === c.tag) {
-        if (tag === "@") {
-            if (n.data !== c.data) {
-                var r: IBobrilCacheNode = createNode(n, c.parent, n.data, null);
-                removeNode(c);
-                if (DEBUG && component && measureFullComponentDuration)
-                    endMeasure(componentStartMark!, `${component.id} update`);
-                return r;
-            }
-            createInto = n.data;
-            createBefore = getLastDomNode(c);
-            if (createBefore != null) createBefore = createBefore.nextSibling;
-            tag = undefined;
-        }
-        if (tag === undefined) {
-            if (isString(newChildren) && isString(cachedChildren)) {
-                if (newChildren !== cachedChildren) {
-                    var el = <Element>c.element;
-                    el.textContent = newChildren;
-                    (c as IBobrilCacheNodeUnsafe).children = newChildren;
-                }
+            if (component.id !== c.component.id) {
+                bigChange = true;
             } else {
-                if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
-                if (deepness <= 0) {
-                    if (isArray(cachedChildren))
-                        selectedUpdate(<IBobrilCacheNode[]>c.children, createInto, createBefore);
-                } else {
-                    (c as IBobrilCacheNodeUnsafe).children = updateChildren(
-                        createInto,
-                        newChildren,
-                        cachedChildren,
-                        c,
-                        createBefore,
-                        deepness - 1,
-                    );
+                currentCtx = ctx;
+                if (n.cfg !== undefined) ctx.cfg = n.cfg;
+                else ctx.cfg = findCfg(c.parent);
+                if (component.shouldChange)
+                    if (!ignoringShouldChange && !locallyInvalidated) {
+                        if (DEBUG && measureComponentMethods) {
+                            var startMark = window.performance.mark(`${component.id} [shouldChange]`);
+                        }
+                        const shouldChange = component.shouldChange(ctx, n, c);
+                        if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                        if (!shouldChange) {
+                            finishUpdateNodeWithoutChange(c, createInto, createBefore);
+                            return;
+                        }
+                    }
+                (<any>ctx).data = n.data || {};
+                (c as IBobrilCacheNodeUnsafe).component = component;
+                if (beforeRenderCallback !== noop)
+                    beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
+                if (component.render) {
+                    (c as IBobrilCacheNodeUnsafe).orig = n;
+                    n = assign({}, n); // need to clone me because it should not be modified for next updates
+                    (c as IBobrilCacheNodeUnsafe).cfg = undefined;
+                    if (n.cfg !== undefined) n.cfg = undefined;
+                    hookId = 0;
+                    if (DEBUG && measureComponentMethods) {
+                        var startMark = window.performance.mark(`${component.id} [render]`);
+                    }
+                    try {
+                        component.render(ctx, n, c);
+                    } catch (e) {
+                        handleCatchInternal(e, ctx, true);
+                    } finally {
+                        hookId = -1;
+                        if (DEBUG && measureComponentMethods) endMeasure(startMark!);
+                    }
+                    if (n.cfg !== undefined) {
+                        if (c.cfg === undefined) (c as IBobrilCacheNodeUnsafe).cfg = n.cfg;
+                        else assign(c.cfg, n.cfg);
+                    }
                 }
+                currentCtx = undefined;
+            }
+        } else {
+            // In case there is no component and source is same reference it is considered not changed
+            if (c.orig === n && !ignoringShouldChange) {
+                finishUpdateNodeWithoutChange(c, createInto, createBefore);
+                return;
+            }
+            (c as IBobrilCacheNodeUnsafe).orig = n;
+            if (DEBUG) Object.freeze(n);
+        }
+        var newChildren = n.children;
+        var cachedChildren = c.children;
+        var tag = n.tag;
+        if (tag === "-") {
+            finishUpdateNodeWithoutChange(c, createInto, createBefore);
+            return;
+        }
+        const backupInSvg = inSvg;
+        const backupInNotFocusable = inNotFocusable;
+        if (isNumber(newChildren)) {
+            newChildren = "" + newChildren;
+        }
+        if (
+            bigChange ||
+            (component != undefined && ctx == undefined) ||
+            (component == undefined && ctx != undefined && ctx.me.component !== emptyObject)
+        ) {
+            // it is big change of component.id or old one was not even component or old one was component and new is not anymore => recreate
+        } else if (tag === "/") {
+            if (c.tag === "/" && cachedChildren === newChildren) {
+                finishUpdateNode(n, c, component);
+                return;
+            }
+        } else if (tag === c.tag) {
+            if (tag === "@") {
+                if (n.data !== c.data) {
+                    createNodeInto(n, cArray, cIndex, c.parent, n.data, null);
+                    removeNode(c);
+                    return;
+                }
+                createInto = n.data;
+                createBefore = getLastDomNode(c);
+                if (createBefore != null) createBefore = createBefore.nextSibling;
+                tag = undefined;
+            }
+            if (tag === undefined) {
+                if (isString(newChildren) && isString(cachedChildren)) {
+                    if (newChildren !== cachedChildren) {
+                        var el = <Element>c.element;
+                        el.textContent = newChildren;
+                        (c as IBobrilCacheNodeUnsafe).children = newChildren;
+                    }
+                } else {
+                    if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren))
+                            selectedUpdate(<IBobrilCacheNode[]>c.children, createInto, createBefore);
+                    } else {
+                        updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
+                    }
+                    inSvg = backupInSvg;
+                    inNotFocusable = backupInNotFocusable;
+                }
+                finishUpdateNode(n, c, component);
+                return;
+            } else {
+                var inSvgForeignObject = false;
+                if (tag === "svg") {
+                    inSvg = true;
+                } else if (inSvg && tag === "foreignObject") {
+                    inSvgForeignObject = true;
+                    inSvg = false;
+                }
+                if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
+                var el = <Element>c.element;
+                if (isString(newChildren) && !isArray(cachedChildren)) {
+                    if (newChildren !== cachedChildren) {
+                        el.textContent = newChildren;
+                        (c as IBobrilCacheNodeUnsafe).children = newChildren;
+                    }
+                } else {
+                    if (deepness <= 0) {
+                        if (isArray(cachedChildren)) selectedUpdate(<IBobrilCacheNode[]>c.children, el, null);
+                    } else {
+                        updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
+                    }
+                }
+                if (inSvgForeignObject) inSvg = true;
+                finishUpdateNode(n, c, component);
+                let [newClassName, newStyle, newAttrs] = enrichNode(c, n);
+                if (c.attrs || newAttrs || inNotFocusable)
+                    (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, newAttrs, c.attrs || {}, inNotFocusable);
+                updateNodeStyle(el as HTMLElement, newStyle, newClassName, c, inSvg);
                 inSvg = backupInSvg;
                 inNotFocusable = backupInNotFocusable;
+                return;
             }
-            finishUpdateNode(n, c, component);
-            if (DEBUG && component && measureFullComponentDuration)
-                endMeasure(componentStartMark!, `${component.id} update`);
-
-            return c;
-        } else {
-            var inSvgForeignObject = false;
-            if (tag === "svg") {
-                inSvg = true;
-            } else if (inSvg && tag === "foreignObject") {
-                inSvgForeignObject = true;
-                inSvg = false;
-            }
-            if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
-            var el = <Element>c.element;
-            if (isString(newChildren) && !isArray(cachedChildren)) {
-                if (newChildren !== cachedChildren) {
-                    el.textContent = newChildren;
-                    cachedChildren = newChildren;
-                }
-            } else {
-                if (deepness <= 0) {
-                    if (isArray(cachedChildren)) selectedUpdate(<IBobrilCacheNode[]>c.children, el, null);
-                } else {
-                    cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
-                }
-            }
-            (c as IBobrilCacheNodeUnsafe).children = cachedChildren;
-            if (inSvgForeignObject) inSvg = true;
-            finishUpdateNode(n, c, component);
-            let [newClassName, newStyle, newAttrs] = enrichNode(c, n);
-            if (c.attrs || newAttrs || inNotFocusable)
-                (c as IBobrilCacheNodeUnsafe).attrs = updateElement(c, el, newAttrs, c.attrs || {}, inNotFocusable);
-            updateNodeStyle(el as HTMLElement, newStyle, newClassName, c, inSvg);
-            inSvg = backupInSvg;
-            inNotFocusable = backupInNotFocusable;
-            if (DEBUG && component && measureFullComponentDuration)
-                endMeasure(componentStartMark!, `${component.id} update`);
-
-            return c;
         }
+        var insertBefore = getDomNode(c);
+        var parEl = c.element;
+        if (isArray(parEl)) parEl = parEl[0];
+        if (parEl != undefined) parEl = <Element>parEl.parentNode;
+        if (parEl == undefined) {
+            parEl = createInto;
+            if (insertBefore != undefined && insertBefore.parentNode != parEl) insertBefore = createBefore;
+        }
+        if (insertBefore == undefined) insertBefore = createBefore;
+        var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, insertBefore);
+        removeNode(c);
+        cArray[cIndex] = r;
+    } finally {
+        if (DEBUG && component && measureFullComponentDuration)
+            endMeasure(componentStartMark!, `${component.id} update`);
     }
-    var insertBefore = getDomNode(c);
-    var parEl = c.element;
-    if (isArray(parEl)) parEl = parEl[0];
-    if (parEl != undefined) parEl = <Element>parEl.parentNode;
-    if (parEl == undefined) {
-        parEl = createInto;
-        if (insertBefore != undefined && insertBefore.parentNode != parEl) insertBefore = createBefore;
-    }
-    if (insertBefore == undefined) insertBefore = createBefore;
-    var r: IBobrilCacheNode = createNode(n, c.parent, <Element>parEl, insertBefore);
-    removeNode(c);
-    if (DEBUG && component && measureFullComponentDuration) endMeasure(componentStartMark!, `${component.id} update`);
-    return r;
 }
 
 export function getDomNode(c: IBobrilCacheNode | undefined): Node | null {
@@ -1554,9 +1566,10 @@ function updateNodeInUpdateChildren(
     element: Element,
     deepness: number,
 ) {
-    cachedChildren[cachedIndex] = updateNode(
+    updateNodeInto(
         newNode,
-        cachedChildren[cachedIndex]!,
+        cachedChildren,
+        cachedIndex,
         element,
         findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore),
         deepness,
@@ -1610,7 +1623,7 @@ function reorderAndUpdateNodeInUpdateChildren(
     if (what != null && what !== before) {
         reorderInUpdateChildrenRec(cur, element, before);
     }
-    cachedChildren[cachedIndex] = updateNode(newNode, cur, element, before, deepness);
+    updateNodeInto(newNode, cachedChildren, cachedIndex, element, before, deepness);
 }
 
 function recursiveFlattenVdomChildren(res: IBobrilNode[], children: IBobrilChildren) {
@@ -1647,15 +1660,18 @@ export function updateChildren(
     parentNode: IBobrilCacheNode | undefined,
     createBefore: Node | null,
     deepness: number,
-): IBobrilCacheNode[] {
-    if (cachedChildren == undefined) cachedChildren = [];
-    if (!isArray(cachedChildren)) {
+): void {
+    if (cachedChildren == undefined) {
+        cachedChildren = [];
+        if (parentNode) (parentNode as IBobrilCacheNodeUnsafe).children = cachedChildren;
+    } else if (!isArray(cachedChildren)) {
         if (element.firstChild) element.removeChild(element.firstChild);
-        cachedChildren = <any>[];
+        cachedChildren = [];
+        if (parentNode) (parentNode as IBobrilCacheNodeUnsafe).children = cachedChildren;
     }
     let newCh = <IBobrilNode[]>[];
     flattenVdomChildren(newCh, newChildren);
-    return updateChildrenCore(
+    updateChildrenCore(
         element,
         <IBobrilNode[]>newCh,
         <IBobrilCacheNode[]>cachedChildren,
@@ -1751,19 +1767,19 @@ function updateChildrenCore(
         }
         // Only work left is to add new nodes
         while (newIndex < newEnd) {
-            cachedChildren.splice(
+            cachedChildren.splice(cachedIndex, 0, undefined!);
+            cachedLength++;
+
+            createNodeInto(
+                newChildren[newIndex]!,
+                cachedChildren,
                 cachedIndex,
-                0,
-                createNode(
-                    newChildren[newIndex]!,
-                    parentNode,
-                    element,
-                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore),
-                ),
+                parentNode,
+                element,
+                findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore),
             );
             cachedIndex++;
             cachedEnd++;
-            cachedLength++;
             newIndex++;
         }
         return cachedChildren;
@@ -1834,21 +1850,24 @@ function updateChildrenCore(
         var akPos = cachedKeys[key];
         if (akPos === undefined) {
             // New key
-            cachedChildren.splice(
-                cachedIndex,
-                0,
-                createNode(
+            cachedChildren.splice(cachedIndex, 0, undefined!);
+            cachedLength++;
+            try {
+                createNodeInto(
                     newChildren[newIndex]!,
+                    cachedChildren,
+                    cachedIndex,
                     parentNode,
                     element,
-                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore),
-                ),
-            );
+                    findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore),
+                );
+            } catch (e) {
+                handleCatchInternal(e, parentNode!.ctx!, true);
+            }
             delta++;
             newIndex++;
             cachedIndex++;
             cachedEnd++;
-            cachedLength++;
             continue;
         }
         if (!(cachedKey in <any>newKeys)) {
@@ -1916,18 +1935,18 @@ function updateChildrenCore(
     while (newIndex < newEnd) {
         key = newChildren[newIndex]!.key;
         if (key != null) {
-            cachedChildren.splice(
+            cachedChildren.splice(cachedIndex, 0, undefined!);
+            cachedLength++;
+
+            createNodeInto(
+                newChildren[newIndex]!,
+                cachedChildren,
                 cachedIndex,
-                0,
-                createNode(
-                    newChildren[newIndex]!,
-                    parentNode,
-                    element,
-                    findNextNode(cachedChildren, cachedIndex - 1, cachedLength, createBefore),
-                ),
+                parentNode,
+                element,
+                findNextNode(cachedChildren, cachedIndex, cachedLength, createBefore),
             );
             cachedEnd++;
-            cachedLength++;
             delta++;
             cachedIndex++;
         }
@@ -2008,18 +2027,18 @@ function updateChildrenCore(
             newIndex++;
             cachedIndex++;
         } else {
-            cachedChildren.splice(
+            cachedChildren.splice(newIndex, 0, undefined!);
+            cachedLength++;
+
+            createNodeInto(
+                newChildren[newIndex]!,
+                cachedChildren,
                 newIndex,
-                0,
-                createNode(
-                    newChildren[newIndex]!,
-                    parentNode,
-                    element,
-                    findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore),
-                ),
+                parentNode,
+                element,
+                findNextNode(cachedChildren, newIndex, cachedLength, createBefore),
             );
             cachedEnd++;
-            cachedLength++;
             newIndex++;
             cachedIndex++;
         }
@@ -2166,14 +2185,19 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
         var node = cache[i]!;
         var ctx = node.ctx;
         if (ctx != null && (<any>ctx)[ctxInvalidated] >= frameCounter) {
-            cache[i] = updateNode(
-                node.orig,
-                node,
-                element,
-                findNextNode(cache, i, len, createBefore),
-                (<any>ctx)[ctxDeepness],
-                true,
-            );
+            try {
+                updateNodeInto(
+                    node.orig,
+                    cache,
+                    i,
+                    element,
+                    findNextNode(cache, i, len, createBefore),
+                    (<any>ctx)[ctxDeepness],
+                    true,
+                );
+            } catch (e) {
+                handleCatchInternal(e, ctx, true);
+            }
         } else {
             ctx = node.ctxStyle;
             if (ctx != null && (<any>ctx)[ctxInvalidated] >= frameCounter) {
@@ -2186,14 +2210,19 @@ function selectedUpdate(cache: IBobrilCacheNode[], element: Element, createBefor
                 if (node.tag === "svg") inSvg = true;
                 else if (inSvg && node.tag === "foreignObject") inSvg = false;
                 var thisElement = node.element;
-                if (thisElement != undefined) {
-                    selectedUpdate(node.children, <Element>thisElement, null);
-                } else {
-                    selectedUpdate(node.children, element, findNextNode(cache, i, len, createBefore));
+                try {
+                    if (thisElement != undefined) {
+                        selectedUpdate(node.children, <Element>thisElement, null);
+                    } else {
+                        selectedUpdate(node.children, element, findNextNode(cache, i, len, createBefore));
+                    }
+                } catch (e) {
+                    handleCatchInternal(e, node.ctx, true);
+                } finally {
+                    pushUpdateEverytimeCallback(node);
+                    inSvg = backupInSvg;
+                    inNotFocusable = backupInNotFocusable;
                 }
-                pushUpdateEverytimeCallback(node);
-                inSvg = backupInSvg;
-                inNotFocusable = backupInNotFocusable;
             }
         }
     }
@@ -2273,54 +2302,78 @@ function internalUpdate(time: number) {
     if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) {
         var renderStartMark = window.performance.mark(`render ${frameCounter}`);
     }
-    for (let repeat = 0; repeat < 100; repeat++) {
-        let fullRefresh = false;
-        if (fullRecreateRequested) {
-            fullRecreateRequested = false;
-            fullRefresh = true;
-        }
-        deferSyncUpdateRequested = false;
-        focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1]!;
-        inNotFocusable = false;
-        rootIds = Object.keys(roots);
-        for (var i = 0; i < rootIds.length; i++) {
-            var r = roots[rootIds[i]!];
-            if (!r) continue;
-            var rc = r.n;
-            var insertBefore: Node | null = null;
-            for (var j = i + 1; j < rootIds.length; j++) {
-                let rafter = roots[rootIds[j]!];
-                if (rafter === undefined) continue;
-                insertBefore = getDomNode(rafter.n);
-                if (insertBefore != null) break;
+    try {
+        for (let repeat = 0; repeat < 100; repeat++) {
+            let fullRefresh = false;
+            if (fullRecreateRequested) {
+                fullRecreateRequested = false;
+                fullRefresh = true;
             }
-            if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
-            if (r.e === undefined) r.e = document.body;
-            if (rc) {
-                if (fullRefresh || (rc.ctx as any)[ctxInvalidated] >= frameCounter) {
-                    let node = RootComponent(r);
-                    updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : (rc.ctx as any)[ctxDeepness]);
-                } else {
-                    if (isArray(r.c)) selectedUpdate(r.c, r.e, insertBefore);
+            deferSyncUpdateRequested = false;
+            focusRootTop = focusRootStack.length === 0 ? null : focusRootStack[focusRootStack.length - 1]!;
+            inNotFocusable = false;
+            rootIds = Object.keys(roots);
+            for (var i = 0; i < rootIds.length; i++) {
+                var r = roots[rootIds[i]!];
+                if (!r) continue;
+                var rc = r.n;
+                var insertBefore: Node | null = null;
+                for (var j = i + 1; j < rootIds.length; j++) {
+                    let rafter = roots[rootIds[j]!];
+                    if (rafter === undefined) continue;
+                    insertBefore = getDomNode(rafter.n);
+                    if (insertBefore != null) break;
                 }
-            } else {
-                let node = RootComponent(r);
-                rc = createNode(node, undefined, r.e, insertBefore);
-                r.n = rc;
+                if (focusRootTop) inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds);
+                if (r.e === undefined) r.e = document.body;
+                if (rc) {
+                    if (fullRefresh || (rc.ctx as any)[ctxInvalidated] >= frameCounter) {
+                        let node = RootComponent(r);
+                        let rca = [rc];
+                        try {
+                            updateNodeInto(
+                                node,
+                                rca,
+                                0,
+                                r.e,
+                                insertBefore,
+                                fullRefresh ? 1e6 : (rc.ctx as any)[ctxDeepness],
+                            );
+                            rc = rca[0]!;
+                        } catch (e) {
+                            rc = rca[0]!;
+                            handleCatchInternal(e, rc.ctx, true);
+                        }
+                    } else {
+                        if (isArray(r.c)) selectedUpdate(r.c, r.e, insertBefore);
+                    }
+                } else {
+                    let node = RootComponent(r);
+                    let rca = [rc! as IBobrilCacheNode];
+                    try {
+                        createNodeInto(node, rca, 0, undefined, r.e, insertBefore);
+                    } catch (e) {
+                        rc = rca[0]!;
+                        handleCatchInternal(e, rc.ctx, true);
+                    }
+                    rc = rca[0];
+                    r.n = rc;
+                }
+                r.c = rc!.children;
             }
-            r.c = rc.children;
+            callPostCallbacks();
+            if (!deferSyncUpdateRequested) {
+                callEffects();
+            }
+            if (!deferSyncUpdateRequested) break;
         }
-        callPostCallbacks();
-        if (!deferSyncUpdateRequested) {
-            callEffects();
-        }
-        if (!deferSyncUpdateRequested) break;
+    } finally {
+        listeningEventDeepness--;
+        let r0 = roots["0"];
+        afterFrameCallback(r0 ? r0.c : null);
+        if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) endMeasure(renderStartMark!, "render");
+        lastFrameDurationMs = now() - renderFrameBegin;
     }
-    listeningEventDeepness--;
-    let r0 = roots["0"];
-    afterFrameCallback(r0 ? r0.c : null);
-    if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) endMeasure(renderStartMark!, "render");
-    lastFrameDurationMs = now() - renderFrameBegin;
 }
 
 function endMeasure(startMark: PerformanceMark, measureName?: string) {
@@ -3063,6 +3116,16 @@ export function ErrorBoundary(props: {
     let ec = exceptionContext();
     let parentEc = useContext(ec)!;
     let cCtx = currentCtx;
+    if (error() != undefined) {
+        return withKey(
+            Fragment(
+                isFunction(props.fallback) && props.fallback.length >= 1
+                    ? { children: props.fallback(error, () => error(undefined)) }
+                    : { children: props.fallback as IBobrilChildren },
+            ),
+            "f",
+        );
+    }
     useProvideContext(ec, {
         handle: (exception, ctx, bubble) => {
             if (exception instanceof NotReadyError) {
@@ -3080,16 +3143,6 @@ export function ErrorBoundary(props: {
         ctx: parentEc.ctx,
         resume: parentEc.resume,
     });
-    if (error() != undefined) {
-        return withKey(
-            Fragment(
-                isFunction(props.fallback) && props.fallback.length >= 1
-                    ? { children: props.fallback(error, () => error(undefined)) }
-                    : { children: props.fallback as IBobrilChildren },
-            ),
-            "f",
-        );
-    }
     return withKey(Fragment({ children: props.children }), "r");
 }
 
@@ -4503,7 +4556,7 @@ export function useContext<T>(key: string | IContext<T>): T | undefined {
 
 function getContextValue<T>(key: IContext<T>, ctx: IBobrilCtx): T {
     const cfg = ctx!.me.cfg || ctx!.cfg;
-    if (!(key.id in cfg)) return key.dv;
+    if (cfg == undefined || !(key.id in cfg)) return key.dv;
     return cfg[key.id];
 }
 
