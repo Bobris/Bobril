@@ -235,4 +235,31 @@ describe("Suspense", () => {
         b.syncUpdate();
         expect(document.body.innerHTML).toContain("<div>Error: Error1</div>");
     });
+
+    it("shows fallback when promise is used in useEffect", async () => {
+        let resolve: (value: string | PromiseLike<string>) => void;
+        var promise = new Promise<string>((resolve2) => {
+            resolve = resolve2;
+        });
+        let result = "";
+        b.init(() => (
+            <b.Suspense fallback={<div>Loading...</div>} expectedLoadTimeMs={0}>
+                <div>
+                    {() => {
+                        b.useEffect(() => {
+                            result = b.use(promise);
+                        });
+                        return <div>Content</div>;
+                    }}
+                </div>
+            </b.Suspense>
+        ));
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain("<div>Loading...</div>");
+        resolve!("Hello");
+        await promise;
+        b.syncUpdate();
+        expect(result).toEqual("Hello");
+        expect(document.body.innerHTML).toContain("<div>Content</div>");
+    });
 });

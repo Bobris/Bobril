@@ -138,4 +138,17 @@ describe("createContext", () => {
         b.init(() => <Comp />);
         b.syncUpdate();
     });
+
+    it("can read value with use hook", () => {
+        const myContext = b.createContext(42);
+
+        function Comp() {
+            const value = b.use(myContext);
+            expect(value).toBe(42);
+            return <>{value}</>;
+        }
+
+        b.init(() => <Comp />);
+        b.syncUpdate();
+    });
 });

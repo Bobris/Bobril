@@ -6,7 +6,7 @@ import {
     reallyBeforeFrameCallback,
     RenderPhase,
 } from "./frameCallbacks";
-import { isString, isNumber, isObject, isFunction, isArray } from "./isFunc";
+import { isString, isNumber, isObject, isFunction, isArray, isPromiseLike } from "./isFunc";
 import { assert, createTextNode, hOP, is, newHashObj, noop } from "./localHelpers";
 
 // Bobril.Core
@@ -3067,39 +3067,44 @@ export function Suspense(data: SuspenseData): IBobrilNode | null {
     }
 }
 
-export function use<T extends PromiseLike<any>>(value: T): T extends PromiseLike<infer U> ? U : never {
-    var ec = useContext(exceptionContext())!;
-    let stored = promiseResults.get(value);
-    if (stored) {
-        if (stored[0] == undefined) {
-            if (!stored[2].has(ec.ctx!)) stored[2].set(ec.ctx!, () => ec.resume());
-            throwNotReady();
+export function use<T extends IContext<any> | PromiseLike<any>>(
+    value: T,
+): T extends IContext<infer U> ? U : T extends PromiseLike<infer U> ? U : never {
+    if (isPromiseLike(value)) {
+        var ec = useContext(exceptionContext())!;
+        let stored = promiseResults.get(value);
+        if (stored) {
+            if (stored[0] == undefined) {
+                if (!stored[2].has(ec.ctx!)) stored[2].set(ec.ctx!, () => ec.resume());
+                throwNotReady();
+            }
+            if (stored[0]) return stored[1];
+            throw stored[1];
         }
-        if (stored[0]) return stored[1];
-        throw stored[1];
+
+        promiseResults.set(value, [undefined, new NotReadyError(), new Map([[ec.ctx!, () => ec.resume()]])]);
+
+        value.then(
+            (val) => {
+                var stored = promiseResults.get(value);
+                stored![0] = true;
+                stored![1] = val;
+                for (let [_ctx, resume] of stored![2]) {
+                    resume();
+                }
+            },
+            (err) => {
+                var stored = promiseResults.get(value);
+                stored![0] = false;
+                stored![1] = err;
+                for (let [_ctx, resume] of stored![2]) {
+                    resume();
+                }
+            },
+        );
+        throwNotReady();
     }
-
-    promiseResults.set(value, [undefined, new NotReadyError(), new Map([[ec.ctx!, () => ec.resume()]])]);
-
-    value.then(
-        (val) => {
-            var stored = promiseResults.get(value);
-            stored![0] = true;
-            stored![1] = val;
-            for (let [_ctx, resume] of stored![2]) {
-                resume();
-            }
-        },
-        (err) => {
-            var stored = promiseResults.get(value);
-            stored![0] = false;
-            stored![1] = err;
-            for (let [_ctx, resume] of stored![2]) {
-                resume();
-            }
-        },
-    );
-    throwNotReady();
+    return useContext(value);
 }
 
 class UnwindError extends Error {
@@ -4543,7 +4548,7 @@ export function context<T>(key: IContext<T>): (target: object, propertyKey: stri
 export function useContext<T>(key: IContext<T>): T;
 export function useContext<T = unknown>(key: string): T | undefined;
 export function useContext<T>(key: string | IContext<T>): T | undefined {
-    checkCurrentRenderCtx();
+    if (currentCtx == undefined) throw new Error("use like hooks could be used only from component context");
     const cfg = currentCtx!.me.cfg || currentCtx!.cfg;
     if (isString(key)) {
         if (cfg == undefined) return undefined;

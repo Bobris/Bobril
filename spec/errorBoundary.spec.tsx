@@ -89,4 +89,62 @@ describe("ErrorBoundary", () => {
         ));
         expect(() => b.syncUpdate()).toThrowError("Error in fallback");
     });
+
+    it("shows fallback when there is error in useEffect", () => {
+        b.init(() => (
+            <b.ErrorBoundary fallback={<div>Error</div>}>
+                <div>
+                    {() => {
+                        b.useEffect(() => {
+                            throw new Error("Error in useEffect");
+                        });
+                        return <div>Content</div>;
+                    }}
+                </div>
+            </b.ErrorBoundary>
+        ));
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain("<div>Error</div>");
+    });
+
+    it("shows fallback when there is error in useLayoutEffect", () => {
+        b.init(() => (
+            <b.ErrorBoundary fallback={<div>Error</div>}>
+                <div>
+                    {() => {
+                        b.useLayoutEffect(() => {
+                            throw new Error("Error in useLayoutEffect");
+                        });
+                        return <div>Content</div>;
+                    }}
+                </div>
+            </b.ErrorBoundary>
+        ));
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain("<div>Error</div>");
+    });
+
+    it("shows fallback when there is error in useEffect and previous useEffect is cleaned up", () => {
+        let cleanupError = false;
+        b.init(() => (
+            <b.ErrorBoundary fallback={<div>Error</div>}>
+                <div>
+                    {() => {
+                        b.useEffect(() => {
+                            return () => {
+                                cleanupError = true;
+                            };
+                        });
+                        b.useEffect(() => {
+                            throw new Error("Error");
+                        });
+                        return <div>Content</div>;
+                    }}
+                </div>
+            </b.ErrorBoundary>
+        ));
+        b.syncUpdate();
+        expect(cleanupError).toBe(true);
+        expect(document.body.innerHTML).toContain("<div>Error</div>");
+    });
 });
