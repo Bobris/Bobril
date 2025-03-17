@@ -2369,6 +2369,7 @@ function internalUpdate(time: number) {
         }
     } finally {
         listeningEventDeepness--;
+        rootIds = undefined;
         let r0 = roots["0"];
         afterFrameCallback(r0 ? r0.c : null);
         if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) endMeasure(renderStartMark!, "render");
@@ -3149,6 +3150,29 @@ export function ErrorBoundary(props: {
         resume: parentEc.resume,
     });
     return withKey(Fragment({ children: props.children }), "r");
+}
+
+export function lazy<
+    T extends
+        | { default: ((data?: T, children?: any) => IBobrilNode) | IComponentClass<T> | IComponentFunction<T> }
+        | ((data?: T, children?: any) => IBobrilNode)
+        | IComponentClass<T>
+        | IComponentFunction<T>,
+>(factory: () => Promise<T>): T extends { default: infer U } ? U : T {
+    const loader = {
+        result: undefined as any,
+        loader: factory,
+    };
+    return ((props: any, children: IBobrilChildren) => {
+        if (loader.result === undefined) {
+            let res = use(loader.loader()) as any;
+            if (res.default) {
+                res = res.default;
+            }
+            loader.result = res;
+        }
+        return createElement(loader.result, props, children);
+    }) as any;
 }
 
 // Bobril.OnChange

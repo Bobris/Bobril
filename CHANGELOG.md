@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.0.1
+
+Fix of regression in addRoot in 21.0.0.
+
 ## 21.0.0
 
 Added `Suspense` component, `use` hook and `ErrorBoundary` component.
