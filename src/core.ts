@@ -3161,11 +3161,15 @@ export function lazy<
 >(factory: () => Promise<T>): T extends { default: infer U } ? U : T {
     const loader = {
         result: undefined as any,
-        loader: factory,
+        factory,
+        loader: undefined as unknown as Promise<T>,
     };
     return ((props: any, children: IBobrilChildren) => {
+        if (loader.loader === undefined) {
+            loader.loader = loader.factory();
+        }
         if (loader.result === undefined) {
-            let res = use(loader.loader()) as any;
+            let res = use(loader.loader) as any;
             if (res.default) {
                 res = res.default;
             }
