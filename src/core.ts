@@ -3165,17 +3165,19 @@ export function lazy<
         loader: undefined as unknown as Promise<T>,
     };
     return ((props: any, children: IBobrilChildren) => {
-        if (loader.loader === undefined) {
-            loader.loader = loader.factory();
-        }
-        if (loader.result === undefined) {
-            let res = use(loader.loader) as any;
-            if (res.default) {
-                res = res.default;
+        return createElement(Fragment, null, () => {
+            if (loader.loader === undefined) {
+                loader.loader = loader.factory();
             }
-            loader.result = res;
-        }
-        return createElement(loader.result, props, children);
+            if (loader.result === undefined) {
+                let res = use(loader.loader) as any;
+                if (res.default) {
+                    res = res.default;
+                }
+                loader.result = res;
+            }
+            return createElement(loader.result, props, children);
+        });
     }) as any;
 }
 

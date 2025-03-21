@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.1.1
+
+Even better `lazy` implementation.
+
 ## 21.1.0
 
 Implement `lazy` like in React.
