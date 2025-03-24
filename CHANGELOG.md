@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.1.3
+
+Fixed regression in 21.0.0 around onMouseOver not ignoring preventDefault result like in previous versions.
+
 ## 21.1.1
 
 Even better `lazy` implementation.

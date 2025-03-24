@@ -14,6 +14,7 @@ import {
     buildUseIsHook,
     OmitAutoAddedEventParams,
     prepareEventParams,
+    resetEventParams,
 } from "./core";
 
 import { isBoolean } from "./isFunc";
@@ -327,6 +328,7 @@ function mouseEnterAndLeave(ev: IBobrilPointerEvent) {
     mouseOverHookSet.forEach((v) => v.update(toPath));
 
     bubble(node, "onMouseOver", ev);
+    resetEventParams(ev);
 
     var common = 0;
     while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common])
