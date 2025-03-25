@@ -292,6 +292,7 @@ dndProto.cancelDnd = function (this: IDndOverCtx): void {
 
 dndProto.destroy = function (this: IDndCtx): void {
     this.ended = true;
+    resetEventParams(this);
     if (this.started) broadcast("onDragEnd", this);
     resetEventParams(this);
     delete pointer2Dnd[this.pointerid];
@@ -361,6 +362,7 @@ function handlePointerDown(
 
 function dndMoved(node: IBobrilCacheNode | undefined, dnd: IDndOverCtx) {
     dnd.overNode = node;
+    resetEventParams(dnd);
     dnd.targetCtx = bubble(node, "onDragOver", dnd);
     if (dnd.targetCtx == undefined) {
         dnd.operation = DndOp.None;
