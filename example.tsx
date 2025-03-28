@@ -73,7 +73,7 @@ b.routes([
     }),
     b.route({
         name: "page2",
-        url: "page2/:id",
+        url: "page2/:id?",
         handler: (data: b.IRouteHandlerData) => (
             <div>
                 <h1>Page 2 - {data.routeParams["id"]}</h1>

@@ -2499,6 +2499,23 @@ export function setBeforeInit(callback: (cb: () => void) => void): void {
     };
 }
 
+let afterDomLoaded: (() => void) | undefined | true;
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (isFunction(afterDomLoaded)) {
+        afterDomLoaded();
+    }
+    afterDomLoaded = true;
+});
+
+setBeforeInit((cb) => {
+    if (afterDomLoaded === true) {
+        cb();
+    } else {
+        afterDomLoaded = cb;
+    }
+});
+
 let currentCtxWithEvents: IBobrilCtx | undefined;
 
 export function callWithCurrentCtxWithEvents<T>(call: () => T, ctx: IBobrilCtx): T {

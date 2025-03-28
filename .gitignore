@@ -1,6 +1,7 @@
 coverage/
 gh-pages/
 node_modules/
+dist/
 
 *.log
 
