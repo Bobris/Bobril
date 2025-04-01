@@ -506,21 +506,23 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
     }
     dnd!.beforeDrag = false;
     var eff = effectAllowedTable[dnd!.enabledOperations]!;
-    var dt = ev.dataTransfer!;
-    dt.effectAllowed = eff;
-    var div = document.createElement("div");
-    div.style.pointerEvents = "none";
-    (<any>dt).setDragImage(div, 0, 0);
-    var data = dnd!.data;
-    var dataKeys = Object.keys(data);
-    for (var i = 0; i < dataKeys.length; i++) {
-        try {
-            var k = dataKeys[i]!;
-            var d = data[k];
-            if (!isString(d)) d = JSON.stringify(d);
-            ev.dataTransfer!.setData(k, d);
-        } catch (e) {
-            if (DEBUG) if (window.console) console.log("Cannot set dnd data to " + dataKeys[i]);
+    var dt = ev.dataTransfer;
+    if (dt != undefined) {
+        dt.effectAllowed = eff;
+        var div = document.createElement("div");
+        div.style.pointerEvents = "none";
+        (<any>dt).setDragImage(div, 0, 0);
+        var data = dnd!.data;
+        var dataKeys = Object.keys(data);
+        for (var i = 0; i < dataKeys.length; i++) {
+            try {
+                var k = dataKeys[i]!;
+                var d = data[k];
+                if (!isString(d)) d = JSON.stringify(d);
+                dt.setData(k, d);
+            } catch (e) {
+                if (DEBUG) if (window.console) console.log("Cannot set dnd data to " + dataKeys[i]);
+            }
         }
     }
     updateFromNative(dnd!, ev);
@@ -528,7 +530,9 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
 }
 
 function setDropEffect(ev: DragEvent, op: DndOp) {
-    ev.dataTransfer!.dropEffect = dropEffectsAllowedTable[op]!;
+    var dt = ev.dataTransfer;
+    if (dt == undefined) return;
+    dt.dropEffect = dropEffectsAllowedTable[op]!;
 }
 
 function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobrilCacheNode | undefined): boolean {
@@ -542,27 +546,29 @@ function handleDragOver(ev: DragEvent, _target: Node | undefined, _node: IBobril
         dnd.startX = dnd.x;
         dnd.startY = dnd.y;
         dnd.local = false;
-        var dt = ev.dataTransfer!;
+        var dt = ev.dataTransfer;
         var eff = 0;
-        var effectAllowed: string | undefined = undefined;
-        try {
-            effectAllowed = dt.effectAllowed;
-        } catch (e) {}
-        for (; eff < 7; eff++) {
-            if (effectAllowedTable[eff] === effectAllowed) break;
+        if (dt != undefined) {
+            var effectAllowed: string | undefined = undefined;
+            try {
+                effectAllowed = dt.effectAllowed;
+            } catch (e) {}
+            for (; eff < 7; eff++) {
+                if (effectAllowedTable[eff] === effectAllowed) break;
+            }
+            var dtTypes = dt.types;
+            if (dtTypes) {
+                for (var i = 0; i < dtTypes.length; i++) {
+                    var tt = dtTypes[i]!;
+                    if (tt === "text/plain") tt = "Text";
+                    else if (tt === "text/uri-list") tt = "Url";
+                    (<any>dnd).data[tt] = null;
+                }
+            } else {
+                if (dt.getData("Text") !== undefined) (<any>dnd).data["Text"] = null;
+            }
         }
         dnd.enabledOperations = eff;
-        var dtTypes = dt.types;
-        if (dtTypes) {
-            for (var i = 0; i < dtTypes.length; i++) {
-                var tt = dtTypes[i]!;
-                if (tt === "text/plain") tt = "Text";
-                else if (tt === "text/uri-list") tt = "Url";
-                (<any>dnd).data[tt] = null;
-            }
-        } else {
-            if (dt.getData("Text") !== undefined) (<any>dnd).data["Text"] = null;
-        }
     }
     updateFromNative(dnd, ev);
     setDropEffect(ev, dnd!.operation);
@@ -601,16 +607,18 @@ function handleDrop(ev: DragEvent, _target: Node | undefined, _node: IBobrilCach
     dnd.y = ev.clientY;
     if (!dnd.local) {
         var dataKeys = Object.keys(dnd.data);
-        var dt = ev.dataTransfer!;
-        for (let i = 0; i < dataKeys.length; i++) {
-            var k = dataKeys[i]!;
-            var d: any;
-            if (k === "Files") {
-                d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
-            } else {
-                d = dt.getData(k);
+        var dt = ev.dataTransfer;
+        if (dt != undefined) {
+            for (let i = 0; i < dataKeys.length; i++) {
+                var k = dataKeys[i]!;
+                var d: any;
+                if (k === "Files") {
+                    d = [].slice.call(dt.files, 0); // What a useless FileList type! Get rid of it.
+                } else {
+                    d = dt.getData(k);
+                }
+                dnd.data[k] = d;
             }
-            dnd.data[k] = d;
         }
     }
     updateFromNative(dnd, ev);
