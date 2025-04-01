@@ -513,7 +513,7 @@ function afterFrame(root: IBobrilCacheChildren | null) {
             var styleElement = document.createElement("style");
             styleElement.appendChild(createTextNode(styleStr));
 
-            var head = document.head || document.getElementsByTagName("head")[0];
+            var head = document.head;
             if (htmlStyle != null) {
                 head.replaceChild(styleElement, htmlStyle);
             } else {

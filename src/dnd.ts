@@ -508,28 +508,9 @@ function handleDragStart(ev: DragEvent, _target: Node | undefined, node: IBobril
     var eff = effectAllowedTable[dnd!.enabledOperations]!;
     var dt = ev.dataTransfer!;
     dt.effectAllowed = eff;
-    if ((<any>dt).setDragImage) {
-        var div = document.createElement("div");
-        div.style.pointerEvents = "none";
-        (<any>dt).setDragImage(div, 0, 0);
-    } else {
-        // For IE10 and IE11 hack to hide default drag element
-        var style = (<HTMLElement>ev.target).style;
-        var opacityBackup = style.opacity;
-        var widthBackup = style.width;
-        var heightBackup = style.height;
-        var paddingBackup = style.padding;
-        style.opacity = "0";
-        style.width = "0";
-        style.height = "0";
-        style.padding = "0";
-        setTimeout(() => {
-            style.opacity = opacityBackup;
-            style.width = widthBackup;
-            style.height = heightBackup;
-            style.padding = paddingBackup;
-        }, 0);
-    }
+    var div = document.createElement("div");
+    div.style.pointerEvents = "none";
+    (<any>dt).setDragImage(div, 0, 0);
     var data = dnd!.data;
     var dataKeys = Object.keys(data);
     for (var i = 0; i < dataKeys.length; i++) {
