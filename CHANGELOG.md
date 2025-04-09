@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.1.7
+
+Fixed speed regression with useLayoutEffect.
+
 ## 21.1.6
 
 Protect against crash when dataTransfer is null in drag and drop.

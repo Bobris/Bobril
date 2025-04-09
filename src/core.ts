@@ -1265,6 +1265,7 @@ export function updateNodeInto(
             if ((<any>ctx)[ctxInvalidated] >= frameCounter) {
                 deepness = Math.max(deepness, (<any>ctx)[ctxDeepness]);
                 locallyInvalidated = true;
+                (<any>ctx)[ctxInvalidated] = frameCounter;
             }
             if (component.id !== c.component.id) {
                 bigChange = true;
