@@ -810,7 +810,9 @@ export function createNodeInto(
                 currentCtx = undefined;
             }
         } else {
-            if (DEBUG) Object.freeze(n);
+            if (DEBUG) {
+                if ((n as any)["$bobx"] != undefined) Object.freeze(n);
+            }
         }
         var tag = c.tag;
         if (tag === "-") {
@@ -1320,7 +1322,9 @@ export function updateNodeInto(
                 return;
             }
             (c as IBobrilCacheNodeUnsafe).orig = n;
-            if (DEBUG) Object.freeze(n);
+            if (DEBUG) {
+                if ((n as any)["$bobx"] != undefined) Object.freeze(n);
+            }
         }
         var newChildren = n.children;
         var cachedChildren = c.children;
