@@ -3504,6 +3504,7 @@ export function prepareEventParams<T extends IEventParam>(
 }
 
 export function resetEventParams(params: IEventParam) {
+    if ((params as unknown as IEventParam).propagationStopped == undefined) return;
     (params as Writable<IEventParam>).defaultPrevented = false;
     (params as Writable<IEventParam>).propagationStopped = false;
     (params as Writable<IEventParam>).immediatePropagationStopped = false;

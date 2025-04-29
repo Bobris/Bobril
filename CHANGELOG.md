@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.1.10
+
+Hopefully fix crash in DnD with Events.
+
 ## 21.1.8
 
 Do not freeze Bobx observable object if they are used as data itself in Bobril component (this is only for debug purposes anyway and freezing Proxies is seriously broken in Browsers).
