@@ -1254,6 +1254,9 @@ export function updateNodeInto(
         //cannot be implemented as because parent node is not passed: createNodeInto(n, cArray, cIndex, ?, createInto, createBefore, deepness);
         throw Error("updateNode for non created node");
     }
+    if (n == undefined) {
+        throw Error("updateNode for undefined node in " + toStringPath(c));
+    }
     var component = n.component;
     var bigChange = false;
     var ctx = c.ctx;
@@ -1391,6 +1394,9 @@ export function updateNodeInto(
                 }
                 if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
                 var el = <Element>c.element;
+                if (el == undefined) {
+                    throw Error("updateNode for undefined element for " + tag + " in " + toStringPath(c));
+                }
                 if (isString(newChildren) && !isArray(cachedChildren)) {
                     if (newChildren !== cachedChildren) {
                         el.textContent = newChildren;
@@ -1686,6 +1692,11 @@ export function updateChildren(
     );
 }
 
+function toStringPath(c: IBobrilCacheNode | undefined): string {
+    if (c == undefined) return "";
+    return toStringPath(c.parent) + ">" + (c.tag != undefined ? c.tag + ":" : "") + c.key + "@" + c.component?.id;
+}
+
 function updateChildrenCore(
     element: Element,
     newChildren: IBobrilNode[],
@@ -1799,8 +1810,8 @@ function updateChildrenCore(
         return cachedChildren;
     }
     // order of keyed nodes ware changed => reorder keyed nodes first
-    var cachedKeys: { [keyName: string]: number } = newHashObj();
-    var newKeys: { [keyName: string]: number } = newHashObj();
+    var cachedKeys = new Map<string, number>();
+    var newKeys = new Map<string, number>();
     var key: string | undefined;
     var node: IBobrilNode;
     var backupNewIndex = newIndex;
@@ -1809,18 +1820,22 @@ function updateChildrenCore(
     for (; cachedIndex < cachedEnd; cachedIndex++) {
         node = cachedChildren[cachedIndex]!;
         key = node.key;
-        if (key != null) {
-            assert(!(key in <any>cachedKeys));
-            cachedKeys[key] = cachedIndex;
+        if (key != undefined) {
+            if (cachedKeys.has(key)) {
+                throw new Error("Duplicate cached node key " + key + " " + toStringPath(parentNode));
+            }
+            cachedKeys.set(key, cachedIndex);
         } else deltaKeyless--;
     }
     var keyLess = -deltaKeyless - deltaKeyless;
     for (; newIndex < newEnd; newIndex++) {
         node = newChildren[newIndex]!;
         key = node.key;
-        if (key != null) {
-            assert(!(key in <any>newKeys));
-            newKeys[key] = newIndex;
+        if (key != undefined) {
+            if (newKeys.has(key)) {
+                throw new Error("Duplicate new node key " + key + " " + toStringPath(parentNode));
+            }
+            newKeys.set(key, newIndex);
         } else deltaKeyless++;
     }
     keyLess += deltaKeyless;
@@ -1852,7 +1867,7 @@ function updateChildrenCore(
             }
             if (key == undefined) break;
         }
-        var akPos = cachedKeys[key];
+        var akPos = cachedKeys.get(key);
         if (akPos === undefined) {
             // New key
             cachedChildren.splice(cachedIndex, 0, undefined!);
@@ -1875,7 +1890,7 @@ function updateChildrenCore(
             cachedEnd++;
             continue;
         }
-        if (!(cachedKey in <any>newKeys)) {
+        if (!newKeys.has(cachedKey)) {
             // Old key
             removeNode(cachedChildren[cachedIndex]!);
             cachedChildren.splice(cachedIndex, 1);

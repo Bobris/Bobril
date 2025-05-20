@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.2.0
+
+Improve error reporting in some strange cases.
+
 ## 21.1.10
 
 Hopefully fix crash in DnD with Events.
