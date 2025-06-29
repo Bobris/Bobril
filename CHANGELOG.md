@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.2.1
+
+Add type information for `activeStyleDef`.
+
 ## 21.2.0
 
 Improve error reporting in some strange cases.

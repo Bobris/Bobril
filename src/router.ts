@@ -519,7 +519,7 @@ export function urlOfRoute(name: string, params?: Params): string {
     return name;
 }
 
-export const activeStyleDef = styleDef("active");
+export const activeStyleDef: IBobrilStyles = styleDef("active");
 
 export function Link(data: {
     name: string;
