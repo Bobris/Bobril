@@ -36,6 +36,27 @@ function MyComponent({ lazyData }: { lazyData: Promise<string> }) {
     return <div>Data: {data}</div>; // Will suspend until the promise resolves
 }
 
+function KeyboardShow() {
+    let text = b.useStore(() => [] as string[]);
+    b.useCaptureEvents({
+        onKeyDown(event) {
+            text.push(
+                event.key +
+                    " " +
+                    event.which +
+                    " " +
+                    (event.shift ? "Shift " : "") +
+                    (event.ctrl ? "Ctrl " : "") +
+                    (event.alt ? "Alt " : "") +
+                    (event.meta ? "Meta " : ""),
+            );
+            if (text.length > 10) text.splice(0, 1); // Limit to last 10 keys
+            b.invalidate();
+        },
+    });
+    return <div>Pressed key: {text.join(", ")}</div>;
+}
+
 function SuspenseExample() {
     const lazyData = fetchData();
     return (
@@ -67,6 +88,7 @@ b.routes([
         handler: () => (
             <div>
                 <h1 style={() => b.useIsMouseOver() && { background: "teal" }}>Page 1</h1>
+                <KeyboardShow />
                 <RoutePage />
             </div>
         ),
