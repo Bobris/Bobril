@@ -25,6 +25,20 @@ describe("ErrorBoundary", () => {
         expect(document.body.innerHTML).toContain("<div>Error</div>");
     });
 
+    it("shows functional fallback when there is error", () => {
+        b.init(() => (
+            <b.ErrorBoundary fallback={(e) => <div>{(e as Error).message}</div>}>
+                <div>
+                    {() => {
+                        throw new Error("Bobril");
+                    }}
+                </div>
+            </b.ErrorBoundary>
+        ));
+        b.syncUpdate();
+        expect(document.body.innerHTML).toContain("<div>Bobril</div>");
+    });
+
     it("shows fallback when there is error in nested component", () => {
         b.init(() => (
             <b.ErrorBoundary fallback={<div>Outer</div>}>

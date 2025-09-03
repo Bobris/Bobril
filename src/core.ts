@@ -3152,7 +3152,7 @@ class UnwindError extends Error {
 }
 
 export function ErrorBoundary(props: {
-    fallback: IBobrilChildren | ((err: any, reset: () => void) => IBobrilChildren);
+    fallback: IBobrilChildren | ((err: unknown, reset?: () => void) => IBobrilChildren);
     children: IBobrilChildren;
 }): IBobrilNode {
     const error = useState<unknown>(undefined);
@@ -3163,7 +3163,7 @@ export function ErrorBoundary(props: {
         return withKey(
             Fragment(
                 isFunction(props.fallback) && props.fallback.length >= 1
-                    ? { children: props.fallback(error, () => error(undefined)) }
+                    ? { children: props.fallback(error(), () => error(undefined)) }
                     : { children: props.fallback as IBobrilChildren },
             ),
             "f",

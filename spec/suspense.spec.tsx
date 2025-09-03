@@ -209,7 +209,7 @@ describe("Suspense", () => {
             reject2 = reject;
         });
         b.init(() => (
-            <b.ErrorBoundary fallback={(e) => <div>Error: {e}</div>}>
+            <b.ErrorBoundary fallback={(e) => <div>Error: {e as string}</div>}>
                 <b.Suspense fallback={<div>One</div>} expectedLoadTimeMs={0}>
                     <div>Data1: {() => b.use(promise1)}</div>
                 </b.Suspense>

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.3.0
+
+Fixed ErrorBoundary to properly pass just Error object and not just function to get it.
+
 ## 21.2.1
 
 Add type information for `activeStyleDef`.
