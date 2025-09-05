@@ -75,7 +75,7 @@ b.routes([
             <b.ErrorBoundary
                 fallback={(err, reset) => (
                     <div>
-                        Caught an error: {err.message} <button onClick={reset}>Try again</button>
+                        Caught an error: {(err as Error).message} <button onClick={reset}>Try again</button>
                     </div>
                 )}
             >

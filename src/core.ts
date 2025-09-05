@@ -566,6 +566,37 @@ function pushUpdateCallback(c: IBobrilCacheNode) {
     }
 }
 
+function pushUpdateEverytimeCallbackAndUseEffect(c: IBobrilCacheNode) {
+    var cc = c.component;
+    if (cc) {
+        let fn = cc[postUpdateDomEverytime];
+        if (fn) {
+            updateCall.push(fn);
+            updateInstance.push(c);
+        }
+        let flags = getHookFlags(c);
+        if (flags & hasPostUpdateDomEverytime) {
+            updateCall.push(hookPostUpdateDomEverytime);
+            updateInstance.push(c);
+        }
+        if (flags & hasUseEffect) {
+            effectInstance.push(c);
+        }
+    } else {
+        var sctx = c.ctxStyle;
+        if (sctx) {
+            const flags = (sctx as IBobrilCtxInternal).$hookFlags | 0;
+            if (flags & hasPostUpdateDomEverytime) {
+                updateCall.push(hookPostUpdateDomEverytime);
+                updateInstance.push(c);
+            }
+            if (flags & hasUseEffect) {
+                effectInstance.push(c);
+            }
+        }
+    }
+}
+
 function pushUpdateEverytimeCallback(c: IBobrilCacheNode) {
     var cc = c.component;
     if (cc) {
@@ -1224,7 +1255,7 @@ function finishUpdateNodeWithoutChange(c: IBobrilCacheNode, createInto: Element,
         inSvg = backupInSvg;
         inNotFocusable = backupInNotFocusable;
     }
-    pushUpdateEverytimeCallback(c);
+    pushUpdateEverytimeCallbackAndUseEffect(c);
 }
 
 export function updateNode(

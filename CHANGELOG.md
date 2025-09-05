@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.4.0
+
+In skipRender case call useEffect hooks.
+
 ## 21.3.0
 
 Fixed ErrorBoundary to properly pass just Error object and not just function to get it.
