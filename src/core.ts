@@ -4850,6 +4850,27 @@ export function useCallback<T>(callback: T, deps: DependencyList): T {
     return useMemo(() => callback, deps);
 }
 
+class EffectEventHook<T extends Function> {
+    callback!: T;
+    bound!: T;
+    apply(...args: any[]): any {
+        return this.callback.apply(undefined, args);
+    }
+}
+
+export function useEffectEvent<T extends Function>(callback: T): T {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = new EffectEventHook<T>();
+        hook.bound = hook.apply.bind(hook);
+        hooks[myHookId] = hook;
+    }
+    hook.callback = callback;
+    return hook.bound;
+}
+
 class CommonEffectHook extends DepsChangeDetector implements IDisposable {
     callback?: EffectCallback;
     lastDisposer?: () => void;

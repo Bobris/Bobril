@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.5.0
+
+Added `useEffectEvent` from React 19.2.
+
 ## 21.4.0
 
 In skipRender case call useEffect hooks.

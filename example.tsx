@@ -54,7 +54,7 @@ function KeyboardShow() {
             b.invalidate();
         },
     });
-    return <div>Pressed key: {text.join(", ")}</div>;
+    return <div tabIndex={0}>Pressed key: {text.join(", ")}</div>;
 }
 
 function SuspenseExample() {
