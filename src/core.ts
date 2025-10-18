@@ -2112,7 +2112,7 @@ if (nativeRaf) {
 
 const setTimeout = window.setTimeout;
 
-export const now = Date.now || (() => new Date().getTime());
+export const now = Date.now;
 var startTime = now();
 var lastTickTime = 0;
 

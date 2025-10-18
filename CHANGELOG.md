@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.6.0
+
+Removed old browser fallback code.
+
 ## 21.5.0
 
 Added `useEffectEvent` from React 19.2.
