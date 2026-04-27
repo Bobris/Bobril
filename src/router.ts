@@ -43,6 +43,7 @@ export interface IRoute {
     url?: string;
     data?: Object;
     handler?: IRouteHandler;
+    onPreload?: () => Promise<void>;
     keyBuilder?: (params: Params) => string;
     children?: Array<IRoute>;
     isDefault?: boolean;
@@ -79,6 +80,7 @@ export interface IRouteConfig {
     url?: string;
     data?: Object;
     handler?: IRouteHandler;
+    onPreload?: () => Promise<void>;
     keyBuilder?: (params: Params) => string;
 }
 
@@ -466,6 +468,7 @@ export function route(config: IRouteConfig, nestedRoutes?: Array<IRoute>): IRout
         url: config.url,
         data: config.data,
         handler: config.handler,
+        onPreload: config.onPreload,
         keyBuilder: config.keyBuilder,
         children: nestedRoutes,
     };
@@ -476,6 +479,7 @@ export function routeDefault(config: IRouteConfig): IRoute {
         name: config.name,
         data: config.data,
         handler: config.handler,
+        onPreload: config.onPreload,
         keyBuilder: config.keyBuilder,
         isDefault: true,
     };
@@ -486,6 +490,7 @@ export function routeNotFound(config: IRouteConfig): IRoute {
         name: config.name,
         data: config.data,
         handler: config.handler,
+        onPreload: config.onPreload,
         keyBuilder: config.keyBuilder,
         isNotFound: true,
     };
@@ -614,6 +619,7 @@ export function createBackTransition(distance?: number): IRouteTransition {
 var currentTransition: IRouteTransition | null = null;
 var nextTransition: IRouteTransition | null = null;
 var transitionState: number = 0;
+var preloadPromise: Promise<void[]> | undefined = undefined;
 
 function doAction(transition: IRouteTransition) {
     switch (transition.type) {
@@ -627,6 +633,19 @@ function doAction(transition: IRouteTransition) {
             pop(transition.distance!);
             break;
     }
+}
+
+function runFutureRoutePreloads(): void {
+    let pending: Promise<void>[] | undefined;
+    for (let i = futureRoutes.length - 1; i >= 0; i--) {
+        let rr = futureRoutes[i]!;
+        let onPreload = rr.onPreload;
+        if (!onPreload) continue;
+        if (!pending) pending = [];
+        pending.push(onPreload.call(rr));
+    }
+
+    preloadPromise = pending ? Promise.all(pending) : undefined;
 }
 
 function nextIteration(): void {
@@ -692,19 +711,30 @@ function nextIteration(): void {
                 futureRoutes = [];
             }
             transitionState = -2;
+            runFutureRoutePreloads();
         } else if (transitionState === -2 - futureRoutes.length) {
             if (nextTransition) {
                 transitionState = activeRoutes.length;
                 continue;
             }
-            if (currentTransition!.type !== RouteTransitionType.Pop) {
-                let tr = currentTransition;
+            let finishTransition = () => {
+                if (currentTransition!.type !== RouteTransitionType.Pop) {
+                    let tr = currentTransition;
+                    currentTransition = null;
+                    doAction(tr!);
+                } else {
+                    if (!skipInvalidate) invalidate();
+                }
                 currentTransition = null;
-                doAction(tr!);
+                preloadPromise = undefined;
+            };
+            if (preloadPromise) {
+                preloadPromise.then(finishTransition).catch((err: any) => {
+                    console.log(err);
+                });
             } else {
-                if (!skipInvalidate) invalidate();
+                finishTransition();
             }
-            currentTransition = null;
             return;
         } else {
             if (nextTransition) {
@@ -733,6 +763,7 @@ function nextIteration(): void {
                     } else if (resp === false) {
                         currentTransition = null;
                         nextTransition = null;
+                        preloadPromise = undefined;
                         return;
                     } else {
                         nextTransition = resp;

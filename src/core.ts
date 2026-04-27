@@ -130,8 +130,10 @@ export type IBobrilEventsWithCtx<TCtx> = {
         : never;
 };
 
-export interface IBobrilComponent<TData = any, TCtx extends IBobrilCtx<TData> = any>
-    extends IBobrilEventsWithCtx<TCtx> {
+export interface IBobrilComponent<
+    TData = any,
+    TCtx extends IBobrilCtx<TData> = any,
+> extends IBobrilEventsWithCtx<TCtx> {
     /// parent component of derived/overriding component
     super?: IBobrilComponent;
     /// if id of old node is different from new node it is considered completely different so init will be called before render directly

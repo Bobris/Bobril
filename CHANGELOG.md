@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.7.0
+
+Router has onPreload method which it call in parallel for all new route path.
+
 ## 21.6.0
 
 Removed old browser fallback code.

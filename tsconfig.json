@@ -5,7 +5,6 @@
     "allowSyntheticDefaultImports": true,
     "checkJs": false,
     "declaration": false,
-    "downlevelIteration": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",

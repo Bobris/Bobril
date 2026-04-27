@@ -1,19 +1,26 @@
 {
     "name": "bobril",
-    "version": "21.5.0",
+    "version": "21.7.0",
     "description": "Component Oriented MVC Framework with virtual DOM and CSS",
+    "license": "MIT",
+    "author": "Boris Letocha",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Bobris/Bobril.git",
+        "directory": "package"
+    },
     "main": "index.js",
     "types": "index.d.ts",
+    "scripts": {
+        "prepublishOnly": "oxfmt --write index.ts src spec package.json && bb test",
+        "test": "bb test"
+    },
+    "devDependencies": {
+        "oxfmt": "*",
+        "typescript": "*"
+    },
     "typescript": {
         "main": "index.ts"
-    },
-    "prettier": {
-        "tabWidth": 4,
-        "printWidth": 120
-    },
-    "scripts": {
-        "prepublishOnly": "prettier --write index.ts && prettier --write -c src && prettier --write -c spec && bb test",
-        "test": "bb test"
     },
     "bobril": {
         "compilerOptions": {
@@ -34,16 +41,5 @@
             "noPropertyAccessFromIndexSignature": true,
             "reactNamespace": "b"
         }
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Bobris/Bobril.git",
-        "directory": "package"
-    },
-    "author": "Boris Letocha",
-    "license": "MIT",
-    "devDependencies": {
-        "prettier": "*",
-        "typescript": "*"
     }
 }
